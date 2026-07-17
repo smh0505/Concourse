@@ -1,0 +1,7 @@
+{
+  "id": "catppuccin-macchiato",
+  "name": "Catppuccin Macchiato",
+  "version": "1.0.0",
+  "kind": "theme",
+  "entry": "index.ts"
+}

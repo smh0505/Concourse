@@ -1,7 +1,11 @@
+export type PluginKind = "source" | "theme";
+
 export interface PluginManifest {
   id: string;
   name: string;
   version: string;
+  /** Which capability this plugin provides — determines what its entry module must export. */
+  kind: PluginKind;
   /** Path to the entry module, relative to the plugin's own folder (e.g. "index.ts"). */
   entry: string;
 }
@@ -13,6 +17,7 @@ export function isPluginManifest(value: unknown): value is PluginManifest {
     typeof m.id === "string" &&
     typeof m.name === "string" &&
     typeof m.version === "string" &&
+    (m.kind === "source" || m.kind === "theme") &&
     typeof m.entry === "string"
   );
 }

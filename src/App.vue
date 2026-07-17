@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, watch } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useLibraryStore } from "./stores/library";
 import { usePluginStore } from "./stores/plugins";
+import { useThemeStore } from "./stores/theme";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
 import ApiKeySettings from "./components/desktop/ApiKeySettings.vue";
 import AddGameForm from "./components/desktop/AddGameForm.vue";
@@ -11,10 +12,12 @@ import GameFilters from "./components/desktop/GameFilters.vue";
 import GameGrid from "./components/desktop/GameGrid.vue";
 import EditGameModal from "./components/desktop/EditGameModal.vue";
 import PluginSettings from "./components/desktop/PluginSettings.vue";
+import ThemeSettings from "./components/desktop/ThemeSettings.vue";
 import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
 
 const library = useLibraryStore();
 const plugins = usePluginStore();
+const theme = useThemeStore();
 const bigPicture = ref(false);
 const { connected: gamepadConnected, gamepadName } = useGamepadStatus();
 
@@ -27,6 +30,7 @@ watch(bigPicture, (enabled) => {
 onMounted(async () => {
   await library.init();
   await plugins.init();
+  await theme.init();
 });
 onUnmounted(library.dispose);
 </script>
@@ -42,6 +46,7 @@ onUnmounted(library.dispose);
     </div>
     <ApiKeySettings />
     <PluginSettings />
+    <ThemeSettings />
     <AddGameForm />
     <ErrorBanner />
     <GameFilters />
@@ -84,15 +89,20 @@ onUnmounted(library.dispose);
 
 <style>
 :root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-}
+  /* Catppuccin Latte, as the compiled-in default (also the shipped default theme) */
+  --color-base: #eff1f5;
+  --color-mantle: #e6e9ef;
+  --color-crust: #dce0e8;
+  --color-text: #4c4f69;
+  --color-subtext: #5c5f77;
+  --color-surface0: #ccd0da;
+  --color-surface1: #bcc0cc;
+  --color-accent: #1e66f5;
+  --color-accent-alt: #8839ef;
+  --color-danger: #d20f39;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  color: var(--color-text);
+  background-color: var(--color-base);
 }
 </style>

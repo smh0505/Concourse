@@ -10,6 +10,6 @@ const library = useLibraryStore();
 
 <style scoped>
 .error {
-  color: #d33;
+  color: var(--color-danger);
 }
 </style>

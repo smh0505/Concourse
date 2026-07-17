@@ -41,6 +41,6 @@ async function onSubmit() {
 }
 
 .error {
-  color: #d33;
+  color: var(--color-danger);
 }
 </style>

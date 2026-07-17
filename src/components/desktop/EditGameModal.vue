@@ -129,8 +129,8 @@ async function onSave() {
 }
 
 .modal {
-  background: #f6f6f6;
-  color: #0f0f0f;
+  background: var(--color-mantle);
+  color: var(--color-text);
   border-radius: 8px;
   padding: 1.5rem;
   width: 90%;
@@ -171,7 +171,7 @@ async function onSave() {
 
 .tag {
   font-size: 0.7rem;
-  background: #6663;
+  background: var(--color-surface0);
   border-radius: 3px;
   padding: 0.1rem 0.4rem;
   display: inline-flex;
@@ -200,19 +200,12 @@ async function onSave() {
 }
 
 .error {
-  color: #d33;
+  color: var(--color-danger);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .modal {
-    background: #2f2f2f;
-    color: #f6f6f6;
-  }
 }
 </style>

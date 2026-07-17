@@ -41,7 +41,7 @@ const library = useLibraryStore();
 
 .tag {
   font-size: 0.7rem;
-  background: #6663;
+  background: var(--color-surface0);
   border-radius: 3px;
   padding: 0.1rem 0.4rem;
 }
@@ -51,7 +51,7 @@ const library = useLibraryStore();
 }
 
 .filter-tag.active {
-  background: #396cd8;
-  color: #fff;
+  background: var(--color-accent);
+  color: var(--color-base);
 }
 </style>

@@ -17,7 +17,7 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function reloadPlugins() {
-    loadedPlugins.value = await loadEnabledPlugins(enabledIds.value);
+    loadedPlugins.value = await loadEnabledPlugins<SourcePlugin>("source", enabledIds.value);
   }
 
   async function togglePlugin(id: string) {
@@ -28,7 +28,7 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function init() {
-    manifests.value = getAvailablePluginManifests();
+    manifests.value = getAvailablePluginManifests("source");
 
     const stored = await settingsRepo.get(ENABLED_PLUGINS_SETTING);
     if (stored) {

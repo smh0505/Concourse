@@ -1,0 +1,7 @@
+{
+  "id": "brick-block-theme",
+  "name": "Brick Block Theme",
+  "version": "1.0.0",
+  "kind": "theme",
+  "entry": "index.ts"
+}

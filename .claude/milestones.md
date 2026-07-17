@@ -27,21 +27,28 @@
 - [x] Plugin manifest format
 - [x] Settings UI to enable/disable installed plugins
 
-## Milestone 5 — First Source Plugin (Steam)
+## Milestone 5 — Theme/Skin Plugins
+Themes are component-level skins, not just palette swaps — a theme plugin can override actual UI components (e.g. `GameCard`, `BigPictureGrid` tile), not only colors/fonts. Distinct from `SourcePlugin`s: only one theme is active at a time (exclusive selection), vs. source plugins which are independently multi-enabled.
+- [x] Define `ThemePlugin` interface — component-slot overrides (e.g. `{ GameCard?: Component, BigPictureTile?: Component, ... }`) plus optional `activate()`/`deactivate()`
+- [x] Add a `kind: "source" | "theme"` field to the plugin manifest so the loader/settings UI can distinguish plugin types (reuses existing `plugin.json`/loader infra from Milestone 4)
+- [x] Slot registry — named, swappable UI regions that app components render via `<component :is="resolveSlot('GameCard')" />`, falling back to the current built-in component when no active theme overrides that slot
+- [x] Theme store (`useThemeStore`) tracking the single active theme id, persisted via `settings` table
+- [x] Settings UI: exclusive theme picker (radio-style, not checkboxes like source plugins)
+
+## Milestone 6 — First Source Plugin (Steam)
 - [ ] Parse `libraryfolders.vdf` for install locations
 - [ ] Parse appmanifest files for owned/installed games
 - [ ] Map Steam entries into core `GameEntry` format
 - [ ] Dedup against manually-added games
 - [ ] Test end-to-end: scan → library → launch → playtime
 
-## Milestone 6 — Polish & Extras
-- [ ] Theming/skin support
+## Milestone 7 — Polish & Extras
 - [ ] Background art/trailer preview on focus (Big Picture)
 - [ ] Additional source plugins (Epic, GOG, emulator scanner)
 - [ ] Auto-launch into Big Picture on boot (toggle)
 - [ ] Per-game launch options / compatibility wrappers via [Locale Remulator](https://github.com/InWILL/Locale_Remulator) (bundled as a Tauri sidecar, LGPL-3.0) — preferred over the original xupefei/Locale-Emulator, which is archived and 32-bit only, since Locale Remulator is actively maintained and supports 64-bit games (Detours-based hooking). Extend `launch_game`/`GameEditFields` with an optional wrapper-command flag instead of direct spawn; not a `SourcePlugin`, since it wraps launch rather than scanning for games
 
-## Milestone 7 — Remote/Downloadable Plugins (future)
+## Milestone 8 — Remote/Downloadable Plugins (future)
 - [ ] Rust command to download plugin bundles (e.g. from GitHub releases) into the app-data plugins dir, via `reqwest`
 - [ ] Zip extraction for downloaded plugin bundles
 - [ ] SHA256 checksum pinned in manifest, verified before load
@@ -49,4 +56,4 @@
 - [ ] Second loader strategy alongside the current build-time `import.meta.glob` one (bundled vs. remote-downloaded)
 - [ ] Revisit `tauri.conf.json` CSP (`csp: null` today) once loading remote-sourced code is real
 
-Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the controller UX early. Milestone 4's current loader only discovers plugins bundled into the app at build time (`src/plugins/*`); Milestone 7 tracks true runtime-downloadable third-party plugin support as a distinct, larger feature.
+Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the controller UX early. Milestone 4's current loader only discovers plugins bundled into the app at build time (`src/plugins/*`); Milestone 8 tracks true runtime-downloadable third-party plugin support as a distinct, larger feature.

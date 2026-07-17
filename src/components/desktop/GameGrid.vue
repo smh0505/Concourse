@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import GameCard from "./GameCard.vue";
 import { useLibraryStore } from "../../stores/library";
+import { useThemeSlot } from "../../theme/slotRegistry";
 
 const library = useLibraryStore();
+const cardComponent = useThemeSlot("GameCard", GameCard);
 </script>
 
 <template>
   <div class="grid">
-    <GameCard v-for="game in library.filteredGames" :key="game.id" :game="game" />
+    <component :is="cardComponent" v-for="game in library.filteredGames" :key="game.id" :game="game" />
     <p v-if="library.filteredGames.length === 0" class="empty">No games match.</p>
   </div>
 </template>

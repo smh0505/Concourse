@@ -37,7 +37,7 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 
 <style scoped>
 .card {
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-surface1);
   border-radius: 8px;
   padding: 0.75rem;
   display: flex;
@@ -58,8 +58,8 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 }
 
 .cover-placeholder {
-  background: #444;
-  color: #fff;
+  background: var(--color-surface0);
+  color: var(--color-text);
   display: flex;
   align-items: center;
   justify-content: center;

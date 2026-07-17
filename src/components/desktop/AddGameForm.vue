@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useLibraryStore } from "../../stores/library";
 
-const emit = defineEmits<{ add: [title: string, executablePath: string] }>();
+const library = useLibraryStore();
 
 const title = ref("");
 const executablePath = ref("");
 const error = ref("");
 
-function onSubmit() {
+async function onSubmit() {
   if (!title.value.trim() || !executablePath.value.trim()) {
     error.value = "Title and executable path are required.";
     return;
   }
   error.value = "";
-  emit("add", title.value.trim(), executablePath.value.trim());
+  await library.addGame(title.value.trim(), executablePath.value.trim());
   title.value = "";
   executablePath.value = "";
 }

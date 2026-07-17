@@ -1,24 +1,19 @@
 <script setup lang="ts">
-const search = defineModel<string>("search", { default: "" });
+import { useLibraryStore } from "../../stores/library";
 
-defineProps<{
-  allTags: string[];
-  activeTagFilter: string | null;
-}>();
-
-const emit = defineEmits<{ toggleTag: [tag: string] }>();
+const library = useLibraryStore();
 </script>
 
 <template>
   <div class="filters">
-    <input v-model="search" class="search" placeholder="Search by title..." />
-    <div class="tags" v-if="allTags.length">
+    <input v-model="library.search" class="search" placeholder="Search by title..." />
+    <div class="tags" v-if="library.allTags.length">
       <span
         class="tag filter-tag"
-        :class="{ active: activeTagFilter === tag }"
-        v-for="tag in allTags"
+        :class="{ active: library.activeTagFilter === tag }"
+        v-for="tag in library.allTags"
         :key="tag"
-        @click="emit('toggleTag', tag)"
+        @click="library.toggleTagFilter(tag)"
       >
         {{ tag }}
       </span>

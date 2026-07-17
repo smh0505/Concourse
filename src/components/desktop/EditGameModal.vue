@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import type { Game, GameEditFields } from "../db";
+import { computed, ref, watch } from "vue";
+import { useLibraryStore } from "../../stores/library";
+import type { GameEditFields } from "../../db";
 
-const props = defineProps<{ game: Game | null }>();
-const emit = defineEmits<{ save: [fields: GameEditFields]; cancel: [] }>();
+const library = useLibraryStore();
 
 const form = ref<GameEditFields>({
   title: "",
@@ -15,9 +15,21 @@ const form = ref<GameEditFields>({
   release_date: "",
 });
 const error = ref("");
+const newTag = ref("");
+
+const tags = computed(() =>
+  library.editingGame ? library.gameTags[library.editingGame.id] ?? [] : [],
+);
+
+async function onAddTag() {
+  const name = newTag.value.trim();
+  if (!name || !library.editingGame) return;
+  await library.addTag(library.editingGame, name);
+  newTag.value = "";
+}
 
 watch(
-  () => props.game,
+  () => library.editingGame,
   (game) => {
     if (!game) return;
     error.value = "";
@@ -34,12 +46,12 @@ watch(
   { immediate: true },
 );
 
-function onSave() {
+async function onSave() {
   if (!form.value.title.trim() || !form.value.executable_path.trim()) {
     error.value = "Title and executable path are required.";
     return;
   }
-  emit("save", {
+  await library.saveEdit({
     title: form.value.title.trim(),
     executable_path: form.value.executable_path.trim(),
     platform: form.value.platform?.trim() || null,
@@ -52,9 +64,9 @@ function onSave() {
 </script>
 
 <template>
-  <div v-if="game" class="modal-backdrop" @click.self="emit('cancel')">
+  <div v-if="library.editingGame" class="modal-backdrop" @click.self="library.cancelEdit">
     <form class="modal" @submit.prevent="onSave">
-      <h2>Edit {{ game.title }}</h2>
+      <h2>Edit {{ library.editingGame.title }}</h2>
       <label>
         Title
         <input v-model="form.title" />
@@ -83,9 +95,22 @@ function onSave() {
         Description
         <textarea v-model="form.description" rows="4"></textarea>
       </label>
+      <div class="tags-section">
+        <span>Tags</span>
+        <div class="tags" v-if="tags.length">
+          <span class="tag" v-for="tag in tags" :key="tag">
+            {{ tag }}
+            <button class="tag-remove" @click="library.removeTag(library.editingGame!, tag)">&times;</button>
+          </span>
+        </div>
+        <form class="add-tag-form" @submit.prevent="onAddTag">
+          <input v-model="newTag" placeholder="Add tag" />
+          <button type="submit">+</button>
+        </form>
+      </div>
       <p v-if="error" class="error">{{ error }}</p>
       <div class="modal-actions">
-        <button type="button" @click="emit('cancel')">Cancel</button>
+        <button type="button" @click="library.cancelEdit">Cancel</button>
         <button type="submit">Save</button>
       </div>
     </form>
@@ -128,6 +153,50 @@ function onSave() {
 .modal input,
 .modal textarea {
   font-family: inherit;
+}
+
+.tags-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.tag {
+  font-size: 0.7rem;
+  background: #6663;
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.tag-remove {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0;
+  color: inherit;
+}
+
+.add-tag-form {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.add-tag-form input {
+  flex: 1;
+  font-size: 0.85rem;
 }
 
 .error {

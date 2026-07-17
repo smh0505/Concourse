@@ -15,11 +15,11 @@
 - [x] Tagging + basic filter/search
 
 ## Milestone 3 — Big Picture Mode
-- [ ] Full-screen layout, large-tile grid
-- [ ] Gamepad input wiring (D-pad/stick nav, face buttons)
-- [ ] Focus/selection states for controller nav
-- [ ] Launch game from Big Picture
-- [ ] Toggle between desktop UI and Big Picture
+- [x] Full-screen layout, large-tile grid
+- [x] Gamepad input wiring (D-pad/stick nav, face buttons)
+- [x] Focus/selection states for controller nav
+- [x] Launch game from Big Picture
+- [x] Toggle between desktop UI and Big Picture
 
 ## Milestone 4 — Plugin System
 - [ ] Define plugin interface (`scan()`, `launch()`, `getInstallStatus()`)

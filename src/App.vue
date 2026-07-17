@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useLibraryStore } from "./stores/library";
+import { usePluginStore } from "./stores/plugins";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
 import ApiKeySettings from "./components/desktop/ApiKeySettings.vue";
 import AddGameForm from "./components/desktop/AddGameForm.vue";
@@ -9,9 +10,11 @@ import ErrorBanner from "./components/desktop/ErrorBanner.vue";
 import GameFilters from "./components/desktop/GameFilters.vue";
 import GameGrid from "./components/desktop/GameGrid.vue";
 import EditGameModal from "./components/desktop/EditGameModal.vue";
+import PluginSettings from "./components/desktop/PluginSettings.vue";
 import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
 
 const library = useLibraryStore();
+const plugins = usePluginStore();
 const bigPicture = ref(false);
 const { connected: gamepadConnected, gamepadName } = useGamepadStatus();
 
@@ -21,7 +24,10 @@ watch(bigPicture, (enabled) => {
     .catch((e) => console.error("Failed to toggle fullscreen:", e));
 });
 
-onMounted(library.init);
+onMounted(async () => {
+  await library.init();
+  await plugins.init();
+});
 onUnmounted(library.dispose);
 </script>
 
@@ -35,6 +41,7 @@ onUnmounted(library.dispose);
       <button @click="bigPicture = true">Big Picture Mode</button>
     </div>
     <ApiKeySettings />
+    <PluginSettings />
     <AddGameForm />
     <ErrorBanner />
     <GameFilters />

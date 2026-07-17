@@ -22,10 +22,22 @@ Before performing any task, always read and align with these two core documents 
   - When a task or checklist item from `milestones.md` is fully completed and verified, update the corresponding `[ ]` to `[x]` in `milestones.md`.
   - Always commit your changes after completing a sub-task or milestone.
 
-### Core Stack Decisions (Milestone 1 First Task)
-*Refer to Milestone 1: "Pick stack (Electron/Tauri+React vs .NET/Avalonia)"*.
-- Since we target low-level system performance, quick startup, and lightweight footprints, we lean heavily towards **Tauri (Rust) + React/TypeScript** (or Vue/Svelte) for the frontend, utilizing SQLite for local data persistence.
+### Core Stack Decisions (Milestone 1 First Task — DECIDED)
+Stack is locked: **Tauri (Rust) + Vue 3/TypeScript** frontend, **SQLite** for local data persistence (via `tauri-plugin-sql`).
 - Ensure system API integrations (process spawning for launching, process-exit detection, and gamepad inputs) are handled efficiently through safe Rust/C++ system bindings where needed.
+- Rust backend is split by domain module under `src-tauri/src/`: `db.rs` (migrations/schema), `launcher.rs` (process spawn + playtime tracking), `sgdb.rs` (SteamGridDB), `igdb.rs` (IGDB). Keep `lib.rs` limited to plugin wiring and command registration.
+- Frontend data layer lives in `src/db/` as repository classes (`GameRepository`, `TagRepository`, `PlaytimeRepository`, `SettingsRepository`) over a shared `Database` connection — not loose exported functions.
+- Frontend UI lives in `src/components/`; `App.vue` stays the single owner of shared state and repository calls, child components emit events rather than reaching into the DB directly.
+
+### Package Manager
+**Use `bun`, not `npm`/`yarn`/`pnpm`**, for all TypeScript/frontend tooling in this repo.
+- `bun install` — install JS dependencies
+- `bun add <pkg>` — add a JS dependency
+- `bun run dev` — start the Vite dev server (frontend only)
+- `bun run build` — typecheck (`vue-tsc --noEmit`) + production build
+- `bunx tauri dev` — run the full Tauri app (frontend + Rust backend) in dev mode
+- `bunx tauri build` — build the production desktop binary
+- `cargo check` (run from `src-tauri/`) — quick Rust compile check without a full build
 
 ---
 

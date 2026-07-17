@@ -8,11 +8,11 @@
 - [x] Launch button (spawn process from path)
 
 ## Milestone 2 — Metadata & Playtime
-- [ ] Integrate SteamGridDB API for cover art
-- [ ] Integrate IGDB for genre/description/release date
-- [ ] Manual metadata edit/override UI
-- [ ] Playtime tracking (process-exit detection, session log)
-- [ ] Tagging + basic filter/search
+- [x] Integrate SteamGridDB API for cover art
+- [x] Integrate IGDB for genre/description/release date
+- [x] Manual metadata edit/override UI
+- [x] Playtime tracking (process-exit detection, session log)
+- [x] Tagging + basic filter/search
 
 ## Milestone 3 — Big Picture Mode
 - [ ] Full-screen layout, large-tile grid

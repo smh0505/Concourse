@@ -8,6 +8,9 @@ export interface Game {
   description: string | null;
   release_date: string | null;
   total_playtime: number;
+  /** SQLite boolean (0/1). When set, plugin scans never merge into this row - a title
+   *  match inserts a separate new row instead of overwriting executable_path/platform. */
+  skip_dedup: number;
 }
 
 export type GameEditFields = Pick<
@@ -19,4 +22,5 @@ export type GameEditFields = Pick<
   | "background_art_url"
   | "description"
   | "release_date"
+  | "skip_dedup"
 >;

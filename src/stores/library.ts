@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   games as gameRepo,
   playtime as playtimeRepo,
@@ -10,6 +11,7 @@ import {
   type Game,
   type GameEditFields,
 } from "../db";
+import type { GameEntry } from "../plugins/types";
 
 const SGDB_API_KEY_SETTING = "steamgriddb_api_key";
 const IGDB_CLIENT_ID_SETTING = "igdb_client_id";
@@ -152,6 +154,35 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
   }
 
+  /**
+   * Imports scanned plugin entries. A title matching an existing game merges into that
+   * row (executable_path/platform upgraded to the scanned source, id preserved so
+   * playtime history and tags carry over); otherwise a new game row is inserted.
+   * Games with skip_dedup set are never merge targets - a title match against one of
+   * those always inserts a separate new row instead, so both coexist.
+   */
+  async function importEntries(entries: GameEntry[]): Promise<{ added: number; merged: number }> {
+    const titleToGame = new Map(
+      games.value.filter((g) => !g.skip_dedup).map((g) => [g.title.toLowerCase(), g]),
+    );
+    let added = 0;
+    let merged = 0;
+
+    for (const entry of entries) {
+      const existing = titleToGame.get(entry.title.toLowerCase());
+      if (existing) {
+        await gameRepo.updateLaunchSource(existing.id, entry.executablePath, entry.platform);
+        merged++;
+      } else {
+        await gameRepo.addWithPlatform(entry.title, entry.executablePath, entry.platform);
+        added++;
+      }
+    }
+
+    if (added > 0 || merged > 0) await refresh();
+    return { added, merged };
+  }
+
   function openEdit(game: Game) {
     editingGame.value = game;
   }
@@ -170,7 +201,15 @@ export const useLibraryStore = defineStore("library", () => {
   async function launchGame(game: Game) {
     error.value = "";
     try {
-      await invoke("launch_game", { gameId: game.id, executablePath: game.executable_path });
+      // A URI (e.g. "steam://rungameid/730") can't be spawned as a process - hand it
+      // to the OS's protocol handler instead. We get no process handle this way, so
+      // playtime tracking (which relies on waiting for a spawned child to exit) is
+      // skipped for these rather than recording a guessed/fake duration.
+      if (game.executable_path.includes("://")) {
+        await openUrl(game.executable_path);
+      } else {
+        await invoke("launch_game", { gameId: game.id, executablePath: game.executable_path });
+      }
     } catch (e) {
       error.value = String(e);
     }
@@ -216,6 +255,7 @@ export const useLibraryStore = defineStore("library", () => {
     fetchCoverArt,
     addGame,
     deleteGame,
+    importEntries,
     openEdit,
     cancelEdit,
     saveEdit,

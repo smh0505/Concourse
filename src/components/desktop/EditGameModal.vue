@@ -13,6 +13,7 @@ const form = ref<GameEditFields>({
   background_art_url: "",
   description: "",
   release_date: "",
+  skip_dedup: 0,
 });
 const error = ref("");
 const newTag = ref("");
@@ -41,6 +42,7 @@ watch(
       background_art_url: game.background_art_url ?? "",
       description: game.description ?? "",
       release_date: game.release_date ?? "",
+      skip_dedup: game.skip_dedup,
     };
   },
   { immediate: true },
@@ -59,6 +61,7 @@ async function onSave() {
     background_art_url: form.value.background_art_url?.trim() || null,
     description: form.value.description?.trim() || null,
     release_date: form.value.release_date?.trim() || null,
+    skip_dedup: form.value.skip_dedup,
   });
 }
 </script>
@@ -94,6 +97,14 @@ async function onSave() {
       <label>
         Description
         <textarea v-model="form.description" rows="4"></textarea>
+      </label>
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          :checked="form.skip_dedup === 1"
+          @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
+        />
+        Keep separate from plugin scans (don't merge/dedup this entry)
       </label>
       <div class="tags-section">
         <span>Tags</span>
@@ -153,6 +164,12 @@ async function onSave() {
 .modal input,
 .modal textarea {
   font-family: inherit;
+}
+
+.checkbox-label {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
 }
 
 .tags-section {

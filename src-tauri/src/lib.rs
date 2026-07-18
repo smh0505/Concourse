@@ -3,6 +3,7 @@ mod db;
 mod igdb;
 mod launcher;
 mod sgdb;
+mod steam;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -22,7 +23,9 @@ pub fn run() {
             greet,
             launcher::launch_game,
             sgdb::fetch_cover_art,
-            igdb::fetch_igdb_metadata
+            igdb::fetch_igdb_metadata,
+            steam::find_steam_library_folders,
+            steam::find_steam_apps
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

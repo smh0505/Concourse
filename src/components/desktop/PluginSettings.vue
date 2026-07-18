@@ -21,6 +21,15 @@ const plugins = usePluginStore();
         </label>
       </li>
     </ul>
+    <button
+      v-if="plugins.manifests.length > 0"
+      class="scan-button"
+      :disabled="plugins.scanning || plugins.loadedPlugins.length === 0"
+      @click="plugins.scanAll"
+    >
+      {{ plugins.scanning ? "Scanning..." : "Scan Now" }}
+    </button>
+    <p v-if="plugins.lastScanSummary" class="scan-summary">{{ plugins.lastScanSummary }}</p>
   </div>
 </template>
 
@@ -58,5 +67,16 @@ const plugins = usePluginStore();
 .version {
   opacity: 0.6;
   font-size: 0.75rem;
+}
+
+.scan-button {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.scan-summary {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 </style>

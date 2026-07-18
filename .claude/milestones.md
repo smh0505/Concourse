@@ -36,17 +36,18 @@ Themes are component-level skins, not just palette swaps — a theme plugin can 
 - [x] Settings UI: exclusive theme picker (radio-style, not checkboxes like source plugins)
 
 ## Milestone 6 — First Source Plugin (Steam)
-- [ ] Parse `libraryfolders.vdf` for install locations
-- [ ] Parse appmanifest files for owned/installed games
-- [ ] Map Steam entries into core `GameEntry` format
-- [ ] Dedup against manually-added games
-- [ ] Test end-to-end: scan → library → launch → playtime
+- [x] Parse `libraryfolders.vdf` for install locations
+- [x] Parse appmanifest files for owned/installed games
+- [x] Map Steam entries into core `GameEntry` format
+- [x] Dedup against manually-added games
+- [x] Test end-to-end: scan → library → launch → playtime (playtime tracking for URI-launched games deferred, tracked in Milestone 7)
 
 ## Milestone 7 — Polish & Extras
 - [ ] Background art/trailer preview on focus (Big Picture)
 - [ ] Additional source plugins (Epic, GOG, emulator scanner)
 - [ ] Auto-launch into Big Picture on boot (toggle)
 - [ ] Per-game launch options / compatibility wrappers via [Locale Remulator](https://github.com/InWILL/Locale_Remulator) (bundled as a Tauri sidecar, LGPL-3.0) — preferred over the original xupefei/Locale-Emulator, which is archived and 32-bit only, since Locale Remulator is actively maintained and supports 64-bit games (Detours-based hooking). Extend `launch_game`/`GameEditFields` with an optional wrapper-command flag instead of direct spawn; not a `SourcePlugin`, since it wraps launch rather than scanning for games
+- [ ] Playtime tracking for URI-launched games (Steam and future protocol-based plugins) — `launch_game`'s process-spawn-and-wait mechanism doesn't apply to `openUrl()` launches (no child process handle; Steam's client owns the real game process). Researched how Playnite solves this: it uses "Folder" tracking mode — periodically poll the OS's running-process list and check whether any running process's executable path falls under the game's known install folder (we already have this: `library_path/steamapps/common/<installdir>` from the appmanifest), rather than needing the exact `.exe` filename or relying on Steam's undocumented, per-game-unreliable `HKCU\Software\Valve\Steam\Apps\<appid>\Running` registry key (confirmed via search: doesn't update reliably for every game). Start polling on launch, stop when no matching process remains, record the elapsed span as a session. Generalizes to any future protocol-launched plugin, not Steam-specific. Separately, historical playtime accumulated before this app was ever used could be imported via Steam's `IPlayerService/GetOwnedGames` Web API (`playtime_forever`), which is what Playnite's own historical-import likely uses, though this needs a user-provided Steam Web API key + SteamID64.
 
 ## Milestone 8 — Remote/Downloadable Plugins (future)
 - [ ] Rust command to download plugin bundles (e.g. from GitHub releases) into the app-data plugins dir, via `reqwest`

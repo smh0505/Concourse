@@ -15,6 +15,22 @@ export class GameRepository {
     );
   }
 
+  async addWithPlatform(title: string, executablePath: string, platform: string): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "INSERT INTO games (title, executable_path, platform) VALUES ($1, $2, $3)",
+      [title, executablePath, platform],
+    );
+  }
+
+  async updateLaunchSource(id: number, executablePath: string, platform: string): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE games SET executable_path = $1, platform = $2 WHERE id = $3",
+      [executablePath, platform, id],
+    );
+  }
+
   async delete(id: number): Promise<void> {
     const db = await getDb();
     await db.execute("DELETE FROM games WHERE id = $1", [id]);
@@ -47,8 +63,9 @@ export class GameRepository {
          cover_art_url = $4,
          background_art_url = $5,
          description = $6,
-         release_date = $7
-       WHERE id = $8`,
+         release_date = $7,
+         skip_dedup = $8
+       WHERE id = $9`,
       [
         fields.title,
         fields.executable_path,
@@ -57,6 +74,7 @@ export class GameRepository {
         fields.background_art_url,
         fields.description,
         fields.release_date,
+        fields.skip_dedup,
         id,
       ],
     );

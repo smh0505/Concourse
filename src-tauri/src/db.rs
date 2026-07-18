@@ -52,5 +52,13 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "add_games_skip_dedup",
+            sql: r#"
+            ALTER TABLE games ADD COLUMN skip_dedup INTEGER NOT NULL DEFAULT 0;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

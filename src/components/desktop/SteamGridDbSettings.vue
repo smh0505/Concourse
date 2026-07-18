@@ -7,9 +7,7 @@ const library = useLibraryStore();
 <template>
   <form class="settings-form" @submit.prevent="library.saveApiKeys">
     <input v-model="library.sgdbApiKey" type="password" placeholder="SteamGridDB API key" />
-    <input v-model="library.igdbClientId" type="password" placeholder="IGDB client ID" />
-    <input v-model="library.igdbClientSecret" type="password" placeholder="IGDB client secret" />
-    <button type="submit">Save Keys</button>
+    <button type="submit">Save Key</button>
   </form>
 </template>
 

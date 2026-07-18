@@ -1,0 +1,7 @@
+{
+  "id": "igdb",
+  "name": "IGDB (metadata provider)",
+  "version": "1.0.0",
+  "kind": "metadata",
+  "entry": "index.ts"
+}

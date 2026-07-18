@@ -1,5 +1,12 @@
 import type { Component } from "vue";
 
+export interface PluginBase {
+  id: string;
+  name: string;
+  /** Optional inline settings UI, rendered under this plugin's row in the settings panel. */
+  settingsComponent?: Component;
+}
+
 export interface GameEntry {
   id: string;
   title: string;
@@ -8,20 +15,26 @@ export interface GameEntry {
   coverArtUrl?: string;
 }
 
-export interface SourcePlugin {
-  id: string;
-  name: string;
+export interface SourcePlugin extends PluginBase {
   scan(): Promise<GameEntry[]>;
   launch(entry: GameEntry): Promise<void>;
   getInstallStatus(entry: GameEntry): Promise<boolean>;
 }
 
+export interface MetadataResult {
+  description: string | null;
+  releaseDate: string | null;
+  genres: string[];
+}
+
+export interface MetadataProviderPlugin extends PluginBase {
+  fetchMetadata(title: string): Promise<MetadataResult | null>;
+}
+
 /** Named, swappable UI regions a theme plugin can override. */
 export type ThemeSlotName = "GameCard" | "BigPictureTile";
 
-export interface ThemePlugin {
-  id: string;
-  name: string;
+export interface ThemePlugin extends PluginBase {
   /** Component overrides per slot; slots not listed fall back to the built-in component. */
   slots?: Partial<Record<ThemeSlotName, Component>>;
   /** CSS custom properties (e.g. "--color-base") applied to :root while this theme is active. */

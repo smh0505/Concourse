@@ -1,4 +1,4 @@
-export type PluginKind = "source" | "theme";
+export type PluginKind = "source" | "theme" | "metadata";
 
 export interface PluginManifest {
   id: string;
@@ -17,7 +17,7 @@ export function isPluginManifest(value: unknown): value is PluginManifest {
     typeof m.id === "string" &&
     typeof m.name === "string" &&
     typeof m.version === "string" &&
-    (m.kind === "source" || m.kind === "theme") &&
+    (m.kind === "source" || m.kind === "theme" || m.kind === "metadata") &&
     typeof m.entry === "string"
   );
 }

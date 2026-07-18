@@ -4,20 +4,22 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useLibraryStore } from "./stores/library";
 import { usePluginStore } from "./stores/plugins";
 import { useThemeStore } from "./stores/theme";
+import { useMetadataProviderStore } from "./stores/metadataProviders";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
-import ApiKeySettings from "./components/desktop/ApiKeySettings.vue";
+import SteamGridDbSettings from "./components/desktop/SteamGridDbSettings.vue";
 import AddGameForm from "./components/desktop/AddGameForm.vue";
 import ErrorBanner from "./components/desktop/ErrorBanner.vue";
 import GameFilters from "./components/desktop/GameFilters.vue";
 import GameGrid from "./components/desktop/GameGrid.vue";
+import GameList from "./components/desktop/GameList.vue";
 import EditGameModal from "./components/desktop/EditGameModal.vue";
 import PluginSettings from "./components/desktop/PluginSettings.vue";
-import ThemeSettings from "./components/desktop/ThemeSettings.vue";
 import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
 
 const library = useLibraryStore();
 const plugins = usePluginStore();
 const theme = useThemeStore();
+const metadataProviders = useMetadataProviderStore();
 const bigPicture = ref(false);
 const { connected: gamepadConnected, gamepadName } = useGamepadStatus();
 
@@ -31,6 +33,7 @@ onMounted(async () => {
   await library.init();
   await plugins.init();
   await theme.init();
+  await metadataProviders.init();
 });
 onUnmounted(library.dispose);
 </script>
@@ -44,13 +47,21 @@ onUnmounted(library.dispose);
       </span>
       <button @click="bigPicture = true">Big Picture Mode</button>
     </div>
-    <ApiKeySettings />
+    <SteamGridDbSettings />
     <PluginSettings />
-    <ThemeSettings />
     <AddGameForm />
     <ErrorBanner />
     <GameFilters />
-    <GameGrid />
+    <div class="view-toggle">
+      <button :class="{ active: library.viewMode === 'grid' }" @click="library.setViewMode('grid')">
+        Grid
+      </button>
+      <button :class="{ active: library.viewMode === 'list' }" @click="library.setViewMode('list')">
+        List
+      </button>
+    </div>
+    <GameGrid v-if="library.viewMode === 'grid'" />
+    <GameList v-else />
     <EditGameModal />
   </main>
 
@@ -77,6 +88,17 @@ onUnmounted(library.dispose);
 .gamepad-badge {
   font-size: 0.85rem;
   opacity: 0.8;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.view-toggle button.active {
+  background: var(--color-accent);
+  color: var(--color-base);
 }
 
 .exit-big-picture {

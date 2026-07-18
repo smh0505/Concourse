@@ -43,8 +43,8 @@ Themes are component-level skins, not just palette swaps — a theme plugin can 
 - [x] Test end-to-end: scan → library → launch → playtime (playtime tracking for URI-launched games deferred, tracked in Milestone 7)
 
 ## Milestone 7 — Polish & Extras
-- [ ] List view for desktop UI (proposal calls for "grid and list views"; only grid exists today)
-- [ ] Metadata provider plugin support — swap IGDB for another source (proposal's "Other Plugin Candidates"); needs a new plugin `kind` (e.g. `"metadata"`) alongside `source`/`theme`, following the same manifest/loader pattern
+- [x] List view for desktop UI (proposal calls for "grid and list views"; only grid exists today)
+- [x] Metadata provider plugin support — swap IGDB for another source (proposal's "Other Plugin Candidates"); needs a new plugin `kind` (e.g. `"metadata"`) alongside `source`/`theme`, following the same manifest/loader pattern
 - [ ] Controller mapping profile plugins — custom gamepad button/axis mappings, distinct from the existing hardcoded `useGamepadNav` bindings (proposal's "Other Plugin Candidates")
 - [ ] Background art/trailer preview on focus (Big Picture)
 - [ ] Additional source plugins (Epic, GOG, emulator scanner)

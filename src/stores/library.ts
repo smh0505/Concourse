@@ -12,16 +12,12 @@ import {
   type GameEditFields,
 } from "../db";
 import type { GameEntry } from "../plugins/types";
+import { useMetadataProviderStore } from "./metadataProviders";
 
 const SGDB_API_KEY_SETTING = "steamgriddb_api_key";
-const IGDB_CLIENT_ID_SETTING = "igdb_client_id";
-const IGDB_CLIENT_SECRET_SETTING = "igdb_client_secret";
+const VIEW_MODE_SETTING = "view_mode";
 
-interface IgdbMetadata {
-  description: string | null;
-  release_date: string | null;
-  genres: string[];
-}
+export type ViewMode = "grid" | "list";
 
 interface GameSessionEnded {
   game_id: number;
@@ -38,11 +34,10 @@ export const useLibraryStore = defineStore("library", () => {
   const activeTagFilter = ref<string | null>(null);
   const error = ref("");
   const sgdbApiKey = ref("");
-  const igdbClientId = ref("");
-  const igdbClientSecret = ref("");
   const fetchingCoverFor = ref<number | null>(null);
   const fetchingMetadataFor = ref<number | null>(null);
   const editingGame = ref<Game | null>(null);
+  const viewMode = ref<ViewMode>("grid");
 
   let unlistenSessionEnded: UnlistenFn | undefined;
 
@@ -69,6 +64,11 @@ export const useLibraryStore = defineStore("library", () => {
     activeTagFilter.value = activeTagFilter.value === tag ? null : tag;
   }
 
+  async function setViewMode(mode: ViewMode) {
+    viewMode.value = mode;
+    await settingsRepo.set(VIEW_MODE_SETTING, mode);
+  }
+
   async function addTag(game: Game, name: string) {
     await tagRepo.addToGame(game.id, [name]);
     await refresh();
@@ -81,31 +81,22 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function saveApiKeys() {
     await settingsRepo.set(SGDB_API_KEY_SETTING, sgdbApiKey.value.trim());
-    await settingsRepo.set(IGDB_CLIENT_ID_SETTING, igdbClientId.value.trim());
-    await settingsRepo.set(IGDB_CLIENT_SECRET_SETTING, igdbClientSecret.value.trim());
   }
 
   async function fetchMetadata(game: Game) {
     error.value = "";
-    if (!igdbClientId.value.trim() || !igdbClientSecret.value.trim()) {
-      error.value = "Set IGDB client ID and secret first.";
-      return;
-    }
     fetchingMetadataFor.value = game.id;
     try {
-      const meta = await invoke<IgdbMetadata | null>("fetch_igdb_metadata", {
-        clientId: igdbClientId.value.trim(),
-        clientSecret: igdbClientSecret.value.trim(),
-        title: game.title,
-      });
+      const metadataProviders = useMetadataProviderStore();
+      const meta = await metadataProviders.fetchMetadata(game.title);
       if (meta) {
-        await gameRepo.updateMetadata(game.id, meta.description, meta.release_date);
+        await gameRepo.updateMetadata(game.id, meta.description, meta.releaseDate);
         if (meta.genres.length > 0) {
           await tagRepo.addToGame(game.id, meta.genres);
         }
         await refresh();
       } else {
-        error.value = `No IGDB metadata found for "${game.title}".`;
+        error.value = `No metadata found for "${game.title}".`;
       }
     } catch (e) {
       error.value = String(e);
@@ -217,8 +208,8 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function init() {
     sgdbApiKey.value = (await settingsRepo.get(SGDB_API_KEY_SETTING)) ?? "";
-    igdbClientId.value = (await settingsRepo.get(IGDB_CLIENT_ID_SETTING)) ?? "";
-    igdbClientSecret.value = (await settingsRepo.get(IGDB_CLIENT_SECRET_SETTING)) ?? "";
+    const storedViewMode = await settingsRepo.get(VIEW_MODE_SETTING);
+    if (storedViewMode === "grid" || storedViewMode === "list") viewMode.value = storedViewMode;
     await refresh();
 
     unlistenSessionEnded = await listen<GameSessionEnded>("game-session-ended", async (event) => {
@@ -240,14 +231,14 @@ export const useLibraryStore = defineStore("library", () => {
     activeTagFilter,
     error,
     sgdbApiKey,
-    igdbClientId,
-    igdbClientSecret,
     fetchingCoverFor,
     fetchingMetadataFor,
     editingGame,
+    viewMode,
     filteredGames,
     refresh,
     toggleTagFilter,
+    setViewMode,
     addTag,
     removeTag,
     saveApiKeys,

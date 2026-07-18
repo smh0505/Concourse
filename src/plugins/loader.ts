@@ -50,3 +50,18 @@ export async function loadEnabledPlugins<T>(
   const plugins: (T | null)[] = await Promise.all(manifests.map((m) => loadPlugin<T>(m)));
   return plugins.filter((p): p is T => p !== null);
 }
+
+/** Loads every installed plugin of a kind, regardless of enabled/selected state - used
+ *  by the settings panel, which needs each plugin's instance (for its optional
+ *  settingsComponent) independent of whether it's currently active. */
+export async function loadAllPlugins<T>(kind: PluginKind): Promise<Map<string, T>> {
+  const manifests = getAvailablePluginManifests(kind);
+  const entries = await Promise.all(
+    manifests.map(async (m) => [m.id, await loadPlugin<T>(m)] as const),
+  );
+  const map = new Map<string, T>();
+  for (const [id, plugin] of entries) {
+    if (plugin !== null) map.set(id, plugin);
+  }
+  return map;
+}

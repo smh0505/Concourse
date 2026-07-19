@@ -41,6 +41,14 @@ export class GameRepository {
     await db.execute("UPDATE games SET cover_art_url = $1 WHERE id = $2", [coverArtUrl, id]);
   }
 
+  async updateBackgroundArt(id: number, backgroundArtUrl: string): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE games SET background_art_url = $1 WHERE id = $2", [
+      backgroundArtUrl,
+      id,
+    ]);
+  }
+
   async updateMetadata(
     id: number,
     description: string | null,

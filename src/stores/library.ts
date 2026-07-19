@@ -36,6 +36,7 @@ export const useLibraryStore = defineStore("library", () => {
   const sgdbApiKey = ref("");
   const fetchingCoverFor = ref<number | null>(null);
   const fetchingMetadataFor = ref<number | null>(null);
+  const fetchingBackgroundFor = ref<number | null>(null);
   const editingGame = ref<Game | null>(null);
   const viewMode = ref<ViewMode>("grid");
 
@@ -127,6 +128,31 @@ export const useLibraryStore = defineStore("library", () => {
       error.value = String(e);
     } finally {
       fetchingCoverFor.value = null;
+    }
+  }
+
+  async function fetchBackgroundArt(game: Game) {
+    error.value = "";
+    if (!sgdbApiKey.value.trim()) {
+      error.value = "Set a SteamGridDB API key first.";
+      return;
+    }
+    fetchingBackgroundFor.value = game.id;
+    try {
+      const url = await invoke<string | null>("fetch_background_art", {
+        apiKey: sgdbApiKey.value.trim(),
+        title: game.title,
+      });
+      if (url) {
+        await gameRepo.updateBackgroundArt(game.id, url);
+        await refresh();
+      } else {
+        error.value = `No background art found for "${game.title}".`;
+      }
+    } catch (e) {
+      error.value = String(e);
+    } finally {
+      fetchingBackgroundFor.value = null;
     }
   }
 
@@ -233,6 +259,7 @@ export const useLibraryStore = defineStore("library", () => {
     sgdbApiKey,
     fetchingCoverFor,
     fetchingMetadataFor,
+    fetchingBackgroundFor,
     editingGame,
     viewMode,
     filteredGames,
@@ -244,6 +271,7 @@ export const useLibraryStore = defineStore("library", () => {
     saveApiKeys,
     fetchMetadata,
     fetchCoverArt,
+    fetchBackgroundArt,
     addGame,
     deleteGame,
     importEntries,

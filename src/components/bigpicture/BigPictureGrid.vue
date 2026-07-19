@@ -66,6 +66,9 @@ function onKeydown(event: KeyboardEvent) {
 
 const tileRefs = ref<(HTMLElement | null)[]>([]);
 const focusedTile = computed(() => tileRefs.value[focusedIndex.value]);
+const focusedBackgroundUrl = computed(
+  () => library.games[focusedIndex.value]?.background_art_url ?? null,
+);
 
 function setTileRef(index: number, el: Element | ComponentPublicInstance | null) {
   if (el === null) {
@@ -82,6 +85,15 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
 
 <template>
   <div class="big-picture" ref="rootRef" tabindex="0" @keydown="onKeydown">
+    <Transition name="backdrop-fade">
+      <div
+        v-if="focusedBackgroundUrl"
+        :key="focusedBackgroundUrl"
+        class="backdrop"
+        :style="{ backgroundImage: `url(${focusedBackgroundUrl})` }"
+      />
+    </Transition>
+    <div class="backdrop-overlay" />
     <div class="tile-grid" ref="gridRef">
       <component
         :is="tileComponent"
@@ -110,7 +122,34 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
   outline: none;
 }
 
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+.backdrop-fade-enter-active,
+.backdrop-fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+
+.backdrop-fade-enter-from,
+.backdrop-fade-leave-to {
+  opacity: 0;
+}
+
+.backdrop-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(17, 17, 17, 0.55) 0%, rgba(17, 17, 17, 0.9) 100%);
+  z-index: 1;
+}
+
 .tile-grid {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 2rem;

@@ -1,15 +1,5 @@
 import { onMounted, onUnmounted, ref } from "vue";
-
-const DPAD_UP = 12;
-const DPAD_DOWN = 13;
-const DPAD_LEFT = 14;
-const DPAD_RIGHT = 15;
-const BUTTON_CONFIRM = 0; // A / Cross
-const BUTTON_CANCEL = 1; // B / Circle
-
-const AXIS_THRESHOLD = 0.5;
-const REPEAT_DELAY_MS = 350;
-const REPEAT_INTERVAL_MS = 130;
+import { useControllerMappingStore } from "../stores/controllerMapping";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -21,6 +11,7 @@ export interface UseGamepadNavOptions {
 }
 
 export function useGamepadNav(options: UseGamepadNavOptions) {
+  const controllerMapping = useControllerMappingStore();
   const focusedIndex = ref(0);
 
   const heldSince: Partial<Record<Direction, number>> = {};
@@ -46,6 +37,8 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
   }
 
   function handleDirection(direction: Direction, active: boolean, now: number) {
+    const { repeatDelayMs = 350, repeatIntervalMs = 130 } = controllerMapping.activeMapping;
+
     if (!active) {
       delete heldSince[direction];
       delete lastRepeatAt[direction];
@@ -59,7 +52,7 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
     }
     const held = now - heldSince[direction]!;
     const sinceLastRepeat = now - (lastRepeatAt[direction] ?? now);
-    if (held >= REPEAT_DELAY_MS && sinceLastRepeat >= REPEAT_INTERVAL_MS) {
+    if (held >= repeatDelayMs && sinceLastRepeat >= repeatIntervalMs) {
       lastRepeatAt[direction] = now;
       move(direction);
     }
@@ -69,22 +62,28 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
     const pads = navigator.getGamepads();
     const pad = pads[0];
     if (pad) {
+      const mapping = controllerMapping.activeMapping;
+      const axisThreshold = mapping.axisThreshold ?? 0.5;
       const now = performance.now();
       const axisX = pad.axes[0] ?? 0;
       const axisY = pad.axes[1] ?? 0;
 
-      handleDirection("up", pad.buttons[DPAD_UP]?.pressed || axisY < -AXIS_THRESHOLD, now);
-      handleDirection("down", pad.buttons[DPAD_DOWN]?.pressed || axisY > AXIS_THRESHOLD, now);
-      handleDirection("left", pad.buttons[DPAD_LEFT]?.pressed || axisX < -AXIS_THRESHOLD, now);
-      handleDirection("right", pad.buttons[DPAD_RIGHT]?.pressed || axisX > AXIS_THRESHOLD, now);
+      handleDirection("up", pad.buttons[mapping.dpadUp]?.pressed || axisY < -axisThreshold, now);
+      handleDirection("down", pad.buttons[mapping.dpadDown]?.pressed || axisY > axisThreshold, now);
+      handleDirection("left", pad.buttons[mapping.dpadLeft]?.pressed || axisX < -axisThreshold, now);
+      handleDirection(
+        "right",
+        pad.buttons[mapping.dpadRight]?.pressed || axisX > axisThreshold,
+        now,
+      );
 
-      const confirmPressed = pad.buttons[BUTTON_CONFIRM]?.pressed ?? false;
+      const confirmPressed = pad.buttons[mapping.buttonConfirm]?.pressed ?? false;
       if (confirmPressed && !confirmWasPressed) {
         options.onSelect(focusedIndex.value);
       }
       confirmWasPressed = confirmPressed;
 
-      const cancelPressed = pad.buttons[BUTTON_CANCEL]?.pressed ?? false;
+      const cancelPressed = pad.buttons[mapping.buttonCancel]?.pressed ?? false;
       if (cancelPressed && !cancelWasPressed) {
         options.onCancel?.();
       }

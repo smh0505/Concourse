@@ -29,6 +29,17 @@ async function onAddTag() {
   newTag.value = "";
 }
 
+const fetchingBackground = computed(
+  () => library.editingGame !== null && library.fetchingBackgroundFor === library.editingGame.id,
+);
+
+async function onFetchBackgroundArt() {
+  if (!library.editingGame) return;
+  await library.fetchBackgroundArt(library.editingGame);
+  const updated = library.games.find((g) => g.id === library.editingGame?.id);
+  if (updated) form.value.background_art_url = updated.background_art_url ?? "";
+}
+
 watch(
   () => library.editingGame,
   (game) => {
@@ -88,7 +99,12 @@ async function onSave() {
       </label>
       <label>
         Background art URL
-        <input v-model="form.background_art_url" />
+        <div class="input-with-button">
+          <input v-model="form.background_art_url" />
+          <button type="button" :disabled="fetchingBackground" @click="onFetchBackgroundArt">
+            {{ fetchingBackground ? "..." : "Fetch" }}
+          </button>
+        </div>
       </label>
       <label>
         Release date
@@ -164,6 +180,19 @@ async function onSave() {
 .modal input,
 .modal textarea {
   font-family: inherit;
+}
+
+.input-with-button {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.input-with-button button {
+  font-size: 0.8rem;
 }
 
 .checkbox-label {

@@ -1,0 +1,7 @@
+{
+  "id": "standard-gamepad",
+  "name": "Standard Gamepad",
+  "version": "1.0.0",
+  "kind": "controller",
+  "entry": "index.ts"
+}

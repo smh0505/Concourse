@@ -31,6 +31,22 @@ export interface MetadataProviderPlugin extends PluginBase {
   fetchMetadata(title: string): Promise<MetadataResult | null>;
 }
 
+export interface GamepadMapping {
+  dpadUp: number;
+  dpadDown: number;
+  dpadLeft: number;
+  dpadRight: number;
+  buttonConfirm: number;
+  buttonCancel: number;
+  axisThreshold?: number;
+  repeatDelayMs?: number;
+  repeatIntervalMs?: number;
+}
+
+export interface ControllerMappingPlugin extends PluginBase {
+  mapping: GamepadMapping;
+}
+
 /** Named, swappable UI regions a theme plugin can override. */
 export type ThemeSlotName = "GameCard" | "BigPictureTile";
 

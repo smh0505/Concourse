@@ -23,6 +23,7 @@ pub fn run() {
             greet,
             launcher::launch_game,
             sgdb::fetch_cover_art,
+            sgdb::fetch_background_art,
             igdb::fetch_igdb_metadata,
             steam::find_steam_library_folders,
             steam::find_steam_apps

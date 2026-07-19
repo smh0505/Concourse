@@ -14,7 +14,7 @@ interface IgdbMetadataResponse {
 
 const plugin: MetadataProviderPlugin = {
   id: "igdb",
-  name: "IGDB (metadata provider)",
+  name: "IGDB",
   settingsComponent: IgdbSettingsForm,
 
   async fetchMetadata(title: string): Promise<MetadataResult | null> {

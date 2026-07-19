@@ -5,7 +5,10 @@ import { useLibraryStore } from "./stores/library";
 import { usePluginStore } from "./stores/plugins";
 import { useThemeStore } from "./stores/theme";
 import { useMetadataProviderStore } from "./stores/metadataProviders";
+import { useControllerMappingStore } from "./stores/controllerMapping";
+import { useAppSettingsStore } from "./stores/appSettings";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
+import AppSettings from "./components/desktop/AppSettings.vue";
 import SteamGridDbSettings from "./components/desktop/SteamGridDbSettings.vue";
 import AddGameForm from "./components/desktop/AddGameForm.vue";
 import ErrorBanner from "./components/desktop/ErrorBanner.vue";
@@ -20,6 +23,8 @@ const library = useLibraryStore();
 const plugins = usePluginStore();
 const theme = useThemeStore();
 const metadataProviders = useMetadataProviderStore();
+const controllerMapping = useControllerMappingStore();
+const appSettings = useAppSettingsStore();
 const bigPicture = ref(false);
 const { connected: gamepadConnected, gamepadName } = useGamepadStatus();
 
@@ -34,6 +39,9 @@ onMounted(async () => {
   await plugins.init();
   await theme.init();
   await metadataProviders.init();
+  await controllerMapping.init();
+  await appSettings.init();
+  if (appSettings.autoLaunchBigPicture) bigPicture.value = true;
 });
 onUnmounted(library.dispose);
 </script>
@@ -47,6 +55,7 @@ onUnmounted(library.dispose);
       </span>
       <button @click="bigPicture = true">Big Picture Mode</button>
     </div>
+    <AppSettings />
     <SteamGridDbSettings />
     <PluginSettings />
     <AddGameForm />

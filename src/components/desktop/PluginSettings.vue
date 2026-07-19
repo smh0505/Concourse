@@ -3,30 +3,40 @@ import { onMounted, ref } from "vue";
 import { usePluginStore } from "../../stores/plugins";
 import { useThemeStore } from "../../stores/theme";
 import { useMetadataProviderStore } from "../../stores/metadataProviders";
+import { useControllerMappingStore } from "../../stores/controllerMapping";
 import { loadAllPlugins } from "../../plugins/loader";
-import type { SourcePlugin, ThemePlugin, MetadataProviderPlugin } from "../../plugins/types";
+import type {
+  SourcePlugin,
+  ThemePlugin,
+  MetadataProviderPlugin,
+  ControllerMappingPlugin,
+} from "../../plugins/types";
 
-type Tab = "source" | "theme" | "metadata";
+type Tab = "source" | "theme" | "metadata" | "controller";
 
 const plugins = usePluginStore();
 const theme = useThemeStore();
 const metadataProviders = useMetadataProviderStore();
+const controllerMapping = useControllerMappingStore();
 
 const activeTab = ref<Tab>("source");
 
 const allSourcePlugins = ref<Map<string, SourcePlugin>>(new Map());
 const allThemePlugins = ref<Map<string, ThemePlugin>>(new Map());
 const allMetadataPlugins = ref<Map<string, MetadataProviderPlugin>>(new Map());
+const allControllerPlugins = ref<Map<string, ControllerMappingPlugin>>(new Map());
 
 onMounted(async () => {
-  const [sourcePlugins, themePlugins, metadataPlugins] = await Promise.all([
+  const [sourcePlugins, themePlugins, metadataPlugins, controllerPlugins] = await Promise.all([
     loadAllPlugins<SourcePlugin>("source"),
     loadAllPlugins<ThemePlugin>("theme"),
     loadAllPlugins<MetadataProviderPlugin>("metadata"),
+    loadAllPlugins<ControllerMappingPlugin>("controller"),
   ]);
   allSourcePlugins.value = sourcePlugins;
   allThemePlugins.value = themePlugins;
   allMetadataPlugins.value = metadataPlugins;
+  allControllerPlugins.value = controllerPlugins;
 });
 </script>
 
@@ -42,6 +52,9 @@ onMounted(async () => {
       </button>
       <button :class="{ active: activeTab === 'metadata' }" @click="activeTab = 'metadata'">
         Metadata Provider
+      </button>
+      <button :class="{ active: activeTab === 'controller' }" @click="activeTab = 'controller'">
+        Controller
       </button>
     </div>
 
@@ -77,17 +90,6 @@ onMounted(async () => {
 
     <div v-else-if="activeTab === 'theme'" class="tab-panel">
       <ul class="plugin-list">
-        <li class="plugin-row">
-          <label>
-            <input
-              type="radio"
-              name="theme-provider"
-              :checked="theme.activeThemeId === null"
-              @change="theme.setActiveTheme(null)"
-            />
-            Default
-          </label>
-        </li>
         <li class="plugin-row" v-for="manifest in theme.manifests" :key="manifest.id">
           <label>
             <input
@@ -107,7 +109,7 @@ onMounted(async () => {
       </ul>
     </div>
 
-    <div v-else class="tab-panel">
+    <div v-else-if="activeTab === 'metadata'" class="tab-panel">
       <p v-if="metadataProviders.manifests.length === 0" class="empty">No providers installed.</p>
       <ul v-else class="plugin-list">
         <li class="plugin-row" v-for="manifest in metadataProviders.manifests" :key="manifest.id">
@@ -123,6 +125,28 @@ onMounted(async () => {
           <component
             :is="allMetadataPlugins.get(manifest.id)?.settingsComponent"
             v-if="allMetadataPlugins.get(manifest.id)?.settingsComponent"
+          />
+        </li>
+      </ul>
+    </div>
+
+    <div v-else class="tab-panel">
+      <p v-if="controllerMapping.manifests.length === 0" class="empty">No mappings installed.</p>
+      <ul v-else class="plugin-list">
+        <li class="plugin-row" v-for="manifest in controllerMapping.manifests" :key="manifest.id">
+          <label>
+            <input
+              type="radio"
+              name="controller-mapping"
+              :checked="controllerMapping.activeMappingId === manifest.id"
+              @change="controllerMapping.setActiveMapping(manifest.id)"
+            />
+            {{ manifest.name }}
+            <span class="version">v{{ manifest.version }}</span>
+          </label>
+          <component
+            :is="allControllerPlugins.get(manifest.id)?.settingsComponent"
+            v-if="allControllerPlugins.get(manifest.id)?.settingsComponent"
           />
         </li>
       </ul>

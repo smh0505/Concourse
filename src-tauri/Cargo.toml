@@ -23,11 +23,16 @@ tauri-plugin-opener = "2"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "blocking"] }
 urlencoding = "2"
 keyvalues-parser = "0.2"
 sysinfo = "0.32"
 roxmltree = "0.20"
+wasmtime = { version = "27", features = ["component-model"] }
+wasmtime-wasi = "27"
+rusqlite = { version = "0.32", features = ["bundled"] }
+sha2 = "0.10"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

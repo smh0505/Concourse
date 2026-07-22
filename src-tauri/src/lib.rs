@@ -8,6 +8,9 @@ mod locale_emulator;
 mod locale_remulator;
 mod sgdb;
 mod steam;
+mod wasm_plugin_installer;
+mod wasm_plugin_runtime;
+mod wasm_plugins;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -39,7 +42,12 @@ pub fn run() {
             steam::find_steam_apps,
             epic::find_epic_apps,
             gog::find_gog_apps,
-            gog::launch_gog_game
+            gog::launch_gog_game,
+            wasm_plugin_installer::install_wasm_plugin,
+            wasm_plugin_installer::list_wasm_plugins,
+            wasm_plugin_runtime::wasm_plugin_scan,
+            wasm_plugin_runtime::wasm_plugin_launch,
+            wasm_plugin_runtime::wasm_plugin_get_install_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

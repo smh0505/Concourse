@@ -2,8 +2,13 @@ use tauri_plugin_sql::{Migration, MigrationKind};
 
 pub const DB_URL: &str = "sqlite:library.db";
 
+// Each entry here is a shipped migration, tracked per-version against every existing
+// library.db via tauri-plugin-sql's own migration ledger. Once a version has shipped, its
+// `sql`/`version` must never change - editing one in place desyncs that ledger from what's
+// already been applied to real databases. Add a new migration instead (see CLAUDE.md).
 pub fn migrations() -> Vec<Migration> {
     vec![
+        // v1-v2: initial schema
         Migration {
             version: 1,
             description: "create_core_schema",
@@ -52,6 +57,9 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        // v3-v6: incremental `games` columns added for plugin scans (skip_dedup),
+        // folder-based playtime tracking (install_dir), and compatibility wrappers
+        // (locale_profile_guid, locale_wrapper)
         Migration {
             version: 3,
             description: "add_games_skip_dedup",
@@ -81,6 +89,24 @@ pub fn migrations() -> Vec<Migration> {
             description: "add_games_locale_wrapper",
             sql: r#"
             ALTER TABLE games ADD COLUMN locale_wrapper TEXT;
+        "#,
+            kind: MigrationKind::Up,
+        },
+        // v7: generic per-game key-value storage for WASM plugins (Milestone 8) - the
+        // sanctioned alternative to a plugin getting its own `games` column. Rows are
+        // namespaced by plugin_id, so a plugin's data is deletable in one statement on
+        // uninstall and can never collide with another plugin's or core `games` fields.
+        Migration {
+            version: 7,
+            description: "create_plugin_data_table",
+            sql: r#"
+            CREATE TABLE plugin_data (
+                plugin_id TEXT NOT NULL,
+                game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+                key TEXT NOT NULL,
+                value TEXT NOT NULL,
+                PRIMARY KEY (plugin_id, game_id, key)
+            );
         "#,
             kind: MigrationKind::Up,
         },

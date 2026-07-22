@@ -54,7 +54,7 @@ export const useThemeStore = defineStore("theme", () => {
   }
 
   async function init() {
-    manifests.value = getAvailablePluginManifests("theme");
+    manifests.value = await getAvailablePluginManifests("theme");
 
     const stored = await settingsRepo.get(ACTIVE_THEME_SETTING);
     if (stored === null) {

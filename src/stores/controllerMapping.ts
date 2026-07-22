@@ -42,7 +42,7 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
   }
 
   async function init() {
-    manifests.value = getAvailablePluginManifests("controller");
+    manifests.value = await getAvailablePluginManifests("controller");
 
     const stored = await settingsRepo.get(ACTIVE_MAPPING_SETTING);
     if (stored === null) {

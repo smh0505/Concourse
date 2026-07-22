@@ -1,4 +1,6 @@
+import { invoke } from "@tauri-apps/api/core";
 import { isPluginManifest, type PluginKind, type PluginManifest } from "./manifest";
+import type { GameEntry, SourcePlugin } from "./types";
 
 // Each plugin lives at src/plugins/<id>/plugin.json + an entry module (e.g. index.ts)
 // exporting a SourcePlugin or ThemePlugin (per manifest `kind`) as its default export.
@@ -18,16 +20,51 @@ function folderOf(manifestPath: string): string {
   return manifestPath.replace(/\/plugin\.json$/, "");
 }
 
-export function getAvailablePluginManifests(kind?: PluginKind): PluginManifest[] {
+/** WASM plugins are installed at runtime into the app-data dir (Milestone 8), not
+ *  discovered by Vite at build time - only "source" is supported today (the WIT world only
+ *  defines a SourcePlugin export), so this is skipped entirely for other kinds. */
+async function getInstalledWasmManifests(kind?: PluginKind): Promise<PluginManifest[]> {
+  if (kind && kind !== "source") return [];
+  try {
+    const manifests = await invoke<PluginManifest[]>("list_wasm_plugins");
+    return manifests
+      .filter((m) => m.kind === "source")
+      .map((m) => ({ ...m, runtime: "wasm" as const }));
+  } catch {
+    return [];
+  }
+}
+
+export async function getAvailablePluginManifests(kind?: PluginKind): Promise<PluginManifest[]> {
   const manifests: PluginManifest[] = [];
   for (const mod of Object.values(manifestModules)) {
     const data = mod.default;
     if (isPluginManifest(data) && (!kind || data.kind === kind)) manifests.push(data);
   }
+  manifests.push(...(await getInstalledWasmManifests(kind)));
   return manifests;
 }
 
+/** Thin wrapper implementing SourcePlugin over the wasm_plugin_runtime.rs Tauri commands -
+ *  the frontend never talks to WASM plugin code directly, only through these. */
+function createWasmSourcePlugin(manifest: PluginManifest): SourcePlugin {
+  return {
+    id: manifest.id,
+    name: manifest.name,
+    scan: () => invoke<GameEntry[]>("wasm_plugin_scan", { pluginId: manifest.id }),
+    launch: (entry: GameEntry) =>
+      invoke("wasm_plugin_launch", { pluginId: manifest.id, entry }),
+    getInstallStatus: (entry: GameEntry) =>
+      invoke<boolean>("wasm_plugin_get_install_status", { pluginId: manifest.id, entry }),
+  };
+}
+
 async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
+  if (manifest.runtime === "wasm") {
+    if (manifest.kind !== "source") return null;
+    return createWasmSourcePlugin(manifest) as T;
+  }
+
   const manifestPath = Object.keys(manifestModules).find((path) => {
     const data = manifestModules[path].default;
     return isPluginManifest(data) && data.id === manifest.id;
@@ -46,7 +83,7 @@ export async function loadEnabledPlugins<T>(
   kind: PluginKind,
   enabledIds: ReadonlySet<string>,
 ): Promise<T[]> {
-  const manifests = getAvailablePluginManifests(kind).filter((m) => enabledIds.has(m.id));
+  const manifests = (await getAvailablePluginManifests(kind)).filter((m) => enabledIds.has(m.id));
   const plugins: (T | null)[] = await Promise.all(manifests.map((m) => loadPlugin<T>(m)));
   return plugins.filter((p): p is T => p !== null);
 }
@@ -55,7 +92,7 @@ export async function loadEnabledPlugins<T>(
  *  by the settings panel, which needs each plugin's instance (for its optional
  *  settingsComponent) independent of whether it's currently active. */
 export async function loadAllPlugins<T>(kind: PluginKind): Promise<Map<string, T>> {
-  const manifests = getAvailablePluginManifests(kind);
+  const manifests = await getAvailablePluginManifests(kind);
   const entries = await Promise.all(
     manifests.map(async (m) => [m.id, await loadPlugin<T>(m)] as const),
   );

@@ -67,7 +67,7 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
   }
 
   async function init() {
-    manifests.value = getAvailablePluginManifests("metadata");
+    manifests.value = await getAvailablePluginManifests("metadata");
 
     const stored = await settingsRepo.get(ENABLED_PROVIDERS_SETTING);
     if (stored === null) {

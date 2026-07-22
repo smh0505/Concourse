@@ -59,7 +59,7 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function init() {
-    manifests.value = getAvailablePluginManifests("source");
+    manifests.value = await getAvailablePluginManifests("source");
 
     const stored = await settingsRepo.get(ENABLED_PLUGINS_SETTING);
     if (stored) {

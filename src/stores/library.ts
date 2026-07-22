@@ -13,9 +13,17 @@ import {
 } from "../db";
 import type { GameEntry } from "../plugins/types";
 import { useMetadataProviderStore } from "./metadataProviders";
+import { useAppSettingsStore } from "./appSettings";
 
 const SGDB_API_KEY_SETTING = "steamgriddb_api_key";
 const VIEW_MODE_SETTING = "view_mode";
+
+/** Parent folder of a real filesystem executable path; null for URIs, which have none. */
+function parentDir(executablePath: string): string | null {
+  if (executablePath.includes("://")) return null;
+  const lastSeparator = Math.max(executablePath.lastIndexOf("\\"), executablePath.lastIndexOf("/"));
+  return lastSeparator > 0 ? executablePath.slice(0, lastSeparator) : null;
+}
 
 export type ViewMode = "grid" | "list";
 
@@ -188,10 +196,20 @@ export const useLibraryStore = defineStore("library", () => {
     for (const entry of entries) {
       const existing = titleToGame.get(entry.title.toLowerCase());
       if (existing) {
-        await gameRepo.updateLaunchSource(existing.id, entry.executablePath, entry.platform);
+        await gameRepo.updateLaunchSource(
+          existing.id,
+          entry.executablePath,
+          entry.platform,
+          entry.installDir,
+        );
         merged++;
       } else {
-        await gameRepo.addWithPlatform(entry.title, entry.executablePath, entry.platform);
+        await gameRepo.addWithPlatform(
+          entry.title,
+          entry.executablePath,
+          entry.platform,
+          entry.installDir,
+        );
         added++;
       }
     }
@@ -222,10 +240,56 @@ export const useLibraryStore = defineStore("library", () => {
       // to the OS's protocol handler instead. We get no process handle this way, so
       // playtime tracking (which relies on waiting for a spawned child to exit) is
       // skipped for these rather than recording a guessed/fake duration.
-      if (game.executable_path.includes("://")) {
+      //
+      // GOG has no registered URI scheme of its own (unlike Steam/Epic) - GalaxyClient.exe
+      // is invoked directly with CLI flags instead, so "gog://" is a pseudo-URI used only
+      // to route through invoke("launch_gog_game", ...) rather than openUrl().
+      const isUri = game.executable_path.includes("://");
+
+      if (game.locale_profile_guid && game.locale_wrapper && !isUri) {
+        const appSettings = useAppSettingsStore();
+        // Both wrappers relay to the real target exe - we get no confirmed process-exit
+        // signal from either (see locale_remulator.rs/locale_emulator.rs), so this falls
+        // back to the same folder-based tracking as the URI-launched sources.
+        if (game.locale_wrapper === "lr") {
+          if (!appSettings.localeRemulatorPath) {
+            error.value = "Locale Remulator path not configured (see Settings).";
+            return;
+          }
+          await invoke("launch_via_locale_remulator", {
+            lrprocPath: appSettings.localeRemulatorPath,
+            profileGuid: game.locale_profile_guid,
+            executablePath: game.executable_path,
+          });
+        } else {
+          if (!appSettings.localeEmulatorPath) {
+            error.value = "Locale Emulator path not configured (see Settings).";
+            return;
+          }
+          await invoke("launch_via_locale_emulator", {
+            leprocPath: appSettings.localeEmulatorPath,
+            profileGuid: game.locale_profile_guid,
+            executablePath: game.executable_path,
+          });
+        }
+      } else if (game.executable_path.startsWith("gog://")) {
+        const gameId = game.executable_path.replace("gog://", "");
+        await invoke("launch_gog_game", { gameId });
+      } else if (isUri) {
         await openUrl(game.executable_path);
       } else {
         await invoke("launch_game", { gameId: game.id, executablePath: game.executable_path });
+        return;
+      }
+
+      // URI-launched games (and wrapper-launched ones) get no process handle from the
+      // launch call itself, but if we know the install folder (Steam/Epic/GOG scans record
+      // it, or - for manual/wrapped entries - the executable's own parent folder), poll for
+      // a process running from under that folder instead - see
+      // launcher.rs::track_folder_playtime.
+      const installDir = game.install_dir ?? parentDir(game.executable_path);
+      if (installDir) {
+        await invoke("track_folder_playtime", { gameId: game.id, installDir });
       }
     } catch (e) {
       error.value = String(e);

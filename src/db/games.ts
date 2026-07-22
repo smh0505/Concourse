@@ -15,19 +15,29 @@ export class GameRepository {
     );
   }
 
-  async addWithPlatform(title: string, executablePath: string, platform: string): Promise<void> {
+  async addWithPlatform(
+    title: string,
+    executablePath: string,
+    platform: string,
+    installDir?: string,
+  ): Promise<void> {
     const db = await getDb();
     await db.execute(
-      "INSERT INTO games (title, executable_path, platform) VALUES ($1, $2, $3)",
-      [title, executablePath, platform],
+      "INSERT INTO games (title, executable_path, platform, install_dir) VALUES ($1, $2, $3, $4)",
+      [title, executablePath, platform, installDir ?? null],
     );
   }
 
-  async updateLaunchSource(id: number, executablePath: string, platform: string): Promise<void> {
+  async updateLaunchSource(
+    id: number,
+    executablePath: string,
+    platform: string,
+    installDir?: string,
+  ): Promise<void> {
     const db = await getDb();
     await db.execute(
-      "UPDATE games SET executable_path = $1, platform = $2 WHERE id = $3",
-      [executablePath, platform, id],
+      "UPDATE games SET executable_path = $1, platform = $2, install_dir = $3 WHERE id = $4",
+      [executablePath, platform, installDir ?? null, id],
     );
   }
 
@@ -72,8 +82,10 @@ export class GameRepository {
          background_art_url = $5,
          description = $6,
          release_date = $7,
-         skip_dedup = $8
-       WHERE id = $9`,
+         skip_dedup = $8,
+         locale_profile_guid = $9,
+         locale_wrapper = $10
+       WHERE id = $11`,
       [
         fields.title,
         fields.executable_path,
@@ -83,6 +95,8 @@ export class GameRepository {
         fields.description,
         fields.release_date,
         fields.skip_dedup,
+        fields.locale_profile_guid,
+        fields.locale_wrapper,
         id,
       ],
     );

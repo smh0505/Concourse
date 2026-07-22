@@ -13,6 +13,8 @@ export interface GameEntry {
   executablePath: string;
   platform: string;
   coverArtUrl?: string;
+  /** Known install folder, used for folder-based playtime tracking on URI-launched entries. */
+  installDir?: string;
 }
 
 export interface SourcePlugin extends PluginBase {

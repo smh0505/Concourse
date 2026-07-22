@@ -32,6 +32,11 @@ watch(bigPicture, (enabled) => {
   getCurrentWindow()
     .setFullscreen(enabled)
     .catch((e) => console.error("Failed to toggle fullscreen:", e));
+
+  // Big Picture is a fixed overlay on top of the desktop page, but the desktop page
+  // itself is still scrollable underneath it - lock it so mouse-wheel input while Big
+  // Picture is open doesn't scroll the hidden desktop content behind it.
+  document.documentElement.style.overflow = enabled ? "hidden" : "";
 });
 
 onMounted(async () => {

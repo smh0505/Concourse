@@ -1,0 +1,7 @@
+{
+  "id": "epic",
+  "name": "Epic Games",
+  "version": "1.0.0",
+  "kind": "source",
+  "entry": "index.ts"
+}

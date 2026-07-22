@@ -1,7 +1,11 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod db;
+mod epic;
+mod gog;
 mod igdb;
 mod launcher;
+mod locale_emulator;
+mod locale_remulator;
 mod sgdb;
 mod steam;
 
@@ -22,11 +26,20 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             launcher::launch_game,
+            launcher::track_folder_playtime,
+            locale_remulator::wrapper_path_exists,
+            locale_remulator::list_locale_remulator_profiles,
+            locale_remulator::launch_via_locale_remulator,
+            locale_emulator::list_locale_emulator_profiles,
+            locale_emulator::launch_via_locale_emulator,
             sgdb::fetch_cover_art,
             sgdb::fetch_background_art,
             igdb::fetch_igdb_metadata,
             steam::find_steam_library_folders,
-            steam::find_steam_apps
+            steam::find_steam_apps,
+            epic::find_epic_apps,
+            gog::find_gog_apps,
+            gog::launch_gog_game
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

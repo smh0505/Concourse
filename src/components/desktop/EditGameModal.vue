@@ -1,9 +1,55 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import { useLibraryStore } from "../../stores/library";
+import { useAppSettingsStore } from "../../stores/appSettings";
 import type { GameEditFields } from "../../db";
 
+interface LocaleProfile {
+  name: string;
+  guid: string;
+}
+
 const library = useLibraryStore();
+const appSettings = useAppSettingsStore();
+const lrProfiles = ref<LocaleProfile[]>([]);
+const leProfiles = ref<LocaleProfile[]>([]);
+
+watch(
+  () => appSettings.localeRemulatorPath,
+  async (path) => {
+    if (!path) {
+      lrProfiles.value = [];
+      return;
+    }
+    try {
+      lrProfiles.value = await invoke<LocaleProfile[]>("list_locale_remulator_profiles", {
+        lrprocPath: path,
+      });
+    } catch {
+      lrProfiles.value = [];
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => appSettings.localeEmulatorPath,
+  async (path) => {
+    if (!path) {
+      leProfiles.value = [];
+      return;
+    }
+    try {
+      leProfiles.value = await invoke<LocaleProfile[]>("list_locale_emulator_profiles", {
+        leprocPath: path,
+      });
+    } catch {
+      leProfiles.value = [];
+    }
+  },
+  { immediate: true },
+);
 
 const form = ref<GameEditFields>({
   title: "",
@@ -14,9 +60,30 @@ const form = ref<GameEditFields>({
   description: "",
   release_date: "",
   skip_dedup: 0,
+  locale_profile_guid: "",
+  locale_wrapper: null,
 });
 const error = ref("");
 const newTag = ref("");
+
+/** Combines locale_wrapper + locale_profile_guid into one <select> value ("lr:<guid>" /
+ *  "le:<guid>" / ""), since the two wrappers' GUIDs aren't namespaced against each other. */
+const wrapperSelection = computed({
+  get: () =>
+    form.value.locale_wrapper && form.value.locale_profile_guid
+      ? `${form.value.locale_wrapper}:${form.value.locale_profile_guid}`
+      : "",
+  set: (value: string) => {
+    if (!value) {
+      form.value.locale_wrapper = null;
+      form.value.locale_profile_guid = "";
+      return;
+    }
+    const [wrapper, guid] = value.split(":");
+    form.value.locale_wrapper = wrapper as "lr" | "le";
+    form.value.locale_profile_guid = guid;
+  },
+});
 
 const tags = computed(() =>
   library.editingGame ? library.gameTags[library.editingGame.id] ?? [] : [],
@@ -54,6 +121,8 @@ watch(
       description: game.description ?? "",
       release_date: game.release_date ?? "",
       skip_dedup: game.skip_dedup,
+      locale_profile_guid: game.locale_profile_guid ?? "",
+      locale_wrapper: game.locale_wrapper,
     };
   },
   { immediate: true },
@@ -73,6 +142,8 @@ async function onSave() {
     description: form.value.description?.trim() || null,
     release_date: form.value.release_date?.trim() || null,
     skip_dedup: form.value.skip_dedup,
+    locale_profile_guid: form.value.locale_profile_guid?.trim() || null,
+    locale_wrapper: form.value.locale_wrapper,
   });
 }
 </script>
@@ -121,6 +192,26 @@ async function onSave() {
           @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
         />
         Keep separate from plugin scans (don't merge/dedup this entry)
+      </label>
+      <label>
+        Compatibility wrapper profile
+        <select v-model="wrapperSelection">
+          <option value="">None</option>
+          <optgroup label="Locale Remulator" v-if="lrProfiles.length">
+            <option v-for="profile in lrProfiles" :key="profile.guid" :value="`lr:${profile.guid}`">
+              {{ profile.name }}
+            </option>
+          </optgroup>
+          <optgroup label="Locale Emulator" v-if="leProfiles.length">
+            <option v-for="profile in leProfiles" :key="profile.guid" :value="`le:${profile.guid}`">
+              {{ profile.name }}
+            </option>
+          </optgroup>
+        </select>
+        <span v-if="!lrProfiles.length && !leProfiles.length" class="hint">
+          No profiles found - configure a wrapper path in Settings and create a profile via
+          its editor first.
+        </span>
       </label>
       <div class="tags-section">
         <span>Tags</span>
@@ -247,6 +338,11 @@ async function onSave() {
 
 .error {
   color: var(--color-danger);
+}
+
+.hint {
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
 .modal-actions {

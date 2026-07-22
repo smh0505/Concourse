@@ -60,5 +60,29 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "add_games_install_dir",
+            sql: r#"
+            ALTER TABLE games ADD COLUMN install_dir TEXT;
+        "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "add_games_locale_profile_guid",
+            sql: r#"
+            ALTER TABLE games ADD COLUMN locale_profile_guid TEXT;
+        "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 6,
+            description: "add_games_locale_wrapper",
+            sql: r#"
+            ALTER TABLE games ADD COLUMN locale_wrapper TEXT;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

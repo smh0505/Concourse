@@ -21,6 +21,7 @@ function toGameEntry(app: SteamApp): GameEntry {
     // so the client handles overlay/DRM/updates the same as launching from Steam itself.
     executablePath: `steam://rungameid/${app.app_id}`,
     platform: "steam",
+    installDir: `${app.library_path}\\steamapps\\common\\${app.install_dir}`,
   };
 }
 

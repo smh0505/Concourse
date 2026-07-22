@@ -120,6 +120,14 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
   padding: 3rem;
   z-index: 20;
   outline: none;
+  /* Console-style UI - scrolling still works (gamepad/keyboard nav scrollIntoView,
+     mouse wheel), just without a visible scrollbar track. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.big-picture::-webkit-scrollbar {
+  display: none;
 }
 
 .backdrop {

@@ -7,7 +7,6 @@ mod launcher;
 mod locale_emulator;
 mod locale_remulator;
 mod sgdb;
-mod steam;
 mod wasm_plugin_installer;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
@@ -38,8 +37,6 @@ pub fn run() {
             sgdb::fetch_cover_art,
             sgdb::fetch_background_art,
             igdb::fetch_igdb_metadata,
-            steam::find_steam_library_folders,
-            steam::find_steam_apps,
             epic::find_epic_apps,
             gog::find_gog_apps,
             gog::launch_gog_game,

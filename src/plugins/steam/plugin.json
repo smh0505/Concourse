@@ -1,7 +1,0 @@
-{
-  "id": "steam",
-  "name": "Steam",
-  "version": "1.0.0",
-  "kind": "source",
-  "entry": "index.ts"
-}

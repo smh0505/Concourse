@@ -85,7 +85,6 @@ onMounted(async () => {
       >
         {{ plugins.scanning ? "Scanning..." : "Scan Now" }}
       </button>
-      <p v-if="plugins.lastScanSummary" class="scan-summary">{{ plugins.lastScanSummary }}</p>
     </div>
 
     <div v-else-if="activeTab === 'theme'" class="tab-panel">
@@ -209,11 +208,5 @@ onMounted(async () => {
 .scan-button {
   margin-top: 0.5rem;
   font-size: 0.85rem;
-}
-
-.scan-summary {
-  margin-top: 0.4rem;
-  font-size: 0.8rem;
-  opacity: 0.8;
 }
 </style>

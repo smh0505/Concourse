@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { useLibraryStore } from "../../stores/library";
 import { useAppSettingsStore } from "../../stores/appSettings";
+import BaseModal from "./BaseModal.vue";
 import type { GameEditFields } from "../../db";
 
 interface LocaleProfile {
@@ -149,8 +150,8 @@ async function onSave() {
 </script>
 
 <template>
-  <div v-if="library.editingGame" class="modal-backdrop" @click.self="library.cancelEdit">
-    <form class="modal" @submit.prevent="onSave">
+  <BaseModal :open="library.editingGame !== null" max-width="420px" @close="library.cancelEdit">
+    <form v-if="library.editingGame" class="modal-body" @submit.prevent="onSave">
       <h2>Edit {{ library.editingGame.title }}</h2>
       <label>
         Title
@@ -232,35 +233,17 @@ async function onSave() {
         <button type="submit">Save</button>
       </div>
     </form>
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped>
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.modal {
-  background: var(--color-mantle);
-  color: var(--color-text);
-  border-radius: 8px;
-  padding: 1.5rem;
-  width: 90%;
-  max-width: 420px;
-  max-height: 85vh;
-  overflow-y: auto;
+.modal-body {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.modal label {
+.modal-body label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -268,8 +251,8 @@ async function onSave() {
   text-align: left;
 }
 
-.modal input,
-.modal textarea {
+.modal-body input,
+.modal-body textarea {
   font-family: inherit;
 }
 

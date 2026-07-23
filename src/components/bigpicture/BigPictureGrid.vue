@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from "vue";
+import { IconInboxOff } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import { useGamepadNav } from "../../composables/useGamepadNav";
 import { useThemeSlot } from "../../theme/slotRegistry";
@@ -105,7 +106,10 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
         @select="library.launchGame(game)"
         @hover="focusedIndex = index"
       />
-      <p v-if="library.games.length === 0" class="empty">No games in library.</p>
+      <div v-if="library.games.length === 0" class="empty">
+        <IconInboxOff :size="48" :stroke-width="1.5" />
+        <p>No games in library.</p>
+      </div>
     </div>
   </div>
 </template>
@@ -160,11 +164,15 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
   z-index: 2;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 2rem;
+  gap: var(--space-6, 2rem);
 }
 
 .empty {
   grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
   opacity: 0.7;
   font-size: 1.5rem;
   text-align: center;

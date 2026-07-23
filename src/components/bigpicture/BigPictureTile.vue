@@ -18,7 +18,7 @@ const emit = defineEmits<{ select: []; hover: [] }>();
 .tile {
   background: none;
   border: 3px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--radius-lg, 12px);
   padding: 0;
   cursor: pointer;
   display: flex;
@@ -26,11 +26,15 @@ const emit = defineEmits<{ select: []; hover: [] }>();
   gap: 0.75rem;
   color: inherit;
   font-family: inherit;
-  transition: transform 0.1s ease, border-color 0.1s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .tile.focused {
   border-color: var(--color-accent, #fff);
+  box-shadow: var(--shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.5));
   transform: scale(1.05);
 }
 
@@ -38,7 +42,7 @@ const emit = defineEmits<{ select: []; hover: [] }>();
 .tile-cover-placeholder {
   width: 100%;
   aspect-ratio: 3 / 4;
-  border-radius: 10px;
+  border-radius: var(--radius-md, 10px);
 }
 
 .tile-cover {

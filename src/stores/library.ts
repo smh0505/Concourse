@@ -14,6 +14,7 @@ import {
 import type { GameEntry } from "../plugins/types";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useAppSettingsStore } from "./appSettings";
+import { useToastStore } from "./toasts";
 
 const SGDB_API_KEY_SETTING = "steamgriddb_api_key";
 const VIEW_MODE_SETTING = "view_mode";
@@ -40,7 +41,6 @@ export const useLibraryStore = defineStore("library", () => {
   const allTags = ref<string[]>([]);
   const search = ref("");
   const activeTagFilter = ref<string | null>(null);
-  const error = ref("");
   const sgdbApiKey = ref("");
   const fetchingCoverFor = ref<number | null>(null);
   const fetchingMetadataFor = ref<number | null>(null);
@@ -93,7 +93,7 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function fetchMetadata(game: Game) {
-    error.value = "";
+    const toasts = useToastStore();
     fetchingMetadataFor.value = game.id;
     try {
       const metadataProviders = useMetadataProviderStore();
@@ -105,19 +105,19 @@ export const useLibraryStore = defineStore("library", () => {
         }
         await refresh();
       } else {
-        error.value = `No metadata found for "${game.title}".`;
+        toasts.push(`No metadata found for "${game.title}".`, "error");
       }
     } catch (e) {
-      error.value = String(e);
+      toasts.push(String(e), "error");
     } finally {
       fetchingMetadataFor.value = null;
     }
   }
 
   async function fetchCoverArt(game: Game) {
-    error.value = "";
+    const toasts = useToastStore();
     if (!sgdbApiKey.value.trim()) {
-      error.value = "Set a SteamGridDB API key first.";
+      toasts.push("Set a SteamGridDB API key first.", "error");
       return;
     }
     fetchingCoverFor.value = game.id;
@@ -130,19 +130,19 @@ export const useLibraryStore = defineStore("library", () => {
         await gameRepo.updateCoverArt(game.id, url);
         await refresh();
       } else {
-        error.value = `No cover art found for "${game.title}".`;
+        toasts.push(`No cover art found for "${game.title}".`, "error");
       }
     } catch (e) {
-      error.value = String(e);
+      toasts.push(String(e), "error");
     } finally {
       fetchingCoverFor.value = null;
     }
   }
 
   async function fetchBackgroundArt(game: Game) {
-    error.value = "";
+    const toasts = useToastStore();
     if (!sgdbApiKey.value.trim()) {
-      error.value = "Set a SteamGridDB API key first.";
+      toasts.push("Set a SteamGridDB API key first.", "error");
       return;
     }
     fetchingBackgroundFor.value = game.id;
@@ -155,22 +155,21 @@ export const useLibraryStore = defineStore("library", () => {
         await gameRepo.updateBackgroundArt(game.id, url);
         await refresh();
       } else {
-        error.value = `No background art found for "${game.title}".`;
+        toasts.push(`No background art found for "${game.title}".`, "error");
       }
     } catch (e) {
-      error.value = String(e);
+      toasts.push(String(e), "error");
     } finally {
       fetchingBackgroundFor.value = null;
     }
   }
 
   async function addGame(title: string, executablePath: string) {
-    error.value = "";
     try {
       await gameRepo.add(title, executablePath);
       await refresh();
     } catch (e) {
-      error.value = String(e);
+      useToastStore().push(String(e), "error");
     }
   }
 
@@ -234,7 +233,7 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function launchGame(game: Game) {
-    error.value = "";
+    const toasts = useToastStore();
     try {
       // A URI (e.g. "steam://rungameid/730") can't be spawned as a process - hand it
       // to the OS's protocol handler instead. We get no process handle this way, so
@@ -253,7 +252,7 @@ export const useLibraryStore = defineStore("library", () => {
         // back to the same folder-based tracking as the URI-launched sources.
         if (game.locale_wrapper === "lr") {
           if (!appSettings.localeRemulatorPath) {
-            error.value = "Locale Remulator path not configured (see Settings).";
+            toasts.push("Locale Remulator path not configured (see Settings).", "error");
             return;
           }
           await invoke("launch_via_locale_remulator", {
@@ -263,7 +262,7 @@ export const useLibraryStore = defineStore("library", () => {
           });
         } else {
           if (!appSettings.localeEmulatorPath) {
-            error.value = "Locale Emulator path not configured (see Settings).";
+            toasts.push("Locale Emulator path not configured (see Settings).", "error");
             return;
           }
           await invoke("launch_via_locale_emulator", {
@@ -292,7 +291,7 @@ export const useLibraryStore = defineStore("library", () => {
         await invoke("track_folder_playtime", { gameId: game.id, installDir });
       }
     } catch (e) {
-      error.value = String(e);
+      toasts.push(String(e), "error");
     }
   }
 
@@ -319,7 +318,6 @@ export const useLibraryStore = defineStore("library", () => {
     allTags,
     search,
     activeTagFilter,
-    error,
     sgdbApiKey,
     fetchingCoverFor,
     fetchingMetadataFor,

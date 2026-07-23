@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { IconEdit, IconPlayerPlay, IconTrash } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import type { Game } from "../../db";
 
@@ -26,7 +27,9 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
     </div>
 
     <div class="actions">
-      <button class="play" @click="library.launchGame(game)">Play</button>
+      <button class="play" title="Play" @click="library.launchGame(game)">
+        <IconPlayerPlay :size="15" :stroke-width="1.75" />
+      </button>
       <button class="fetch-cover" :disabled="fetchingCover" @click="library.fetchCoverArt(game)">
         {{ fetchingCover ? "..." : "Cover" }}
       </button>
@@ -37,8 +40,12 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
       >
         {{ fetchingMetadata ? "..." : "Info" }}
       </button>
-      <button class="edit" @click="library.openEdit(game)">Edit</button>
-      <button class="remove" @click="library.deleteGame(game.id)">Remove</button>
+      <button class="edit" title="Edit" @click="library.openEdit(game)">
+        <IconEdit :size="15" :stroke-width="1.75" />
+      </button>
+      <button class="remove" title="Remove" @click="library.deleteGame(game.id)">
+        <IconTrash :size="15" :stroke-width="1.75" />
+      </button>
     </div>
   </div>
 </template>

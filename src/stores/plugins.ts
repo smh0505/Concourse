@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { settings as settingsRepo } from "../db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
 import { useLibraryStore } from "./library";
+import { useToastStore } from "./toasts";
 import type { PluginManifest } from "../plugins/manifest";
 import type { SourcePlugin } from "../plugins/types";
 
@@ -13,7 +14,6 @@ export const usePluginStore = defineStore("plugins", () => {
   const enabledIds = ref<Set<string>>(new Set());
   const loadedPlugins = ref<SourcePlugin[]>([]);
   const scanning = ref(false);
-  const lastScanSummary = ref<string | null>(null);
 
   async function persistEnabledIds() {
     await settingsRepo.set(ENABLED_PLUGINS_SETTING, JSON.stringify([...enabledIds.value]));
@@ -31,13 +31,13 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function scanAll() {
+    const toasts = useToastStore();
     if (loadedPlugins.value.length === 0) {
-      lastScanSummary.value = "No plugins enabled.";
+      toasts.push("No plugins enabled.", "error");
       return;
     }
 
     scanning.value = true;
-    lastScanSummary.value = null;
     try {
       const library = useLibraryStore();
       let totalAdded = 0;
@@ -50,9 +50,9 @@ export const usePluginStore = defineStore("plugins", () => {
         totalMerged += merged;
       }
 
-      lastScanSummary.value = `Scan complete: ${totalAdded} added, ${totalMerged} merged.`;
+      toasts.push(`Scan complete: ${totalAdded} added, ${totalMerged} merged.`, "success");
     } catch (e) {
-      lastScanSummary.value = `Scan failed: ${String(e)}`;
+      toasts.push(`Scan failed: ${String(e)}`, "error");
     } finally {
       scanning.value = false;
     }
@@ -78,7 +78,6 @@ export const usePluginStore = defineStore("plugins", () => {
     enabledIds,
     loadedPlugins,
     scanning,
-    lastScanSummary,
     togglePlugin,
     scanAll,
     init,

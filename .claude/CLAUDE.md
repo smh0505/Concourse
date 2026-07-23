@@ -7,9 +7,10 @@ Your goal is to help implement this project step-by-step, adhering strictly to o
 ---
 
 ## 1. Reference Documents
-Before performing any task, always read and align with these two core documents in the workspace root:
+Before performing any task, always read and align with these documents (all under `.claude/`):
 - `proposal.md`: Contains the overall product vision, core features, and architectural design.
-- `milestones.md`: Outlines the phased roadmap and implementation checklist.
+- `milestones.md`: Outlines the phased roadmap and implementation checklist — tracks *what's done*, kept short/scannable (one line per item, checkbox state).
+- `devlog.md`: Detailed implementation history behind every `milestones.md` item — rationale, decisions, fixes, verification notes. Tracks *why/how*, not *what's done* (no checkboxes). Same headings as `milestones.md` for cross-reference. When completing a milestone item, write the short tracking line in `milestones.md` and the full detail in `devlog.md`, not both in one file.
 
 ---
 

@@ -68,8 +68,9 @@ built-in Steam source plugin, verified against a real Steam install.
 ## Status
 
 Actively developed, milestone by milestone. See [`.claude/proposal.md`](.claude/proposal.md)
-for the original design proposal and [`.claude/milestones.md`](.claude/milestones.md) for
-detailed, up-to-date progress tracking against it.
+for the original design proposal, [`.claude/milestones.md`](.claude/milestones.md) for
+up-to-date progress tracking against it, and [`.claude/devlog.md`](.claude/devlog.md) for the
+implementation history/rationale behind each milestone item.
 
 As of now: core library, metadata/playtime tracking, Big Picture mode, the plugin system
 (including the WebAssembly runtime-plugin pipeline), Steam/Epic/GOG source plugins, Locale

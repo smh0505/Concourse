@@ -10,6 +10,7 @@ mod sgdb;
 mod wasm_plugin_installer;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
+mod wrapper_installer;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -44,7 +45,9 @@ pub fn run() {
             wasm_plugin_installer::list_wasm_plugins,
             wasm_plugin_runtime::wasm_plugin_scan,
             wasm_plugin_runtime::wasm_plugin_launch,
-            wasm_plugin_runtime::wasm_plugin_get_install_status
+            wasm_plugin_runtime::wasm_plugin_get_install_status,
+            wrapper_installer::latest_locale_remulator_download_url,
+            wrapper_installer::latest_locale_emulator_download_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

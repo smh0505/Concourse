@@ -86,6 +86,29 @@ impl gamelib::plugin::host::Host for PluginHostState {
         }
     }
 
+    fn list_registry_keys(&mut self, hive: String, path: String) -> Result<Vec<String>, String> {
+        #[cfg(target_os = "windows")]
+        {
+            use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+            use winreg::RegKey;
+
+            let root = match hive.as_str() {
+                "HKLM" => HKEY_LOCAL_MACHINE,
+                "HKCU" => HKEY_CURRENT_USER,
+                _ => return Err(format!("Unknown registry hive: {}", hive)),
+            };
+            let Ok(key) = RegKey::predef(root).open_subkey(&path) else {
+                return Ok(Vec::new());
+            };
+            Ok(key.enum_keys().flatten().collect())
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = (hive, path);
+            Ok(Vec::new())
+        }
+    }
+
     fn read_file(&mut self, path: String) -> Result<String, String> {
         std::fs::read_to_string(&path).map_err(|e| format!("Failed to read {}: {}", path, e))
     }

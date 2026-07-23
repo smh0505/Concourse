@@ -19,6 +19,11 @@ interface host {
     /// Windows registry string value read. `hive` is one of "HKLM"/"HKCU".
     read-registry-string: func(hive: string, path: string, value: string) -> option<string>;
 
+    /// Windows registry subkey name enumeration (e.g. listing installed game IDs under a
+    /// `Games` key) - `hive` is one of "HKLM"/"HKCU". Empty list (not an error) if the key
+    /// doesn't exist, matching `read-registry-string`'s "just means absent" treatment.
+    list-registry-keys: func(hive: string, path: string) -> result<list<string>, string>;
+
     read-file: func(path: string) -> result<string, string>;
     list-dir: func(path: string) -> result<list<string>, string>;
     path-exists: func(path: string) -> bool;

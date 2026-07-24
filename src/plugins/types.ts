@@ -49,6 +49,23 @@ export interface ControllerMappingPlugin extends PluginBase {
   mapping: GamepadMapping;
 }
 
+export interface LocaleProfile {
+  name: string;
+  guid: string;
+}
+
+/** A compatibility wrapper (e.g. Locale Remulator/Locale Emulator) - fully self-contained:
+ *  manages its own download/install, lists the locale profiles the user has set up, and
+ *  launches a target executable through one of them. Unlike Steam/GOG's auto-detected
+ *  registry paths, install() always installs to (and the plugin itself always resolves) the
+ *  same deterministic location, so there's no path for the host to own or pass in. */
+export interface WrapperPlugin extends PluginBase {
+  install(): Promise<void>;
+  isInstalled(): Promise<boolean>;
+  listProfiles(): Promise<LocaleProfile[]>;
+  launch(profileGuid: string, executablePath: string): Promise<void>;
+}
+
 /** Named, swappable UI regions a theme plugin can override. */
 export type ThemeSlotName = "GameCard" | "BigPictureTile";
 

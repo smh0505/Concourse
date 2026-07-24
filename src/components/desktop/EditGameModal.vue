@@ -1,56 +1,22 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { invoke } from "@tauri-apps/api/core";
 import { useLibraryStore } from "../../stores/library";
-import { useAppSettingsStore } from "../../stores/appSettings";
+import { useWrapperPluginStore, type WrapperProfile } from "../../stores/wrapperPlugins";
 import BaseModal from "./BaseModal.vue";
 import type { GameEditFields } from "../../db";
 
-interface LocaleProfile {
-  name: string;
-  guid: string;
-}
-
 const library = useLibraryStore();
-const appSettings = useAppSettingsStore();
-const lrProfiles = ref<LocaleProfile[]>([]);
-const leProfiles = ref<LocaleProfile[]>([]);
+const wrapperPlugins = useWrapperPluginStore();
 
-watch(
-  () => appSettings.localeRemulatorPath,
-  async (path) => {
-    if (!path) {
-      lrProfiles.value = [];
-      return;
-    }
-    try {
-      lrProfiles.value = await invoke<LocaleProfile[]>("list_locale_remulator_profiles", {
-        lrprocPath: path,
-      });
-    } catch {
-      lrProfiles.value = [];
-    }
-  },
-  { immediate: true },
-);
-
-watch(
-  () => appSettings.localeEmulatorPath,
-  async (path) => {
-    if (!path) {
-      leProfiles.value = [];
-      return;
-    }
-    try {
-      leProfiles.value = await invoke<LocaleProfile[]>("list_locale_emulator_profiles", {
-        leprocPath: path,
-      });
-    } catch {
-      leProfiles.value = [];
-    }
-  },
-  { immediate: true },
-);
+const profilesByPlugin = computed(() => {
+  const groups = new Map<string, WrapperProfile[]>();
+  for (const profile of wrapperPlugins.profiles) {
+    const list = groups.get(profile.pluginId) ?? [];
+    list.push(profile);
+    groups.set(profile.pluginId, list);
+  }
+  return groups;
+});
 
 const form = ref<GameEditFields>({
   title: "",
@@ -67,8 +33,10 @@ const form = ref<GameEditFields>({
 const error = ref("");
 const newTag = ref("");
 
-/** Combines locale_wrapper + locale_profile_guid into one <select> value ("lr:<guid>" /
- *  "le:<guid>" / ""), since the two wrappers' GUIDs aren't namespaced against each other. */
+/** Combines locale_wrapper + locale_profile_guid into one <select> value
+ *  ("<pluginId>:<guid>" / ""), since GUIDs aren't namespaced against each other across
+ *  wrapper plugins. GUIDs themselves aren't guaranteed unique enough alone to split on ":"
+ *  safely, so this splits on the first ":" only - plugin ids never contain one. */
 const wrapperSelection = computed({
   get: () =>
     form.value.locale_wrapper && form.value.locale_profile_guid
@@ -80,9 +48,9 @@ const wrapperSelection = computed({
       form.value.locale_profile_guid = "";
       return;
     }
-    const [wrapper, guid] = value.split(":");
-    form.value.locale_wrapper = wrapper as "lr" | "le";
-    form.value.locale_profile_guid = guid;
+    const separatorIndex = value.indexOf(":");
+    form.value.locale_wrapper = value.slice(0, separatorIndex);
+    form.value.locale_profile_guid = value.slice(separatorIndex + 1);
   },
 });
 
@@ -198,20 +166,18 @@ async function onSave() {
         Compatibility wrapper profile
         <select v-model="wrapperSelection">
           <option value="">None</option>
-          <optgroup label="Locale Remulator" v-if="lrProfiles.length">
-            <option v-for="profile in lrProfiles" :key="profile.guid" :value="`lr:${profile.guid}`">
-              {{ profile.name }}
-            </option>
-          </optgroup>
-          <optgroup label="Locale Emulator" v-if="leProfiles.length">
-            <option v-for="profile in leProfiles" :key="profile.guid" :value="`le:${profile.guid}`">
+          <optgroup
+            v-for="[pluginId, profiles] in profilesByPlugin"
+            :key="pluginId"
+            :label="profiles[0].pluginName"
+          >
+            <option v-for="profile in profiles" :key="profile.guid" :value="`${pluginId}:${profile.guid}`">
               {{ profile.name }}
             </option>
           </optgroup>
         </select>
-        <span v-if="!lrProfiles.length && !leProfiles.length" class="hint">
-          No profiles found - configure a wrapper path in Settings and create a profile via
-          its editor first.
+        <span v-if="wrapperPlugins.profiles.length === 0" class="hint">
+          No profiles found - install and enable a compatibility wrapper plugin in Settings first.
         </span>
       </label>
       <div class="tags-section">

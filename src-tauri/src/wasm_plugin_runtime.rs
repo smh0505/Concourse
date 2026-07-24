@@ -1,8 +1,11 @@
-//! Loads/instantiates a WASM `SourcePlugin` and exposes its exports to the frontend via
+﻿//! Loads/instantiates a WASM `SourcePlugin` and exposes its exports to the frontend via
 //! Tauri commands - the frontend never talks to plugin code directly (see wasm_plugins.rs
 //! for the host-function surface these plugins call back into).
 
-use crate::wasm_plugins::{gamelib::plugin::host::GameEntry, PluginHostState, SourcePluginWorld};
+use crate::wasm_plugins::{
+    gamelib::plugin::host::GameEntry, wrapper_world::WrapperPluginWorld, PluginHostState,
+    SourcePluginWorld,
+};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
@@ -14,12 +17,9 @@ struct WasmPluginManifest {
     entry: String,
 }
 
-/// Mirrors the TS `GameEntry` shape (src/plugins/types.ts) - `rename_all = "camelCase"` so
-/// the JSON wire format matches it exactly (`executablePath`, not `executable_path`),
-/// letting the frontend loader pass/receive these with no manual field mapping. Kept as our
-/// own DTOs rather than deriving Serialize/Deserialize on the wasmtime-bindgen-generated
-/// `GameEntry` directly, so this stays decoupled from bindgen's derive support and free to
-/// diverge if the WIT record ever needs fields the wire format shouldn't have.
+/// Mirrors the TS `GameEntry` shape (src/plugins/types.ts); `rename_all = "camelCase"` matches
+/// the wire format exactly. Kept as our own DTOs rather than deriving Serialize/Deserialize on
+/// the bindgen-generated `GameEntry` directly, decoupling this from bindgen's derive support.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WasmGameEntry {
@@ -68,6 +68,13 @@ impl From<WasmGameEntryInput> for GameEntry {
     }
 }
 
+/// Mirrors the TS `LocaleProfile` shape (src/plugins/types.ts).
+#[derive(Serialize)]
+pub struct WasmLocaleProfile {
+    pub name: String,
+    pub guid: String,
+}
+
 fn plugin_dir(app: &AppHandle, plugin_id: &str) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
@@ -82,13 +89,10 @@ fn db_path(app: &AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| format!("Failed to resolve app data dir: {}", e))
 }
 
-/// Instantiates a plugin already sitting at `plugin_dir` fresh for this call - components
-/// are cheap to instantiate relative to how infrequently `scan`/`launch`/`getInstallStatus`
-/// run (user-triggered, not a hot path), so there's no engine/instance cache here yet. Runs
-/// entirely synchronously; callers must invoke this from a blocking context
-/// (`spawn_blocking`), never directly on the async runtime thread - same requirement the
-/// host functions themselves have. Kept free of `AppHandle` so it's directly unit-testable
-/// (see the `tests` module below) without needing a running Tauri app.
+/// Instantiates a plugin at `plugin_dir` fresh for this call - no engine/instance cache, since
+/// `scan`/`launch`/`getInstallStatus` are user-triggered, not a hot path. Runs synchronously;
+/// callers must invoke from a blocking context (`spawn_blocking`), never the async runtime
+/// thread. Kept `AppHandle`-free so it's directly unit-testable without a running Tauri app.
 fn instantiate_from_paths(
     plugin_dir: &Path,
     plugin_id: &str,
@@ -109,12 +113,11 @@ fn instantiate_from_paths(
     let mut linker = Linker::new(&engine);
     crate::wasm_plugins::gamelib::plugin::host::add_to_linker(&mut linker, |state| state)
         .map_err(|e| e.to_string())?;
-    // Satisfies the baseline wasi:cli/* imports cargo-component's wasm32-wasip1 target
-    // pulls in even for a capability-less "reactor" component like this one - see
-    // PluginHostState's doc comment.
+    // Satisfies baseline wasi:cli/* imports cargo-component's wasm32-wasip1 target pulls in
+    // even for a capability-less component - see PluginHostState's doc comment.
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), db_path)
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
@@ -126,6 +129,47 @@ fn instantiate_from_paths(
 
 fn instantiate(app: &AppHandle, plugin_id: &str) -> Result<(Store<PluginHostState>, SourcePluginWorld), String> {
     instantiate_from_paths(&plugin_dir(app, plugin_id)?, plugin_id, &db_path(app)?)
+}
+
+/// Same shape as `instantiate_from_paths` above, just against `wrapper-plugin-world` instead
+/// of `source-plugin-world` - see that function's doc comment.
+fn instantiate_wrapper_from_paths(
+    plugin_dir: &Path,
+    plugin_id: &str,
+    db_path: &Path,
+) -> Result<(Store<PluginHostState>, WrapperPluginWorld), String> {
+    let manifest_content = std::fs::read_to_string(plugin_dir.join("plugin.json"))
+        .map_err(|e| format!("Failed to read plugin.json: {}", e))?;
+    let manifest: WasmPluginManifest = serde_json::from_str(&manifest_content)
+        .map_err(|e| format!("Invalid plugin.json: {}", e))?;
+
+    let mut config = Config::new();
+    config.wasm_component_model(true);
+    let engine = Engine::new(&config).map_err(|e| e.to_string())?;
+
+    let component = Component::from_file(&engine, plugin_dir.join(&manifest.entry))
+        .map_err(|e| format!("Failed to load {}: {}", manifest.entry, e))?;
+
+    let mut linker = Linker::new(&engine);
+    crate::wasm_plugins::wrapper_world::gamelib::plugin::host::add_to_linker(&mut linker, |state| state)
+        .map_err(|e| e.to_string())?;
+    wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
+
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+    let mut store = Store::new(&engine, state);
+
+    let instance = WrapperPluginWorld::instantiate(&mut store, &component, &linker)
+        .map_err(|e| format!("Failed to instantiate plugin: {}", e))?;
+
+    Ok((store, instance))
+}
+
+fn instantiate_wrapper(
+    app: &AppHandle,
+    plugin_id: &str,
+) -> Result<(Store<PluginHostState>, WrapperPluginWorld), String> {
+    instantiate_wrapper_from_paths(&plugin_dir(app, plugin_id)?, plugin_id, &db_path(app)?)
 }
 
 #[tauri::command]
@@ -176,13 +220,78 @@ pub async fn wasm_plugin_get_install_status(
     .map_err(|e| format!("Plugin task panicked: {}", e))?
 }
 
-/// End-to-end proof for Milestone 8's "reference example" checklist item, against the real
-/// compiled `examples/exe-scanner-plugin` component (built via `cargo component build` there
-/// - see that crate for the guest-side implementation). Exercises the full path: load a real
-/// `.wasm` component, instantiate it against the host-function surface, have it call
-/// `settings-get`/`list-dir`/`path-exists` back into the host, and get real `GameEntry`
-/// results back across the component boundary - not just "does it compile" like the earlier
-/// checklist items necessarily were, since no component existed yet at that point.
+/// Runs a plugin's own managed install (download, extract, seed config, run the vendor
+/// installer) - the plugin decides all of that itself now, this just gives it enough time to.
+/// No timeout: a visible installer window is expected to stay open until the user closes it.
+#[tauri::command]
+pub async fn wasm_wrapper_install(app: AppHandle, plugin_id: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (mut store, instance) = instantiate_wrapper(&app, &plugin_id)?;
+        instance
+            .gamelib_plugin_wrapper_plugin()
+            .call_install(&mut store)
+            .map_err(|e| format!("Plugin trapped during install: {}", e))?
+    })
+    .await
+    .map_err(|e| format!("Plugin task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn wasm_wrapper_is_installed(app: AppHandle, plugin_id: String) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (mut store, instance) = instantiate_wrapper(&app, &plugin_id)?;
+        instance
+            .gamelib_plugin_wrapper_plugin()
+            .call_is_installed(&mut store)
+            .map_err(|e| format!("Plugin trapped during isInstalled: {}", e))
+    })
+    .await
+    .map_err(|e| format!("Plugin task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn wasm_wrapper_list_profiles(
+    app: AppHandle,
+    plugin_id: String,
+) -> Result<Vec<WasmLocaleProfile>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (mut store, instance) = instantiate_wrapper(&app, &plugin_id)?;
+        instance
+            .gamelib_plugin_wrapper_plugin()
+            .call_list_profiles(&mut store)
+            .map_err(|e| format!("Plugin trapped during listProfiles: {}", e))?
+            .map(|profiles| {
+                profiles
+                    .into_iter()
+                    .map(|p| WasmLocaleProfile { name: p.name, guid: p.guid })
+                    .collect()
+            })
+    })
+    .await
+    .map_err(|e| format!("Plugin task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn wasm_wrapper_launch(
+    app: AppHandle,
+    plugin_id: String,
+    profile_guid: String,
+    executable_path: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (mut store, instance) = instantiate_wrapper(&app, &plugin_id)?;
+        instance
+            .gamelib_plugin_wrapper_plugin()
+            .call_launch(&mut store, &profile_guid, &executable_path)
+            .map_err(|e| format!("Plugin trapped during launch: {}", e))?
+    })
+    .await
+    .map_err(|e| format!("Plugin task panicked: {}", e))?
+}
+
+/// End-to-end test against the real compiled `examples/exe-scanner-plugin` component (build
+/// first via `cargo component build` there): loads the `.wasm`, instantiates it against the
+/// host-function surface, and round-trips real `GameEntry` results across the boundary.
 #[cfg(test)]
 mod tests {
     use super::*;

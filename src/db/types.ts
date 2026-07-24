@@ -17,9 +17,10 @@ export interface Game {
    *  set together with locale_wrapper, launch wraps the executable through that wrapper's
    *  exe instead of spawning it directly. */
   locale_profile_guid: string | null;
-  /** Which compatibility wrapper locale_profile_guid belongs to - the two tools' GUIDs
-   *  aren't namespaced against each other, so this disambiguates which one to launch via. */
-  locale_wrapper: "lr" | "le" | null;
+  /** Which wrapper plugin id locale_profile_guid belongs to (e.g. "locale-remulator-wasm") -
+   *  GUIDs aren't namespaced against each other across wrapper plugins, so this disambiguates
+   *  which one to launch via. */
+  locale_wrapper: string | null;
 }
 
 export type GameEditFields = Pick<

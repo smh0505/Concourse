@@ -4,20 +4,23 @@ import { usePluginStore } from "../../stores/plugins";
 import { useThemeStore } from "../../stores/theme";
 import { useMetadataProviderStore } from "../../stores/metadataProviders";
 import { useControllerMappingStore } from "../../stores/controllerMapping";
+import { useWrapperPluginStore } from "../../stores/wrapperPlugins";
 import { loadAllPlugins } from "../../plugins/loader";
 import type {
   SourcePlugin,
   ThemePlugin,
   MetadataProviderPlugin,
   ControllerMappingPlugin,
+  WrapperPlugin,
 } from "../../plugins/types";
 
-type Tab = "source" | "theme" | "metadata" | "controller";
+type Tab = "source" | "theme" | "metadata" | "controller" | "wrapper";
 
 const plugins = usePluginStore();
 const theme = useThemeStore();
 const metadataProviders = useMetadataProviderStore();
 const controllerMapping = useControllerMappingStore();
+const wrapperPlugins = useWrapperPluginStore();
 
 const activeTab = ref<Tab>("source");
 
@@ -25,18 +28,22 @@ const allSourcePlugins = ref<Map<string, SourcePlugin>>(new Map());
 const allThemePlugins = ref<Map<string, ThemePlugin>>(new Map());
 const allMetadataPlugins = ref<Map<string, MetadataProviderPlugin>>(new Map());
 const allControllerPlugins = ref<Map<string, ControllerMappingPlugin>>(new Map());
+const allWrapperPlugins = ref<Map<string, WrapperPlugin>>(new Map());
 
 onMounted(async () => {
-  const [sourcePlugins, themePlugins, metadataPlugins, controllerPlugins] = await Promise.all([
-    loadAllPlugins<SourcePlugin>("source"),
-    loadAllPlugins<ThemePlugin>("theme"),
-    loadAllPlugins<MetadataProviderPlugin>("metadata"),
-    loadAllPlugins<ControllerMappingPlugin>("controller"),
-  ]);
+  const [sourcePlugins, themePlugins, metadataPlugins, controllerPlugins, wrapperPluginsMap] =
+    await Promise.all([
+      loadAllPlugins<SourcePlugin>("source"),
+      loadAllPlugins<ThemePlugin>("theme"),
+      loadAllPlugins<MetadataProviderPlugin>("metadata"),
+      loadAllPlugins<ControllerMappingPlugin>("controller"),
+      loadAllPlugins<WrapperPlugin>("wrapper"),
+    ]);
   allSourcePlugins.value = sourcePlugins;
   allThemePlugins.value = themePlugins;
   allMetadataPlugins.value = metadataPlugins;
   allControllerPlugins.value = controllerPlugins;
+  allWrapperPlugins.value = wrapperPluginsMap;
 });
 </script>
 
@@ -55,6 +62,9 @@ onMounted(async () => {
       </button>
       <button :class="{ active: activeTab === 'controller' }" @click="activeTab = 'controller'">
         Controller
+      </button>
+      <button :class="{ active: activeTab === 'wrapper' }" @click="activeTab = 'wrapper'">
+        Wrapper
       </button>
     </div>
 
@@ -129,7 +139,7 @@ onMounted(async () => {
       </ul>
     </div>
 
-    <div v-else class="tab-panel">
+    <div v-else-if="activeTab === 'controller'" class="tab-panel">
       <p v-if="controllerMapping.manifests.length === 0" class="empty">No mappings installed.</p>
       <ul v-else class="plugin-list">
         <li class="plugin-row" v-for="manifest in controllerMapping.manifests" :key="manifest.id">
@@ -146,6 +156,27 @@ onMounted(async () => {
           <component
             :is="allControllerPlugins.get(manifest.id)?.settingsComponent"
             v-if="allControllerPlugins.get(manifest.id)?.settingsComponent"
+          />
+        </li>
+      </ul>
+    </div>
+
+    <div v-else class="tab-panel">
+      <p v-if="wrapperPlugins.manifests.length === 0" class="empty">No wrapper plugins installed.</p>
+      <ul v-else class="plugin-list">
+        <li class="plugin-row" v-for="manifest in wrapperPlugins.manifests" :key="manifest.id">
+          <label>
+            <input
+              type="checkbox"
+              :checked="wrapperPlugins.enabledIds.has(manifest.id)"
+              @change="wrapperPlugins.toggleWrapper(manifest.id)"
+            />
+            {{ manifest.name }}
+            <span class="version">v{{ manifest.version }}</span>
+          </label>
+          <component
+            :is="allWrapperPlugins.get(manifest.id)?.settingsComponent"
+            v-if="allWrapperPlugins.get(manifest.id)?.settingsComponent"
           />
         </li>
       </ul>

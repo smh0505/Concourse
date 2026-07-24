@@ -65,11 +65,9 @@ fn any_process_under_folder(system: &mut System, install_dir: &str) -> bool {
     })
 }
 
-/// Tracks playtime for URI-launched games (Steam/Epic/GOG), which spawn a child process
-/// via the OS's protocol handler / a launcher client rather than one we hold a handle to.
-/// Mirrors Playnite's "Folder" tracking mode: poll running processes and treat any whose
-/// executable path falls under the game's known install folder as "the game is running",
-/// rather than needing the exact executable name (which we usually don't have for these).
+/// Tracks playtime for URI-launched games (Steam/Epic/GOG), where we hold no child process
+/// handle. Mirrors Playnite's "Folder" tracking mode: poll running processes and treat any
+/// whose exe path falls under the game's known install folder as "running".
 #[tauri::command]
 pub fn track_folder_playtime(app: AppHandle, game_id: i64, install_dir: String) {
     let install_dir = normalize_path_for_comparison(&install_dir);

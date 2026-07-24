@@ -4,13 +4,11 @@ mod epic;
 mod gog;
 mod igdb;
 mod launcher;
-mod locale_emulator;
-mod locale_remulator;
 mod sgdb;
 mod wasm_plugin_installer;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
-mod wrapper_installer;
+mod zip_install;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -30,11 +28,6 @@ pub fn run() {
             greet,
             launcher::launch_game,
             launcher::track_folder_playtime,
-            locale_remulator::wrapper_path_exists,
-            locale_remulator::list_locale_remulator_profiles,
-            locale_remulator::launch_via_locale_remulator,
-            locale_emulator::list_locale_emulator_profiles,
-            locale_emulator::launch_via_locale_emulator,
             sgdb::fetch_cover_art,
             sgdb::fetch_background_art,
             igdb::fetch_igdb_metadata,
@@ -46,8 +39,10 @@ pub fn run() {
             wasm_plugin_runtime::wasm_plugin_scan,
             wasm_plugin_runtime::wasm_plugin_launch,
             wasm_plugin_runtime::wasm_plugin_get_install_status,
-            wrapper_installer::latest_locale_remulator_download_url,
-            wrapper_installer::latest_locale_emulator_download_url
+            wasm_plugin_runtime::wasm_wrapper_install,
+            wasm_plugin_runtime::wasm_wrapper_is_installed,
+            wasm_plugin_runtime::wasm_wrapper_list_profiles,
+            wasm_plugin_runtime::wasm_wrapper_launch
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

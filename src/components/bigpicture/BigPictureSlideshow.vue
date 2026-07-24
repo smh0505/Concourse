@@ -44,11 +44,9 @@ const playtimeMinutes = computed(() =>
   focusedGame.value ? Math.round(focusedGame.value.total_playtime / 60) : 0,
 );
 
-// Always exactly 7 slots (offsets -3..3), even past the ends of the library - otherwise
-// the strip near the first/last game has fewer real covers than the other end, and
-// `justify-content: center` centers that shorter row instead of the selected cover.
-// Out-of-range slots render as inert, non-selectable placeholders instead of being
-// omitted, so the centered cover stays visually centered everywhere.
+// Always exactly 7 slots (offsets -3..3), even past the ends of the library, with
+// out-of-range slots rendered as inert placeholders - otherwise `justify-content: center`
+// centers the shorter row near the first/last game instead of the selected cover.
 const VISIBLE_NEIGHBORS = 3;
 type CoverSlot =
   | { kind: "game"; id: number; index: number; offset: number }

@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
+import { defineComponent, h } from "vue";
 import { isPluginManifest, type PluginKind, type PluginManifest } from "./manifest";
-import type { GameEntry, SourcePlugin } from "./types";
+import type { GameEntry, LocaleProfile, SourcePlugin, WrapperPlugin } from "./types";
+import WrapperInstallStatus from "../components/desktop/WrapperInstallStatus.vue";
 
 // Each plugin lives at src/plugins/<id>/plugin.json + an entry module (e.g. index.ts)
 // exporting a SourcePlugin or ThemePlugin (per manifest `kind`) as its default export.
@@ -21,14 +23,16 @@ function folderOf(manifestPath: string): string {
 }
 
 /** WASM plugins are installed at runtime into the app-data dir (Milestone 8), not
- *  discovered by Vite at build time - only "source" is supported today (the WIT world only
- *  defines a SourcePlugin export), so this is skipped entirely for other kinds. */
+ *  discovered by Vite at build time - only "source" and "wrapper" are supported so far (the
+ *  only kinds the WIT worlds define an export for), so this is skipped for other kinds. */
+const WASM_SUPPORTED_KINDS: readonly PluginKind[] = ["source", "wrapper"];
+
 async function getInstalledWasmManifests(kind?: PluginKind): Promise<PluginManifest[]> {
-  if (kind && kind !== "source") return [];
+  if (kind && !WASM_SUPPORTED_KINDS.includes(kind)) return [];
   try {
     const manifests = await invoke<PluginManifest[]>("list_wasm_plugins");
     return manifests
-      .filter((m) => m.kind === "source")
+      .filter((m) => (kind ? m.kind === kind : WASM_SUPPORTED_KINDS.includes(m.kind)))
       .map((m) => ({ ...m, runtime: "wasm" as const }));
   } catch {
     return [];
@@ -59,10 +63,33 @@ function createWasmSourcePlugin(manifest: PluginManifest): SourcePlugin {
   };
 }
 
+/** Each wrapper plugin now fully owns its own install/found-status (install()/isInstalled()
+ *  are its own exports, no host-side path to pass in), so its settingsComponent can be
+ *  generic across any wrapper plugin - bound to this specific plugin instance since
+ *  settingsComponent is rendered with no props (`<component :is="..." />` in
+ *  PluginSettings.vue). Built after the plugin object itself so the component can call back
+ *  into it directly. */
+function createWasmWrapperPlugin(manifest: PluginManifest): WrapperPlugin {
+  const plugin: WrapperPlugin = {
+    id: manifest.id,
+    name: manifest.name,
+    install: () => invoke("wasm_wrapper_install", { pluginId: manifest.id }),
+    isInstalled: () => invoke<boolean>("wasm_wrapper_is_installed", { pluginId: manifest.id }),
+    listProfiles: () => invoke<LocaleProfile[]>("wasm_wrapper_list_profiles", { pluginId: manifest.id }),
+    launch: (profileGuid: string, executablePath: string) =>
+      invoke("wasm_wrapper_launch", { pluginId: manifest.id, profileGuid, executablePath }),
+  };
+  plugin.settingsComponent = defineComponent({
+    render: () => h(WrapperInstallStatus, { plugin }),
+  });
+  return plugin;
+}
+
 async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   if (manifest.runtime === "wasm") {
-    if (manifest.kind !== "source") return null;
-    return createWasmSourcePlugin(manifest) as T;
+    if (manifest.kind === "source") return createWasmSourcePlugin(manifest) as T;
+    if (manifest.kind === "wrapper") return createWasmWrapperPlugin(manifest) as T;
+    return null;
   }
 
   const manifestPath = Object.keys(manifestModules).find((path) => {

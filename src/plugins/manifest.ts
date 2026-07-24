@@ -1,4 +1,4 @@
-export type PluginKind = "source" | "theme" | "metadata" | "controller";
+export type PluginKind = "source" | "theme" | "metadata" | "controller" | "wrapper";
 
 export interface PluginManifest {
   id: string;
@@ -21,7 +21,11 @@ export function isPluginManifest(value: unknown): value is PluginManifest {
     typeof m.id === "string" &&
     typeof m.name === "string" &&
     typeof m.version === "string" &&
-    (m.kind === "source" || m.kind === "theme" || m.kind === "metadata" || m.kind === "controller") &&
+    (m.kind === "source" ||
+      m.kind === "theme" ||
+      m.kind === "metadata" ||
+      m.kind === "controller" ||
+      m.kind === "wrapper") &&
     typeof m.entry === "string" &&
     (m.runtime === undefined || m.runtime === "ts" || m.runtime === "wasm")
   );

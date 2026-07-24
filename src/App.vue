@@ -8,6 +8,7 @@ import { useThemeStore } from "./stores/theme";
 import { useMetadataProviderStore } from "./stores/metadataProviders";
 import { useControllerMappingStore } from "./stores/controllerMapping";
 import { useAppSettingsStore } from "./stores/appSettings";
+import { useWrapperPluginStore } from "./stores/wrapperPlugins";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
 import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
@@ -29,6 +30,7 @@ const theme = useThemeStore();
 const metadataProviders = useMetadataProviderStore();
 const controllerMapping = useControllerMappingStore();
 const appSettings = useAppSettingsStore();
+const wrapperPlugins = useWrapperPluginStore();
 const bigPicture = ref(false);
 const bigPictureViewMode = ref<"grid" | "slideshow">("grid");
 const activeView = ref<AppView>("library");
@@ -41,9 +43,8 @@ watch(bigPicture, (enabled) => {
     .setFullscreen(enabled)
     .catch((e) => console.error("Failed to toggle fullscreen:", e));
 
-  // Big Picture is a fixed overlay on top of the desktop page, but the desktop page
-  // itself is still scrollable underneath it - lock it so mouse-wheel input while Big
-  // Picture is open doesn't scroll the hidden desktop content behind it.
+  // Big Picture is a fixed overlay on top of the desktop page; lock scroll so mouse-wheel
+  // input doesn't scroll the hidden desktop content behind it.
   document.documentElement.style.overflow = enabled ? "hidden" : "";
 });
 
@@ -54,6 +55,7 @@ onMounted(async () => {
   await metadataProviders.init();
   await controllerMapping.init();
   await appSettings.init();
+  await wrapperPlugins.init();
   if (appSettings.autoLaunchBigPicture) bigPicture.value = true;
 });
 onUnmounted(library.dispose);

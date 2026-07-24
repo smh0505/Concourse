@@ -111,15 +111,15 @@ See devlog for context on why these two workstreams are combined.
 
 **Managed install.**
 - [x] Rust command to fetch latest release download URL (GitHub API)
-- [ ] Download + zip extraction into an app-data-managed directory
-- [ ] Auto-fill wrapper paths after extraction
-- [ ] "Install" button in `AppSettings`
-- [ ] Integrity check before extracting
+- [x] Download + zip extraction into an app-data-managed directory
+- [x] Auto-fill wrapper paths after extraction
+- [x] "Install" button in `AppSettings`
+- [x] Integrity check before extracting
 
 **WASM migration.**
-- [ ] Design a `wrapper`-shaped WIT interface/plugin kind
-- [ ] Port LR/LE's launch logic into WASM plugins
-- [ ] Wire the new `wrapper` plugin kind into loader/settings UI
+- [x] Design a `wrapper`-shaped WIT interface/plugin kind
+- [x] Port LR/LE's launch logic into WASM plugins
+- [x] Wire the new `wrapper` plugin kind into loader/settings UI
 
 ## Milestone 11 — RAWG Metadata Provider (stretch)
 - [ ] `rawg.rs` — fetch description/genres/release date from the RAWG API

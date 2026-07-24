@@ -110,5 +110,17 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        // v8: LR/LE's launch logic moved from the built-in "lr"/"le" literals to WASM
+        // wrapper plugins (Milestone 10) - remaps existing games' locale_wrapper values to
+        // the new plugin ids so their saved wrapper selection keeps working after the switch.
+        Migration {
+            version: 8,
+            description: "remap_locale_wrapper_to_wasm_plugin_ids",
+            sql: r#"
+            UPDATE games SET locale_wrapper = 'locale-remulator-wasm' WHERE locale_wrapper = 'lr';
+            UPDATE games SET locale_wrapper = 'locale-emulator-wasm' WHERE locale_wrapper = 'le';
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

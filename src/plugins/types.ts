@@ -7,6 +7,16 @@ export interface PluginBase {
   settingsComponent?: Component;
 }
 
+/** Composable with any plugin kind (tagged via the manifest's `installable` flag) - a plugin
+ *  that manages its own downloaded dependency rather than just working with what's already on
+ *  disk. A plugin implementing this and not setting its own settingsComponent gets the
+ *  generic InstallableStatus.vue Install button for free. */
+export interface Installable {
+  install(): Promise<void>;
+  uninstall(): Promise<void>;
+  isInstalled(): Promise<boolean>;
+}
+
 export interface GameEntry {
   id: string;
   title: string;
@@ -55,13 +65,12 @@ export interface LocaleProfile {
 }
 
 /** A compatibility wrapper (e.g. Locale Remulator/Locale Emulator) - fully self-contained:
- *  manages its own download/install, lists the locale profiles the user has set up, and
- *  launches a target executable through one of them. Unlike Steam/GOG's auto-detected
- *  registry paths, install() always installs to (and the plugin itself always resolves) the
- *  same deterministic location, so there's no path for the host to own or pass in. */
-export interface WrapperPlugin extends PluginBase {
-  install(): Promise<void>;
-  isInstalled(): Promise<boolean>;
+ *  manages its own download/install (`Installable`), lists the locale profiles the user has
+ *  set up, and launches a target executable through one of them. Unlike Steam/GOG's
+ *  auto-detected registry paths, install() always installs to (and the plugin itself always
+ *  resolves) the same deterministic location, so there's no path for the host to own or pass
+ *  in. */
+export interface WrapperPlugin extends PluginBase, Installable {
   listProfiles(): Promise<LocaleProfile[]>;
   launch(profileGuid: string, executablePath: string): Promise<void>;
 }

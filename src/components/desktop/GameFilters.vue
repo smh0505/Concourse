@@ -81,6 +81,6 @@ function toggleViewMode() {
 
 .filter-tag.active {
   background: var(--color-accent);
-  color: var(--color-base);
+  color: var(--color-on-accent);
 }
 </style>

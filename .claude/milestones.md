@@ -77,10 +77,13 @@ Pivoted to WASM — see devlog.
 
 ## Milestone 8.5 — Further WASM Adoption (stretch)
 - [ ] Uniform `games.install_dir` → `plugin_data` migration for all source plugins
-- [ ] Migrate GOG and/or Epic to WASM plugins
-  - [x] GOG — done (`gog-source-wasm-plugin`)
-  - [ ] Epic — not yet done
+- [x] Migrate GOG and/or Epic to WASM plugins
+  - [x] GOG — done (`gog-source-wasm-plugin`); built-in `gog.rs`/`src/plugins/gog/` fully retired (launch moved into the plugin's own `launch()` too, no host-side GOG code left)
+  - [x] Epic — done (`epic-source-wasm-plugin`); built-in `epic.rs`/`src/plugins/epic/` fully retired, verified against a real installed game
 - [ ] Rename `steam-wasm` → `steam` cleanly
+- [ ] External theme plugins
+  - [x] Data-only tier (`cssVariables` only, install-by-URL, no code/WASM)
+  - [ ] Review component-override tier (`slots`) for external feasibility
 
 (Locale Remulator/Locale Emulator's WASM migration moved into Milestone 10.)
 

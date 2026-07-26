@@ -10,8 +10,18 @@ export interface PluginManifest {
   entry: string;
   /** Absent/"ts" = build-time TS module discovered via Vite (the default, existing kind of
    *  plugin). "wasm" = runtime-installed WASM component (Milestone 8) - `entry` is a
-   *  `.wasm` file loaded by the Rust host via wasm_plugin_runtime.rs, not a Vite module. */
-  runtime?: "ts" | "wasm";
+   *  `.wasm` file loaded by the Rust host via wasm_plugin_runtime.rs, not a Vite module.
+   *  "data" = runtime-installed, code-free theme manifest (Milestone 8.5) - no `entry` to
+   *  load at all, the manifest's own `cssVariables` field *is* the whole plugin. */
+  runtime?: "ts" | "wasm" | "data";
+  /** True if this plugin implements the `Installable` shape (`install()`/`isInstalled()` -
+   *  see src/plugins/types.ts). Not implied by `kind` - any plugin, of any kind, can opt in.
+   *  Drives whether the loader auto-attaches the generic InstallableStatus.vue settings UI
+   *  when the plugin doesn't already provide its own settingsComponent. */
+  installable?: boolean;
+  /** Only present for `runtime: "data"` theme manifests - the whole plugin's content, since
+   *  there's no separate compiled/bundled entry module to load it from. */
+  cssVariables?: Record<string, string>;
 }
 
 export function isPluginManifest(value: unknown): value is PluginManifest {
@@ -27,6 +37,7 @@ export function isPluginManifest(value: unknown): value is PluginManifest {
       m.kind === "controller" ||
       m.kind === "wrapper") &&
     typeof m.entry === "string" &&
-    (m.runtime === undefined || m.runtime === "ts" || m.runtime === "wasm")
+    (m.runtime === undefined || m.runtime === "ts" || m.runtime === "wasm" || m.runtime === "data") &&
+    (m.installable === undefined || typeof m.installable === "boolean")
   );
 }

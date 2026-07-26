@@ -1,6 +1,6 @@
-# Claude Code Project Instructions: Game Library Client
+# Claude Code Project Instructions: Concourse
 
-You are an expert software engineer guiding the development of the **Game Library Client**, a desktop application that aggregates games into a unified library with a console-like "Big Picture" mode.
+You are an expert software engineer guiding the development of **Concourse**, a desktop application that aggregates games into a unified library with a console-like "Big Picture" mode.
 
 Your goal is to help implement this project step-by-step, adhering strictly to our architectural decisions, project proposal, and developmental milestones.
 
@@ -18,6 +18,7 @@ Before performing any task, always read and align with these documents (all unde
 
 ### Development Flow
 - **One Step at a Time**: Work incrementally. Do not try to implement multiple milestones at once. Focus on the current active milestone.
+- **Versioning**: SemVer, staying `0.x` until the app is stable for real-world use (post-M12 stretch work). Minor version tracks the highest fully-completed milestone number (e.g. `0.10.0` = through Milestone 10); patch bumps for fixes within a milestone. Bump `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` together — they must always match.
 - **Code Quality**: Write clean, modular, and self-documenting code. Prefer performance-focused, lightweight solutions where applicable.
 - **Milestone Tracking**:
   - When a task or checklist item from `milestones.md` is fully completed and verified, update the corresponding `[ ]` to `[x]` in `milestones.md`.
@@ -98,6 +99,14 @@ interface ControllerMappingPlugin extends PluginBase {
 - Selection semantics differ by kind: source and metadata-provider plugins are independently **multi-enabled** (checkboxes); theme and controller-mapping plugins are **exclusive single-select** (radio) — you're always browsing one skin / one physical input scheme at a time.
 - Settings UI is one tabbed `PluginSettings.vue` (Source / Theme / Metadata Provider / Controller), not a separate component per kind.
 - A plugin owns its own settings UI via the optional `settingsComponent` field (e.g. IGDB's API-key form) rather than that UI living in a separate top-level component.
+
+### Plugin Versioning
+Every plugin (`plugin.json`'s `version` field, and each WASM plugin repo's `Cargo.toml`) uses plain SemVer, independent of the app's own milestone-tracked version — plugins don't map to `.claude/milestones.md` entries the way the app does:
+- **Patch**: bug fix, no manifest/behavior change.
+- **Minor**: new capability, backward compatible — still works against the same host WIT interface (for WASM plugins) or `PluginBase` shape (for TS plugins).
+- **Major**: breaking change — manifest shape changes, or (for WASM plugins) the plugin now requires a `wit/plugin.wit` interface version older Concourse builds don't have. This is the signal "don't install this on an older app build."
+
+Built-in TS plugins (bundled with the app, vetted every release) start at `1.0.0` since they ship already-stable. Separately-installed WASM plugins and data-only theme manifests (`data-theme-plugins` repo) start at `0.1.0`/`1.0.0` per the same logic — content-only manifests (themes) are stable enough to start at `1.0.0`; WASM plugins with real install/launch logic start at `0.1.0` until proven.
 
 ---
 

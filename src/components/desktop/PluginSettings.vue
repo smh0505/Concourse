@@ -23,6 +23,14 @@ const controllerMapping = useControllerMappingStore();
 const wrapperPlugins = useWrapperPluginStore();
 
 const activeTab = ref<Tab>("source");
+const newThemeUrl = ref("");
+
+async function onInstallDataTheme() {
+  const url = newThemeUrl.value.trim();
+  if (!url) return;
+  await theme.installDataTheme(url);
+  newThemeUrl.value = "";
+}
 
 const allSourcePlugins = ref<Map<string, SourcePlugin>>(new Map());
 const allThemePlugins = ref<Map<string, ThemePlugin>>(new Map());
@@ -110,12 +118,26 @@ onMounted(async () => {
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
           </label>
+          <button
+            v-if="manifest.runtime === 'data'"
+            type="button"
+            class="uninstall-theme"
+            @click="theme.uninstallDataTheme(manifest.id)"
+          >
+            Remove
+          </button>
           <component
             :is="allThemePlugins.get(manifest.id)?.settingsComponent"
             v-if="allThemePlugins.get(manifest.id)?.settingsComponent"
           />
         </li>
       </ul>
+      <form class="install-theme-form" @submit.prevent="onInstallDataTheme">
+        <input v-model="newThemeUrl" placeholder="Theme manifest URL" />
+        <button type="submit" :disabled="theme.installingDataTheme || !newThemeUrl.trim()">
+          {{ theme.installingDataTheme ? "Installing..." : "Install" }}
+        </button>
+      </form>
     </div>
 
     <div v-else-if="activeTab === 'metadata'" class="tab-panel">
@@ -202,7 +224,7 @@ onMounted(async () => {
 
 .tabs button.active {
   background: var(--color-accent);
-  color: var(--color-base);
+  color: var(--color-on-accent);
 }
 
 .empty {
@@ -219,11 +241,22 @@ onMounted(async () => {
   gap: 0.6rem;
 }
 
+.plugin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
 .plugin-row label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.9rem;
+}
+
+.uninstall-theme {
+  font-size: 0.75rem;
 }
 
 .plugin-row :deep(.settings-form) {
@@ -238,6 +271,21 @@ onMounted(async () => {
 
 .scan-button {
   margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.install-theme-form {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.install-theme-form input {
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.install-theme-form button {
   font-size: 0.85rem;
 }
 </style>

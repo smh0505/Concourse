@@ -1,8 +1,17 @@
 import { invoke } from "@tauri-apps/api/core";
 import { defineComponent, h } from "vue";
 import { isPluginManifest, type PluginKind, type PluginManifest } from "./manifest";
-import type { GameEntry, LocaleProfile, SourcePlugin, WrapperPlugin } from "./types";
-import WrapperInstallStatus from "../components/desktop/WrapperInstallStatus.vue";
+import type {
+  GameEntry,
+  Installable,
+  LocaleProfile,
+  PluginBase,
+  SourcePlugin,
+  ThemePlugin,
+  WrapperPlugin,
+} from "./types";
+import InstallableStatus from "../components/desktop/InstallableStatus.vue";
+import { useWrapperPluginStore } from "../stores/wrapperPlugins";
 
 // Each plugin lives at src/plugins/<id>/plugin.json + an entry module (e.g. index.ts)
 // exporting a SourcePlugin or ThemePlugin (per manifest `kind`) as its default export.
@@ -39,6 +48,20 @@ async function getInstalledWasmManifests(kind?: PluginKind): Promise<PluginManif
   }
 }
 
+/** Data-only theme manifests (Milestone 8.5) are installed at runtime the same way WASM
+ *  plugins are (app-data dir), but have no compiled entry to load at all - the manifest's own
+ *  `cssVariables` field is the entire plugin, so this is the only "installed" tier that isn't
+ *  restricted by kind the way WASM_SUPPORTED_KINDS is (there's no WIT world to support). */
+async function getInstalledDataThemeManifests(kind?: PluginKind): Promise<PluginManifest[]> {
+  if (kind && kind !== "theme") return [];
+  try {
+    const manifests = await invoke<PluginManifest[]>("list_data_themes");
+    return manifests.map((m) => ({ ...m, kind: "theme" as const, entry: "", runtime: "data" as const }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getAvailablePluginManifests(kind?: PluginKind): Promise<PluginManifest[]> {
   const manifests: PluginManifest[] = [];
   for (const mod of Object.values(manifestModules)) {
@@ -46,6 +69,7 @@ export async function getAvailablePluginManifests(kind?: PluginKind): Promise<Pl
     if (isPluginManifest(data) && (!kind || data.kind === kind)) manifests.push(data);
   }
   manifests.push(...(await getInstalledWasmManifests(kind)));
+  manifests.push(...(await getInstalledDataThemeManifests(kind)));
   return manifests;
 }
 
@@ -64,31 +88,70 @@ function createWasmSourcePlugin(manifest: PluginManifest): SourcePlugin {
 }
 
 /** Each wrapper plugin now fully owns its own install/found-status (install()/isInstalled()
- *  are its own exports, no host-side path to pass in), so its settingsComponent can be
- *  generic across any wrapper plugin - bound to this specific plugin instance since
- *  settingsComponent is rendered with no props (`<component :is="..." />` in
- *  PluginSettings.vue). Built after the plugin object itself so the component can call back
- *  into it directly. */
+ *  are its own exports, no host-side path to pass in). Uses the generic InstallableStatus.vue
+ *  (see attachInstallableStatus below) but passes its own onInstalled hook, since a fresh
+ *  install needs wrapperPlugins.profiles refreshed - kind-specific behavior the generic
+ *  component deliberately doesn't know about. */
 function createWasmWrapperPlugin(manifest: PluginManifest): WrapperPlugin {
   const plugin: WrapperPlugin = {
     id: manifest.id,
     name: manifest.name,
     install: () => invoke("wasm_wrapper_install", { pluginId: manifest.id }),
+    uninstall: () => invoke("wasm_wrapper_uninstall", { pluginId: manifest.id }),
     isInstalled: () => invoke<boolean>("wasm_wrapper_is_installed", { pluginId: manifest.id }),
     listProfiles: () => invoke<LocaleProfile[]>("wasm_wrapper_list_profiles", { pluginId: manifest.id }),
     launch: (profileGuid: string, executablePath: string) =>
       invoke("wasm_wrapper_launch", { pluginId: manifest.id, profileGuid, executablePath }),
   };
   plugin.settingsComponent = defineComponent({
-    render: () => h(WrapperInstallStatus, { plugin }),
+    render: () =>
+      h(InstallableStatus, {
+        plugin,
+        onInstallChanged: () => useWrapperPluginStore().refreshProfiles(),
+      }),
   });
   return plugin;
+}
+
+function isInstallable(plugin: unknown): plugin is PluginBase & Installable {
+  const p = plugin as Partial<PluginBase & Installable> | null;
+  return (
+    !!p &&
+    typeof p.install === "function" &&
+    typeof p.uninstall === "function" &&
+    typeof p.isInstalled === "function"
+  );
+}
+
+/** Auto-attaches the generic InstallableStatus.vue for any plugin tagged `installable` in its
+ *  manifest that doesn't already provide its own settingsComponent - covers any future
+ *  TS-authored plugin (of any kind) that implements `Installable` without needing its own
+ *  settings UI. WASM plugin kinds with extra needs (e.g. wrapper's profile refresh) set their
+ *  own settingsComponent explicitly instead, which takes precedence over this fallback. */
+function attachInstallableStatus(manifest: PluginManifest, plugin: PluginBase): void {
+  if (!manifest.installable || plugin.settingsComponent || !isInstallable(plugin)) return;
+  plugin.settingsComponent = defineComponent({
+    render: () => h(InstallableStatus, { plugin }),
+  });
+}
+
+function createDataThemePlugin(manifest: PluginManifest): ThemePlugin {
+  return {
+    id: manifest.id,
+    name: manifest.name,
+    cssVariables: manifest.cssVariables,
+  };
 }
 
 async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   if (manifest.runtime === "wasm") {
     if (manifest.kind === "source") return createWasmSourcePlugin(manifest) as T;
     if (manifest.kind === "wrapper") return createWasmWrapperPlugin(manifest) as T;
+    return null;
+  }
+
+  if (manifest.runtime === "data") {
+    if (manifest.kind === "theme") return createDataThemePlugin(manifest) as T;
     return null;
   }
 
@@ -103,7 +166,9 @@ async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   if (!loadEntry) return null;
 
   const mod = await loadEntry();
-  return mod.default as T;
+  const plugin = mod.default as PluginBase;
+  attachInstallableStatus(manifest, plugin);
+  return plugin as T;
 }
 
 export async function loadEnabledPlugins<T>(

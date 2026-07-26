@@ -99,6 +99,7 @@ interface wrapper-plugin {
     /// exists, and runs the real vendor installer (visible, blocking until closed) for
     /// whatever registration step only it can do.
     install: func() -> result<_, string>;
+    uninstall: func() -> result<_, string>;
     is-installed: func() -> bool;
 
     list-profiles: func() -> result<list<locale-profile>, string>;

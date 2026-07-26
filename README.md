@@ -1,4 +1,4 @@
-# Game Library Client
+# Concourse
 
 A desktop app that aggregates games from multiple sources (Steam, Epic, GOG, manual entries,
 and more via plugins) into one unified library, with a console-like controller-first "Big

@@ -1,4 +1,4 @@
-# Project Proposal: Game Library Client
+# Project Proposal: Concourse
 
 ## Overview
 A desktop app that aggregates games into one unified library with a console-like "Big Picture" mode, similar to Playnite/Steam. Core app ships lean; source integrations (Steam, Epic, GOG, etc.) are plugins added on top.

@@ -37,7 +37,7 @@ const toasts = useToastStore();
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   font-size: 0.85rem;
-  color: var(--color-base);
+  color: var(--color-on-accent);
   cursor: pointer;
 }
 

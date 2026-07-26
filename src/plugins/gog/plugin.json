@@ -1,7 +1,0 @@
-{
-  "id": "gog",
-  "name": "GOG",
-  "version": "1.0.0",
-  "kind": "source",
-  "entry": "index.ts"
-}

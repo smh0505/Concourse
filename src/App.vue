@@ -179,6 +179,16 @@ body,
   --color-accent: #1e66f5;
   --color-accent-alt: #8839ef;
   --color-danger: #d20f39;
+  /* Separate from --color-text so a theme with saturated/dark button backgrounds (e.g.
+     Brick Block) can override just this one, without also recoloring body text that sits on
+     lighter backgrounds where --color-text already reads fine. */
+  --color-button-text: var(--color-text);
+  /* Text/icon color for anything rendered on top of --color-accent (submit buttons, active
+     tabs/nav items/filter tags, toasts) - separate from --color-base itself since a theme can
+     repurpose --color-base for something that isn't a light neutral (e.g. Brick Block uses it
+     as a saturated sky-blue background color, not a "text on accent" color). Defaults to
+     --color-base, matching every existing theme's actual light base color exactly. */
+  --color-on-accent: var(--color-base);
 
   /* Spacing scale */
   --space-1: 0.25rem;
@@ -223,6 +233,7 @@ button {
   border: 1px solid var(--color-surface0);
   border-radius: var(--radius-md);
   background: var(--color-surface0);
+  color: var(--color-button-text);
   cursor: pointer;
   transition:
     background-color 0.12s ease,
@@ -248,7 +259,7 @@ button:disabled {
 button[type="submit"] {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-base);
+  color: var(--color-on-accent);
 }
 
 button[type="submit"]:hover:not(:disabled) {

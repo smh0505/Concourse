@@ -195,7 +195,7 @@ impl PluginHostState {
     fn do_http_get(&mut self, url: String) -> Result<String, String> {
         reqwest::blocking::Client::new()
             .get(&url)
-            .header("User-Agent", "game-library-client")
+            .header("User-Agent", "concourse")
             .send()
             .map_err(|e| e.to_string())?
             .text()
@@ -205,7 +205,7 @@ impl PluginHostState {
     fn do_download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {
         reqwest::blocking::Client::new()
             .get(&url)
-            .header("User-Agent", "game-library-client")
+            .header("User-Agent", "concourse")
             .send()
             .map_err(|e| e.to_string())?
             .bytes()

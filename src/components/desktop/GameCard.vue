@@ -9,6 +9,7 @@ import {
   IconTrash,
 } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
+import { useBalloonAnchor } from "../../composables/useBalloonAnchor";
 import type { Game } from "../../db";
 
 const props = defineProps<{ game: Game }>();
@@ -19,30 +20,8 @@ const fetchingCover = computed(() => library.fetchingCoverFor === props.game.id)
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
 const playtimeMinutes = computed(() => Math.round(props.game.total_playtime / 60));
 
-// Positioned via Teleport + the card's own viewport rect (rather than a plain
-// `position: absolute` child) so it can flip to below the card when the card's top edge is
-// scrolled out of view - there'd be no room to show it above in that case.
-const MIN_SPACE_ABOVE = 60;
-
 const cardEl = ref<HTMLElement | null>(null);
-const balloonAnchor = ref<{ top: number; left: number; placement: "above" | "below" } | null>(
-  null,
-);
-
-function onMouseEnter() {
-  const rect = cardEl.value?.getBoundingClientRect();
-  if (!rect) return;
-  const placement = rect.top < MIN_SPACE_ABOVE ? "below" : "above";
-  balloonAnchor.value = {
-    top: placement === "above" ? rect.top : rect.bottom,
-    left: rect.left + rect.width / 2,
-    placement,
-  };
-}
-
-function onMouseLeave() {
-  balloonAnchor.value = null;
-}
+const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(cardEl);
 </script>
 
 <template>
@@ -89,6 +68,7 @@ function onMouseLeave() {
     <Transition name="balloon-fade">
       <div
         v-if="balloonAnchor"
+        ref="balloonEl"
         class="balloon"
         :class="`balloon-${balloonAnchor.placement}`"
         :style="{ top: `${balloonAnchor.top}px`, left: `${balloonAnchor.left}px` }"
@@ -168,7 +148,7 @@ function onMouseLeave() {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
-  color: var(--color-base);
+  color: var(--color-on-accent);
 }
 
 .spin {
@@ -192,7 +172,16 @@ function onMouseLeave() {
   background: var(--color-crust);
   color: var(--color-text);
   box-shadow: var(--shadow-md);
-  white-space: nowrap;
+  /* width: max-content (not fit-content/auto) is required here - a position:fixed box with
+     only `left` set (no `right`) sizes fit-content/auto using "available space" computed as
+     (containing block width - left), NOT the content's real preferred width. Since `left` is
+     the card's center x, that shrinks the box the closer a card sits to the right edge,
+     forcing an early wrap regardless of how much room actually exists. max-content explicitly
+     ignores that available-space constraint and sizes off real content instead; max-width
+     below still caps extremely long titles into multiple lines. */
+  width: max-content;
+  max-width: 300px;
+  white-space: normal;
   pointer-events: none;
   z-index: 100;
 }
@@ -233,6 +222,7 @@ function onMouseLeave() {
 .balloon-playtime {
   font-size: 0.7rem;
   opacity: 0.7;
+  white-space: nowrap;
 }
 
 .balloon-fade-enter-active,

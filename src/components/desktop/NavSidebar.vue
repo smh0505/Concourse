@@ -102,7 +102,7 @@ const emit = defineEmits<{
 
 .nav-item.active {
   background: var(--color-accent);
-  color: var(--color-base);
+  color: var(--color-on-accent);
 }
 
 .sidebar-enter-active,

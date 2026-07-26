@@ -1,8 +1,10 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import { settings as settingsRepo } from "../db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
 import { setActiveSlots, clearActiveSlots } from "../theme/slotRegistry";
+import { useToastStore } from "./toasts";
 import type { PluginManifest } from "../plugins/manifest";
 import type { ThemePlugin } from "../plugins/types";
 
@@ -26,11 +28,45 @@ function applyCssVariables(vars: Record<string, string> | undefined) {
 export const useThemeStore = defineStore("theme", () => {
   const manifests = ref<PluginManifest[]>([]);
   const activeThemeId = ref<string | null>(null);
+  const installingDataTheme = ref(false);
   let activePlugin: ThemePlugin | null = null;
+
+  async function refreshManifests() {
+    manifests.value = await getAvailablePluginManifests("theme");
+  }
 
   async function loadThemePlugin(id: string): Promise<ThemePlugin | null> {
     const plugins = await loadEnabledPlugins<ThemePlugin>("theme", new Set([id]));
     return plugins[0] ?? null;
+  }
+
+  /** Data-only themes (Milestone 8.5) have no build step or compiled entry - installing one
+   *  is just downloading and caching a JSON manifest (`cssVariables` only, no code), so
+   *  there's no separate "enable" step the way WASM plugins have - it shows up in the theme
+   *  list immediately, ready to select. */
+  async function installDataTheme(url: string) {
+    const toasts = useToastStore();
+    installingDataTheme.value = true;
+    try {
+      await invoke<string>("install_data_theme", { url });
+      await refreshManifests();
+      toasts.push("Theme installed.", "success");
+    } catch (e) {
+      toasts.push(`Failed to install theme: ${String(e)}`, "error");
+    } finally {
+      installingDataTheme.value = false;
+    }
+  }
+
+  async function uninstallDataTheme(id: string) {
+    const toasts = useToastStore();
+    try {
+      await invoke("uninstall_data_theme", { id });
+      if (activeThemeId.value === id) await setActiveTheme(DEFAULT_THEME_ID);
+      await refreshManifests();
+    } catch (e) {
+      toasts.push(`Failed to remove theme: ${String(e)}`, "error");
+    }
   }
 
   async function setActiveTheme(id: string | null) {
@@ -54,7 +90,7 @@ export const useThemeStore = defineStore("theme", () => {
   }
 
   async function init() {
-    manifests.value = await getAvailablePluginManifests("theme");
+    await refreshManifests();
 
     const stored = await settingsRepo.get(ACTIVE_THEME_SETTING);
     if (stored === null) {
@@ -64,5 +100,13 @@ export const useThemeStore = defineStore("theme", () => {
     }
   }
 
-  return { manifests, activeThemeId, setActiveTheme, init };
+  return {
+    manifests,
+    activeThemeId,
+    installingDataTheme,
+    setActiveTheme,
+    installDataTheme,
+    uninstallDataTheme,
+    init,
+  };
 });

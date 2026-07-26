@@ -237,6 +237,19 @@ pub async fn wasm_wrapper_install(app: AppHandle, plugin_id: String) -> Result<(
 }
 
 #[tauri::command]
+pub async fn wasm_wrapper_uninstall(app: AppHandle, plugin_id: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (mut store, instance) = instantiate_wrapper(&app, &plugin_id)?;
+        instance
+            .gamelib_plugin_wrapper_plugin()
+            .call_uninstall(&mut store)
+            .map_err(|e| format!("Plugin trapped during uninstall: {}", e))?
+    })
+    .await
+    .map_err(|e| format!("Plugin task panicked: {}", e))?
+}
+
+#[tauri::command]
 pub async fn wasm_wrapper_is_installed(app: AppHandle, plugin_id: String) -> Result<bool, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let (mut store, instance) = instantiate_wrapper(&app, &plugin_id)?;

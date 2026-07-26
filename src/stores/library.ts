@@ -236,8 +236,10 @@ export const useLibraryStore = defineStore("library", () => {
     const toasts = useToastStore();
     try {
       // A URI (e.g. "steam://rungameid/730") can't be spawned as a process - hand it to the
-      // OS's protocol handler instead. GOG has no registered URI scheme; "gog://" is a
-      // pseudo-URI used only to route through invoke("launch_gog_game", ...) below.
+      // OS's protocol handler instead. GOG has no registered URI scheme that launches a
+      // specific installed game (it does register goggalaxy://, but not documented/used for
+      // this); "gog://" is a pseudo-URI that routes to the gog-wasm plugin's own launch()
+      // below instead, the same way any other SourcePlugin's launch() would be called.
       const isUri = game.executable_path.includes("://");
 
       if (game.locale_profile_guid && game.locale_wrapper && !isUri) {
@@ -247,7 +249,17 @@ export const useLibraryStore = defineStore("library", () => {
         await wrapperPlugins.launch(game.locale_wrapper, game.locale_profile_guid, game.executable_path);
       } else if (game.executable_path.startsWith("gog://")) {
         const gameId = game.executable_path.replace("gog://", "");
-        await invoke("launch_gog_game", { gameId });
+        await invoke("wasm_plugin_launch", {
+          pluginId: "gog-wasm",
+          entry: {
+            id: `gog-${gameId}`,
+            title: game.title,
+            executablePath: game.executable_path,
+            platform: game.platform ?? "gog",
+            coverArtUrl: game.cover_art_url ?? undefined,
+            installDir: game.install_dir ?? undefined,
+          },
+        });
       } else if (isUri) {
         await openUrl(game.executable_path);
       } else {

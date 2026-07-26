@@ -1,6 +1,6 @@
 # exe-scanner-plugin
 
-Reference WASM `SourcePlugin` for the Game Library Client's Milestone 8 plugin system
+Reference WASM `SourcePlugin` for Concourse's Milestone 8 plugin system
 (`../../src-tauri/wit/plugin.wit`, `../../src-tauri/src/wasm_plugin_runtime.rs`).
 
 Scans a folder (configured via the `scan_dir` setting) for `.exe` files and offers each as a

@@ -76,7 +76,6 @@ Pivoted to WASM — see devlog.
 - [x] (Stretch) Migrate Steam to a WASM plugin as a real-world proof
 
 ## Milestone 8.5 — Further WASM Adoption (stretch)
-- [ ] Uniform `games.install_dir` → `plugin_data` migration for all source plugins
 - [x] Migrate GOG and/or Epic to WASM plugins
   - [x] GOG — done (`gog-source-wasm-plugin`); built-in `gog.rs`/`src/plugins/gog/` fully retired (launch moved into the plugin's own `launch()` too, no host-side GOG code left)
   - [x] Epic — done (`epic-source-wasm-plugin`); built-in `epic.rs`/`src/plugins/epic/` fully retired, verified against a real installed game
@@ -84,6 +83,14 @@ Pivoted to WASM — see devlog.
 - [ ] External theme plugins
   - [x] Data-only tier (`cssVariables` only, install-by-URL, no code/WASM)
   - [ ] Review component-override tier (`slots`) for external feasibility
+- [x] Migrate SteamGridDB and IGDB metadata providers to WASM plugins
+  - [x] New `metadata-plugin-world` WIT world + `http-request` host primitive (custom
+    headers/method/body, needed for both providers' auth) + manifest-declared `settingsSchema`
+    (generic settings-form UI for WASM plugins needing user-supplied config, e.g. an API key)
+  - [x] `sgdb-metadata-wasm-plugin`, `igdb-metadata-wasm-plugin` — both verified for real
+    against live API keys, fetching real cover art / metadata
+  - [x] Built-in `sgdb.rs`/`igdb.rs`/`src/plugins/igdb/` fully retired once verified; GameCard's
+    dedicated cover-art button folded into the unified "Fetch Metadata" flow along the way
 
 (Locale Remulator/Locale Emulator's WASM migration moved into Milestone 10.)
 
@@ -107,7 +114,11 @@ item below; new ideas get appended under Backlog rather than opening a new miles
 
 ### Backlog
 Ad-hoc polish items land here as they come up, checked off in place rather than moved
-elsewhere. Empty for now.
+elsewhere.
+- [x] API-key/settings forms moved into modals (was inline under each plugin row); GameCard's
+  cover-art fetch folded into the unified "Fetch Metadata" button; all modal-form components
+  consolidated under `src/components/desktop/modalForms/`, `BaseModal.vue` absorbed the
+  separate title/layout wrapper
 
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 See devlog for context on why these two workstreams are combined.
@@ -145,6 +156,10 @@ real-world system access as running an arbitrary downloaded `.exe` — see devlo
   allowlist instead of arbitrary absolute paths)
 - [ ] Permission gating for `spawn-process`/`run-and-wait` (visible, explicit user grant of
   "this plugin can run other programs" before install, not silent)
+- [ ] URL allowlisting or rate-limiting for `http-request`/`http-get`/`download-bytes` (the
+  new `http-request` primitive - arbitrary method/headers/body, added for metadata providers
+  like SGDB/IGDB - meaningfully widens exfiltration potential over plain GET: a plugin can now
+  POST stolen data to an attacker's server, not just leak it via a GET URL's query string)
 
 ## Milestone 14 — Plugin Trust Model: Signing & Review (stretch)
 Even with Milestone 13 done, install-by-URL stays trust-based, not verified - anyone can paste

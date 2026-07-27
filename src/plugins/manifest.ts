@@ -22,6 +22,18 @@ export interface PluginManifest {
   /** Only present for `runtime: "data"` theme manifests - the whole plugin's content, since
    *  there's no separate compiled/bundled entry module to load it from. */
   cssVariables?: Record<string, string>;
+  /** Declares user-configurable settings a WASM plugin needs (e.g. an API key) - the loader
+   *  renders one generic form from this instead of every plugin needing its own custom
+   *  settings UI, which WASM plugins have no other mechanism for (unlike TS-authored plugins'
+   *  `settingsComponent`). Absent for plugins that need no config. */
+  settingsSchema?: SettingsSchemaField[];
+}
+
+export interface SettingsSchemaField {
+  key: string;
+  label: string;
+  /** Controls the rendered `<input>`'s `type` attribute - "password" masks the value. */
+  type?: "text" | "password";
 }
 
 /** Returned by the backend's `fetch_plugin_preview` - just enough to show a confirm-before-

@@ -16,7 +16,6 @@ import { useMetadataProviderStore } from "./metadataProviders";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
 
-const SGDB_API_KEY_SETTING = "steamgriddb_api_key";
 const VIEW_MODE_SETTING = "view_mode";
 
 /** Parent folder of a real filesystem executable path; null for URIs, which have none. */
@@ -41,8 +40,6 @@ export const useLibraryStore = defineStore("library", () => {
   const allTags = ref<string[]>([]);
   const search = ref("");
   const activeTagFilter = ref<string | null>(null);
-  const sgdbApiKey = ref("");
-  const fetchingCoverFor = ref<number | null>(null);
   const fetchingMetadataFor = ref<number | null>(null);
   const fetchingBackgroundFor = ref<number | null>(null);
   const editingGame = ref<Game | null>(null);
@@ -88,10 +85,11 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
   }
 
-  async function saveApiKeys() {
-    await settingsRepo.set(SGDB_API_KEY_SETTING, sgdbApiKey.value.trim());
-  }
-
+  /** One button, every enabled metadata provider - a provider can contribute text
+   *  (description/releaseDate/genres, e.g. IGDB) and/or art (coverArtUrl/backgroundArtUrl,
+   *  e.g. SteamGridDB); metadataProviders.fetchMetadata already merges across all of them,
+   *  first-non-null-wins per field, so this just applies whatever came back without needing
+   *  to know which provider produced which piece. */
   async function fetchMetadata(game: Game) {
     const toasts = useToastStore();
     fetchingMetadataFor.value = game.id;
@@ -103,6 +101,8 @@ export const useLibraryStore = defineStore("library", () => {
         if (meta.genres.length > 0) {
           await tagRepo.addToGame(game.id, meta.genres);
         }
+        if (meta.coverArtUrl) await gameRepo.updateCoverArt(game.id, meta.coverArtUrl);
+        if (meta.backgroundArtUrl) await gameRepo.updateBackgroundArt(game.id, meta.backgroundArtUrl);
         await refresh();
       } else {
         toasts.push(`No metadata found for "${game.title}".`, "error");
@@ -114,45 +114,17 @@ export const useLibraryStore = defineStore("library", () => {
     }
   }
 
-  async function fetchCoverArt(game: Game) {
-    const toasts = useToastStore();
-    if (!sgdbApiKey.value.trim()) {
-      toasts.push("Set a SteamGridDB API key first.", "error");
-      return;
-    }
-    fetchingCoverFor.value = game.id;
-    try {
-      const url = await invoke<string | null>("fetch_cover_art", {
-        apiKey: sgdbApiKey.value.trim(),
-        title: game.title,
-      });
-      if (url) {
-        await gameRepo.updateCoverArt(game.id, url);
-        await refresh();
-      } else {
-        toasts.push(`No cover art found for "${game.title}".`, "error");
-      }
-    } catch (e) {
-      toasts.push(String(e), "error");
-    } finally {
-      fetchingCoverFor.value = null;
-    }
-  }
-
+  /** EditGameModal's dedicated "just refresh background art without leaving the modal"
+   *  button - goes through the same enabled-metadata-provider merge fetchMetadata() does,
+   *  applying only backgroundArtUrl, rather than a SteamGridDB-specific command directly. */
   async function fetchBackgroundArt(game: Game) {
     const toasts = useToastStore();
-    if (!sgdbApiKey.value.trim()) {
-      toasts.push("Set a SteamGridDB API key first.", "error");
-      return;
-    }
     fetchingBackgroundFor.value = game.id;
     try {
-      const url = await invoke<string | null>("fetch_background_art", {
-        apiKey: sgdbApiKey.value.trim(),
-        title: game.title,
-      });
-      if (url) {
-        await gameRepo.updateBackgroundArt(game.id, url);
+      const metadataProviders = useMetadataProviderStore();
+      const meta = await metadataProviders.fetchMetadata(game.title);
+      if (meta?.backgroundArtUrl) {
+        await gameRepo.updateBackgroundArt(game.id, meta.backgroundArtUrl);
         await refresh();
       } else {
         toasts.push(`No background art found for "${game.title}".`, "error");
@@ -279,7 +251,6 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function init() {
-    sgdbApiKey.value = (await settingsRepo.get(SGDB_API_KEY_SETTING)) ?? "";
     const storedViewMode = await settingsRepo.get(VIEW_MODE_SETTING);
     if (storedViewMode === "grid" || storedViewMode === "list") viewMode.value = storedViewMode;
     await refresh();
@@ -301,8 +272,6 @@ export const useLibraryStore = defineStore("library", () => {
     allTags,
     search,
     activeTagFilter,
-    sgdbApiKey,
-    fetchingCoverFor,
     fetchingMetadataFor,
     fetchingBackgroundFor,
     editingGame,
@@ -313,9 +282,7 @@ export const useLibraryStore = defineStore("library", () => {
     setViewMode,
     addTag,
     removeTag,
-    saveApiKeys,
     fetchMetadata,
-    fetchCoverArt,
     fetchBackgroundArt,
     addGame,
     deleteGame,

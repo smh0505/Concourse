@@ -6,7 +6,10 @@ import type { PluginManifest } from "../plugins/manifest";
 import type { MetadataProviderPlugin, MetadataResult } from "../plugins/types";
 
 const ENABLED_PROVIDERS_SETTING = "enabled_metadata_providers";
-const DEFAULT_PROVIDER_IDS = ["igdb"];
+// No bundled default anymore - IGDB/SteamGridDB are both runtime-installed WASM plugins now
+// (install-by-URL), not guaranteed present for a fresh install the way the old built-in TS
+// igdb plugin was.
+const DEFAULT_PROVIDER_IDS: string[] = [];
 
 export const useMetadataProviderStore = defineStore("metadataProviders", () => {
   const manifests = ref<PluginManifest[]>([]);
@@ -33,9 +36,12 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
 
   /**
    * Queries every enabled provider and merges the results: first non-null wins for
-   * description/releaseDate (in provider-enable order), genres are unioned across all
-   * providers. A provider that throws or finds nothing is skipped rather than failing
-   * the whole fetch, so one bad/misconfigured provider doesn't block the others.
+   * description/releaseDate/coverArtUrl/backgroundArtUrl (in provider-enable order - a
+   * text-only provider like IGDB leaves the art fields unset, an art-only provider like
+   * SteamGridDB leaves the text fields unset, so this naturally combines both without either
+   * needing to know about the other), genres are unioned across all providers. A provider
+   * that throws or finds nothing is skipped rather than failing the whole fetch, so one bad/
+   * misconfigured provider doesn't block the others.
    */
   async function fetchMetadata(title: string): Promise<MetadataResult | null> {
     if (loadedPlugins.value.length === 0) {
@@ -44,6 +50,8 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
 
     let description: string | null = null;
     let releaseDate: string | null = null;
+    let coverArtUrl: string | null = null;
+    let backgroundArtUrl: string | null = null;
     const genres = new Set<string>();
     let foundAny = false;
 
@@ -59,11 +67,13 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
       foundAny = true;
       description ??= result.description;
       releaseDate ??= result.releaseDate;
+      coverArtUrl ??= result.coverArtUrl ?? null;
+      backgroundArtUrl ??= result.backgroundArtUrl ?? null;
       for (const genre of result.genres) genres.add(genre);
     }
 
     if (!foundAny) return null;
-    return { description, releaseDate, genres: [...genres] };
+    return { description, releaseDate, genres: [...genres], coverArtUrl, backgroundArtUrl };
   }
 
   async function init() {

@@ -8,7 +8,6 @@ const props = defineProps<{ game: Game }>();
 
 const library = useLibraryStore();
 
-const fetchingCover = computed(() => library.fetchingCoverFor === props.game.id);
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
 </script>
 
@@ -29,9 +28,6 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
     <div class="actions">
       <button class="play" title="Play" @click="library.launchGame(game)">
         <IconPlayerPlay :size="15" :stroke-width="1.75" />
-      </button>
-      <button class="fetch-cover" :disabled="fetchingCover" @click="library.fetchCoverArt(game)">
-        {{ fetchingCover ? "..." : "Cover" }}
       </button>
       <button
         class="fetch-metadata"

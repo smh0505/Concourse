@@ -6,13 +6,17 @@ pub const DB_URL: &str = "sqlite:library.db";
 // library.db via tauri-plugin-sql's own migration ledger. Once a version has shipped, its
 // `sql`/`version` must never change - editing one in place desyncs that ledger from what's
 // already been applied to real databases. Add a new migration instead (see CLAUDE.md).
+//
+// Squashed to a single baseline pre-1.0.0 (was v1-v8, incremental `ALTER TABLE`s added over
+// the course of development) - safe only because the app has never shipped to a real user, so
+// no live database anywhere depends on the old incremental ledger except local dev copies
+// (reset those by deleting library.db; the squashed v1 recreates the same final schema from
+// scratch). Once 1.0.0 ships, migrations go back to strictly additive/append-only.
 pub fn migrations() -> Vec<Migration> {
-    vec![
-        // v1-v2: initial schema
-        Migration {
-            version: 1,
-            description: "create_core_schema",
-            sql: r#"
+    vec![Migration {
+        version: 1,
+        description: "create_baseline_schema",
+        sql: r#"
             CREATE TABLE games (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
@@ -22,7 +26,11 @@ pub fn migrations() -> Vec<Migration> {
                 background_art_url TEXT,
                 description TEXT,
                 release_date TEXT,
-                total_playtime INTEGER NOT NULL DEFAULT 0
+                total_playtime INTEGER NOT NULL DEFAULT 0,
+                skip_dedup INTEGER NOT NULL DEFAULT 0,
+                install_dir TEXT,
+                locale_profile_guid TEXT,
+                locale_wrapper TEXT
             );
 
             CREATE TABLE tags (
@@ -43,63 +51,16 @@ pub fn migrations() -> Vec<Migration> {
                 end_time TEXT,
                 duration_seconds INTEGER
             );
-        "#,
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 2,
-            description: "create_settings_table",
-            sql: r#"
+
             CREATE TABLE settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
             );
-        "#,
-            kind: MigrationKind::Up,
-        },
-        // v3-v6: incremental `games` columns added for plugin scans (skip_dedup),
-        // folder-based playtime tracking (install_dir), and compatibility wrappers
-        // (locale_profile_guid, locale_wrapper)
-        Migration {
-            version: 3,
-            description: "add_games_skip_dedup",
-            sql: r#"
-            ALTER TABLE games ADD COLUMN skip_dedup INTEGER NOT NULL DEFAULT 0;
-        "#,
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 4,
-            description: "add_games_install_dir",
-            sql: r#"
-            ALTER TABLE games ADD COLUMN install_dir TEXT;
-        "#,
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 5,
-            description: "add_games_locale_profile_guid",
-            sql: r#"
-            ALTER TABLE games ADD COLUMN locale_profile_guid TEXT;
-        "#,
-            kind: MigrationKind::Up,
-        },
-        Migration {
-            version: 6,
-            description: "add_games_locale_wrapper",
-            sql: r#"
-            ALTER TABLE games ADD COLUMN locale_wrapper TEXT;
-        "#,
-            kind: MigrationKind::Up,
-        },
-        // v7: generic per-game key-value storage for WASM plugins (Milestone 8) - the
-        // sanctioned alternative to a plugin getting its own `games` column. Rows are
-        // namespaced by plugin_id, so a plugin's data is deletable in one statement on
-        // uninstall and can never collide with another plugin's or core `games` fields.
-        Migration {
-            version: 7,
-            description: "create_plugin_data_table",
-            sql: r#"
+
+            -- Generic per-game key-value storage for WASM plugins (Milestone 8) - the
+            -- sanctioned alternative to a plugin getting its own `games` column. Rows are
+            -- namespaced by plugin_id, so a plugin's data is deletable in one statement on
+            -- uninstall and can never collide with another plugin's or core `games` fields.
             CREATE TABLE plugin_data (
                 plugin_id TEXT NOT NULL,
                 game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
@@ -108,19 +69,6 @@ pub fn migrations() -> Vec<Migration> {
                 PRIMARY KEY (plugin_id, game_id, key)
             );
         "#,
-            kind: MigrationKind::Up,
-        },
-        // v8: LR/LE's launch logic moved from the built-in "lr"/"le" literals to WASM
-        // wrapper plugins (Milestone 10) - remaps existing games' locale_wrapper values to
-        // the new plugin ids so their saved wrapper selection keeps working after the switch.
-        Migration {
-            version: 8,
-            description: "remap_locale_wrapper_to_wasm_plugin_ids",
-            sql: r#"
-            UPDATE games SET locale_wrapper = 'locale-remulator-wasm' WHERE locale_wrapper = 'lr';
-            UPDATE games SET locale_wrapper = 'locale-emulator-wasm' WHERE locale_wrapper = 'le';
-        "#,
-            kind: MigrationKind::Up,
-        },
-    ]
+        kind: MigrationKind::Up,
+    }]
 }

@@ -27,6 +27,18 @@ pub mod wrapper_world {
     });
 }
 
+/// Third, independent bindgen for `metadata-plugin-world` - same reasoning as `wrapper_world`
+/// above (bindgen only generates record types a world's exports reference, so
+/// `metadata-result` needs its own `host` module here too).
+pub mod metadata_world {
+    use wasmtime::component::bindgen;
+
+    bindgen!({
+        path: "wit/plugin.wit",
+        world: "metadata-plugin-world",
+    });
+}
+
 /// Per-instantiation state passed to a plugin's `Store`. `plugin_id` namespaces
 /// `settings`/`plugin_data` access so plugins can't read/write each other's data. Holds its own
 /// `rusqlite` connection to `library.db` since `Host` trait methods run synchronously inside
@@ -202,6 +214,38 @@ impl PluginHostState {
             .map_err(|e| e.to_string())
     }
 
+    /// General-purpose version of `do_http_get` - custom headers and a non-GET method/body,
+    /// for APIs `do_http_get` can't express (an auth header, or a POST-based query API like
+    /// IGDB's). Still sends the same default `User-Agent` as a base, but a plugin-supplied
+    /// header of the same name overrides it (`reqwest` uses the last `.header()` call for a
+    /// given name), matching normal HTTP header-override expectations.
+    fn do_http_request(
+        &mut self,
+        method: String,
+        url: String,
+        headers: Vec<(String, String)>,
+        body: Option<String>,
+    ) -> Result<String, String> {
+        let method = reqwest::Method::from_bytes(method.as_bytes())
+            .map_err(|e| format!("Invalid HTTP method \"{}\": {}", method, e))?;
+
+        let mut request = reqwest::blocking::Client::new()
+            .request(method, &url)
+            .header("User-Agent", "concourse");
+        for (name, value) in headers {
+            request = request.header(name, value);
+        }
+        if let Some(body) = body {
+            request = request.body(body);
+        }
+
+        request
+            .send()
+            .map_err(|e| e.to_string())?
+            .text()
+            .map_err(|e| e.to_string())
+    }
+
     fn do_download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {
         reqwest::blocking::Client::new()
             .get(&url)
@@ -310,6 +354,16 @@ impl gamelib::plugin::host::Host for PluginHostState {
         self.do_http_get(url)
     }
 
+    fn http_request(
+        &mut self,
+        method: String,
+        url: String,
+        headers: Vec<(String, String)>,
+        body: Option<String>,
+    ) -> Result<String, String> {
+        self.do_http_request(method, url, headers, body)
+    }
+
     fn download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {
         self.do_download_bytes(url)
     }
@@ -386,6 +440,104 @@ impl wrapper_world::gamelib::plugin::host::Host for PluginHostState {
 
     fn http_get(&mut self, url: String) -> Result<String, String> {
         self.do_http_get(url)
+    }
+
+    fn http_request(
+        &mut self,
+        method: String,
+        url: String,
+        headers: Vec<(String, String)>,
+        body: Option<String>,
+    ) -> Result<String, String> {
+        self.do_http_request(method, url, headers, body)
+    }
+
+    fn download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {
+        self.do_download_bytes(url)
+    }
+
+    fn extract_zip(&mut self, bytes: Vec<u8>, dest_dir: String) -> Result<(), String> {
+        self.do_extract_zip(bytes, dest_dir)
+    }
+
+    fn unwrap_single_subdir(&mut self, dir: String) -> Result<String, String> {
+        self.do_unwrap_single_subdir(dir)
+    }
+
+    fn replace_dir(&mut self, src: String, dest: String) -> Result<(), String> {
+        self.do_replace_dir(src, dest)
+    }
+
+    fn plugin_dir(&mut self) -> Result<String, String> {
+        self.do_plugin_dir()
+    }
+
+    fn settings_get(&mut self, key: String) -> Option<String> {
+        self.do_settings_get(key)
+    }
+
+    fn settings_set(&mut self, key: String, value: String) {
+        self.do_settings_set(key, value)
+    }
+
+    fn plugin_data_get(&mut self, game_id: i64, key: String) -> Option<String> {
+        self.do_plugin_data_get(game_id, key)
+    }
+
+    fn plugin_data_set(&mut self, game_id: i64, key: String, value: String) {
+        self.do_plugin_data_set(game_id, key, value)
+    }
+}
+
+impl metadata_world::gamelib::plugin::host::Host for PluginHostState {
+    fn read_registry_string(&mut self, hive: String, path: String, value: String) -> Option<String> {
+        self.do_read_registry_string(hive, path, value)
+    }
+
+    fn list_registry_keys(&mut self, hive: String, path: String) -> Result<Vec<String>, String> {
+        self.do_list_registry_keys(hive, path)
+    }
+
+    fn read_file(&mut self, path: String) -> Result<String, String> {
+        self.do_read_file(path)
+    }
+
+    fn write_file(&mut self, path: String, contents: String) -> Result<(), String> {
+        self.do_write_file(path, contents)
+    }
+
+    fn list_dir(&mut self, path: String) -> Result<Vec<String>, String> {
+        self.do_list_dir(path)
+    }
+
+    fn path_exists(&mut self, path: String) -> bool {
+        self.do_path_exists(path)
+    }
+
+    fn remove_dir(&mut self, path: String) -> Result<(), String> {
+        self.do_remove_dir(path)
+    }
+
+    fn spawn_process(&mut self, path: String, args: Vec<String>) -> Result<(), String> {
+        self.do_spawn_process(path, args)
+    }
+
+    fn run_and_wait(&mut self, path: String, args: Vec<String>, cwd: String) -> Result<(), String> {
+        self.do_run_and_wait(path, args, cwd)
+    }
+
+    fn http_get(&mut self, url: String) -> Result<String, String> {
+        self.do_http_get(url)
+    }
+
+    fn http_request(
+        &mut self,
+        method: String,
+        url: String,
+        headers: Vec<(String, String)>,
+        body: Option<String>,
+    ) -> Result<String, String> {
+        self.do_http_request(method, url, headers, body)
     }
 
     fn download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useLibraryStore } from "../../stores/library";
-import { useWrapperPluginStore, type WrapperProfile } from "../../stores/wrapperPlugins";
-import BaseModal from "./BaseModal.vue";
-import type { GameEditFields } from "../../db";
+import { useLibraryStore } from "../../../stores/library";
+import { useWrapperPluginStore, type WrapperProfile } from "../../../stores/wrapperPlugins";
+import BaseModal from "../BaseModal.vue";
+import type { GameEditFields } from "../../../db";
 
 const library = useLibraryStore();
 const wrapperPlugins = useWrapperPluginStore();
@@ -118,98 +118,104 @@ async function onSave() {
 </script>
 
 <template>
-  <BaseModal :open="library.editingGame !== null" max-width="420px" @close="library.cancelEdit">
-    <form v-if="library.editingGame" class="modal-body" @submit.prevent="onSave">
-      <h2>Edit {{ library.editingGame.title }}</h2>
-      <label>
-        Title
-        <input v-model="form.title" />
-      </label>
-      <label>
-        Executable path
-        <input v-model="form.executable_path" />
-      </label>
-      <label>
-        Platform
-        <input v-model="form.platform" />
-      </label>
-      <label>
-        Cover art URL
-        <input v-model="form.cover_art_url" />
-      </label>
-      <label>
-        Background art URL
-        <div class="input-with-button">
-          <input v-model="form.background_art_url" />
-          <button type="button" :disabled="fetchingBackground" @click="onFetchBackgroundArt">
-            {{ fetchingBackground ? "..." : "Fetch" }}
-          </button>
-        </div>
-      </label>
-      <label>
-        Release date
-        <input v-model="form.release_date" placeholder="YYYY-MM-DD" />
-      </label>
-      <label>
-        Description
-        <textarea v-model="form.description" rows="4"></textarea>
-      </label>
-      <label class="checkbox-label">
-        <input
-          type="checkbox"
-          :checked="form.skip_dedup === 1"
-          @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
-        />
-        Keep separate from plugin scans (don't merge/dedup this entry)
-      </label>
-      <label>
-        Compatibility wrapper profile
-        <select v-model="wrapperSelection">
-          <option value="">None</option>
-          <optgroup
-            v-for="[pluginId, profiles] in profilesByPlugin"
-            :key="pluginId"
-            :label="profiles[0].pluginName"
-          >
-            <option v-for="profile in profiles" :key="profile.guid" :value="`${pluginId}:${profile.guid}`">
-              {{ profile.name }}
-            </option>
-          </optgroup>
-        </select>
-        <span v-if="wrapperPlugins.profiles.length === 0" class="hint">
-          No profiles found - install and enable a compatibility wrapper plugin in Settings first.
-        </span>
-      </label>
-      <div class="tags-section">
-        <span>Tags</span>
-        <div class="tags" v-if="tags.length">
-          <span class="tag" v-for="tag in tags" :key="tag">
-            {{ tag }}
-            <button class="tag-remove" @click="library.removeTag(library.editingGame!, tag)">&times;</button>
+  <BaseModal
+    :open="library.editingGame !== null"
+    :title="library.editingGame ? `Edit ${library.editingGame.title}` : undefined"
+    max-width="420px"
+    @close="library.cancelEdit"
+  >
+    <template v-if="library.editingGame" #body>
+      <form class="edit-game-form" @submit.prevent="onSave">
+        <label>
+          Title
+          <input v-model="form.title" />
+        </label>
+        <label>
+          Executable path
+          <input v-model="form.executable_path" />
+        </label>
+        <label>
+          Platform
+          <input v-model="form.platform" />
+        </label>
+        <label>
+          Cover art URL
+          <input v-model="form.cover_art_url" />
+        </label>
+        <label>
+          Background art URL
+          <div class="input-with-button">
+            <input v-model="form.background_art_url" />
+            <button type="button" :disabled="fetchingBackground" @click="onFetchBackgroundArt">
+              {{ fetchingBackground ? "..." : "Fetch" }}
+            </button>
+          </div>
+        </label>
+        <label>
+          Release date
+          <input v-model="form.release_date" placeholder="YYYY-MM-DD" />
+        </label>
+        <label>
+          Description
+          <textarea v-model="form.description" rows="4"></textarea>
+        </label>
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            :checked="form.skip_dedup === 1"
+            @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
+          />
+          Keep separate from plugin scans (don't merge/dedup this entry)
+        </label>
+        <label>
+          Compatibility wrapper profile
+          <select v-model="wrapperSelection">
+            <option value="">None</option>
+            <optgroup
+              v-for="[pluginId, profiles] in profilesByPlugin"
+              :key="pluginId"
+              :label="profiles[0].pluginName"
+            >
+              <option v-for="profile in profiles" :key="profile.guid" :value="`${pluginId}:${profile.guid}`">
+                {{ profile.name }}
+              </option>
+            </optgroup>
+          </select>
+          <span v-if="wrapperPlugins.profiles.length === 0" class="hint">
+            No profiles found - install and enable a compatibility wrapper plugin in Settings first.
           </span>
+        </label>
+        <div class="tags-section">
+          <span>Tags</span>
+          <div class="tags" v-if="tags.length">
+            <span class="tag" v-for="tag in tags" :key="tag">
+              {{ tag }}
+              <button class="tag-remove" @click="library.removeTag(library.editingGame!, tag)">&times;</button>
+            </span>
+          </div>
+          <form class="add-tag-form" @submit.prevent="onAddTag">
+            <input v-model="newTag" placeholder="Add tag" />
+            <button type="submit">+</button>
+          </form>
         </div>
-        <form class="add-tag-form" @submit.prevent="onAddTag">
-          <input v-model="newTag" placeholder="Add tag" />
-          <button type="submit">+</button>
-        </form>
-      </div>
+      </form>
       <p v-if="error" class="error">{{ error }}</p>
-      <div class="modal-actions">
-        <button type="button" @click="library.cancelEdit">Cancel</button>
-        <button type="submit">Save</button>
-      </div>
-    </form>
+    </template>
+    <template v-if="library.editingGame" #footer>
+      <button type="button" @click="library.cancelEdit">Cancel</button>
+      <button type="button" @click="onSave">Save</button>
+    </template>
   </BaseModal>
 </template>
 
 <style scoped>
-.modal-body {
+.edit-game-form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.modal-body label {
+.edit-game-form label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -217,8 +223,8 @@ async function onSave() {
   text-align: left;
 }
 
-.modal-body input,
-.modal-body textarea {
+.edit-game-form input,
+.edit-game-form textarea {
   font-family: inherit;
 }
 
@@ -292,11 +298,5 @@ async function onSave() {
 .hint {
   font-size: 0.75rem;
   opacity: 0.8;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }
 </style>

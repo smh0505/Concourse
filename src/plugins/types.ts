@@ -37,6 +37,12 @@ export interface MetadataResult {
   description: string | null;
   releaseDate: string | null;
   genres: string[];
+  /** Optional - a text-only provider (e.g. IGDB) leaves these unset; an art-only provider
+   *  (e.g. SteamGridDB) leaves description/releaseDate/genres unset. metadataProviders.ts's
+   *  merge picks the first non-null value across every enabled provider, same as the text
+   *  fields. */
+  coverArtUrl?: string | null;
+  backgroundArtUrl?: string | null;
 }
 
 export interface MetadataProviderPlugin extends PluginBase {

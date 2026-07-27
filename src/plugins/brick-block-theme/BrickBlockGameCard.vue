@@ -4,7 +4,6 @@ import {
   IconEdit,
   IconInfoCircle,
   IconLoader2,
-  IconPhoto,
   IconPlayerPlay,
   IconTrash,
 } from "@tabler/icons-vue";
@@ -22,7 +21,6 @@ const props = defineProps<{ game: Game }>();
 
 const library = useLibraryStore();
 
-const fetchingCover = computed(() => library.fetchingCoverFor === props.game.id);
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
 const playtimeMinutes = computed(() => Math.round(props.game.total_playtime / 60));
 
@@ -36,21 +34,13 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
       <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
       <div v-else class="cover-placeholder">★</div>
 
-      <div v-if="fetchingCover || fetchingMetadata" class="fetch-overlay">
+      <div v-if="fetchingMetadata" class="fetch-overlay">
         <IconLoader2 :size="24" :stroke-width="1.75" class="spin" />
       </div>
 
       <div class="footer">
         <button class="play" title="Play" @click="library.launchGame(game)">
           <IconPlayerPlay :size="15" :stroke-width="1.75" />
-        </button>
-        <button
-          class="fetch-cover"
-          title="Fetch Cover Art"
-          :disabled="fetchingCover"
-          @click="library.fetchCoverArt(game)"
-        >
-          <IconPhoto :size="15" :stroke-width="1.75" />
         </button>
         <button
           class="fetch-metadata"

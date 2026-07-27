@@ -1,16 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
-import { defineComponent, h } from "vue";
+import { defineComponent, h, ref } from "vue";
 import { isPluginManifest, type PluginKind, type PluginManifest } from "./manifest";
 import type {
   GameEntry,
   Installable,
   LocaleProfile,
+  MetadataProviderPlugin,
+  MetadataResult,
   PluginBase,
   SourcePlugin,
   ThemePlugin,
   WrapperPlugin,
 } from "./types";
 import InstallableStatus from "../components/desktop/InstallableStatus.vue";
+import SettingsButton from "../components/desktop/modalForms/SettingsButton.vue";
+import WasmPluginSettingsForm from "../components/desktop/WasmPluginSettingsForm.vue";
 import { useWrapperPluginStore } from "../stores/wrapperPlugins";
 
 // Each plugin lives at src/plugins/<id>/plugin.json + an entry module (e.g. index.ts)
@@ -32,9 +36,9 @@ function folderOf(manifestPath: string): string {
 }
 
 /** WASM plugins are installed at runtime into the app-data dir (Milestone 8), not
- *  discovered by Vite at build time - only "source" and "wrapper" are supported so far (the
- *  only kinds the WIT worlds define an export for), so this is skipped for other kinds. */
-const WASM_SUPPORTED_KINDS: readonly PluginKind[] = ["source", "wrapper"];
+ *  discovered by Vite at build time - only "source", "wrapper", and "metadata" are supported
+ *  so far (the only kinds a WIT world exists for), so this is skipped for other kinds. */
+const WASM_SUPPORTED_KINDS: readonly PluginKind[] = ["source", "wrapper", "metadata"];
 
 async function getInstalledWasmManifests(kind?: PluginKind): Promise<PluginManifest[]> {
   if (kind && !WASM_SUPPORTED_KINDS.includes(kind)) return [];
@@ -85,6 +89,46 @@ function createWasmSourcePlugin(manifest: PluginManifest): SourcePlugin {
     getInstallStatus: (entry: GameEntry) =>
       invoke<boolean>("wasm_plugin_get_install_status", { pluginId: manifest.id, entry }),
   };
+}
+
+/** Attaches the generic WasmPluginSettingsForm.vue for any WASM plugin that declares a
+ *  non-empty settingsSchema and doesn't already have its own settingsComponent - lets a WASM
+ *  plugin collect user-typed config (e.g. an API key) without any custom UI code, on either
+ *  side. */
+function attachSettingsSchemaForm(manifest: PluginManifest, plugin: PluginBase): void {
+  if (!manifest.settingsSchema?.length || plugin.settingsComponent) return;
+  const schema = manifest.settingsSchema;
+  plugin.settingsComponent = defineComponent({
+    setup() {
+      // WasmPluginSettingsForm is fields-only (no button of its own) - SettingsButton's
+      // footer Save button calls this ref's exposed save() instead.
+      const formRef = ref<{ save: () => Promise<void> } | null>(null);
+      return () =>
+        h(
+          SettingsButton,
+          {
+            title: `${manifest.name} Settings`,
+            onSave: () => formRef.value?.save() ?? Promise.resolve(),
+          },
+          { default: () => h(WasmPluginSettingsForm, { ref: formRef, pluginId: manifest.id, schema }) },
+        );
+    },
+  });
+}
+
+/** Thin wrapper implementing MetadataProviderPlugin over wasm_plugin_runtime.rs's
+ *  wasm_plugin_fetch_metadata - config (API keys etc.) is collected via
+ *  attachSettingsSchemaForm below, not passed as arguments here, since the plugin reads its
+ *  own settings back via host::settings-get the same way it would if it had set them itself. */
+function createWasmMetadataProviderPlugin(manifest: PluginManifest): MetadataProviderPlugin {
+  const plugin: MetadataProviderPlugin = {
+    id: manifest.id,
+    name: manifest.name,
+    fetchMetadata: (title: string) =>
+      invoke<MetadataResult | null>("wasm_plugin_fetch_metadata", { pluginId: manifest.id, title }),
+  };
+  attachSettingsSchemaForm(manifest, plugin);
+  return plugin;
 }
 
 /** Each wrapper plugin now fully owns its own install/found-status (install()/isInstalled()
@@ -147,6 +191,7 @@ async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   if (manifest.runtime === "wasm") {
     if (manifest.kind === "source") return createWasmSourcePlugin(manifest) as T;
     if (manifest.kind === "wrapper") return createWasmWrapperPlugin(manifest) as T;
+    if (manifest.kind === "metadata") return createWasmMetadataProviderPlugin(manifest) as T;
     return null;
   }
 

@@ -10,10 +10,11 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
-/// The only two kinds a WIT world exists for today (see `wit/plugin.wit`'s `source-plugin`/
-/// `wrapper-plugin` interfaces) - also doubles as a path-safety allowlist, since a WASM
-/// manifest's `kind` is remote-controlled input that ends up as a directory name below.
-const SUPPORTED_WASM_KINDS: &[&str] = &["source", "wrapper"];
+/// The only three kinds a WIT world exists for today (see `wit/plugin.wit`'s `source-plugin`/
+/// `wrapper-plugin`/`metadata-plugin` interfaces) - also doubles as a path-safety allowlist,
+/// since a WASM manifest's `kind` is remote-controlled input that ends up as a directory name
+/// below.
+const SUPPORTED_WASM_KINDS: &[&str] = &["source", "wrapper", "metadata"];
 
 fn default_theme_kind() -> String {
     "theme".to_string()
@@ -34,6 +35,23 @@ async fn download_bytes(url: &str) -> Result<bytes::Bytes, String> {
         .map_err(|e| format!("Failed to read response body: {}", e))
 }
 
+/// A single user-configurable setting a WASM plugin declares it needs (e.g. an API key) -
+/// lets the host render one generic form instead of every plugin needing its own custom
+/// settings UI (which WASM plugins have no mechanism for at all, unlike TS-authored plugins'
+/// `settingsComponent`). `type` controls the rendered `<input>`'s `type` attribute on the
+/// frontend ("password" masks the value); `#[serde(default)]` since neither is required.
+#[derive(Deserialize, Serialize, Clone)]
+pub struct SettingsSchemaField {
+    pub key: String,
+    pub label: String,
+    #[serde(default = "default_settings_field_type")]
+    pub r#type: String,
+}
+
+fn default_settings_field_type() -> String {
+    "text".to_string()
+}
+
 /// Same shape as the TS `PluginManifest` (src/plugins/manifest.ts) so the frontend loader
 /// doesn't need two different data shapes for build-time TS vs. runtime-installed WASM plugins.
 #[derive(Deserialize, Serialize, Clone)]
@@ -43,6 +61,11 @@ pub struct WasmPluginManifest {
     pub version: String,
     pub kind: String,
     pub entry: String,
+    /// Absent for plugins that need no user-supplied config (Steam/GOG/Epic/LR/LE all scan
+    /// the filesystem/registry directly) - present for ones that do (SGDB/IGDB need an API
+    /// key). See `SettingsSchemaField`.
+    #[serde(default, rename = "settingsSchema")]
+    pub settings_schema: Vec<SettingsSchemaField>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -74,6 +97,7 @@ struct ManifestKindProbe {
 fn detect_kind(probe: &ManifestKindProbe) -> Result<String, String> {
     match probe.kind.as_deref() {
         Some("source") => Ok("source".to_string()),
+        Some("metadata") => Ok("metadata".to_string()),
         Some("theme") => Ok("theme".to_string()),
         Some(other) => Err(format!(
             "\"{}\" plugins can't be installed by URL yet.",
@@ -103,7 +127,7 @@ pub async fn fetch_plugin_preview(url: String) -> Result<PluginPreview, String> 
         serde_json::from_slice(&bytes).map_err(|e| format!("Invalid plugin manifest: {}", e))?;
     let kind = detect_kind(&probe)?;
 
-    if kind == "source" {
+    if kind == "source" || kind == "metadata" {
         let manifest: WasmPluginManifest =
             serde_json::from_slice(&bytes).map_err(|e| format!("Invalid plugin.json: {}", e))?;
         Ok(PluginPreview {
@@ -223,7 +247,7 @@ pub async fn install_plugin(app: AppHandle, url: String) -> Result<String, Strin
         serde_json::from_slice(&bytes).map_err(|e| format!("Invalid plugin manifest: {}", e))?;
     let kind = detect_kind(&probe)?;
 
-    if kind == "source" {
+    if kind == "source" || kind == "metadata" {
         install_wasm_plugin(&app, &url, &bytes).await
     } else {
         install_data_theme(&data_themes_dir(&app)?, &bytes)
@@ -422,7 +446,10 @@ mod tests {
         assert_eq!(detect_kind(&legacy_theme).unwrap(), "theme");
 
         let metadata = ManifestKindProbe { kind: Some("metadata".to_string()), css_variables: None };
-        assert!(detect_kind(&metadata).is_err());
+        assert_eq!(detect_kind(&metadata).unwrap(), "metadata");
+
+        let controller = ManifestKindProbe { kind: Some("controller".to_string()), css_variables: None };
+        assert!(detect_kind(&controller).is_err());
 
         let unknown = ManifestKindProbe { kind: None, css_variables: None };
         assert!(detect_kind(&unknown).is_err());

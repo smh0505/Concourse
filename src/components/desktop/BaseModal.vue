@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, watch } from "vue";
 
-const props = withDefaults(defineProps<{ open: boolean; maxWidth?: string }>(), {
+const props = withDefaults(defineProps<{ open: boolean; title?: string; maxWidth?: string }>(), {
   maxWidth: "420px",
 });
 const emit = defineEmits<{ close: [] }>();
@@ -58,7 +58,17 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
   <Transition name="modal">
     <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
       <div ref="frameEl" class="modal-frame" :style="{ maxWidth }">
-        <slot />
+        <div v-if="$slots.header || title" class="modal-header">
+          <slot name="header">
+            <h2>{{ title }}</h2>
+          </slot>
+        </div>
+        <div class="modal-body">
+          <slot name="body" />
+        </div>
+        <div v-if="$slots.footer" class="modal-footer">
+          <slot name="footer" />
+        </div>
       </div>
     </div>
   </Transition>
@@ -86,6 +96,23 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.modal-header h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .modal-enter-active,

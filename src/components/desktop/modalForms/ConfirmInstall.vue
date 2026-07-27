@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import BaseModal from "./BaseModal.vue";
-import type { PluginPreview } from "../../plugins/manifest";
+import BaseModal from "../BaseModal.vue";
+import type { PluginPreview } from "../../../plugins/manifest";
 
-// Second step of the "install by URL" flow (see AddPluginModal) for every installable plugin
+// Second step of the "install by URL" flow (see AddPlugin.vue) for every installable plugin
 // kind - shows what was actually fetched (id/name/version/kind) before committing to the real
 // download. The risk warning below only applies to kinds that run code (source plugins); a
 // data-only theme manifest is just cssVariables, so it gets a neutral note instead.
@@ -21,9 +21,13 @@ async function onSubmit() {
 </script>
 
 <template>
-  <BaseModal :open="open" max-width="380px" @close="emit('close')">
-    <div v-if="manifest" class="modal-body">
-      <h2>Install {{ manifest.name }}?</h2>
+  <BaseModal
+    :open="open"
+    :title="manifest ? `Install ${manifest.name}?` : undefined"
+    max-width="380px"
+    @close="emit('close')"
+  >
+    <template v-if="manifest" #body>
       <dl class="plugin-info">
         <dt>ID</dt>
         <dd>{{ manifest.id }}</dd>
@@ -40,23 +44,17 @@ async function onSubmit() {
         same file, process, and network access as any program on your system - only install
         plugins from sources you fully trust.
       </p>
-      <div class="modal-actions">
-        <button type="button" @click="emit('close')">Cancel</button>
-        <button type="button" :disabled="installing" @click="onSubmit">
-          {{ installing ? "Installing..." : "Install" }}
-        </button>
-      </div>
-    </div>
+    </template>
+    <template v-if="manifest" #footer>
+      <button type="button" @click="emit('close')">Cancel</button>
+      <button type="button" :disabled="installing" @click="onSubmit">
+        {{ installing ? "Installing..." : "Install" }}
+      </button>
+    </template>
   </BaseModal>
 </template>
 
 <style scoped>
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 .plugin-info {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -76,11 +74,5 @@ async function onSubmit() {
 .hint {
   font-size: 0.75rem;
   opacity: 0.8;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
 }
 </style>

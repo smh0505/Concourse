@@ -7,8 +7,8 @@ import { useControllerMappingStore } from "../../stores/controllerMapping";
 import { useWrapperPluginStore } from "../../stores/wrapperPlugins";
 import { usePluginInstallStore } from "../../stores/pluginInstall";
 import { loadAllPlugins } from "../../plugins/loader";
-import AddPluginModal from "./AddPluginModal.vue";
-import ConfirmInstallModal from "./ConfirmInstallModal.vue";
+import AddPlugin from "./modalForms/AddPlugin.vue";
+import ConfirmInstall from "./modalForms/ConfirmInstall.vue";
 import type {
   SourcePlugin,
   ThemePlugin,
@@ -200,7 +200,7 @@ onMounted(async () => {
       </ul>
     </div>
 
-    <AddPluginModal
+    <AddPlugin
       :open="showAddPluginModal"
       title="Add Plugin"
       label="Plugin manifest URL"
@@ -209,7 +209,7 @@ onMounted(async () => {
       :on-install="pluginInstall.previewInstall"
       @close="showAddPluginModal = false"
     />
-    <ConfirmInstallModal
+    <ConfirmInstall
       :open="pluginInstall.pendingManifest !== null"
       :manifest="pluginInstall.pendingManifest"
       :installing="pluginInstall.installing"

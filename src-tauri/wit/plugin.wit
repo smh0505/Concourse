@@ -47,6 +47,13 @@ interface host {
     http-get: func(url: string) -> result<string, string>;
     download-bytes: func(url: string) -> result<list<u8>, string>;
 
+    /// General-purpose HTTP request for calls http-get can't express - custom headers (e.g.
+    /// an Authorization bearer token) or a non-GET method with a body (e.g. IGDB's POST-based
+    /// query API). Returns the response body as text; use download-bytes instead for binary
+    /// responses. `headers` is a list of (name, value) pairs rather than a named record, so
+    /// this doesn't need a new record type declared just for it.
+    http-request: func(method: string, url: string, headers: list<tuple<string, string>>, body: option<string>) -> result<string, string>;
+
     /// Extracts a zip archive's bytes into dest-dir, replacing anything already there.
     extract-zip: func(bytes: list<u8>, dest-dir: string) -> result<_, string>;
     /// If dir contains exactly one entry and it's a directory, returns that subdirectory's
@@ -109,4 +116,23 @@ interface wrapper-plugin {
 world wrapper-plugin-world {
     import host;
     export wrapper-plugin;
+}
+
+/// Mirrors the existing TypeScript `MetadataProviderPlugin` interface (src/plugins/types.ts) -
+/// a WASM metadata provider is a drop-in alternative implementation of the same contract.
+interface metadata-plugin {
+    record metadata-result {
+        description: option<string>,
+        release-date: option<string>,
+        genres: list<string>,
+        cover-art-url: option<string>,
+        background-art-url: option<string>,
+    }
+
+    fetch-metadata: func(title: string) -> result<option<metadata-result>, string>;
+}
+
+world metadata-plugin-world {
+    import host;
+    export metadata-plugin;
 }

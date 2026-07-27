@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import BaseModal from "./BaseModal.vue";
+import BaseModal from "../BaseModal.vue";
 
 // Generic install-by-URL modal - not theme-specific. Any plugin kind that grows its own
 // install-by-URL capability (source, metadata, etc.) can reuse this by passing its own
@@ -37,31 +37,29 @@ async function onSubmit() {
 </script>
 
 <template>
-  <BaseModal :open="open" max-width="420px" @close="emit('close')">
-    <form class="modal-body" @submit.prevent="onSubmit">
-      <h2>{{ title }}</h2>
-      <label>
-        {{ label }}
-        <input v-model="url" :placeholder="placeholder" />
-      </label>
-      <div class="modal-actions">
-        <button type="button" @click="emit('close')">Cancel</button>
-        <button type="submit" :disabled="installing || !url.trim()">
-          {{ installing ? "Installing..." : "Install" }}
-        </button>
-      </div>
-    </form>
+  <BaseModal :open="open" :title="title" max-width="420px" @close="emit('close')">
+    <template #body>
+      <!-- No submit button inside - Enter still submits natively via this form's own submit
+           event; the visible button lives in #footer, a separate slot location, so it can't
+           be a real type="submit" inside this <form> anymore. -->
+      <form class="add-plugin-form" @submit.prevent="onSubmit">
+        <label>
+          {{ label }}
+          <input v-model="url" :placeholder="placeholder" />
+        </label>
+      </form>
+    </template>
+    <template #footer>
+      <button type="button" @click="emit('close')">Cancel</button>
+      <button type="button" :disabled="installing || !url.trim()" @click="onSubmit">
+        {{ installing ? "Installing..." : "Install" }}
+      </button>
+    </template>
   </BaseModal>
 </template>
 
 <style scoped>
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.modal-body label {
+.add-plugin-form label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -69,13 +67,8 @@ async function onSubmit() {
   text-align: left;
 }
 
-.modal-body input {
+.add-plugin-form input {
   font-family: inherit;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  width: 100%;
 }
 </style>

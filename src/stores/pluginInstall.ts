@@ -6,7 +6,7 @@ import { useThemeStore } from "./theme";
 import { useToastStore } from "./toasts";
 import type { PluginPreview } from "../plugins/manifest";
 
-/** Shared install-by-URL flow (AddPluginModal -> ConfirmInstallModal) for every plugin kind
+/** Shared install-by-URL flow (modalForms/AddPlugin -> modalForms/ConfirmInstall) for every plugin kind
  *  that supports it - source (WASM) plugins and data-only themes both go through the same
  *  fetch-preview / confirm / install steps, backed by the merged `plugin_installer.rs`. Kept
  *  as its own store (rather than living in `plugins.ts` or `theme.ts`) since it needs to

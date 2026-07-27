@@ -1,9 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod db;
-mod igdb;
 mod launcher;
 mod plugin_installer;
-mod sgdb;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
 mod zip_install;
@@ -26,9 +24,6 @@ pub fn run() {
             greet,
             launcher::launch_game,
             launcher::track_folder_playtime,
-            sgdb::fetch_cover_art,
-            sgdb::fetch_background_art,
-            igdb::fetch_igdb_metadata,
             plugin_installer::fetch_plugin_preview,
             plugin_installer::install_plugin,
             plugin_installer::list_data_themes,
@@ -41,7 +36,8 @@ pub fn run() {
             wasm_plugin_runtime::wasm_wrapper_uninstall,
             wasm_plugin_runtime::wasm_wrapper_is_installed,
             wasm_plugin_runtime::wasm_wrapper_list_profiles,
-            wasm_plugin_runtime::wasm_wrapper_launch
+            wasm_plugin_runtime::wasm_wrapper_launch,
+            wasm_plugin_runtime::wasm_plugin_fetch_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

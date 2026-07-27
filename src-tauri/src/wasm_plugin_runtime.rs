@@ -3,8 +3,8 @@
 //! for the host-function surface these plugins call back into).
 
 use crate::wasm_plugins::{
-    gamelib::plugin::host::GameEntry, wrapper_world::WrapperPluginWorld, PluginHostState,
-    SourcePluginWorld,
+    gamelib::plugin::host::GameEntry, metadata_world, metadata_world::MetadataPluginWorld,
+    wrapper_world::WrapperPluginWorld, PluginHostState, SourcePluginWorld,
 };
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -73,6 +73,30 @@ impl From<WasmGameEntryInput> for GameEntry {
 pub struct WasmLocaleProfile {
     pub name: String,
     pub guid: String,
+}
+
+/// Mirrors the TS `MetadataResult` shape (src/plugins/types.ts); `rename_all = "camelCase"`
+/// matches the wire format exactly, same as `WasmGameEntry`.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WasmMetadataResult {
+    pub description: Option<String>,
+    pub release_date: Option<String>,
+    pub genres: Vec<String>,
+    pub cover_art_url: Option<String>,
+    pub background_art_url: Option<String>,
+}
+
+impl From<metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataResult> for WasmMetadataResult {
+    fn from(result: metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataResult) -> Self {
+        Self {
+            description: result.description,
+            release_date: result.release_date,
+            genres: result.genres,
+            cover_art_url: result.cover_art_url,
+            background_art_url: result.background_art_url,
+        }
+    }
 }
 
 /// `kind` matches the subfolder `wasm_plugin_installer.rs::install_wasm_plugin` installs into
@@ -176,6 +200,51 @@ fn instantiate_wrapper(
 ) -> Result<(Store<PluginHostState>, WrapperPluginWorld), String> {
     instantiate_wrapper_from_paths(
         &plugin_dir(app, "wrapper", plugin_id)?,
+        plugin_id,
+        &db_path(app)?,
+    )
+}
+
+/// Same shape as `instantiate_from_paths` above, just against `metadata-plugin-world` instead
+/// of `source-plugin-world` - see that function's doc comment.
+fn instantiate_metadata_from_paths(
+    plugin_dir: &Path,
+    plugin_id: &str,
+    db_path: &Path,
+) -> Result<(Store<PluginHostState>, MetadataPluginWorld), String> {
+    let manifest_content = std::fs::read_to_string(plugin_dir.join("plugin.json"))
+        .map_err(|e| format!("Failed to read plugin.json: {}", e))?;
+    let manifest: WasmPluginManifest = serde_json::from_str(&manifest_content)
+        .map_err(|e| format!("Invalid plugin.json: {}", e))?;
+
+    let mut config = Config::new();
+    config.wasm_component_model(true);
+    let engine = Engine::new(&config).map_err(|e| e.to_string())?;
+
+    let component = Component::from_file(&engine, plugin_dir.join(&manifest.entry))
+        .map_err(|e| format!("Failed to load {}: {}", manifest.entry, e))?;
+
+    let mut linker = Linker::new(&engine);
+    crate::wasm_plugins::metadata_world::gamelib::plugin::host::add_to_linker(&mut linker, |state| state)
+        .map_err(|e| e.to_string())?;
+    wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
+
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+    let mut store = Store::new(&engine, state);
+
+    let instance = MetadataPluginWorld::instantiate(&mut store, &component, &linker)
+        .map_err(|e| format!("Failed to instantiate plugin: {}", e))?;
+
+    Ok((store, instance))
+}
+
+fn instantiate_metadata(
+    app: &AppHandle,
+    plugin_id: &str,
+) -> Result<(Store<PluginHostState>, MetadataPluginWorld), String> {
+    instantiate_metadata_from_paths(
+        &plugin_dir(app, "metadata", plugin_id)?,
         plugin_id,
         &db_path(app)?,
     )
@@ -306,6 +375,24 @@ pub async fn wasm_wrapper_launch(
             .gamelib_plugin_wrapper_plugin()
             .call_launch(&mut store, &profile_guid, &executable_path)
             .map_err(|e| format!("Plugin trapped during launch: {}", e))?
+    })
+    .await
+    .map_err(|e| format!("Plugin task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn wasm_plugin_fetch_metadata(
+    app: AppHandle,
+    plugin_id: String,
+    title: String,
+) -> Result<Option<WasmMetadataResult>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (mut store, instance) = instantiate_metadata(&app, &plugin_id)?;
+        instance
+            .gamelib_plugin_metadata_plugin()
+            .call_fetch_metadata(&mut store, &title)
+            .map_err(|e| format!("Plugin trapped during fetchMetadata: {}", e))?
+            .map(|result| result.map(WasmMetadataResult::from))
     })
     .await
     .map_err(|e| format!("Plugin task panicked: {}", e))?

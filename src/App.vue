@@ -13,13 +13,12 @@ import { useGamepadStatus } from "./composables/useGamepadStatus";
 import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
 import AppSettings from "./components/desktop/AppSettings.vue";
-import SteamGridDbSettings from "./components/desktop/SteamGridDbSettings.vue";
-import AddGameForm from "./components/desktop/AddGameForm.vue";
+import AddGame from "./components/desktop/modalForms/AddGame.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
 import GameFilters from "./components/desktop/GameFilters.vue";
 import GameGrid from "./components/desktop/GameGrid.vue";
 import GameList from "./components/desktop/GameList.vue";
-import EditGameModal from "./components/desktop/EditGameModal.vue";
+import EditGame from "./components/desktop/modalForms/EditGame.vue";
 import PluginSettings from "./components/desktop/PluginSettings.vue";
 import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
 import BigPictureSlideshow from "./components/bigpicture/BigPictureSlideshow.vue";
@@ -88,12 +87,11 @@ onUnmounted(library.dispose);
 
         <template v-else>
           <AppSettings />
-          <SteamGridDbSettings />
           <PluginSettings />
         </template>
       </main>
-      <AddGameForm :open="showAddGameModal" @close="showAddGameModal = false" />
-      <EditGameModal />
+      <AddGame :open="showAddGameModal" @close="showAddGameModal = false" />
+      <EditGame />
     </div>
   </div>
 

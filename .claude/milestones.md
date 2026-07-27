@@ -79,7 +79,10 @@ Pivoted to WASM — see devlog.
 - [x] Migrate GOG and/or Epic to WASM plugins
   - [x] GOG — done (`gog-source-wasm-plugin`); built-in `gog.rs`/`src/plugins/gog/` fully retired (launch moved into the plugin's own `launch()` too, no host-side GOG code left)
   - [x] Epic — done (`epic-source-wasm-plugin`); built-in `epic.rs`/`src/plugins/epic/` fully retired, verified against a real installed game
-- [ ] Rename `steam-wasm` → `steam` cleanly
+- [x] Rename `steam-wasm` → `steam` cleanly — settled on the display-name-only version:
+  every plugin's `id` stays as-is (avoids desyncing anyone's persisted `enabled_plugins`),
+  just the `name` field drops the vestigial "(WASM)" suffix now that no built-in coexists
+  with any WASM plugin anymore (across all 7 repos, not just Steam)
 - [ ] External theme plugins
   - [x] Data-only tier (`cssVariables` only, install-by-URL, no code/WASM)
   - [ ] Review component-override tier (`slots`) for external feasibility

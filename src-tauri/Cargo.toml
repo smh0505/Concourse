@@ -29,7 +29,6 @@ sysinfo = "0.32"
 wasmtime = { version = "27", features = ["component-model"] }
 wasmtime-wasi = "27"
 rusqlite = { version = "0.32", features = ["bundled"] }
-sha2 = "0.10"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 bytes = "1"
 

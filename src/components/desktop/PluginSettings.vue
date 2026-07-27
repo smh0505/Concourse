@@ -5,7 +5,10 @@ import { useThemeStore } from "../../stores/theme";
 import { useMetadataProviderStore } from "../../stores/metadataProviders";
 import { useControllerMappingStore } from "../../stores/controllerMapping";
 import { useWrapperPluginStore } from "../../stores/wrapperPlugins";
+import { usePluginInstallStore } from "../../stores/pluginInstall";
 import { loadAllPlugins } from "../../plugins/loader";
+import AddPluginModal from "./AddPluginModal.vue";
+import ConfirmInstallModal from "./ConfirmInstallModal.vue";
 import type {
   SourcePlugin,
   ThemePlugin,
@@ -21,16 +24,10 @@ const theme = useThemeStore();
 const metadataProviders = useMetadataProviderStore();
 const controllerMapping = useControllerMappingStore();
 const wrapperPlugins = useWrapperPluginStore();
+const pluginInstall = usePluginInstallStore();
 
 const activeTab = ref<Tab>("source");
-const newThemeUrl = ref("");
-
-async function onInstallDataTheme() {
-  const url = newThemeUrl.value.trim();
-  if (!url) return;
-  await theme.installDataTheme(url);
-  newThemeUrl.value = "";
-}
+const showAddPluginModal = ref(false);
 
 const allSourcePlugins = ref<Map<string, SourcePlugin>>(new Map());
 const allThemePlugins = ref<Map<string, ThemePlugin>>(new Map());
@@ -57,7 +54,12 @@ onMounted(async () => {
 
 <template>
   <div class="plugin-settings">
-    <h2>Plugins</h2>
+    <div class="plugin-settings-header">
+      <h2>Plugins</h2>
+      <button type="button" class="add-plugin-button" @click="showAddPluginModal = true">
+        Add Plugin
+      </button>
+    </div>
     <div class="tabs">
       <button :class="{ active: activeTab === 'source' }" @click="activeTab = 'source'">
         Source
@@ -132,12 +134,6 @@ onMounted(async () => {
           />
         </li>
       </ul>
-      <form class="install-theme-form" @submit.prevent="onInstallDataTheme">
-        <input v-model="newThemeUrl" placeholder="Theme manifest URL" />
-        <button type="submit" :disabled="theme.installingDataTheme || !newThemeUrl.trim()">
-          {{ theme.installingDataTheme ? "Installing..." : "Install" }}
-        </button>
-      </form>
     </div>
 
     <div v-else-if="activeTab === 'metadata'" class="tab-panel">
@@ -203,6 +199,23 @@ onMounted(async () => {
         </li>
       </ul>
     </div>
+
+    <AddPluginModal
+      :open="showAddPluginModal"
+      title="Add Plugin"
+      label="Plugin manifest URL"
+      placeholder="https://.../plugin.json"
+      :installing="pluginInstall.fetchingPreview"
+      :on-install="pluginInstall.previewInstall"
+      @close="showAddPluginModal = false"
+    />
+    <ConfirmInstallModal
+      :open="pluginInstall.pendingManifest !== null"
+      :manifest="pluginInstall.pendingManifest"
+      :installing="pluginInstall.installing"
+      :on-confirm="pluginInstall.confirmInstall"
+      @close="pluginInstall.cancelInstall"
+    />
   </div>
 </template>
 
@@ -211,9 +224,17 @@ onMounted(async () => {
   margin-bottom: 1.5rem;
 }
 
-.plugin-settings h2 {
-  font-size: 1rem;
+.plugin-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.plugin-settings-header h2 {
+  font-size: 1rem;
+  margin-bottom: 0;
 }
 
 .tabs {
@@ -274,18 +295,7 @@ onMounted(async () => {
   font-size: 0.85rem;
 }
 
-.install-theme-form {
-  display: flex;
-  gap: 0.4rem;
-  margin-top: 0.75rem;
-}
-
-.install-theme-form input {
-  flex: 1;
-  font-size: 0.85rem;
-}
-
-.install-theme-form button {
+.add-plugin-button {
   font-size: 0.85rem;
 }
 </style>

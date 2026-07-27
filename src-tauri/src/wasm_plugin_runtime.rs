@@ -75,10 +75,15 @@ pub struct WasmLocaleProfile {
     pub guid: String,
 }
 
-fn plugin_dir(app: &AppHandle, plugin_id: &str) -> Result<PathBuf, String> {
+/// `kind` matches the subfolder `wasm_plugin_installer.rs::install_wasm_plugin` installs into
+/// (`wasm-plugins/<kind>/<id>/`) - hardcoded per call site below rather than threaded through
+/// from the frontend, since `wasm_plugin_scan`/`wasm_wrapper_install`/etc. each only ever
+/// operate on one specific kind by construction (a `SourcePlugin` never calls a wrapper
+/// command and vice versa).
+fn plugin_dir(app: &AppHandle, kind: &str, plugin_id: &str) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
-        .map(|dir| dir.join("wasm-plugins").join(plugin_id))
+        .map(|dir| dir.join("wasm-plugins").join(kind).join(plugin_id))
         .map_err(|e| format!("Failed to resolve app data dir: {}", e))
 }
 
@@ -128,7 +133,7 @@ fn instantiate_from_paths(
 }
 
 fn instantiate(app: &AppHandle, plugin_id: &str) -> Result<(Store<PluginHostState>, SourcePluginWorld), String> {
-    instantiate_from_paths(&plugin_dir(app, plugin_id)?, plugin_id, &db_path(app)?)
+    instantiate_from_paths(&plugin_dir(app, "source", plugin_id)?, plugin_id, &db_path(app)?)
 }
 
 /// Same shape as `instantiate_from_paths` above, just against `wrapper-plugin-world` instead
@@ -169,7 +174,11 @@ fn instantiate_wrapper(
     app: &AppHandle,
     plugin_id: &str,
 ) -> Result<(Store<PluginHostState>, WrapperPluginWorld), String> {
-    instantiate_wrapper_from_paths(&plugin_dir(app, plugin_id)?, plugin_id, &db_path(app)?)
+    instantiate_wrapper_from_paths(
+        &plugin_dir(app, "wrapper", plugin_id)?,
+        plugin_id,
+        &db_path(app)?,
+    )
 }
 
 #[tauri::command]

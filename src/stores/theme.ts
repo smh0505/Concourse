@@ -28,7 +28,6 @@ function applyCssVariables(vars: Record<string, string> | undefined) {
 export const useThemeStore = defineStore("theme", () => {
   const manifests = ref<PluginManifest[]>([]);
   const activeThemeId = ref<string | null>(null);
-  const installingDataTheme = ref(false);
   let activePlugin: ThemePlugin | null = null;
 
   async function refreshManifests() {
@@ -38,24 +37,6 @@ export const useThemeStore = defineStore("theme", () => {
   async function loadThemePlugin(id: string): Promise<ThemePlugin | null> {
     const plugins = await loadEnabledPlugins<ThemePlugin>("theme", new Set([id]));
     return plugins[0] ?? null;
-  }
-
-  /** Data-only themes (Milestone 8.5) have no build step or compiled entry - installing one
-   *  is just downloading and caching a JSON manifest (`cssVariables` only, no code), so
-   *  there's no separate "enable" step the way WASM plugins have - it shows up in the theme
-   *  list immediately, ready to select. */
-  async function installDataTheme(url: string) {
-    const toasts = useToastStore();
-    installingDataTheme.value = true;
-    try {
-      await invoke<string>("install_data_theme", { url });
-      await refreshManifests();
-      toasts.push("Theme installed.", "success");
-    } catch (e) {
-      toasts.push(`Failed to install theme: ${String(e)}`, "error");
-    } finally {
-      installingDataTheme.value = false;
-    }
   }
 
   async function uninstallDataTheme(id: string) {
@@ -103,9 +84,8 @@ export const useThemeStore = defineStore("theme", () => {
   return {
     manifests,
     activeThemeId,
-    installingDataTheme,
     setActiveTheme,
-    installDataTheme,
+    refreshManifests,
     uninstallDataTheme,
     init,
   };

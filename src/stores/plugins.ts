@@ -15,6 +15,10 @@ export const usePluginStore = defineStore("plugins", () => {
   const loadedPlugins = ref<SourcePlugin[]>([]);
   const scanning = ref(false);
 
+  async function refreshManifests() {
+    manifests.value = await getAvailablePluginManifests("source");
+  }
+
   async function persistEnabledIds() {
     await settingsRepo.set(ENABLED_PLUGINS_SETTING, JSON.stringify([...enabledIds.value]));
   }
@@ -59,7 +63,7 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function init() {
-    manifests.value = await getAvailablePluginManifests("source");
+    await refreshManifests();
 
     const stored = await settingsRepo.get(ENABLED_PLUGINS_SETTING);
     if (stored) {
@@ -78,6 +82,7 @@ export const usePluginStore = defineStore("plugins", () => {
     enabledIds,
     loadedPlugins,
     scanning,
+    refreshManifests,
     togglePlugin,
     scanAll,
     init,

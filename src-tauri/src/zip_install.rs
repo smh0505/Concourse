@@ -1,21 +1,11 @@
-//! Shared download-a-zip-and-extract-it-safely shape. Split into three steps rather than one
-//! all-in-one function so callers that need to inspect the raw bytes first (e.g. a SHA256
-//! check) can do so. Used directly (async) by `wasm_plugin_installer.rs`, and re-exposed as
-//! synchronous host functions in `wasm_plugins.rs` (`extract-zip`/`unwrap-single-subdir`/
-//! `replace-dir`) so WASM plugins - e.g. the wrapper plugins' own managed-install flow - can
-//! use the same logic without needing to compile a zip-parsing crate into every guest.
+//! Shared zip-extraction/directory-replace helpers, re-exposed as synchronous host functions in
+//! `wasm_plugins.rs` (`extract-zip`/`unwrap-single-subdir`/`replace-dir`) so WASM plugins - e.g.
+//! the wrapper plugins' own managed-install flow - can use the same logic without needing to
+//! compile a zip-parsing crate into every guest. `replace_dir` is also used directly (not via
+//! the WIT host surface) by `plugin_installer.rs`'s WASM plugin install path.
 
 use std::io::Cursor;
 use std::path::Path;
-
-pub async fn download_bytes(url: &str) -> Result<bytes::Bytes, String> {
-    reqwest::get(url)
-        .await
-        .map_err(|e| format!("Failed to download {}: {}", url, e))?
-        .bytes()
-        .await
-        .map_err(|e| format!("Failed to read response body: {}", e))
-}
 
 /// Extracts zip bytes into `staging_dir` (created fresh; any existing directory there is
 /// removed first). Doesn't move the result anywhere else - callers call `replace_dir`

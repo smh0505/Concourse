@@ -31,4 +31,4 @@ running `cargo test` in `src-tauri/`.
 
 To try it against the real app instead of the test: copy the compiled `.wasm` plus a
 `plugin.json` (`{ "id", "name", "version", "kind": "source", "entry": "<wasm filename>" }`)
-into `<app data dir>/wasm-plugins/<id>/`, then set a `scan_dir` value for it to scan.
+into `<app data dir>/wasm-plugins/source/<id>/`, then set a `scan_dir` value for it to scan.

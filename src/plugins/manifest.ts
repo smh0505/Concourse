@@ -24,6 +24,17 @@ export interface PluginManifest {
   cssVariables?: Record<string, string>;
 }
 
+/** Returned by the backend's `fetch_plugin_preview` - just enough to show a confirm-before-
+ *  install dialog (id/name/version/kind) before actually downloading a plugin's real content
+ *  (a `.wasm` binary, or a theme's `cssVariables`). Deliberately narrower than `PluginManifest`
+ *  (no `entry`, no `runtime`) since a preview isn't a fully-loadable plugin yet. */
+export interface PluginPreview {
+  id: string;
+  name: string;
+  version: string;
+  kind: PluginKind;
+}
+
 export function isPluginManifest(value: unknown): value is PluginManifest {
   if (typeof value !== "object" || value === null) return false;
   const m = value as Record<string, unknown>;

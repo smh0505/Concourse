@@ -1,10 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-mod data_theme_installer;
 mod db;
 mod igdb;
 mod launcher;
+mod plugin_installer;
 mod sgdb;
-mod wasm_plugin_installer;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
 mod zip_install;
@@ -30,11 +29,11 @@ pub fn run() {
             sgdb::fetch_cover_art,
             sgdb::fetch_background_art,
             igdb::fetch_igdb_metadata,
-            data_theme_installer::install_data_theme,
-            data_theme_installer::list_data_themes,
-            data_theme_installer::uninstall_data_theme,
-            wasm_plugin_installer::install_wasm_plugin,
-            wasm_plugin_installer::list_wasm_plugins,
+            plugin_installer::fetch_plugin_preview,
+            plugin_installer::install_plugin,
+            plugin_installer::list_data_themes,
+            plugin_installer::uninstall_data_theme,
+            plugin_installer::list_wasm_plugins,
             wasm_plugin_runtime::wasm_plugin_scan,
             wasm_plugin_runtime::wasm_plugin_launch,
             wasm_plugin_runtime::wasm_plugin_get_install_status,

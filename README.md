@@ -60,10 +60,19 @@ implements one of four interfaces depending on `kind`:
 
 Build-time plugins live under `src/plugins/<id>/` and are discovered via Vite's
 `import.meta.glob`. Runtime plugins are WebAssembly components (`source` kind only, so far):
-downloaded from a URL, extracted into the app's data directory, and loaded via a `wasmtime`
-host embedded in the Rust backend, sandboxed from the rest of the app. `steam-source-wasm-plugin`
-(a separate, local-only repo) is a real example - a from-scratch reimplementation of the
-built-in Steam source plugin, verified against a real Steam install.
+installed from a manifest URL (Settings → Source → Add Plugin) or downloaded/extracted
+manually into the app's data directory, and loaded via a `wasmtime` host embedded in the Rust
+backend. `steam-source-wasm-plugin` (a separate repo) is a real example - a from-scratch
+reimplementation of the built-in Steam source plugin, verified against a real Steam install.
+
+**Security note (unresolved, tracked as Milestone 13):** wasmtime's Component Model sandbox
+guarantees memory safety (a plugin can't corrupt host memory or escape its own execution), but
+none of the host functions exposed to plugins (`read-file`/`write-file`/`remove-dir`/
+`spawn-process`/`run-and-wait`/registry access/network) are currently scoped or permission-gated
+- a plugin can call them with any path/executable/URL it wants. In practice, installing a WASM
+plugin from an untrusted URL today carries the same real-world risk as running an arbitrary
+downloaded `.exe` - only install plugins from sources you fully trust. Path allowlisting and
+explicit permission prompts for process-spawning are planned but not yet implemented.
 
 ## Status
 

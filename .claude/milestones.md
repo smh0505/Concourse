@@ -148,7 +148,7 @@ Follows the M8.5 SGDB/IGDB precedent — ships as a standalone WASM plugin repo,
 - [x] `rawg-metadata-wasm-plugin` repo — fetch description/genres/release date from the RAWG API,
   `metadata-plugin-world` + `http-request` + `settingsSchema` for the API key
 - [x] Verify for real against a live API key, fetching real metadata
-- [ ] Verify merge behavior against IGDB (first-non-null-wins)
+- [x] Verify merge behavior against IGDB (first-non-null-wins)
 
 ## Milestone 12 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
 - [ ] Xbox — research install detection and launch mechanism

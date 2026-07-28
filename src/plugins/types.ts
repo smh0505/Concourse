@@ -45,8 +45,26 @@ export interface MetadataResult {
   backgroundArtUrl?: string | null;
 }
 
+/** One plausible match from a provider's own search - usually there's exactly one, but a
+ *  provider's search can genuinely be ambiguous (a duplicate/reissue sharing the same title).
+ *  `label` is free-form display text the provider controls, so it can disambiguate identically-
+ *  named candidates itself (e.g. RAWG appending a release year). */
+export interface MetadataCandidate {
+  id: string;
+  label: string;
+  /** Optional thumbnail shown next to `label` in the candidate picker - a provider whose
+   *  search doesn't return per-result images (e.g. SteamGridDB's autocomplete) leaves this
+   *  unset; that provider's section just renders text. */
+  imageUrl?: string;
+}
+
 export interface MetadataProviderPlugin extends PluginBase {
-  fetchMetadata(title: string): Promise<MetadataResult | null>;
+  /** Every plausible match for `title` - metadataProviders.ts's fetchMetadata auto-picks the
+   *  sole candidate when there's exactly one, prompts the user when there's more than one, and
+   *  skips this provider entirely when there are none. */
+  searchCandidates(title: string): Promise<MetadataCandidate[]>;
+  /** Full metadata for one specific candidate previously returned by searchCandidates. */
+  fetchMetadataById(id: string): Promise<MetadataResult | null>;
 }
 
 export interface GamepadMapping {

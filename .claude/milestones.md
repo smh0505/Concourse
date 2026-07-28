@@ -83,9 +83,14 @@ Pivoted to WASM — see devlog.
   every plugin's `id` stays as-is (avoids desyncing anyone's persisted `enabled_plugins`),
   just the `name` field drops the vestigial "(WASM)" suffix now that no built-in coexists
   with any WASM plugin anymore (across all 7 repos, not just Steam)
-- [ ] External theme plugins
+- [x] External theme plugins
   - [x] Data-only tier (`cssVariables` only, install-by-URL, no code/WASM)
-  - [ ] Review component-override tier (`slots`) for external feasibility
+  - [x] Review component-override tier (`slots`) for external feasibility —
+    **reviewed, blocked, no path forward right now.** WASM export is structurally impossible
+    (can't cross a live Vue component across the Component Model boundary); the only technical
+    alternative (raw remote JS via `defineAsyncComponent`) is a bigger security regression than
+    the already-documented Milestone 13 gap, not a smaller one - full JS-realm access instead
+    of a scoped `host::` surface. Not pursued until/unless Milestone 13/14 land first.
 - [x] Migrate SteamGridDB and IGDB metadata providers to WASM plugins
   - [x] New `metadata-plugin-world` WIT world + `http-request` host primitive (custom
     headers/method/body, needed for both providers' auth) + manifest-declared `settingsSchema`
@@ -139,9 +144,11 @@ See devlog for context on why these two workstreams are combined.
 - [x] Wire the new `wrapper` plugin kind into loader/settings UI
 
 ## Milestone 11 — RAWG Metadata Provider (stretch)
-- [ ] `rawg.rs` — fetch description/genres/release date from the RAWG API
-- [ ] `src/plugins/rawg/` `MetadataProviderPlugin`
-- [ ] Verify merge behavior against IGDB
+Follows the M8.5 SGDB/IGDB precedent — ships as a standalone WASM plugin repo, not built-in.
+- [x] `rawg-metadata-wasm-plugin` repo — fetch description/genres/release date from the RAWG API,
+  `metadata-plugin-world` + `http-request` + `settingsSchema` for the API key
+- [x] Verify for real against a live API key, fetching real metadata
+- [ ] Verify merge behavior against IGDB (first-non-null-wins)
 
 ## Milestone 12 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
 - [ ] Xbox — research install detection and launch mechanism

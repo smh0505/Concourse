@@ -1,24 +1,33 @@
 import type { ThemePlugin } from "../types";
 import BrickBlockGameCard from "./BrickBlockGameCard.vue";
 import BrickBlockBigPictureTile from "./BrickBlockBigPictureTile.vue";
+import fusionPixelKoUrl from "./fusion-pixel-12px-proportional-ko.otf.woff2?url";
 
-const FONT_LINK_ID = "brick-block-theme-font";
-// Galmuri11: pixel/dot-matrix Korean font (OFL 1.1, commercial+embed OK) - unlike Press Start 2P
-// it has real Hangul glyph coverage, so CJK titles render in the theme's own pixel style instead
-// of falling back to a mismatched system font. https://github.com/quiple/galmuri
-const FONT_HREF = "https://cdn.jsdelivr.net/npm/galmuri@latest/dist/galmuri.css";
+const FONT_STYLE_ID = "brick-block-theme-font";
+// Fusion Pixel 12px Proportional (Korean build, OFL 1.1, commercial+embed OK) - unlike Press
+// Start 2P it has real Hangul glyph coverage (verified it also covers basic Latin/ASCII on its
+// own, so no separate Latin file is needed), so CJK titles render in the theme's own pixel style
+// instead of falling back to a mismatched system font. Bundled locally rather than the previous
+// jsdelivr CDN link - a cross-origin CDN fetch triggered WebView2's tracking-prevention warning
+// on every launch and made the theme depend on network access at all.
+// https://github.com/TakWolf/fusion-pixel-font
+const FONT_FAMILY = "Fusion Pixel 12px Prop ko";
+const FONT_FACE_CSS = `@font-face {
+  font-family: "${FONT_FAMILY}";
+  src: url("${fusionPixelKoUrl}") format("woff2");
+  font-display: swap;
+}`;
 
 function injectFont() {
-  if (document.getElementById(FONT_LINK_ID)) return;
-  const link = document.createElement("link");
-  link.id = FONT_LINK_ID;
-  link.rel = "stylesheet";
-  link.href = FONT_HREF;
-  document.head.appendChild(link);
+  if (document.getElementById(FONT_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = FONT_STYLE_ID;
+  style.textContent = FONT_FACE_CSS;
+  document.head.appendChild(style);
 }
 
 function removeFont() {
-  document.getElementById(FONT_LINK_ID)?.remove();
+  document.getElementById(FONT_STYLE_ID)?.remove();
 }
 
 const plugin: ThemePlugin = {
@@ -49,11 +58,11 @@ const plugin: ThemePlugin = {
     // background color rather than a light neutral, so --color-on-accent (which defaults to
     // --color-base) needs its own override too, separate from --color-button-text above.
     "--color-on-accent": "#ffffff",
-    // Galmuri11 covers both Latin and Hangul in one pixel-styled font, so it comes first for
-    // everything. Press Start 2P stays as a second-choice pixel look (Latin-only) in case
-    // Galmuri11 fails to load; the app's default stack is the final safety net so text never
-    // falls through to a completely unstyled system font.
-    "--font-pixel": "'Galmuri11', 'Press Start 2P', Inter, Avenir, Helvetica, Arial, sans-serif",
+    // Fusion Pixel covers both Latin and Hangul in one pixel-styled font, so it comes first for
+    // everything. Press Start 2P stays as a second-choice pixel look (Latin-only) in case the
+    // bundled @font-face somehow fails to apply; the app's default stack is the final safety net
+    // so text never falls through to a completely unstyled system font.
+    "--font-pixel": `'${FONT_FAMILY}', 'Press Start 2P', Inter, Avenir, Helvetica, Arial, sans-serif`,
   },
   activate: injectFont,
   deactivate: removeFont,

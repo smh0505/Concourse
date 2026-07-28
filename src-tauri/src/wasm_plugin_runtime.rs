@@ -99,6 +99,22 @@ impl From<metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataRes
     }
 }
 
+/// Mirrors the TS `MetadataCandidate` shape (src/plugins/types.ts); `rename_all = "camelCase"`
+/// matches the wire format exactly, same as `WasmGameEntry`/`WasmMetadataResult`.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WasmMetadataCandidate {
+    pub id: String,
+    pub label: String,
+    pub image_url: Option<String>,
+}
+
+impl From<metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataCandidate> for WasmMetadataCandidate {
+    fn from(candidate: metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataCandidate) -> Self {
+        Self { id: candidate.id, label: candidate.label, image_url: candidate.image_url }
+    }
+}
+
 /// `kind` matches the subfolder `wasm_plugin_installer.rs::install_wasm_plugin` installs into
 /// (`wasm-plugins/<kind>/<id>/`) - hardcoded per call site below rather than threaded through
 /// from the frontend, since `wasm_plugin_scan`/`wasm_wrapper_install`/etc. each only ever
@@ -381,17 +397,35 @@ pub async fn wasm_wrapper_launch(
 }
 
 #[tauri::command]
-pub async fn wasm_plugin_fetch_metadata(
+pub async fn wasm_plugin_search_candidates(
     app: AppHandle,
     plugin_id: String,
     title: String,
+) -> Result<Vec<WasmMetadataCandidate>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let (mut store, instance) = instantiate_metadata(&app, &plugin_id)?;
+        instance
+            .gamelib_plugin_metadata_plugin()
+            .call_search_candidates(&mut store, &title)
+            .map_err(|e| format!("Plugin trapped during searchCandidates: {}", e))?
+            .map(|candidates| candidates.into_iter().map(WasmMetadataCandidate::from).collect())
+    })
+    .await
+    .map_err(|e| format!("Plugin task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn wasm_plugin_fetch_metadata_by_id(
+    app: AppHandle,
+    plugin_id: String,
+    id: String,
 ) -> Result<Option<WasmMetadataResult>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let (mut store, instance) = instantiate_metadata(&app, &plugin_id)?;
         instance
             .gamelib_plugin_metadata_plugin()
-            .call_fetch_metadata(&mut store, &title)
-            .map_err(|e| format!("Plugin trapped during fetchMetadata: {}", e))?
+            .call_fetch_metadata_by_id(&mut store, &id)
+            .map_err(|e| format!("Plugin trapped during fetchMetadataById: {}", e))?
             .map(|result| result.map(WasmMetadataResult::from))
     })
     .await

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref, shallowRef } from "vue";
 import { usePluginStore } from "../../stores/plugins";
 import { useThemeStore } from "../../stores/theme";
 import { useMetadataProviderStore } from "../../stores/metadataProviders";
@@ -16,6 +16,7 @@ import type {
   ControllerMappingPlugin,
   WrapperPlugin,
 } from "../../plugins/types";
+import type { PluginManifest } from "../../plugins/manifest";
 
 type Tab = "source" | "theme" | "metadata" | "controller" | "wrapper";
 
@@ -29,11 +30,33 @@ const pluginInstall = usePluginInstallStore();
 const activeTab = ref<Tab>("source");
 const showAddPluginModal = ref(false);
 
-const allSourcePlugins = ref<Map<string, SourcePlugin>>(new Map());
-const allThemePlugins = ref<Map<string, ThemePlugin>>(new Map());
-const allMetadataPlugins = ref<Map<string, MetadataProviderPlugin>>(new Map());
-const allControllerPlugins = ref<Map<string, ControllerMappingPlugin>>(new Map());
-const allWrapperPlugins = ref<Map<string, WrapperPlugin>>(new Map());
+// shallowRef, not ref - these hold loaded plugin instances (including settingsComponent, a
+// live Vue component definition) that only ever get swapped wholesale in onMounted below, never
+// mutated field-by-field. A deep ref() would proxy each plugin object and its component through
+// Vue's reactivity, which is what triggers "Vue received a Component that was made a reactive
+// object" when passed to <component :is="...">.
+const allSourcePlugins = shallowRef<Map<string, SourcePlugin>>(new Map());
+const allThemePlugins = shallowRef<Map<string, ThemePlugin>>(new Map());
+const allMetadataPlugins = shallowRef<Map<string, MetadataProviderPlugin>>(new Map());
+const allControllerPlugins = shallowRef<Map<string, ControllerMappingPlugin>>(new Map());
+const allWrapperPlugins = shallowRef<Map<string, WrapperPlugin>>(new Map());
+
+/** Enabled plugins first, in their priority order, followed by installed-but-disabled ones -
+ *  lets the reorder buttons act on a stable, priority-first list instead of jumping around
+ *  whatever order getAvailablePluginManifests happened to discover them in. */
+function orderByPriority(manifests: PluginManifest[], enabledIds: string[]): PluginManifest[] {
+  const byId = new Map(manifests.map((m) => [m.id, m]));
+  const enabled = enabledIds.map((id) => byId.get(id)).filter((m): m is PluginManifest => !!m);
+  const rest = manifests.filter((m) => !enabledIds.includes(m.id));
+  return [...enabled, ...rest];
+}
+
+const orderedSourceManifests = computed(() =>
+  orderByPriority(plugins.manifests, plugins.enabledIds),
+);
+const orderedMetadataManifests = computed(() =>
+  orderByPriority(metadataProviders.manifests, metadataProviders.enabledIds),
+);
 
 onMounted(async () => {
   const [sourcePlugins, themePlugins, metadataPlugins, controllerPlugins, wrapperPluginsMap] =
@@ -80,21 +103,45 @@ onMounted(async () => {
 
     <div v-if="activeTab === 'source'" class="tab-panel">
       <p v-if="plugins.manifests.length === 0" class="empty">No plugins installed.</p>
-      <ul v-else class="plugin-list">
-        <li class="plugin-row" v-for="manifest in plugins.manifests" :key="manifest.id">
+      <p v-else class="hint">
+        Scan order matters: on a same-titled game found by more than one source, the later
+        source's launch path/platform wins. Reorder with the arrows below.
+      </p>
+      <ul v-if="plugins.manifests.length > 0" class="plugin-list">
+        <li class="plugin-row" v-for="manifest in orderedSourceManifests" :key="manifest.id">
           <label>
             <input
               type="checkbox"
-              :checked="plugins.enabledIds.has(manifest.id)"
+              :checked="plugins.enabledIds.includes(manifest.id)"
               @change="plugins.togglePlugin(manifest.id)"
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
           </label>
-          <component
-            :is="allSourcePlugins.get(manifest.id)?.settingsComponent"
-            v-if="allSourcePlugins.get(manifest.id)?.settingsComponent"
-          />
+          <span class="row-controls">
+            <span v-if="plugins.enabledIds.includes(manifest.id)" class="reorder-buttons">
+              <button
+                type="button"
+                :disabled="plugins.enabledIds.indexOf(manifest.id) === 0"
+                @click="plugins.movePlugin(manifest.id, -1)"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                :disabled="
+                  plugins.enabledIds.indexOf(manifest.id) === plugins.enabledIds.length - 1
+                "
+                @click="plugins.movePlugin(manifest.id, 1)"
+              >
+                ↓
+              </button>
+            </span>
+            <component
+              :is="allSourcePlugins.get(manifest.id)?.settingsComponent"
+              v-if="allSourcePlugins.get(manifest.id)?.settingsComponent"
+            />
+          </span>
         </li>
       </ul>
       <button
@@ -138,21 +185,46 @@ onMounted(async () => {
 
     <div v-else-if="activeTab === 'metadata'" class="tab-panel">
       <p v-if="metadataProviders.manifests.length === 0" class="empty">No providers installed.</p>
-      <ul v-else class="plugin-list">
-        <li class="plugin-row" v-for="manifest in metadataProviders.manifests" :key="manifest.id">
+      <p v-else class="hint">
+        Fetch order matters: for each field (description, release date, cover/background art),
+        the first enabled provider that has an answer wins. Reorder with the arrows below.
+      </p>
+      <ul v-if="metadataProviders.manifests.length > 0" class="plugin-list">
+        <li class="plugin-row" v-for="manifest in orderedMetadataManifests" :key="manifest.id">
           <label>
             <input
               type="checkbox"
-              :checked="metadataProviders.enabledIds.has(manifest.id)"
+              :checked="metadataProviders.enabledIds.includes(manifest.id)"
               @change="metadataProviders.toggleProvider(manifest.id)"
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
           </label>
-          <component
-            :is="allMetadataPlugins.get(manifest.id)?.settingsComponent"
-            v-if="allMetadataPlugins.get(manifest.id)?.settingsComponent"
-          />
+          <span class="row-controls">
+            <span v-if="metadataProviders.enabledIds.includes(manifest.id)" class="reorder-buttons">
+              <button
+                type="button"
+                :disabled="metadataProviders.enabledIds.indexOf(manifest.id) === 0"
+                @click="metadataProviders.moveProvider(manifest.id, -1)"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                :disabled="
+                  metadataProviders.enabledIds.indexOf(manifest.id) ===
+                  metadataProviders.enabledIds.length - 1
+                "
+                @click="metadataProviders.moveProvider(manifest.id, 1)"
+              >
+                ↓
+              </button>
+            </span>
+            <component
+              :is="allMetadataPlugins.get(manifest.id)?.settingsComponent"
+              v-if="allMetadataPlugins.get(manifest.id)?.settingsComponent"
+            />
+          </span>
         </li>
       </ul>
     </div>
@@ -251,6 +323,30 @@ onMounted(async () => {
 .empty {
   opacity: 0.7;
   font-size: 0.85rem;
+}
+
+.hint {
+  opacity: 0.7;
+  font-size: 0.8rem;
+  margin: 0 0 0.5rem;
+}
+
+.row-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.reorder-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.reorder-buttons button {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
+  line-height: 1.2;
 }
 
 .plugin-list {

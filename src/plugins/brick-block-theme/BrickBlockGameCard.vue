@@ -197,11 +197,11 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
 }
 
 .brick-balloon .balloon-title {
-  font-size: 0.6rem;
+  font-size: 0.85rem;
   line-height: 1.4;
 }
 
 .brick-balloon .balloon-playtime {
-  font-size: 0.55rem;
+  font-size: 0.75rem;
 }
 </style>

@@ -11,7 +11,10 @@ const ENABLED_PLUGINS_SETTING = "enabled_plugins";
 
 export const usePluginStore = defineStore("plugins", () => {
   const manifests = ref<PluginManifest[]>([]);
-  const enabledIds = ref<Set<string>>(new Set());
+  // Ordered, not just a membership set - scanAll() walks this order, and on a title collision
+  // across sources importEntries() overwrites with the later plugin's data, so this order is
+  // the source-priority order (last enabled/reordered to the bottom wins a merge conflict).
+  const enabledIds = ref<string[]>([]);
   const loadedPlugins = ref<SourcePlugin[]>([]);
   const scanning = ref(false);
 
@@ -20,7 +23,7 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function persistEnabledIds() {
-    await settingsRepo.set(ENABLED_PLUGINS_SETTING, JSON.stringify([...enabledIds.value]));
+    await settingsRepo.set(ENABLED_PLUGINS_SETTING, JSON.stringify(enabledIds.value));
   }
 
   async function reloadPlugins() {
@@ -28,8 +31,19 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function togglePlugin(id: string) {
-    if (enabledIds.value.has(id)) enabledIds.value.delete(id);
-    else enabledIds.value.add(id);
+    const idx = enabledIds.value.indexOf(id);
+    if (idx !== -1) enabledIds.value.splice(idx, 1);
+    else enabledIds.value.push(id);
+    await persistEnabledIds();
+    await reloadPlugins();
+  }
+
+  async function movePlugin(id: string, direction: -1 | 1) {
+    const idx = enabledIds.value.indexOf(id);
+    const target = idx + direction;
+    if (idx === -1 || target < 0 || target >= enabledIds.value.length) return;
+    const [entry] = enabledIds.value.splice(idx, 1);
+    enabledIds.value.splice(target, 0, entry);
     await persistEnabledIds();
     await reloadPlugins();
   }
@@ -68,9 +82,9 @@ export const usePluginStore = defineStore("plugins", () => {
     const stored = await settingsRepo.get(ENABLED_PLUGINS_SETTING);
     if (stored) {
       try {
-        enabledIds.value = new Set(JSON.parse(stored));
+        enabledIds.value = JSON.parse(stored);
       } catch {
-        enabledIds.value = new Set();
+        enabledIds.value = [];
       }
     }
 
@@ -84,6 +98,7 @@ export const usePluginStore = defineStore("plugins", () => {
     scanning,
     refreshManifests,
     togglePlugin,
+    movePlugin,
     scanAll,
     init,
   };

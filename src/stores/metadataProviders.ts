@@ -2,8 +2,15 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { settings as settingsRepo } from "../db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
+import { useToastStore } from "./toasts";
 import type { PluginManifest } from "../plugins/manifest";
-import type { MetadataProviderPlugin, MetadataResult } from "../plugins/types";
+import type { MetadataCandidate, MetadataProviderPlugin, MetadataResult } from "../plugins/types";
+
+export interface PendingCandidateSection {
+  pluginId: string;
+  pluginName: string;
+  candidates: MetadataCandidate[];
+}
 
 const ENABLED_PROVIDERS_SETTING = "enabled_metadata_providers";
 // No bundled default anymore - IGDB/SteamGridDB are both runtime-installed WASM plugins now
@@ -13,11 +20,37 @@ const DEFAULT_PROVIDER_IDS: string[] = [];
 
 export const useMetadataProviderStore = defineStore("metadataProviders", () => {
   const manifests = ref<PluginManifest[]>([]);
-  const enabledIds = ref<Set<string>>(new Set());
+  // Ordered, not just a membership set - fetchMetadata below queries providers in this order
+  // and it's first-non-null-wins per field, so this order is the provider-priority order.
+  const enabledIds = ref<string[]>([]);
   const loadedPlugins = ref<MetadataProviderPlugin[]>([]);
+  // Set (not cleared) by fetchMetadata below once every enabled provider's search has finished
+  // and more than one provider came back ambiguous (2+ candidates) - a mounted
+  // CandidatePicker.vue renders one section per ambiguous provider and calls
+  // submitCandidateSelections once, which resolves the pending promise fetchMetadata is
+  // awaiting. Providers with 0 or exactly 1 candidate never show up here at all - they're
+  // resolved automatically without interrupting the user.
+  const pendingCandidateSections = ref<PendingCandidateSection[] | null>(null);
+  let resolvePendingSelections: ((selections: Record<string, string | null>) => void) | null =
+    null;
+
+  function promptForCandidates(
+    sections: PendingCandidateSection[],
+  ): Promise<Record<string, string | null>> {
+    pendingCandidateSections.value = sections;
+    return new Promise((resolve) => {
+      resolvePendingSelections = resolve;
+    });
+  }
+
+  function submitCandidateSelections(selections: Record<string, string | null>) {
+    resolvePendingSelections?.(selections);
+    resolvePendingSelections = null;
+    pendingCandidateSections.value = null;
+  }
 
   async function persistEnabledIds() {
-    await settingsRepo.set(ENABLED_PROVIDERS_SETTING, JSON.stringify([...enabledIds.value]));
+    await settingsRepo.set(ENABLED_PROVIDERS_SETTING, JSON.stringify(enabledIds.value));
   }
 
   async function reloadPlugins() {
@@ -28,8 +61,19 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
   }
 
   async function toggleProvider(id: string) {
-    if (enabledIds.value.has(id)) enabledIds.value.delete(id);
-    else enabledIds.value.add(id);
+    const idx = enabledIds.value.indexOf(id);
+    if (idx !== -1) enabledIds.value.splice(idx, 1);
+    else enabledIds.value.push(id);
+    await persistEnabledIds();
+    await reloadPlugins();
+  }
+
+  async function moveProvider(id: string, direction: -1 | 1) {
+    const idx = enabledIds.value.indexOf(id);
+    const target = idx + direction;
+    if (idx === -1 || target < 0 || target >= enabledIds.value.length) return;
+    const [entry] = enabledIds.value.splice(idx, 1);
+    enabledIds.value.splice(target, 0, entry);
     await persistEnabledIds();
     await reloadPlugins();
   }
@@ -42,10 +86,54 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
    * needing to know about the other), genres are unioned across all providers. A provider
    * that throws or finds nothing is skipped rather than failing the whole fetch, so one bad/
    * misconfigured provider doesn't block the others.
+   *
+   * Each provider is a two-step searchCandidates/fetchMetadataById call rather than one direct
+   * fetch, so a provider whose own search is genuinely ambiguous (e.g. a duplicate/reissue
+   * sharing the exact same title) can surface that instead of silently guessing. Runs in two
+   * phases rather than resolving each provider one at a time: phase 1 calls searchCandidates on
+   * every provider up front (toasting each provider's result as it comes in) and picks a
+   * chosenId immediately for the 0/1-candidate cases; phase 2, if any provider came back
+   * ambiguous (2+ candidates), shows ONE combined picker (one section per ambiguous provider,
+   * see CandidatePicker.vue) instead of interrupting once per provider. chosenIds stays index-
+   * aligned with loadedPlugins throughout specifically so provider-priority order (which field
+   * wins a merge conflict) survives the pause for user input - an ambiguous provider resolved
+   * late by the picker still merges at its original priority position, not appended at the end.
    */
   async function fetchMetadata(title: string): Promise<MetadataResult | null> {
     if (loadedPlugins.value.length === 0) {
       throw new Error("No metadata provider enabled.");
+    }
+
+    const toasts = useToastStore();
+    const chosenIds: (string | null)[] = new Array(loadedPlugins.value.length).fill(null);
+    const ambiguousSections: (PendingCandidateSection & { index: number })[] = [];
+
+    for (let i = 0; i < loadedPlugins.value.length; i++) {
+      const plugin = loadedPlugins.value[i];
+      let candidates: MetadataCandidate[];
+      try {
+        candidates = await plugin.searchCandidates(title);
+      } catch {
+        toasts.push(`${plugin.name}: search failed.`, "error");
+        continue;
+      }
+
+      if (candidates.length === 0) {
+        toasts.push(`${plugin.name}: no match found.`, "info");
+      } else if (candidates.length === 1) {
+        toasts.push(`${plugin.name}: found a match.`, "success");
+        chosenIds[i] = candidates[0].id;
+      } else {
+        toasts.push(`${plugin.name}: ${candidates.length} matches found.`, "info");
+        ambiguousSections.push({ index: i, pluginId: plugin.id, pluginName: plugin.name, candidates });
+      }
+    }
+
+    if (ambiguousSections.length > 0) {
+      const selections = await promptForCandidates(ambiguousSections);
+      for (const section of ambiguousSections) {
+        chosenIds[section.index] = selections[section.pluginId] ?? null;
+      }
     }
 
     let description: string | null = null;
@@ -55,10 +143,13 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
     const genres = new Set<string>();
     let foundAny = false;
 
-    for (const plugin of loadedPlugins.value) {
+    for (let i = 0; i < loadedPlugins.value.length; i++) {
+      const id = chosenIds[i];
+      if (id === null) continue;
+
       let result: MetadataResult | null;
       try {
-        result = await plugin.fetchMetadata(title);
+        result = await loadedPlugins.value[i].fetchMetadataById(id);
       } catch {
         continue;
       }
@@ -81,18 +172,28 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
 
     const stored = await settingsRepo.get(ENABLED_PROVIDERS_SETTING);
     if (stored === null) {
-      enabledIds.value = new Set(DEFAULT_PROVIDER_IDS);
+      enabledIds.value = [...DEFAULT_PROVIDER_IDS];
       await persistEnabledIds();
     } else {
       try {
-        enabledIds.value = new Set(JSON.parse(stored));
+        enabledIds.value = JSON.parse(stored);
       } catch {
-        enabledIds.value = new Set();
+        enabledIds.value = [];
       }
     }
 
     await reloadPlugins();
   }
 
-  return { manifests, enabledIds, loadedPlugins, toggleProvider, fetchMetadata, init };
+  return {
+    manifests,
+    enabledIds,
+    loadedPlugins,
+    pendingCandidateSections,
+    toggleProvider,
+    moveProvider,
+    submitCandidateSelections,
+    fetchMetadata,
+    init,
+  };
 });

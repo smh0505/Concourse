@@ -14,6 +14,7 @@ import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
 import AppSettings from "./components/desktop/AppSettings.vue";
 import AddGame from "./components/desktop/modalForms/AddGame.vue";
+import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
 import GameFilters from "./components/desktop/GameFilters.vue";
 import GameGrid from "./components/desktop/GameGrid.vue";
@@ -112,6 +113,11 @@ onUnmounted(library.dispose);
   </div>
 
   <ToastContainer />
+  <CandidatePicker
+    :open="metadataProviders.pendingCandidateSections !== null"
+    :sections="metadataProviders.pendingCandidateSections ?? []"
+    :on-submit="metadataProviders.submitCandidateSelections"
+  />
 </template>
 
 <style scoped>

@@ -1,10 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h } from "vue";
 import { isPluginManifest, type PluginKind, type PluginManifest } from "./manifest";
 import type {
   GameEntry,
   Installable,
   LocaleProfile,
+  MetadataCandidate,
   MetadataProviderPlugin,
   MetadataResult,
   PluginBase,
@@ -14,7 +15,6 @@ import type {
 } from "./types";
 import InstallableStatus from "../components/desktop/InstallableStatus.vue";
 import SettingsButton from "../components/desktop/modalForms/SettingsButton.vue";
-import WasmPluginSettingsForm from "../components/desktop/WasmPluginSettingsForm.vue";
 import { useWrapperPluginStore } from "../stores/wrapperPlugins";
 
 // Each plugin lives at src/plugins/<id>/plugin.json + an entry module (e.g. index.ts)
@@ -91,41 +91,31 @@ function createWasmSourcePlugin(manifest: PluginManifest): SourcePlugin {
   };
 }
 
-/** Attaches the generic WasmPluginSettingsForm.vue for any WASM plugin that declares a
- *  non-empty settingsSchema and doesn't already have its own settingsComponent - lets a WASM
- *  plugin collect user-typed config (e.g. an API key) without any custom UI code, on either
- *  side. */
+/** Attaches the generic SettingsButton.vue for any WASM plugin that declares a non-empty
+ *  settingsSchema and doesn't already have its own settingsComponent - lets a WASM plugin
+ *  collect user-typed config (e.g. an API key) without any custom UI code, on either side. */
 function attachSettingsSchemaForm(manifest: PluginManifest, plugin: PluginBase): void {
   if (!manifest.settingsSchema?.length || plugin.settingsComponent) return;
   const schema = manifest.settingsSchema;
   plugin.settingsComponent = defineComponent({
-    setup() {
-      // WasmPluginSettingsForm is fields-only (no button of its own) - SettingsButton's
-      // footer Save button calls this ref's exposed save() instead.
-      const formRef = ref<{ save: () => Promise<void> } | null>(null);
-      return () =>
-        h(
-          SettingsButton,
-          {
-            title: `${manifest.name} Settings`,
-            onSave: () => formRef.value?.save() ?? Promise.resolve(),
-          },
-          { default: () => h(WasmPluginSettingsForm, { ref: formRef, pluginId: manifest.id, schema }) },
-        );
-    },
+    render: () =>
+      h(SettingsButton, { title: `${manifest.name} Settings`, pluginId: manifest.id, schema }),
   });
 }
 
 /** Thin wrapper implementing MetadataProviderPlugin over wasm_plugin_runtime.rs's
- *  wasm_plugin_fetch_metadata - config (API keys etc.) is collected via
- *  attachSettingsSchemaForm below, not passed as arguments here, since the plugin reads its
- *  own settings back via host::settings-get the same way it would if it had set them itself. */
+ *  wasm_plugin_search_candidates/wasm_plugin_fetch_metadata_by_id - config (API keys etc.) is
+ *  collected via attachSettingsSchemaForm below, not passed as arguments here, since the plugin
+ *  reads its own settings back via host::settings-get the same way it would if it had set them
+ *  itself. */
 function createWasmMetadataProviderPlugin(manifest: PluginManifest): MetadataProviderPlugin {
   const plugin: MetadataProviderPlugin = {
     id: manifest.id,
     name: manifest.name,
-    fetchMetadata: (title: string) =>
-      invoke<MetadataResult | null>("wasm_plugin_fetch_metadata", { pluginId: manifest.id, title }),
+    searchCandidates: (title: string) =>
+      invoke<MetadataCandidate[]>("wasm_plugin_search_candidates", { pluginId: manifest.id, title }),
+    fetchMetadataById: (id: string) =>
+      invoke<MetadataResult | null>("wasm_plugin_fetch_metadata_by_id", { pluginId: manifest.id, id }),
   };
   attachSettingsSchemaForm(manifest, plugin);
   return plugin;
@@ -216,12 +206,20 @@ async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   return plugin as T;
 }
 
+/** Loads enabled plugins in enabledIds' own iteration order (not manifest-discovery order) -
+ *  for kinds where sequence has real meaning (e.g. metadata providers' first-non-null-wins
+ *  merge, source plugins' last-scan-wins field overwrite on a title collision), the caller
+ *  controls priority by controlling what order it passes ids in. */
 export async function loadEnabledPlugins<T>(
   kind: PluginKind,
-  enabledIds: ReadonlySet<string>,
+  enabledIds: Iterable<string>,
 ): Promise<T[]> {
-  const manifests = (await getAvailablePluginManifests(kind)).filter((m) => enabledIds.has(m.id));
-  const plugins: (T | null)[] = await Promise.all(manifests.map((m) => loadPlugin<T>(m)));
+  const manifests = await getAvailablePluginManifests(kind);
+  const byId = new Map(manifests.map((m) => [m.id, m]));
+  const ordered = [...enabledIds]
+    .map((id) => byId.get(id))
+    .filter((m): m is PluginManifest => m !== undefined);
+  const plugins: (T | null)[] = await Promise.all(ordered.map((m) => loadPlugin<T>(m)));
   return plugins.filter((p): p is T => p !== null);
 }
 

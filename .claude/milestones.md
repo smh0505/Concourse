@@ -161,7 +161,7 @@ Install-by-URL for WASM source plugins (Milestone 8) currently grants a plugin t
 real-world system access as running an arbitrary downloaded `.exe` — see devlog for the gap.
 - [x] Interim: honest risk warning in the install confirmation UI and README (no real
   sandboxing yet)
-- [ ] Path allowlisting for file/registry host primitives (scope `read-file`/`write-file`/
+- [x] Path allowlisting for file/registry host primitives (scope `read-file`/`write-file`/
   `remove-dir`/`list-dir`/`path-exists`/registry reads to a plugin-declared directory
   allowlist instead of arbitrary absolute paths)
 - [x] Permission gating for `spawn-process`/`run-and-wait` (visible, explicit user grant of

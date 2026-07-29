@@ -2,9 +2,23 @@
 //! bindings generated from `wit/plugin.wit` and implements the `host` interface plugins import.
 
 use crate::zip_install;
+use serde::Deserialize;
 use std::path::{Path, PathBuf};
 use wasmtime::component::bindgen;
 use wasmtime_wasi::{ResourceTable, WasiCtx, WasiCtxBuilder, WasiView};
+
+/// Milestone 13 path allowlisting - a manifest-declared scope a plugin is allowed to read
+/// beyond its own `plugin-dir()` (always implicitly allowed, see `is_within_plugin_dir`).
+/// `Registry` covers a hive+key prefix (e.g. Steam's/GOG's own fixed vendor keys); `Path`
+/// covers a literal filesystem path prefix (e.g. Epic's fixed manifests directory - genuinely
+/// static, not runtime-discovered, so it doesn't need `request-read-scope`). Declared in
+/// `plugin.json`'s `pathScopes` field, parsed once at `PluginHostState` construction.
+#[derive(Clone, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum PathScope {
+    Registry { hive: String, prefix: String },
+    Path { prefix: String },
+}
 
 bindgen!({
     path: "wit/plugin.wit",
@@ -54,10 +68,24 @@ pub struct PluginHostState {
     db: rusqlite::Connection,
     wasi_ctx: WasiCtx,
     resource_table: ResourceTable,
+    /// Manifest-declared registry/path scopes (Milestone 13) - static, known at plugin-author
+    /// time (e.g. Steam's own vendor registry keys, Epic's fixed manifests directory).
+    path_scopes: Vec<PathScope>,
+    /// Dynamic scopes granted this instantiation via `request-read-scope` (Steam's runtime-
+    /// discovered library folders - not knowable ahead of time, so can't live in `path_scopes`).
+    /// In-memory only, not persisted - fine, since a fresh `PluginHostState` is created per
+    /// Tauri command call anyway (see `wasm_plugin_runtime.rs`), and the plugin that needs this
+    /// (Steam) does its discovery-then-read all within one call/instantiation.
+    dynamic_read_scopes: Vec<PathBuf>,
 }
 
 impl PluginHostState {
-    pub fn new(plugin_id: String, plugin_dir: PathBuf, db_path: &Path) -> rusqlite::Result<Self> {
+    pub fn new(
+        plugin_id: String,
+        plugin_dir: PathBuf,
+        db_path: &Path,
+        path_scopes: Vec<PathScope>,
+    ) -> rusqlite::Result<Self> {
         let db = rusqlite::Connection::open(db_path)?;
         Ok(Self {
             plugin_id,
@@ -65,6 +93,8 @@ impl PluginHostState {
             db,
             wasi_ctx: WasiCtxBuilder::new().build(),
             resource_table: ResourceTable::new(),
+            path_scopes,
+            dynamic_read_scopes: Vec::new(),
         })
     }
 
@@ -88,6 +118,103 @@ impl PluginHostState {
             )
             .unwrap_or(false)
     }
+
+    /// Lexically resolves `.`/`..` components without touching disk - unlike
+    /// `std::fs::canonicalize`, this works for a path that doesn't exist yet (e.g. `write-file`'s
+    /// target before it's created) and avoids Windows' `\\?\`-prefixed canonical form entirely.
+    /// Case-insensitive comparison downstream, matching Windows path semantics.
+    fn normalize_components(path: &str) -> Vec<String> {
+        let mut parts: Vec<String> = Vec::new();
+        for component in path.split(['/', '\\']) {
+            match component {
+                "" | "." => continue,
+                ".." => {
+                    parts.pop();
+                }
+                other => parts.push(other.to_string()),
+            }
+        }
+        parts
+    }
+
+    /// True if `target`, once lexically normalized, starts with `prefix`'s own normalized
+    /// components - the containment check every path-scope rule below is built on. Rejects
+    /// traversal tricks like `<scoped-dir>\..\..\Users\x\.ssh\id_rsa`, whose normalized form no
+    /// longer starts with the scoped prefix at all.
+    fn path_has_prefix(target: &str, prefix: &str) -> bool {
+        let target_parts = Self::normalize_components(target);
+        let prefix_parts = Self::normalize_components(prefix);
+        !prefix_parts.is_empty()
+            && target_parts.len() >= prefix_parts.len()
+            && target_parts[..prefix_parts.len()]
+                .iter()
+                .zip(prefix_parts.iter())
+                .all(|(a, b)| a.eq_ignore_ascii_case(b))
+    }
+
+    /// Always allowed, for every file operation - a plugin can always read/write/delete inside
+    /// its own directory.
+    fn is_within_plugin_dir(&self, path: &str) -> bool {
+        Self::path_has_prefix(path, &self.plugin_dir.to_string_lossy())
+    }
+
+    /// Read-only file access additionally allowed under: a manifest-declared static `Path`
+    /// scope (Epic's fixed manifests dir), or a dynamic scope this instantiation was granted
+    /// via `request-read-scope` (Steam's verified library folders). Never applies to
+    /// write-file/remove-dir - those stay hard-confined to `plugin-dir()` with no escape hatch,
+    /// see `is_within_plugin_dir`.
+    fn is_allowed_read_path(&self, path: &str) -> bool {
+        if self.is_within_plugin_dir(path) {
+            return true;
+        }
+        let static_match = self.path_scopes.iter().any(|scope| match scope {
+            PathScope::Path { prefix } => Self::path_has_prefix(path, prefix),
+            PathScope::Registry { .. } => false,
+        });
+        if static_match {
+            return true;
+        }
+        self.dynamic_read_scopes
+            .iter()
+            .any(|root| Self::path_has_prefix(path, &root.to_string_lossy()))
+    }
+
+    fn is_allowed_registry(&self, hive: &str, path: &str) -> bool {
+        self.path_scopes.iter().any(|scope| match scope {
+            PathScope::Registry { hive: scoped_hive, prefix } => {
+                scoped_hive.eq_ignore_ascii_case(hive) && Self::path_has_prefix(path, prefix)
+            }
+            PathScope::Path { .. } => false,
+        })
+    }
+
+    /// Steam is the one plugin whose legitimate read scope genuinely can't be known ahead of
+    /// time (install location and library folders are wherever the user's own Steam install
+    /// put them) - this is the verified-elevation half of that: the host checks for a
+    /// `steamapps` subdirectory, Steam's own real structural signature, before trusting a
+    /// plugin-requested root at all. Any plugin id without a known validator is rejected
+    /// outright rather than silently trusted or given a real user-facing approval prompt -
+    /// there's no third-party plugin exercising that path yet, so a real prompt UI is deferred
+    /// until one actually needs it (see milestones.md/devlog.md).
+    fn do_request_read_scope(&mut self, path: String) -> Result<(), String> {
+        let recognized = match self.plugin_id.as_str() {
+            "steam-wasm" => Path::new(&path).join("steamapps").is_dir(),
+            _ => {
+                return Err(format!(
+                    "No path-scope validator is registered for plugin \"{}\" - request-read-scope isn't available to it yet.",
+                    self.plugin_id
+                ))
+            }
+        };
+        if !recognized {
+            return Err(format!(
+                "\"{}\" doesn't look like a real Steam library (no steamapps subdirectory) - scope request denied.",
+                path
+            ));
+        }
+        self.dynamic_read_scopes.push(PathBuf::from(path));
+        Ok(())
+    }
 }
 
 impl WasiView for PluginHostState {
@@ -106,6 +233,9 @@ impl WasiView for PluginHostState {
 /// (see `wrapper_world`'s doc comment) share one copy of the logic instead of two.
 impl PluginHostState {
     fn do_read_registry_string(&mut self, hive: String, path: String, value: String) -> Option<String> {
+        if !self.is_allowed_registry(&hive, &path) {
+            return None;
+        }
         #[cfg(target_os = "windows")]
         {
             use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
@@ -130,6 +260,12 @@ impl PluginHostState {
     }
 
     fn do_list_registry_keys(&mut self, hive: String, path: String) -> Result<Vec<String>, String> {
+        if !self.is_allowed_registry(&hive, &path) {
+            return Err(format!(
+                "Registry access denied: \"{}\\{}\" is outside this plugin's declared pathScopes.",
+                hive, path
+            ));
+        }
         #[cfg(target_os = "windows")]
         {
             use winreg::enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
@@ -153,10 +289,22 @@ impl PluginHostState {
     }
 
     fn do_read_file(&mut self, path: String) -> Result<String, String> {
+        if !self.is_allowed_read_path(&path) {
+            return Err(format!(
+                "Read access denied: \"{}\" is outside this plugin's directory and declared pathScopes.",
+                path
+            ));
+        }
         std::fs::read_to_string(&path).map_err(|e| format!("Failed to read {}: {}", path, e))
     }
 
     fn do_write_file(&mut self, path: String, contents: String) -> Result<(), String> {
+        if !self.is_within_plugin_dir(&path) {
+            return Err(format!(
+                "Write access denied: \"{}\" is outside this plugin's own directory.",
+                path
+            ));
+        }
         if let Some(parent) = Path::new(&path).parent() {
             std::fs::create_dir_all(parent)
                 .map_err(|e| format!("Failed to create {}: {}", parent.display(), e))?;
@@ -165,6 +313,12 @@ impl PluginHostState {
     }
 
     fn do_remove_dir(&mut self, path: String) -> Result<(), String> {
+        if !self.is_within_plugin_dir(&path) {
+            return Err(format!(
+                "Remove access denied: \"{}\" is outside this plugin's own directory.",
+                path
+            ));
+        }
         if !Path::new(&path).exists() {
             return Ok(());
         }
@@ -172,6 +326,12 @@ impl PluginHostState {
     }
 
     fn do_list_dir(&mut self, path: String) -> Result<Vec<String>, String> {
+        if !self.is_allowed_read_path(&path) {
+            return Err(format!(
+                "List access denied: \"{}\" is outside this plugin's directory and declared pathScopes.",
+                path
+            ));
+        }
         let entries =
             std::fs::read_dir(&path).map_err(|e| format!("Failed to list {}: {}", path, e))?;
         entries
@@ -184,7 +344,7 @@ impl PluginHostState {
     }
 
     fn do_path_exists(&mut self, path: String) -> bool {
-        std::path::Path::new(&path).exists()
+        self.is_allowed_read_path(&path) && std::path::Path::new(&path).exists()
     }
 
     /// Fire-and-forget, like launch() elsewhere in this app - playtime is covered separately by
@@ -368,6 +528,10 @@ impl gamelib::plugin::host::Host for PluginHostState {
         self.do_remove_dir(path)
     }
 
+    fn request_read_scope(&mut self, path: String) -> Result<(), String> {
+        self.do_request_read_scope(path)
+    }
+
     fn spawn_process(&mut self, path: String, args: Vec<String>) -> Result<(), String> {
         self.do_spawn_process(path, args)
     }
@@ -456,6 +620,10 @@ impl wrapper_world::gamelib::plugin::host::Host for PluginHostState {
         self.do_remove_dir(path)
     }
 
+    fn request_read_scope(&mut self, path: String) -> Result<(), String> {
+        self.do_request_read_scope(path)
+    }
+
     fn spawn_process(&mut self, path: String, args: Vec<String>) -> Result<(), String> {
         self.do_spawn_process(path, args)
     }
@@ -542,6 +710,10 @@ impl metadata_world::gamelib::plugin::host::Host for PluginHostState {
 
     fn remove_dir(&mut self, path: String) -> Result<(), String> {
         self.do_remove_dir(path)
+    }
+
+    fn request_read_scope(&mut self, path: String) -> Result<(), String> {
+        self.do_request_read_scope(path)
     }
 
     fn spawn_process(&mut self, path: String, args: Vec<String>) -> Result<(), String> {

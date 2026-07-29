@@ -4,7 +4,7 @@
 
 use crate::wasm_plugins::{
     gamelib::plugin::host::GameEntry, metadata_world, metadata_world::MetadataPluginWorld,
-    wrapper_world::WrapperPluginWorld, PluginHostState, SourcePluginWorld,
+    wrapper_world::WrapperPluginWorld, PathScope, PluginHostState, SourcePluginWorld,
 };
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -15,6 +15,11 @@ use wasmtime::{Config, Engine, Store};
 #[derive(Deserialize)]
 struct WasmPluginManifest {
     entry: String,
+    /// Milestone 13 path allowlisting - see `PathScope`'s own doc comment. Absent/empty for
+    /// plugins that never need registry access or a file read outside their own `plugin-dir()`
+    /// (LR/LE, every metadata provider).
+    #[serde(default, rename = "pathScopes")]
+    path_scopes: Vec<PathScope>,
 }
 
 /// Mirrors the TS `GameEntry` shape (src/plugins/types.ts); `rename_all = "camelCase"` matches
@@ -162,7 +167,7 @@ fn instantiate_from_paths(
     // even for a capability-less component - see PluginHostState's doc comment.
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path)
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes)
         .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
@@ -200,7 +205,7 @@ fn instantiate_wrapper_from_paths(
         .map_err(|e| e.to_string())?;
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path)
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes)
         .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
@@ -245,7 +250,7 @@ fn instantiate_metadata_from_paths(
         .map_err(|e| e.to_string())?;
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path)
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes)
         .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 

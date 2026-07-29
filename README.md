@@ -89,18 +89,24 @@ into Settings → the matching tab → Add Plugin; themes install the same way f
 manifest URL. See each repo's own README for manual-copy install paths if you'd rather build
 locally or skip the URL flow.
 
-**Security note (partially addressed, tracked as Milestone 13):** wasmtime's Component Model
+**Security note (mostly addressed, tracked as Milestone 13):** wasmtime's Component Model
 sandbox guarantees memory safety (a plugin can't corrupt host memory or escape its own
-execution), but most of the host functions exposed to plugins (`read-file`/`write-file`/
-`remove-dir`/registry access/network) are still unscoped - a plugin can call them with any
-path/URL it wants. `spawn-process`/`run-and-wait` are the one exception now gated behind an
-explicit, visible per-plugin grant: a plugin must declare `capabilities: ["run-programs"]` in
-its manifest, and the app refuses to run anything on its behalf until you've actually granted
-it (a checkbox in the install-confirmation dialog for install-by-URL, or a "Permission needed"
-row with a Grant button in Settings for an already-installed plugin). In practice, installing a
-WASM plugin from an untrusted URL still carries meaningful real-world risk (file/registry/
-network access is unrestricted) - only install plugins from sources you fully trust. Path
-allowlisting for file/registry access is planned but not yet implemented.
+execution), and the host functions exposed to plugins are now scoped on both fronts that
+mattered:
+- `spawn-process`/`run-and-wait` need an explicit, visible per-plugin grant - a plugin must
+  declare `capabilities: ["run-programs"]` in its manifest, and the app refuses to run anything
+  on its behalf until you've actually granted it (a checkbox in the install-confirmation dialog
+  for install-by-URL, or a "Permission needed" row with a Grant button in Settings for an
+  already-installed plugin).
+- `write-file`/`remove-dir` are hard-confined to a plugin's own directory, unconditionally, no
+  exceptions. `read-file`/`list-dir`/`path-exists`/registry access are scoped to a manifest-
+  declared allowlist (`pathScopes`) plus, for the one plugin whose install location genuinely
+  can't be known ahead of time (Steam), a verified runtime scope request - the host checks for
+  a real structural signature (a `steamapps` subdirectory) before granting access, and rejects
+  any plugin id it doesn't have a validator for outright.
+
+Network access (`http-get`/`download-bytes`/`http-request`) is still unrestricted - a plugin
+can call out to any URL. Only install plugins from sources you fully trust.
 
 ## Status
 

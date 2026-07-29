@@ -38,7 +38,9 @@ pub fn run() {
             wasm_plugin_runtime::wasm_wrapper_list_profiles,
             wasm_plugin_runtime::wasm_wrapper_launch,
             wasm_plugin_runtime::wasm_plugin_search_candidates,
-            wasm_plugin_runtime::wasm_plugin_fetch_metadata_by_id
+            wasm_plugin_runtime::wasm_plugin_fetch_metadata_by_id,
+            wasm_plugin_runtime::grant_plugin_capability,
+            wasm_plugin_runtime::is_plugin_capability_granted
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

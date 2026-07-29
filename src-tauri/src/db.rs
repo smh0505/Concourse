@@ -13,62 +13,85 @@ pub const DB_URL: &str = "sqlite:library.db";
 // (reset those by deleting library.db; the squashed v1 recreates the same final schema from
 // scratch). Once 1.0.0 ships, migrations go back to strictly additive/append-only.
 pub fn migrations() -> Vec<Migration> {
-    vec![Migration {
-        version: 1,
-        description: "create_baseline_schema",
-        sql: r#"
-            CREATE TABLE games (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT NOT NULL,
-                executable_path TEXT NOT NULL,
-                platform TEXT,
-                cover_art_url TEXT,
-                background_art_url TEXT,
-                description TEXT,
-                release_date TEXT,
-                total_playtime INTEGER NOT NULL DEFAULT 0,
-                skip_dedup INTEGER NOT NULL DEFAULT 0,
-                install_dir TEXT,
-                locale_profile_guid TEXT,
-                locale_wrapper TEXT
-            );
+    vec![
+        Migration {
+            version: 1,
+            description: "create_baseline_schema",
+            sql: r#"
+                CREATE TABLE games (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    executable_path TEXT NOT NULL,
+                    platform TEXT,
+                    cover_art_url TEXT,
+                    background_art_url TEXT,
+                    description TEXT,
+                    release_date TEXT,
+                    total_playtime INTEGER NOT NULL DEFAULT 0,
+                    skip_dedup INTEGER NOT NULL DEFAULT 0,
+                    install_dir TEXT,
+                    locale_profile_guid TEXT,
+                    locale_wrapper TEXT
+                );
 
-            CREATE TABLE tags (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE
-            );
+                CREATE TABLE tags (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE
+                );
 
-            CREATE TABLE game_tags (
-                game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-                tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-                PRIMARY KEY (game_id, tag_id)
-            );
+                CREATE TABLE game_tags (
+                    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+                    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+                    PRIMARY KEY (game_id, tag_id)
+                );
 
-            CREATE TABLE playtime_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-                start_time TEXT NOT NULL,
-                end_time TEXT,
-                duration_seconds INTEGER
-            );
+                CREATE TABLE playtime_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT,
+                    duration_seconds INTEGER
+                );
 
-            CREATE TABLE settings (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            );
+                CREATE TABLE settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
 
-            -- Generic per-game key-value storage for WASM plugins (Milestone 8) - the
-            -- sanctioned alternative to a plugin getting its own `games` column. Rows are
-            -- namespaced by plugin_id, so a plugin's data is deletable in one statement on
-            -- uninstall and can never collide with another plugin's or core `games` fields.
-            CREATE TABLE plugin_data (
-                plugin_id TEXT NOT NULL,
-                game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-                key TEXT NOT NULL,
-                value TEXT NOT NULL,
-                PRIMARY KEY (plugin_id, game_id, key)
-            );
-        "#,
-        kind: MigrationKind::Up,
-    }]
+                -- Generic per-game key-value storage for WASM plugins (Milestone 8) - the
+                -- sanctioned alternative to a plugin getting its own `games` column. Rows are
+                -- namespaced by plugin_id, so a plugin's data is deletable in one statement on
+                -- uninstall and can never collide with another plugin's or core `games` fields.
+                CREATE TABLE plugin_data (
+                    plugin_id TEXT NOT NULL,
+                    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    PRIMARY KEY (plugin_id, game_id, key)
+                );
+            "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "add_plugin_capability_grants",
+            sql: r#"
+                -- Explicit, host-enforced capability grants (Milestone 13) - deliberately its
+                -- own table rather than reusing `settings`'s `plugin:<id>:<key>` convention,
+                -- since a WASM guest's own settings-get/settings-set host functions can freely
+                -- read/write any key under its own `plugin:<id>:` prefix. If a grant lived in
+                -- that same table/namespace, a plugin could just call settings-set on its own
+                -- grant key and self-grant the very capability this table exists to gate. A
+                -- WASM guest has no code path to this table at all - only spawn-process/
+                -- run-and-wait's host-side implementation reads it, and only the frontend
+                -- (Settings UI / install confirmation) ever writes it.
+                CREATE TABLE plugin_capability_grants (
+                    plugin_id TEXT NOT NULL,
+                    capability TEXT NOT NULL,
+                    PRIMARY KEY (plugin_id, capability)
+                );
+            "#,
+            kind: MigrationKind::Up,
+        },
+    ]
 }

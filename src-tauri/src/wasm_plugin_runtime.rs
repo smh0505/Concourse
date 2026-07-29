@@ -432,6 +432,50 @@ pub async fn wasm_plugin_fetch_metadata_by_id(
     .map_err(|e| format!("Plugin task panicked: {}", e))?
 }
 
+/// Milestone 13 capability gating - records an explicit, visible user grant (install-
+/// confirmation checkbox for a new install-by-URL plugin, or a Settings-panel "Grant" button
+/// for an already-installed one) that `wasm_plugins.rs`'s `has_capability` checks before
+/// `spawn-process`/`run-and-wait` acts. Writes to `plugin_capability_grants`, never the
+/// `settings` table - see that table's migration comment for why they have to stay separate.
+#[tauri::command]
+pub async fn grant_plugin_capability(
+    app: AppHandle,
+    plugin_id: String,
+    capability: String,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = rusqlite::Connection::open(db_path(&app)?).map_err(|e| e.to_string())?;
+        conn.execute(
+            "INSERT OR IGNORE INTO plugin_capability_grants (plugin_id, capability) VALUES (?1, ?2)",
+            rusqlite::params![plugin_id, capability],
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(())
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn is_plugin_capability_granted(
+    app: AppHandle,
+    plugin_id: String,
+    capability: String,
+) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let conn = rusqlite::Connection::open(db_path(&app)?).map_err(|e| e.to_string())?;
+        Ok(conn
+            .query_row(
+                "SELECT 1 FROM plugin_capability_grants WHERE plugin_id = ?1 AND capability = ?2",
+                rusqlite::params![plugin_id, capability],
+                |_| Ok(true),
+            )
+            .unwrap_or(false))
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {}", e))?
+}
+
 /// End-to-end test against the real compiled `examples/exe-scanner-plugin` component (build
 /// first via `cargo component build` there): loads the `.wasm`, instantiates it against the
 /// host-function surface, and round-trips real `GameEntry` results across the boundary.

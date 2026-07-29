@@ -164,7 +164,7 @@ real-world system access as running an arbitrary downloaded `.exe` — see devlo
 - [ ] Path allowlisting for file/registry host primitives (scope `read-file`/`write-file`/
   `remove-dir`/`list-dir`/`path-exists`/registry reads to a plugin-declared directory
   allowlist instead of arbitrary absolute paths)
-- [ ] Permission gating for `spawn-process`/`run-and-wait` (visible, explicit user grant of
+- [x] Permission gating for `spawn-process`/`run-and-wait` (visible, explicit user grant of
   "this plugin can run other programs" before install, not silent)
 - [ ] URL allowlisting or rate-limiting for `http-request`/`http-get`/`download-bytes` (the
   new `http-request` primitive - arbitrary method/headers/body, added for metadata providers

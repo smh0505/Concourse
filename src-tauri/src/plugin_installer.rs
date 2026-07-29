@@ -66,6 +66,12 @@ pub struct WasmPluginManifest {
     /// key). See `SettingsSchemaField`.
     #[serde(default, rename = "settingsSchema")]
     pub settings_schema: Vec<SettingsSchemaField>,
+    /// Declares which gated host capabilities (Milestone 13) this plugin actually calls -
+    /// today just `"run-programs"` (spawn-process/run-and-wait), declared by Steam/GOG/Epic/
+    /// LR/LE. An array (not a single bool) so future capability tags don't need another
+    /// breaking manifest change. Absent/empty means the plugin never needs an explicit grant.
+    #[serde(default)]
+    pub capabilities: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -115,6 +121,9 @@ pub struct PluginPreview {
     pub name: String,
     pub version: String,
     pub kind: String,
+    /// See `WasmPluginManifest::capabilities` - empty for theme manifests, which have no
+    /// capability concept at all.
+    pub capabilities: Vec<String>,
 }
 
 /// Fetches a manifest from a user-pasted URL and returns just enough to show a confirmation
@@ -135,6 +144,7 @@ pub async fn fetch_plugin_preview(url: String) -> Result<PluginPreview, String> 
             name: manifest.name,
             version: manifest.version,
             kind,
+            capabilities: manifest.capabilities,
         })
     } else {
         let manifest: DataThemeManifest = serde_json::from_slice(&bytes)
@@ -144,6 +154,7 @@ pub async fn fetch_plugin_preview(url: String) -> Result<PluginPreview, String> 
             name: manifest.name,
             version: manifest.version,
             kind,
+            capabilities: Vec::new(),
         })
     }
 }

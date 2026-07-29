@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import { computed, onMounted, ref, shallowRef } from "vue";
 import { usePluginStore } from "../../stores/plugins";
 import { useThemeStore } from "../../stores/theme";
@@ -16,7 +17,7 @@ import type {
   ControllerMappingPlugin,
   WrapperPlugin,
 } from "../../plugins/types";
-import type { PluginManifest } from "../../plugins/manifest";
+import { RUN_PROGRAMS_CAPABILITY, type PluginManifest } from "../../plugins/manifest";
 
 type Tab = "source" | "theme" | "metadata" | "controller" | "wrapper";
 
@@ -58,6 +59,37 @@ const orderedMetadataManifests = computed(() =>
   orderByPriority(metadataProviders.manifests, metadataProviders.enabledIds),
 );
 
+// Milestone 13 capability gating - tracks which already-installed plugins have a recorded
+// grant for "run-programs", independent of how they got installed (install-by-URL's
+// ConfirmInstall checkbox, or a plugin dropped in manually like Steam/GOG/Epic/LR/LE). A
+// plugin declaring the capability but missing here gets a "Permission needed" row with a
+// Grant button - no silent grandfathering, every plugin needs a real recorded grant.
+const grantedRunPrograms = ref<Set<string>>(new Set());
+
+function needsRunProgramsGrant(manifest: PluginManifest): boolean {
+  return !!manifest.capabilities?.includes(RUN_PROGRAMS_CAPABILITY) && !grantedRunPrograms.value.has(manifest.id);
+}
+
+async function grantRunPrograms(pluginId: string) {
+  await invoke("grant_plugin_capability", { pluginId, capability: RUN_PROGRAMS_CAPABILITY });
+  grantedRunPrograms.value = new Set(grantedRunPrograms.value).add(pluginId);
+}
+
+async function loadGrantedCapabilities(manifests: PluginManifest[]) {
+  const needsCheck = manifests.filter((m) => m.capabilities?.includes(RUN_PROGRAMS_CAPABILITY));
+  const results = await Promise.all(
+    needsCheck.map((m) =>
+      invoke<boolean>("is_plugin_capability_granted", {
+        pluginId: m.id,
+        capability: RUN_PROGRAMS_CAPABILITY,
+      }).then((granted) => [m.id, granted] as const),
+    ),
+  );
+  const granted = new Set(grantedRunPrograms.value);
+  for (const [id, isGranted] of results) if (isGranted) granted.add(id);
+  grantedRunPrograms.value = granted;
+}
+
 onMounted(async () => {
   const [sourcePlugins, themePlugins, metadataPlugins, controllerPlugins, wrapperPluginsMap] =
     await Promise.all([
@@ -72,6 +104,7 @@ onMounted(async () => {
   allMetadataPlugins.value = metadataPlugins;
   allControllerPlugins.value = controllerPlugins;
   allWrapperPlugins.value = wrapperPluginsMap;
+  await loadGrantedCapabilities([...plugins.manifests, ...wrapperPlugins.manifests]);
 });
 </script>
 
@@ -142,6 +175,10 @@ onMounted(async () => {
               v-if="allSourcePlugins.get(manifest.id)?.settingsComponent"
             />
           </span>
+          <p v-if="needsRunProgramsGrant(manifest)" class="permission-needed">
+            Permission needed: this plugin runs other programs on your system.
+            <button type="button" @click="grantRunPrograms(manifest.id)">Grant</button>
+          </p>
         </li>
       </ul>
       <button
@@ -268,6 +305,10 @@ onMounted(async () => {
             :is="allWrapperPlugins.get(manifest.id)?.settingsComponent"
             v-if="allWrapperPlugins.get(manifest.id)?.settingsComponent"
           />
+          <p v-if="needsRunProgramsGrant(manifest)" class="permission-needed">
+            Permission needed: this plugin runs other programs on your system.
+            <button type="button" @click="grantRunPrograms(manifest.id)">Grant</button>
+          </p>
         </li>
       </ul>
     </div>
@@ -379,6 +420,23 @@ onMounted(async () => {
 .plugin-row :deep(.settings-form) {
   margin-top: 0.35rem;
   margin-left: 1.5rem;
+}
+
+.permission-needed {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  margin: 0.35rem 0 0;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+}
+
+.permission-needed button {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
 }
 
 .version {

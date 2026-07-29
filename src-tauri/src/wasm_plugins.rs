@@ -72,6 +72,22 @@ impl PluginHostState {
     fn namespaced_settings_key(&self, key: &str) -> String {
         format!("plugin:{}:{}", self.plugin_id, key)
     }
+
+    /// Backs the Milestone 13 capability-gating check for spawn-process/run-and-wait - queries
+    /// `plugin_capability_grants` directly (not the `settings` table), since that's a table
+    /// this plugin's own settings-get/settings-set host functions have no code path to at all.
+    /// A grant only ever gets written by the frontend (install-confirmation checkbox, or a
+    /// Settings-panel "Grant" button for an already-installed plugin) - never by the plugin
+    /// itself.
+    fn has_capability(&self, capability: &str) -> bool {
+        self.db
+            .query_row(
+                "SELECT 1 FROM plugin_capability_grants WHERE plugin_id = ?1 AND capability = ?2",
+                rusqlite::params![self.plugin_id, capability],
+                |_| Ok(true),
+            )
+            .unwrap_or(false)
+    }
 }
 
 impl WasiView for PluginHostState {
@@ -174,6 +190,11 @@ impl PluginHostState {
     /// Fire-and-forget, like launch() elsewhere in this app - playtime is covered separately by
     /// `launcher.rs::track_folder_playtime`.
     fn do_spawn_process(&mut self, path: String, args: Vec<String>) -> Result<(), String> {
+        if !self.has_capability("run-programs") {
+            return Err(
+                "This plugin has not been granted permission to run other programs. Grant it in Settings.".to_string(),
+            );
+        }
         std::process::Command::new(&path)
             .args(&args)
             .stdout(std::process::Stdio::null())
@@ -192,6 +213,11 @@ impl PluginHostState {
     /// perfectly normal close (confirmed by a real test: force-closing the window here
     /// previously turned a fully successful install into a reported failure).
     fn do_run_and_wait(&mut self, path: String, args: Vec<String>, cwd: String) -> Result<(), String> {
+        if !self.has_capability("run-programs") {
+            return Err(
+                "This plugin has not been granted permission to run other programs. Grant it in Settings.".to_string(),
+            );
+        }
         std::process::Command::new(&path)
             .args(&args)
             .current_dir(&cwd)

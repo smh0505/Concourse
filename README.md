@@ -89,14 +89,18 @@ into Settings → the matching tab → Add Plugin; themes install the same way f
 manifest URL. See each repo's own README for manual-copy install paths if you'd rather build
 locally or skip the URL flow.
 
-**Security note (unresolved, tracked as Milestone 13):** wasmtime's Component Model sandbox
-guarantees memory safety (a plugin can't corrupt host memory or escape its own execution), but
-none of the host functions exposed to plugins (`read-file`/`write-file`/`remove-dir`/
-`spawn-process`/`run-and-wait`/registry access/network) are currently scoped or permission-gated
-- a plugin can call them with any path/executable/URL it wants. In practice, installing a WASM
-plugin from an untrusted URL today carries the same real-world risk as running an arbitrary
-downloaded `.exe` - only install plugins from sources you fully trust. Path allowlisting and
-explicit permission prompts for process-spawning are planned but not yet implemented.
+**Security note (partially addressed, tracked as Milestone 13):** wasmtime's Component Model
+sandbox guarantees memory safety (a plugin can't corrupt host memory or escape its own
+execution), but most of the host functions exposed to plugins (`read-file`/`write-file`/
+`remove-dir`/registry access/network) are still unscoped - a plugin can call them with any
+path/URL it wants. `spawn-process`/`run-and-wait` are the one exception now gated behind an
+explicit, visible per-plugin grant: a plugin must declare `capabilities: ["run-programs"]` in
+its manifest, and the app refuses to run anything on its behalf until you've actually granted
+it (a checkbox in the install-confirmation dialog for install-by-URL, or a "Permission needed"
+row with a Grant button in Settings for an already-installed plugin). In practice, installing a
+WASM plugin from an untrusted URL still carries meaningful real-world risk (file/registry/
+network access is unrestricted) - only install plugins from sources you fully trust. Path
+allowlisting for file/registry access is planned but not yet implemented.
 
 ## Status
 

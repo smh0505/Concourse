@@ -27,6 +27,11 @@ export interface PluginManifest {
    *  settings UI, which WASM plugins have no other mechanism for (unlike TS-authored plugins'
    *  `settingsComponent`). Absent for plugins that need no config. */
   settingsSchema?: SettingsSchemaField[];
+  /** Declares which gated host capabilities (Milestone 13) this plugin actually calls - today
+   *  just "run-programs" (spawn-process/run-and-wait). Host-enforced regardless of what this
+   *  says (see `wasm_plugins.rs`'s `has_capability`) - this only drives whether the UI asks for
+   *  an explicit grant at all. Absent/empty for plugins that never need one. */
+  capabilities?: string[];
 }
 
 export interface SettingsSchemaField {
@@ -45,7 +50,12 @@ export interface PluginPreview {
   name: string;
   version: string;
   kind: PluginKind;
+  capabilities: string[];
 }
+
+/** The one gated capability today (Milestone 13) - a plugin declaring this in its manifest
+ *  needs an explicit user grant before spawn-process/run-and-wait will do anything. */
+export const RUN_PROGRAMS_CAPABILITY = "run-programs";
 
 export function isPluginManifest(value: unknown): value is PluginManifest {
   if (typeof value !== "object" || value === null) return false;

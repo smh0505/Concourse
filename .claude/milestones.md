@@ -77,7 +77,7 @@ Pivoted to WASM — see devlog.
 - [x] Revisit `tauri.conf.json` CSP
 - [x] (Stretch) Migrate Steam to a WASM plugin as a real-world proof
 
-## Milestone 8.5 — Further WASM Adoption (stretch)
+## Milestone 9 — Further WASM Adoption (stretch)
 - [x] Migrate GOG and/or Epic to WASM plugins
   - [x] GOG — done (`gog-source-wasm-plugin`); built-in `gog.rs`/`src/plugins/gog/` fully retired (launch moved into the plugin's own `launch()` too, no host-side GOG code left)
   - [x] Epic — done (`epic-source-wasm-plugin`); built-in `epic.rs`/`src/plugins/epic/` fully retired, verified against a real installed game
@@ -120,7 +120,7 @@ See devlog for context on why these two workstreams are combined.
 - [x] Wire the new `wrapper` plugin kind into loader/settings UI
 
 ## Milestone 11 — RAWG Metadata Provider (stretch)
-Follows the M8.5 SGDB/IGDB precedent — ships as a standalone WASM plugin repo, not built-in.
+Follows the M9 SGDB/IGDB precedent — ships as a standalone WASM plugin repo, not built-in.
 - [x] `rawg-metadata-wasm-plugin` repo — fetch description/genres/release date from the RAWG API,
   `metadata-plugin-world` + `http-request` + `settingsSchema` for the API key
 - [x] Verify for real against a live API key, fetching real metadata

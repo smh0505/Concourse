@@ -2,7 +2,7 @@
 //! bindings generated from `wit/plugin.wit` and implements the `host` interface plugins import.
 
 use crate::zip_install;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use wasmtime::component::bindgen;
 use wasmtime_wasi::{ResourceTable, WasiCtx, WasiCtxBuilder, WasiView};
@@ -13,7 +13,7 @@ use wasmtime_wasi::{ResourceTable, WasiCtx, WasiCtxBuilder, WasiView};
 /// covers a literal filesystem path prefix (e.g. Epic's fixed manifests directory - genuinely
 /// static, not runtime-discovered, so it doesn't need `request-read-scope`). Declared in
 /// `plugin.json`'s `pathScopes` field, parsed once at `PluginHostState` construction.
-#[derive(Clone, Deserialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum PathScope {
     Registry { hive: String, prefix: String },

@@ -2,7 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { computed, ref, watch } from "vue";
 import BaseModal from "../BaseModal.vue";
-import { RUN_PROGRAMS_CAPABILITY, type PluginPreview } from "../../../plugins/manifest";
+import { RUN_PROGRAMS_CAPABILITY, type PathScope, type PluginPreview } from "../../../plugins/manifest";
 
 // Second step of the "install by URL" flow (see AddPlugin.vue) for every installable plugin
 // kind - shows what was actually fetched (id/name/version/kind) before committing to the real
@@ -29,6 +29,16 @@ watch(
     runProgramsGranted.value = false;
   },
 );
+
+// Milestone 13 path/URL allowlisting is entirely self-declared by the plugin's own manifest -
+// the host enforces it either way, but nothing surfaced it to the person deciding whether to
+// install at all. Visibility only (not itself an enforcement step, unlike the checkbox above) -
+// a malicious author can declare whatever they want here, this just stops it being invisible.
+function formatPathScope(scope: PathScope): string {
+  return scope.type === "registry"
+    ? `Registry: ${scope.hive}\\${scope.prefix}`
+    : `Files under: ${scope.prefix}`;
+}
 
 async function onSubmit() {
   if (needsRunProgramsGrant.value && props.manifest) {
@@ -61,11 +71,23 @@ async function onSubmit() {
       <p v-if="manifest.kind === 'theme'" class="hint">
         This installs a data-only theme (colors/CSS variables only, no code).
       </p>
-      <p v-else class="hint">
-        This downloads and runs code from the URL you provided. It currently runs with the
-        same file and network access as any program on your system - only install plugins
-        from sources you fully trust.
-      </p>
+      <template v-else>
+        <p class="hint">
+          This downloads and runs code from the URL you provided. File/registry/network access
+          is scoped to what it declares below (host-enforced) - but that scope is self-declared
+          by the plugin's own author, not verified against what the code actually does. Only
+          install plugins from sources you fully trust.
+        </p>
+        <div v-if="manifest.pathScopes.length || manifest.httpScopes.length" class="scope-list">
+          <p class="scope-list-title">Declares access to:</p>
+          <ul>
+            <li v-for="(scope, i) in manifest.pathScopes" :key="`path-${i}`">
+              {{ formatPathScope(scope) }}
+            </li>
+            <li v-for="host in manifest.httpScopes" :key="`http-${host}`">Network: {{ host }}</li>
+          </ul>
+        </div>
+      </template>
       <label v-if="needsRunProgramsGrant" class="permission-grant">
         <input type="checkbox" v-model="runProgramsGranted" />
         This plugin runs other programs on your system (e.g. launching a game). I understand
@@ -105,6 +127,26 @@ async function onSubmit() {
 .hint {
   font-size: 0.75rem;
   opacity: 0.8;
+}
+
+.scope-list {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.scope-list-title {
+  margin: 0 0 0.2rem;
+  opacity: 0.8;
+}
+
+.scope-list ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.scope-list li {
+  font-family: monospace;
+  word-break: break-all;
 }
 
 .permission-grant {

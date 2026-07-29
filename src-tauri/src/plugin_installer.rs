@@ -4,6 +4,7 @@
 //! the app's single "Add Plugin" UI (one button, one URL field, one confirm dialog for either
 //! kind) already treats them as one flow rather than two.
 
+use crate::wasm_plugins::PathScope;
 use crate::zip_install::replace_dir;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -72,6 +73,14 @@ pub struct WasmPluginManifest {
     /// breaking manifest change. Absent/empty means the plugin never needs an explicit grant.
     #[serde(default)]
     pub capabilities: Vec<String>,
+    /// See `wasm_plugins::PathScope` - shown in the install-confirmation dialog (visibility
+    /// only, not itself an enforcement mechanism from this side) so a self-declared scope isn't
+    /// completely invisible to the person deciding whether to install.
+    #[serde(default, rename = "pathScopes")]
+    pub path_scopes: Vec<PathScope>,
+    /// See `wasm_plugins.rs`'s `is_allowed_host` - same visibility purpose as `path_scopes`.
+    #[serde(default, rename = "httpScopes")]
+    pub http_scopes: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -124,6 +133,9 @@ pub struct PluginPreview {
     /// See `WasmPluginManifest::capabilities` - empty for theme manifests, which have no
     /// capability concept at all.
     pub capabilities: Vec<String>,
+    /// See `WasmPluginManifest::path_scopes`/`http_scopes` - both empty for theme manifests.
+    pub path_scopes: Vec<PathScope>,
+    pub http_scopes: Vec<String>,
 }
 
 /// Fetches a manifest from a user-pasted URL and returns just enough to show a confirmation
@@ -145,6 +157,8 @@ pub async fn fetch_plugin_preview(url: String) -> Result<PluginPreview, String> 
             version: manifest.version,
             kind,
             capabilities: manifest.capabilities,
+            path_scopes: manifest.path_scopes,
+            http_scopes: manifest.http_scopes,
         })
     } else {
         let manifest: DataThemeManifest = serde_json::from_slice(&bytes)
@@ -155,6 +169,8 @@ pub async fn fetch_plugin_preview(url: String) -> Result<PluginPreview, String> 
             version: manifest.version,
             kind,
             capabilities: Vec::new(),
+            path_scopes: Vec::new(),
+            http_scopes: Vec::new(),
         })
     }
 }

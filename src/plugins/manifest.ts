@@ -51,11 +51,20 @@ export interface PluginPreview {
   version: string;
   kind: PluginKind;
   capabilities: string[];
+  pathScopes: PathScope[];
+  httpScopes: string[];
 }
 
 /** The one gated capability today (Milestone 13) - a plugin declaring this in its manifest
  *  needs an explicit user grant before spawn-process/run-and-wait will do anything. */
 export const RUN_PROGRAMS_CAPABILITY = "run-programs";
+
+/** Mirrors the Rust `PathScope` enum (`wasm_plugins.rs`) - a plugin's self-declared read
+ *  scope beyond its own plugin-dir(). Shown in the install-confirmation dialog for visibility
+ *  only; the host enforces it regardless of whether anyone ever looks at this. */
+export type PathScope =
+  | { type: "registry"; hive: string; prefix: string }
+  | { type: "path"; prefix: string };
 
 export function isPluginManifest(value: unknown): value is PluginManifest {
   if (typeof value !== "object" || value === null) return false;

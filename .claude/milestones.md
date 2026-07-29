@@ -87,12 +87,8 @@ Pivoted to WASM — see devlog.
   with any WASM plugin anymore (across all 7 repos, not just Steam)
 - [x] External theme plugins
   - [x] Data-only tier (`cssVariables` only, install-by-URL, no code/WASM)
-  - [x] Review component-override tier (`slots`) for external feasibility —
-    **reviewed, blocked, no path forward right now.** WASM export is structurally impossible
-    (can't cross a live Vue component across the Component Model boundary); the only technical
-    alternative (raw remote JS via `defineAsyncComponent`) is a bigger security regression than
-    the already-documented Milestone 13 gap, not a smaller one - full JS-realm access instead
-    of a scoped `host::` surface. Not pursued until/unless Milestone 13/14 land first.
+  - [x] Review component-override tier (`slots`) for external feasibility — reviewed,
+    found blocked at the time; tracked separately as Milestone 17 (Post-1.0 Roadmap)
 - [x] Migrate SteamGridDB and IGDB metadata providers to WASM plugins
   - [x] New `metadata-plugin-world` WIT world + `http-request` host primitive (custom
     headers/method/body, needed for both providers' auth) + manifest-declared `settingsSchema`
@@ -241,3 +237,16 @@ Carried over from Milestone 12 unstarted, in full.
 - [ ] EA app — research install detection and launch mechanism
 - [ ] Ubisoft Connect — research install detection and launch mechanism
 - [ ] Each ships as its own WASM plugin in a separate repo from day one
+
+## Milestone 17 — External Theme Plugins: Component-Override Tier (blocked)
+Carried over from Milestone 9, where the `slots` tier was reviewed and closed out as blocked -
+WASM export is structurally impossible (can't cross a live Vue component across the Component
+Model boundary), and the only technical alternative (raw remote JS via `defineAsyncComponent`)
+was judged a bigger security regression than Milestone 13's then-still-open capability-sandboxing
+gap. That condition has since changed - Milestones 13 and 14 are both closed now - so the
+original blocking rationale is worth re-checking rather than assumed to still hold as-is.
+- [ ] Re-review whether Milestone 13/14's now-closed sandboxing/trust model changes the
+  raw-remote-JS calculus at all
+- [ ] If still blocked, re-confirm no other mechanism exists (e.g. Vue's own runtime template
+  compiler, noted in devlog as a concretely-buildable declarative alternative, not proposed for
+  implementation yet)

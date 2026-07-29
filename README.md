@@ -108,19 +108,26 @@ function exposed to plugins that could do real-world damage is now gated:
   subdomain), not an arbitrary attacker-controlled URL.
 
 Only install plugins from sources you fully trust regardless - this closes "a plugin can
-silently reach anywhere on your system or network," not a full app-store-grade trust model
-(no review/moderation step yet - see Milestone 14).
+silently reach anywhere on your system or network," not a full app-store-grade trust model.
 
-**Signing (Milestone 14, in progress):** every official plugin release is signed with a
-[Sigstore](https://www.sigstore.dev/) build-provenance attestation, binding the published
-`.wasm` to the exact commit and CI run that built it. Concourse checks this automatically on
-install and shows the result - **advisory only right now, not a hard gate**. Worth being
-precise about what this actually proves: it confirms an artifact really came from that repo's
-own CI, unmodified since (catches tampering, a compromised release token, a hijacked repo
-slipping in a rogue build) - it does **not** vouch for the repo author's intentions. A malicious
-author's own code gets a perfectly valid signature too, since their own CI genuinely built and
-signed exactly what they committed. Answering "is this author trustworthy" is a separate,
-harder problem (a curated/reviewed registry, revocation) - still open.
+**Trust model (Milestone 14, closed):** two complementary, independent layers.
+- **Signing** - every official plugin release is signed with a
+  [Sigstore](https://www.sigstore.dev/) build-provenance attestation, binding the published
+  `.wasm` to the exact commit and CI run that built it. Concourse checks this on install and
+  shows the result - **advisory only, not a hard gate**. It confirms an artifact really came
+  from that repo's own CI, unmodified since (catches tampering, a compromised release token, a
+  hijacked repo slipping in a rogue build) - it does **not** vouch for the repo author's
+  intentions. A malicious author's own code gets a perfectly valid signature too, since their
+  own CI genuinely built and signed exactly what they committed.
+- **Curated registry** - [`concourse-plugin-registry`](https://github.com/smh0505/concourse-plugin-registry),
+  a hand-maintained list of plugins whose pinned version has actually been read, each entry
+  locked to a specific release and its real SHA256. The "Add Plugin" dialog lists these
+  alongside the freeform URL field; installing from the registry is a **hard reject** on hash
+  mismatch, unlike signing's advisory check - this hash was chosen by hand after review, so a
+  mismatch is a real "this isn't what was reviewed" signal. Pulling an entry from the registry
+  *is* revocation for future installs (not retroactive against already-installed copies yet).
+  Freeform install-by-URL still works exactly as before either way - the registry is an
+  additional, more-trusted path, not a required gate.
 
 ## Status
 
@@ -131,9 +138,10 @@ implementation history/rationale behind each milestone item.
 
 As of now: core library, metadata/playtime tracking, Big Picture mode, the plugin system
 (including the WebAssembly runtime-plugin pipeline and managed install for the compatibility
-wrappers), and a desktop UI polish pass are all done. All official plugins listed above are
-live. Open work includes an emulator/ROM scanner plugin, WASM plugin capability sandboxing
-(Milestone 13), and a plugin trust/signing model (Milestone 14).
+wrappers), a desktop UI polish pass, WASM plugin capability sandboxing (Milestone 13), and a
+plugin trust/signing model (Milestone 14) are all done. All official plugins listed above are
+live. Open work includes an emulator/ROM scanner plugin and additional source plugins
+(Xbox/EA/Ubisoft, Milestone 12).
 
 ## License
 

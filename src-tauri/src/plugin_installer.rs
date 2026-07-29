@@ -219,6 +219,7 @@ async fn install_wasm_plugin(
     app: &AppHandle,
     manifest_url: &str,
     manifest_bytes: &[u8],
+    expected_sha256: Option<&str>,
 ) -> Result<InstallResult, String> {
     let manifest: WasmPluginManifest = serde_json::from_slice(manifest_bytes)
         .map_err(|e| format!("Invalid plugin.json: {}", e))?;
@@ -232,6 +233,22 @@ async fn install_wasm_plugin(
 
     let wasm_url = sibling_url(manifest_url, &manifest.entry)?;
     let wasm_bytes = download_bytes(&wasm_url).await?;
+
+    // Milestone 14 curated registry - unlike the Sigstore check below, a mismatch here is a
+    // hard reject: this hash was pinned by hand after actually reviewing that specific
+    // version, so a mismatch is a real "this isn't what was reviewed" signal, not just "no
+    // attestation exists yet" (which every pre-signing release would otherwise trip).
+    if let Some(expected) = expected_sha256 {
+        use sha2::{Digest, Sha256};
+        let actual = format!("{:x}", Sha256::digest(&wasm_bytes));
+        if !actual.eq_ignore_ascii_case(expected) {
+            return Err(format!(
+                "Pinned hash mismatch - this download doesn't match what was reviewed \
+                 (expected {}, got {}). Install aborted.",
+                expected, actual
+            ));
+        }
+    }
 
     let (verified, verification_note) =
         match crate::plugin_verification::parse_github_owner_repo(manifest_url) {
@@ -307,14 +324,18 @@ fn install_data_theme(dir: &Path, manifest_bytes: &[u8]) -> Result<InstallResult
 /// KB) rather than reusing bytes from `fetch_plugin_preview`, keeping both commands simple and
 /// stateless. Branches on the manifest's own `kind` once fetched.
 #[tauri::command]
-pub async fn install_plugin(app: AppHandle, url: String) -> Result<InstallResult, String> {
+pub async fn install_plugin(
+    app: AppHandle,
+    url: String,
+    expected_sha256: Option<String>,
+) -> Result<InstallResult, String> {
     let bytes = download_bytes(&url).await?;
     let probe: ManifestKindProbe =
         serde_json::from_slice(&bytes).map_err(|e| format!("Invalid plugin manifest: {}", e))?;
     let kind = detect_kind(&probe)?;
 
     if kind == "source" || kind == "metadata" {
-        install_wasm_plugin(&app, &url, &bytes).await
+        install_wasm_plugin(&app, &url, &bytes, expected_sha256.as_deref()).await
     } else {
         install_data_theme(&data_themes_dir(&app)?, &bytes)
     }

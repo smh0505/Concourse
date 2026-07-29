@@ -180,10 +180,15 @@ any URL. This is a further, larger tier beyond capability sandboxing, not a prer
   known publisher key before install) - implemented as advisory (shown to the user, not yet a
   hard install-time gate); proves provenance/integrity, explicitly not author trustworthiness
   (see devlog)
-- [ ] Curated/reviewed plugin registry (a moderated list of known-good plugin URLs) as an
-  alternative to freeform paste-any-URL
-- [ ] Revocation mechanism (blocklist a previously-trusted plugin id/version if later found
-  malicious)
+- [x] Curated/reviewed plugin registry (a moderated list of known-good plugin URLs) as an
+  alternative to freeform paste-any-URL - new `concourse-plugin-registry` repo, hand-pinned
+  `{id, manifestUrl, wasmSha256}` entries, install-time hash check is a hard reject (unlike
+  signing's advisory check)
+- [x] Revocation mechanism (blocklist a previously-trusted plugin id/version if later found
+  malicious) - pulling an entry from the registry repo *is* revocation, no separate mechanism;
+  install-time only for now, doesn't retroactively flag already-installed plugins (see devlog)
+
+Milestone 14 fully closed - all three bullets done.
 
 Idea: a separate whitelist repo/wiki listing `{plugin id, version, manifest URL, expected
 sha256}` entries, reviewed and pinned by hand, could cover the registry + revocation bullets

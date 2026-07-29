@@ -2,6 +2,7 @@
 mod db;
 mod launcher;
 mod plugin_installer;
+mod plugin_registry;
 mod plugin_verification;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
@@ -30,6 +31,7 @@ pub fn run() {
             plugin_installer::list_data_themes,
             plugin_installer::uninstall_data_theme,
             plugin_installer::list_wasm_plugins,
+            plugin_registry::fetch_plugin_registry,
             wasm_plugin_runtime::wasm_plugin_scan,
             wasm_plugin_runtime::wasm_plugin_launch,
             wasm_plugin_runtime::wasm_plugin_get_install_status,

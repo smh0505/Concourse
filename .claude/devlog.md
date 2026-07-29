@@ -279,3 +279,52 @@ Net effect on Milestone 14: the signing bullet goes from "distinct, heavier tier
 - `scripts/validate.sh` + a CI workflow re-derives every entry's hash from its live `manifestUrl` on every push/PR and fails if it doesn't match `wasmSha256` - catches a copy-paste mistake in the registry itself before it ships, not just plugin-side bugs. Verified locally with an equivalent Python script first (no `jq` in this dev environment) before writing the real bash+jq version that actually runs in CI - all 8 entries checked out clean on the first real run
 - New host module `plugin_registry.rs` (`fetch_plugin_registry` command, plain GET against the registry's raw `main` branch file - same trust model as fetching any other manifest URL already). `plugin_installer.rs`'s `install_plugin`/`install_wasm_plugin` gained an `expected_sha256: Option<String>` parameter - when present (only ever passed for a registry-sourced install, never a freeform-pasted URL), a mismatch is a **hard reject**, unlike the Sigstore check's advisory-only failure. The asymmetry is deliberate and stated in both the code and the registry's own README: an attestation mismatch just means "no attestation exists yet" (true for every pre-Milestone-14 release), but a pinned-hash mismatch means "this doesn't match what was actually reviewed" - a real, actionable signal, not a rollout-timing artifact
 - Frontend: `pluginInstall.ts` gained `registryEntries`/`loadRegistry()`, and `previewInstall`/`confirmInstall` now thread an optional `expectedSha256` through end to end. `AddPlugin.vue` fetches the registry on mount and shows it as a second path alongside the existing freeform-URL field - clicking a registry entry's own Install button goes through the identical preview/confirm flow as a pasted URL, just with the pinned hash attached. A registry fetch failure (network down, repo unreachable) is silently swallowed rather than toasted - freeform install-by-URL was never gated by the registry's availability and shouldn't start erroring just because an *additional*, more-trusted path happened to be unreachable
+
+**Version-bump automation, added after the milestone closed.** The manual "re-download,
+re-review, re-hash, re-pin" busywork described above still had to happen by hand for every real
+plugin release. User asked to automate the *mechanical* part of that (fetching + hashing +
+committing) while explicitly keeping the human review/merge gate - not a request to trust
+"latest" automatically, which would have quietly undone the entire point of a curated registry.
+- Each of the 8 plugin repos' `publish.yml` now fires a `repository_dispatch` (`event_type:
+  plugin-release`, payload `{repo, tag}`) to `concourse-plugin-registry` right after publishing
+  a release. A new `scripts/bump-entry.sh` there re-downloads that exact release's manifest and
+  `.wasm`, independently computes the real sha256 (never trusts a value the dispatch payload
+  itself could have carried), and patches just that one entry's `manifestUrl`/`wasmSha256`. A
+  new workflow, `bump-from-release.yml`, wraps that script and opens a PR rather than committing
+  to `main` directly - the existing `validate.yml` (unchanged) re-verifies the hash independently
+  on the PR and again on merge, so a bot-authored change gets the identical scrutiny a
+  human-authored one would. Nothing is trusted-and-merged automatically; a human still has to
+  read the diff and click merge
+- Real end-to-end test (not just a code review) surfaced two actual bugs, both fixed before
+  calling this done:
+  1. The first cut wired the dispatch into a *separate* workflow triggered by `release:
+     published`, matching the pattern the plugin repos already used for other automation. It
+     never fired. Root cause: `publish.yml` creates its release via `softprops/action-gh-release`
+     using the default `GITHUB_TOKEN`, and GitHub's loop-prevention rule means events created by
+     that token don't trigger *other* workflows in the same repo - confirmed by cutting a real
+     `v0.3.2` test release on `rawg-metadata-wasm-plugin` and watching the separate
+     `notify-registry.yml` never run. Fix: call the dispatch as an inline step at the end of
+     `publish.yml`'s own job instead (same `steps.check.outputs.exists == 'false'` guard), so it
+     rides the same job/token context that just did the actual publishing rather than depending
+     on a second event firing at all. Propagated to all 8 repos; the dead separate-workflow file
+     removed everywhere
+  2. Once the dispatch did fire, `bump-from-release.yml`'s PR step failed outright -
+     `concourse-plugin-registry` didn't have "Allow GitHub Actions to create pull requests"
+     enabled (off by default on a new repo). Enabled via
+     `gh api -X PUT .../actions/permissions/workflow -f default_workflow_permissions=write -F
+     can_approve_pull_request_reviews=true`. Retrying the same dispatch then hit a second,
+     related issue - the bump branch already existed from the first failed attempt, so the plain
+     `git push` was rejected as a non-fast-forward. Fixed by force-pushing the bump branch (it's
+     disposable and bot-owned, always rebuilt fresh from `main`, so a leftover branch from a
+     retried run should just be replaced) and skipping `gh pr create` if a PR is already open for
+     that branch, so a retried dispatch is idempotent instead of erroring
+- One more one-off observed and left as-is rather than engineered around: the first PR's
+  `validate.yml` run came back `action_required` and needed a single manual approval
+  (`gh api -X POST .../actions/runs/<id>/approve`) before it would run at all - read as a
+  first-time-bot-contributor gate on a brand-new repo, not a recurring requirement. Confirmed by
+  observation: the post-merge `validate.yml` run on `main` and the dispatch used for the actual
+  test both went straight to `success` with no gate the second time
+- Test releases used real infrastructure end to end rather than synthetic data - genuine `v0.3.2`
+  then `v0.3.3` patch bumps (no functional change) on `rawg-metadata-wasm-plugin`, a real signed
+  release, a real registry PR, merged for real once verified (`registry.json` now legitimately
+  points at `v0.3.3`, not left pinned to stale test data)

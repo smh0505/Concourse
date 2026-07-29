@@ -208,6 +208,13 @@ answers "did this really come from that repo's CI," not just "does this match a 
 pinned" - real authenticity, not a integrity-only proxy for it. Wired in - see devlog for the
 full reasoning and implementation notes.
 
+Update: the registry's own version-bump busywork (re-download, re-hash, re-pin by hand on
+every plugin release) is now automated end to end, without weakening the manual-review gate -
+each plugin repo's release fires a cross-repo dispatch, the registry repo independently
+re-downloads and re-hashes the real asset and opens a PR, `validate.yml` re-verifies it again,
+and a human still has to actually merge. Verified for real against a live release. See devlog
+for the two real bugs this test run surfaced and fixed.
+
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at
 build time (`src/plugins/*`); Milestone 8 added true runtime-downloadable plugin support as

@@ -89,10 +89,9 @@ into Settings → the matching tab → Add Plugin; themes install the same way f
 manifest URL. See each repo's own README for manual-copy install paths if you'd rather build
 locally or skip the URL flow.
 
-**Security note (mostly addressed, tracked as Milestone 13):** wasmtime's Component Model
-sandbox guarantees memory safety (a plugin can't corrupt host memory or escape its own
-execution), and the host functions exposed to plugins are now scoped on both fronts that
-mattered:
+**Security note (Milestone 13, closed):** wasmtime's Component Model sandbox guarantees memory
+safety (a plugin can't corrupt host memory or escape its own execution), and every host
+function exposed to plugins that could do real-world damage is now gated:
 - `spawn-process`/`run-and-wait` need an explicit, visible per-plugin grant - a plugin must
   declare `capabilities: ["run-programs"]` in its manifest, and the app refuses to run anything
   on its behalf until you've actually granted it (a checkbox in the install-confirmation dialog
@@ -104,9 +103,13 @@ mattered:
   can't be known ahead of time (Steam), a verified runtime scope request - the host checks for
   a real structural signature (a `steamapps` subdirectory) before granting access, and rejects
   any plugin id it doesn't have a validator for outright.
+- `http-get`/`http-request`/`download-bytes` are scoped to a manifest-declared hostname
+  allowlist (`httpScopes`) - a plugin can only ever reach the hosts it declares (exact match or
+  subdomain), not an arbitrary attacker-controlled URL.
 
-Network access (`http-get`/`download-bytes`/`http-request`) is still unrestricted - a plugin
-can call out to any URL. Only install plugins from sources you fully trust.
+Only install plugins from sources you fully trust regardless - this closes "a plugin can
+silently reach anywhere on your system or network," not a full app-store-grade trust model
+(no code signing, no review step yet - see Milestone 14).
 
 ## Status
 

@@ -77,6 +77,12 @@ pub struct PluginHostState {
     /// Tauri command call anyway (see `wasm_plugin_runtime.rs`), and the plugin that needs this
     /// (Steam) does its discovery-then-read all within one call/instantiation.
     dynamic_read_scopes: Vec<PathBuf>,
+    /// Manifest-declared allowed hostnames (Milestone 13's last item) - unlike file paths,
+    /// every plugin's real network usage turned out to be a small, fixed set of hostnames known
+    /// at author time (confirmed via `grep` across all plugin repos before implementing this -
+    /// Steam/GOG/Epic call none at all), so this needed no dynamic verified-scope mechanism the
+    /// way Steam's filesystem access did. Declared in `plugin.json`'s `httpScopes` field.
+    http_scopes: Vec<String>,
 }
 
 impl PluginHostState {
@@ -85,6 +91,7 @@ impl PluginHostState {
         plugin_dir: PathBuf,
         db_path: &Path,
         path_scopes: Vec<PathScope>,
+        http_scopes: Vec<String>,
     ) -> rusqlite::Result<Self> {
         let db = rusqlite::Connection::open(db_path)?;
         Ok(Self {
@@ -94,6 +101,7 @@ impl PluginHostState {
             wasi_ctx: WasiCtxBuilder::new().build(),
             resource_table: ResourceTable::new(),
             path_scopes,
+            http_scopes,
             dynamic_read_scopes: Vec::new(),
         })
     }
@@ -185,6 +193,25 @@ impl PluginHostState {
                 scoped_hive.eq_ignore_ascii_case(hive) && Self::path_has_prefix(path, prefix)
             }
             PathScope::Path { .. } => false,
+        })
+    }
+
+    /// Milestone 13's last item - checked before every outbound `http-get`/`http-request`/
+    /// `download-bytes` call. Exact-hostname or subdomain-suffix match against
+    /// `plugin.json`'s `httpScopes` (so declaring "steamgriddb.com" also covers
+    /// "www.steamgriddb.com" without needing every subdomain spelled out). Only the plugin-
+    /// supplied entry URL is checked - whatever redirect chain the HTTP client follows
+    /// internally afterward is out of scope, same as how this kind of check normally works.
+    fn is_allowed_host(&self, url: &str) -> bool {
+        let Ok(parsed) = reqwest::Url::parse(url) else {
+            return false;
+        };
+        let Some(host) = parsed.host_str() else {
+            return false;
+        };
+        self.http_scopes.iter().any(|scope| {
+            host.eq_ignore_ascii_case(scope)
+                || host.to_lowercase().ends_with(&format!(".{}", scope.to_lowercase()))
         })
     }
 
@@ -391,6 +418,12 @@ impl PluginHostState {
     /// thread. Sends a `User-Agent` - some APIs (e.g. GitHub's, used by the wrapper plugins'
     /// own managed-install flow to hit the releases API) reject requests without one.
     fn do_http_get(&mut self, url: String) -> Result<String, String> {
+        if !self.is_allowed_host(&url) {
+            return Err(format!(
+                "Network access denied: \"{}\" is outside this plugin's declared httpScopes.",
+                url
+            ));
+        }
         reqwest::blocking::Client::new()
             .get(&url)
             .header("User-Agent", "concourse")
@@ -412,6 +445,12 @@ impl PluginHostState {
         headers: Vec<(String, String)>,
         body: Option<String>,
     ) -> Result<String, String> {
+        if !self.is_allowed_host(&url) {
+            return Err(format!(
+                "Network access denied: \"{}\" is outside this plugin's declared httpScopes.",
+                url
+            ));
+        }
         let method = reqwest::Method::from_bytes(method.as_bytes())
             .map_err(|e| format!("Invalid HTTP method \"{}\": {}", method, e))?;
 
@@ -433,6 +472,12 @@ impl PluginHostState {
     }
 
     fn do_download_bytes(&mut self, url: String) -> Result<Vec<u8>, String> {
+        if !self.is_allowed_host(&url) {
+            return Err(format!(
+                "Network access denied: \"{}\" is outside this plugin's declared httpScopes.",
+                url
+            ));
+        }
         reqwest::blocking::Client::new()
             .get(&url)
             .header("User-Agent", "concourse")

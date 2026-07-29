@@ -166,10 +166,12 @@ real-world system access as running an arbitrary downloaded `.exe` — see devlo
   allowlist instead of arbitrary absolute paths)
 - [x] Permission gating for `spawn-process`/`run-and-wait` (visible, explicit user grant of
   "this plugin can run other programs" before install, not silent)
-- [ ] URL allowlisting or rate-limiting for `http-request`/`http-get`/`download-bytes` (the
+- [x] URL allowlisting or rate-limiting for `http-request`/`http-get`/`download-bytes` (the
   new `http-request` primitive - arbitrary method/headers/body, added for metadata providers
   like SGDB/IGDB - meaningfully widens exfiltration potential over plain GET: a plugin can now
   POST stolen data to an attacker's server, not just leak it via a GET URL's query string)
+
+Milestone 13 fully closed - all four items done.
 
 ## Milestone 14 — Plugin Trust Model: Signing & Review (stretch)
 Even with Milestone 13 done, install-by-URL stays trust-based, not verified - anyone can paste

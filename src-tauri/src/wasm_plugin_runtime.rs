@@ -20,6 +20,10 @@ struct WasmPluginManifest {
     /// (LR/LE, every metadata provider).
     #[serde(default, rename = "pathScopes")]
     path_scopes: Vec<PathScope>,
+    /// Milestone 13's last item - allowed hostnames for http-get/http-request/download-bytes.
+    /// Absent/empty for plugins that make no network calls at all (Steam/GOG/Epic).
+    #[serde(default, rename = "httpScopes")]
+    http_scopes: Vec<String>,
 }
 
 /// Mirrors the TS `GameEntry` shape (src/plugins/types.ts); `rename_all = "camelCase"` matches
@@ -167,7 +171,7 @@ fn instantiate_from_paths(
     // even for a capability-less component - see PluginHostState's doc comment.
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes)
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes, manifest.http_scopes)
         .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
@@ -205,7 +209,7 @@ fn instantiate_wrapper_from_paths(
         .map_err(|e| e.to_string())?;
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes)
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes, manifest.http_scopes)
         .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
@@ -250,7 +254,7 @@ fn instantiate_metadata_from_paths(
         .map_err(|e| e.to_string())?;
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes)
+    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes, manifest.http_scopes)
         .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 

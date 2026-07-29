@@ -328,3 +328,25 @@ committing) while explicitly keeping the human review/merge gate - not a request
   then `v0.3.3` patch bumps (no functional change) on `rawg-metadata-wasm-plugin`, a real signed
   release, a real registry PR, merged for real once verified (`registry.json` now legitimately
   points at `v0.3.3`, not left pinned to stale test data)
+
+## 1.0.0 — Core Roadmap Closed, Post-1.0 Roadmap Opened
+User call: bump `0.10.0` -> `1.0.0` now rather than waiting on the two leftover items (Milestone
+7's ROM scanner sub-item, Milestone 12's Xbox/EA/Ubisoft stretch goal, the latter entirely
+unstarted). Judgment: Milestones 1–6 and 8–11, plus both security milestones (13, 14, the most
+recently closed and arguably the highest-stakes work in the whole roadmap), are done; the two
+remaining items are an unstarted stretch goal and one sub-item of an otherwise-closed polish
+milestone, neither blocking real-world use the way the original "post-M12" versioning note
+implied when it was written (back when M12 was still the *next* milestone in sequence, not a
+skipped-over stretch goal that later milestones passed by).
+- Bumped `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` to `1.0.0` together;
+  `cargo check` regenerated `Cargo.lock`'s matching `concourse` package entry rather than hand-editing it
+- `milestones.md` restructured rather than just bumping the header: Milestone 7's unstarted ROM
+  scanner sub-item and all of Milestone 12 moved out into a new `Post-1.0 Roadmap` section
+  (renumbered Milestone 15/16 there), leaving both source milestones fully checked. Chose to
+  keep calling them "Milestones" (not "Phases," despite that being the term floated) - it's the
+  same document, same devlog cross-reference convention, just a second wave numbered
+  continuously from 14, not a different kind of unit
+- `CLAUDE.md`'s versioning rule rewritten to match: the "stay 0.x until post-M12" language no
+  longer made sense once M12 was consciously deferred rather than completed-then-followed;
+  replaced with "1.0.0 marks the core roadmap done, Post-1.0 minor bumps track closing a
+  Post-1.0 Roadmap milestone"

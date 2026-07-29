@@ -18,7 +18,7 @@ Before performing any task, always read and align with these documents (all unde
 
 ### Development Flow
 - **One Step at a Time**: Work incrementally. Do not try to implement multiple milestones at once. Focus on the current active milestone.
-- **Versioning**: SemVer, staying `0.x` until the app is stable for real-world use (post-M12 stretch work). Minor version tracks the highest fully-completed milestone number (e.g. `0.10.0` = through Milestone 10); patch bumps for fixes within a milestone. Bump `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` together — they must always match.
+- **Versioning**: SemVer. `1.0.0` marked Milestones 1–14 (the core roadmap) closed and the app stable for real-world use. Post-1.0, minor version bumps track closing a Post-1.0 Roadmap milestone (see `milestones.md`); patch bumps for fixes within a milestone. Bump `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` together — they must always match.
 - **Code Quality**: Write clean, modular, and self-documenting code. Prefer performance-focused, lightweight solutions where applicable.
 - **Milestone Tracking**:
   - When a task or checklist item from `milestones.md` is fully completed and verified, update the corresponding `[ ]` to `[x]` in `milestones.md`.

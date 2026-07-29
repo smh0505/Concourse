@@ -1,6 +1,6 @@
 [package]
 name = "concourse"
-version = "0.10.0"
+version = "1.0.0"
 description = "Concourse - unified game library client"
 authors = ["you"]
 edition = "2021"

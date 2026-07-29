@@ -3,6 +3,10 @@
 Tracks *what's done*. For implementation rationale, decisions, and fixes behind each item,
 see `.claude/devlog.md`.
 
+**1.0.0** marks Milestones 1–14 (the core roadmap) closed and the app considered stable for
+real-world use. Further work continues under **Post-1.0 Roadmap** at the bottom of this file,
+numbered as a continuing milestone sequence for the same devlog cross-reference convention.
+
 ## Milestone 1 — Core Library Foundation
 - [x] Pick stack (Tauri + Vue/TypeScript, SQLite)
 - [x] Set up SQLite schema (games, tags, playtime sessions)
@@ -49,10 +53,8 @@ see `.claude/devlog.md`.
 - [x] Metadata provider plugin support (new `metadata` plugin kind)
 - [x] Controller mapping profile plugins
 - [x] Background art on focus (Big Picture)
-- [ ] Additional source plugins
-  - [x] Epic Games
-  - [x] GOG
-  - [ ] Emulator/ROM scanner
+- [x] Additional source plugins — Epic Games, GOG (emulator/ROM scanner moved to
+  Post-1.0 Roadmap, Milestone 15)
 - [x] Big Picture scroll fixes (hidden scrollbar, desktop scroll lock)
 - [x] Auto-launch into Big Picture on boot (toggle)
 - [x] Per-game compatibility wrappers (Locale Remulator + Locale Emulator)
@@ -150,11 +152,8 @@ Follows the M8.5 SGDB/IGDB precedent — ships as a standalone WASM plugin repo,
 - [x] Verify for real against a live API key, fetching real metadata
 - [x] Verify merge behavior against IGDB (first-non-null-wins)
 
-## Milestone 12 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
-- [ ] Xbox — research install detection and launch mechanism
-- [ ] EA app — research install detection and launch mechanism
-- [ ] Ubisoft Connect — research install detection and launch mechanism
-- [ ] Each ships as its own WASM plugin in a separate repo from day one
+(Milestone 12, Xbox/EA/Ubisoft source plugins, moved to Post-1.0 Roadmap, Milestone 16 — none
+of its items were started, no reason to hold up 1.0 for a stretch goal untouched.)
 
 ## Milestone 13 — WASM Plugin Capability Sandboxing (security)
 Install-by-URL for WASM source plugins (Milestone 8) currently grants a plugin the same
@@ -219,3 +218,28 @@ Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validat
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at
 build time (`src/plugins/*`); Milestone 8 added true runtime-downloadable plugin support as
 a distinct, larger feature.
+
+---
+
+# Post-1.0 Roadmap
+
+Second wave of milestones, opened after 1.0.0 shipped. Items below were carried over from the
+1.0 roadmap rather than blocking release on them — an unstarted stretch goal (Milestone 12) or
+one leftover sub-item (Milestone 7's ROM scanner) don't meet the bar for holding up a stable
+1.0. Numbering continues the same sequence/heading convention as above for devlog
+cross-reference.
+
+## Milestone 15 — Additional Source Plugins: Emulator/ROM Scanner
+Carried over from Milestone 7 (Polish & Extras) unstarted.
+- [ ] Research emulator/ROM directory conventions worth supporting first (scope: which
+  emulators/formats)
+- [ ] Scan configured ROM directories, map entries into core `GameEntry` format
+- [ ] Launch mechanism (emulator + ROM path)
+- [ ] Dedup against manually-added / other source-plugin entries
+
+## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
+Carried over from Milestone 12 unstarted, in full.
+- [ ] Xbox — research install detection and launch mechanism
+- [ ] EA app — research install detection and launch mechanism
+- [ ] Ubisoft Connect — research install detection and launch mechanism
+- [ ] Each ships as its own WASM plugin in a separate repo from day one

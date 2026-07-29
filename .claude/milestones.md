@@ -104,32 +104,6 @@ Pivoted to WASM — see devlog.
 
 (Locale Remulator/Locale Emulator's WASM migration moved into Milestone 10.)
 
-## Milestone 9 — Desktop UI Polish (ongoing)
-This milestone doesn't close — UI polish is open-ended. See devlog for full detail on each
-item below; new ideas get appended under Backlog rather than opening a new milestone.
-- [x] Custom window chrome
-- [x] Navigation shell
-- [x] Grid/list view toggle redesign
-- [x] Collapsible sidebar
-- [x] Themed scrollbars
-- [x] Sidebar/titlebar rework (Add Game modal, Big Picture button relocation)
-- [x] Design token pass
-- [x] Play/Edit/Remove icon-only buttons
-- [x] GameCard hover redesign
-- [x] Toast/notification system
-- [x] Empty/loading states
-- [x] Modal polish
-- [x] Big Picture visual pass
-- [x] Big Picture slideshow view
-
-### Backlog
-Ad-hoc polish items land here as they come up, checked off in place rather than moved
-elsewhere.
-- [x] API-key/settings forms moved into modals (was inline under each plugin row); GameCard's
-  cover-art fetch folded into the unified "Fetch Metadata" button; all modal-form components
-  consolidated under `src/components/desktop/modalForms/`, `BaseModal.vue` absorbed the
-  separate title/layout wrapper
-
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 See devlog for context on why these two workstreams are combined.
 
@@ -213,6 +187,30 @@ each plugin repo's release fires a cross-repo dispatch, the registry repo indepe
 re-downloads and re-hashes the real asset and opens a PR, `validate.yml` re-verifies it again,
 and a human still has to actually merge. Verified for real against a live release. See devlog
 for the two real bugs this test run surfaced and fixed.
+
+## Milestone 14.5 — UI Polish (Continuous, ongoing)
+This milestone doesn't close — UI polish is open-ended. See devlog for full detail on each
+item below; new items get appended in place rather than opening a new milestone. Numbered
+14.5 (not 9) since it sits alongside/after the closed core roadmap rather than blocking any
+milestone in sequence.
+- [x] Custom window chrome
+- [x] Navigation shell
+- [x] Grid/list view toggle redesign
+- [x] Collapsible sidebar
+- [x] Themed scrollbars
+- [x] Sidebar/titlebar rework (Add Game modal, Big Picture button relocation)
+- [x] Design token pass
+- [x] Play/Edit/Remove icon-only buttons
+- [x] GameCard hover redesign
+- [x] Toast/notification system
+- [x] Empty/loading states
+- [x] Modal polish
+- [x] Big Picture visual pass
+- [x] Big Picture slideshow view
+- [x] API-key/settings forms moved into modals (was inline under each plugin row); GameCard's
+  cover-art fetch folded into the unified "Fetch Metadata" button; all modal-form components
+  consolidated under `src/components/desktop/modalForms/`, `BaseModal.vue` absorbed the
+  separate title/layout wrapper
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

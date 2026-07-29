@@ -556,14 +556,23 @@ mod tests {
         let plugin_dir = temp.0.join("plugin");
         std::fs::create_dir_all(&plugin_dir).unwrap();
         std::fs::copy(&component_path, plugin_dir.join("entry.wasm")).unwrap();
-        std::fs::write(
-            plugin_dir.join("plugin.json"),
-            r#"{"id":"test-exe-scanner","name":"Test Exe Scanner","version":"0.1.0","kind":"source","entry":"entry.wasm"}"#,
-        )
-        .unwrap();
 
         let games_dir = temp.0.join("games");
         std::fs::create_dir_all(&games_dir).unwrap();
+        // Milestone 13 path allowlisting - this plugin scans a directory outside its own
+        // plugin-dir() (a user-configured "scan_dir" setting, same shape a real plugin
+        // scanning a custom folder would need), so its fixture manifest has to declare that as
+        // a static pathScopes entry, same as a real plugin author would in their own
+        // plugin.json - `games_dir` is only known at test runtime, so this is built with
+        // `format!` rather than a literal string like the other fixture manifests in this file.
+        std::fs::write(
+            plugin_dir.join("plugin.json"),
+            format!(
+                r#"{{"id":"test-exe-scanner","name":"Test Exe Scanner","version":"0.1.0","kind":"source","entry":"entry.wasm","pathScopes":[{{"type":"path","prefix":{}}}]}}"#,
+                serde_json::to_string(&games_dir.to_string_lossy().to_string()).unwrap()
+            ),
+        )
+        .unwrap();
         std::fs::write(games_dir.join("game1.exe"), b"not a real PE, just test bytes").unwrap();
         std::fs::write(games_dir.join("readme.txt"), b"should be filtered out").unwrap();
 

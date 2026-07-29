@@ -200,6 +200,18 @@ fn sibling_url(manifest_url: &str, entry: &str) -> Result<String, String> {
     Ok(format!("{}/{}", &manifest_url[..last_slash], entry))
 }
 
+/// What `install_plugin` returns - the installed id plus a Milestone 14 provenance-
+/// verification outcome. `verified`/`verification_note` are advisory only right now (install
+/// always proceeds regardless, see `plugin_verification.rs`'s module doc comment for why a
+/// hard gate isn't viable yet) - shown to the user, not enforced.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallResult {
+    pub id: String,
+    pub verified: bool,
+    pub verification_note: String,
+}
+
 /// Downloads a plugin's sibling `.wasm` entry and installs both files into
 /// `<app data>/wasm-plugins/<kind>/<id>/` (kind subfolder keeps source/wrapper plugins
 /// separated on disk). `manifest_bytes` is the already-downloaded `plugin.json` content.
@@ -207,7 +219,7 @@ async fn install_wasm_plugin(
     app: &AppHandle,
     manifest_url: &str,
     manifest_bytes: &[u8],
-) -> Result<String, String> {
+) -> Result<InstallResult, String> {
     let manifest: WasmPluginManifest = serde_json::from_slice(manifest_bytes)
         .map_err(|e| format!("Invalid plugin.json: {}", e))?;
 
@@ -220,6 +232,29 @@ async fn install_wasm_plugin(
 
     let wasm_url = sibling_url(manifest_url, &manifest.entry)?;
     let wasm_bytes = download_bytes(&wasm_url).await?;
+
+    let (verified, verification_note) =
+        match crate::plugin_verification::parse_github_owner_repo(manifest_url) {
+            Some((owner, repo)) => {
+                match crate::plugin_verification::verify_plugin_provenance(
+                    &wasm_bytes,
+                    &owner,
+                    &repo,
+                )
+                .await
+                {
+                    Ok(()) => (
+                        true,
+                        format!("Verified: built by {}/{}'s own CI.", owner, repo),
+                    ),
+                    Err(e) => (false, format!("Not verified: {}", e)),
+                }
+            }
+            None => (
+                false,
+                "Not verified: this plugin isn't hosted on github.com.".to_string(),
+            ),
+        };
 
     let kind_dir = wasm_plugins_dir(app)?.join(&manifest.kind);
     std::fs::create_dir_all(&kind_dir)
@@ -238,13 +273,13 @@ async fn install_wasm_plugin(
     let final_dir = kind_dir.join(&manifest.id);
     replace_dir(&staging_dir, &final_dir)?;
 
-    Ok(manifest.id)
+    Ok(InstallResult { id: manifest.id, verified, verification_note })
 }
 
 /// Caches a theme manifest under `<app data>/data-themes/<id>/theme.json` - no download beyond
 /// the manifest itself, since a data-only theme has no code, just `cssVariables`.
 /// `manifest_bytes` is the already-downloaded manifest content.
-fn install_data_theme(dir: &Path, manifest_bytes: &[u8]) -> Result<String, String> {
+fn install_data_theme(dir: &Path, manifest_bytes: &[u8]) -> Result<InstallResult, String> {
     let manifest: DataThemeManifest = serde_json::from_slice(manifest_bytes)
         .map_err(|e| format!("Invalid theme manifest: {}", e))?;
     if manifest.id.trim().is_empty() {
@@ -261,14 +296,18 @@ fn install_data_theme(dir: &Path, manifest_bytes: &[u8]) -> Result<String, Strin
     std::fs::write(theme_dir.join("theme.json"), manifest_json)
         .map_err(|e| format!("Failed to write theme.json: {}", e))?;
 
-    Ok(manifest.id)
+    Ok(InstallResult {
+        id: manifest.id,
+        verified: false,
+        verification_note: "Not applicable: data-only themes have no code to verify.".to_string(),
+    })
 }
 
 /// Installs a plugin from a user-pasted manifest URL - re-fetches the manifest (cheap, a few
 /// KB) rather than reusing bytes from `fetch_plugin_preview`, keeping both commands simple and
 /// stateless. Branches on the manifest's own `kind` once fetched.
 #[tauri::command]
-pub async fn install_plugin(app: AppHandle, url: String) -> Result<String, String> {
+pub async fn install_plugin(app: AppHandle, url: String) -> Result<InstallResult, String> {
     let bytes = download_bytes(&url).await?;
     let probe: ManifestKindProbe =
         serde_json::from_slice(&bytes).map_err(|e| format!("Invalid plugin manifest: {}", e))?;
@@ -430,8 +469,8 @@ mod tests {
         );
 
         let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
-        let id = install_data_theme(&temp.0, &bytes).expect("install should succeed");
-        assert_eq!(id, "test-online-theme");
+        let result = install_data_theme(&temp.0, &bytes).expect("install should succeed");
+        assert_eq!(result.id, "test-online-theme");
 
         let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
         assert_eq!(manifests.len(), 1);
@@ -442,7 +481,7 @@ mod tests {
             Some("#123456")
         );
 
-        uninstall_data_theme_from(&temp.0, &id).expect("uninstall should succeed");
+        uninstall_data_theme_from(&temp.0, &result.id).expect("uninstall should succeed");
         let manifests_after = list_data_themes_from(&temp.0).expect("list should succeed");
         assert!(manifests_after.is_empty(), "expected theme to be gone after uninstall");
     }

@@ -167,8 +167,12 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
     return { description, releaseDate, genres: [...genres], coverArtUrl, backgroundArtUrl };
   }
 
-  async function init() {
+  async function refreshManifests() {
     manifests.value = await getAvailablePluginManifests("metadata");
+  }
+
+  async function init() {
+    await refreshManifests();
 
     const stored = await settingsRepo.get(ENABLED_PROVIDERS_SETTING);
     if (stored === null) {
@@ -194,6 +198,7 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
     moveProvider,
     submitCandidateSelections,
     fetchMetadata,
+    refreshManifests,
     init,
   };
 });

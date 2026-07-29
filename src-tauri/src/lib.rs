@@ -2,6 +2,7 @@
 mod db;
 mod launcher;
 mod plugin_installer;
+mod plugin_verification;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
 mod zip_install;

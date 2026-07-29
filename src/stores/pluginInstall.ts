@@ -2,9 +2,19 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { usePluginStore } from "./plugins";
+import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";
 import { useToastStore } from "./toasts";
 import type { PluginPreview } from "../plugins/manifest";
+
+/** Mirrors the Rust `InstallResult` (`plugin_installer.rs`) - Milestone 14's provenance
+ *  verification is advisory only, surfaced here rather than enforced (install always
+ *  proceeds regardless of `verified`). */
+interface InstallResult {
+  id: string;
+  verified: boolean;
+  verificationNote: string;
+}
 
 /** Shared install-by-URL flow (modalForms/AddPlugin -> modalForms/ConfirmInstall) for every plugin kind
  *  that supports it - source (WASM) plugins and data-only themes both go through the same
@@ -41,10 +51,12 @@ export const usePluginInstallStore = defineStore("pluginInstall", () => {
     const kind = pendingManifest.value?.kind;
     installing.value = true;
     try {
-      await invoke("install_plugin", { url: pendingUrl.value });
+      const result = await invoke<InstallResult>("install_plugin", { url: pendingUrl.value });
       if (kind === "source") await usePluginStore().refreshManifests();
+      else if (kind === "metadata") await useMetadataProviderStore().refreshManifests();
       else if (kind === "theme") await useThemeStore().refreshManifests();
       toasts.push("Plugin installed.", "success");
+      toasts.push(result.verificationNote, result.verified ? "success" : "info");
     } catch (e) {
       toasts.push(`Failed to install plugin: ${String(e)}`, "error");
     } finally {

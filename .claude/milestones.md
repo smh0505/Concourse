@@ -176,8 +176,10 @@ Milestone 13 fully closed - all four items done.
 ## Milestone 14 — Plugin Trust Model: Signing & Review (stretch)
 Even with Milestone 13 done, install-by-URL stays trust-based, not verified - anyone can paste
 any URL. This is a further, larger tier beyond capability sandboxing, not a prerequisite for it.
-- [ ] Code signing for published plugin releases (sign `.wasm` + manifest; verify against a
-  known publisher key before install)
+- [x] Code signing for published plugin releases (sign `.wasm` + manifest; verify against a
+  known publisher key before install) - implemented as advisory (shown to the user, not yet a
+  hard install-time gate); proves provenance/integrity, explicitly not author trustworthiness
+  (see devlog)
 - [ ] Curated/reviewed plugin registry (a moderated list of known-good plugin URLs) as an
   alternative to freeform paste-any-URL
 - [ ] Revocation mechanism (blocklist a previously-trusted plugin id/version if later found
@@ -198,8 +200,8 @@ Actions OIDC identity (repo + workflow + commit), with the signature recorded in
 public transparency log independent of the repo/account itself. Verification is one command
 (`gh attestation verify <file> --repo <owner>/<repo>`). Unlike the whitelist-repo idea, this
 answers "did this really come from that repo's CI," not just "does this match a hash someone
-pinned" - real authenticity, not a integrity-only proxy for it. Not wired in yet. See
-devlog for the full reasoning.
+pinned" - real authenticity, not a integrity-only proxy for it. Wired in - see devlog for the
+full reasoning and implementation notes.
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

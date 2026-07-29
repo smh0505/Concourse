@@ -109,7 +109,18 @@ function exposed to plugins that could do real-world damage is now gated:
 
 Only install plugins from sources you fully trust regardless - this closes "a plugin can
 silently reach anywhere on your system or network," not a full app-store-grade trust model
-(no code signing, no review step yet - see Milestone 14).
+(no review/moderation step yet - see Milestone 14).
+
+**Signing (Milestone 14, in progress):** every official plugin release is signed with a
+[Sigstore](https://www.sigstore.dev/) build-provenance attestation, binding the published
+`.wasm` to the exact commit and CI run that built it. Concourse checks this automatically on
+install and shows the result - **advisory only right now, not a hard gate**. Worth being
+precise about what this actually proves: it confirms an artifact really came from that repo's
+own CI, unmodified since (catches tampering, a compromised release token, a hijacked repo
+slipping in a rogue build) - it does **not** vouch for the repo author's intentions. A malicious
+author's own code gets a perfectly valid signature too, since their own CI genuinely built and
+signed exactly what they committed. Answering "is this author trustworthy" is a separate,
+harder problem (a curated/reviewed registry, revocation) - still open.
 
 ## Status
 

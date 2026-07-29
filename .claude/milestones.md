@@ -238,15 +238,31 @@ Carried over from Milestone 12 unstarted, in full.
 - [ ] Ubisoft Connect — research install detection and launch mechanism
 - [ ] Each ships as its own WASM plugin in a separate repo from day one
 
-## Milestone 17 — External Theme Plugins: Component-Override Tier (blocked)
+## Milestone 17 — External Theme Plugins: Component-Override Tier (re-reviewed, still blocked)
 Carried over from Milestone 9, where the `slots` tier was reviewed and closed out as blocked -
 WASM export is structurally impossible (can't cross a live Vue component across the Component
 Model boundary), and the only technical alternative (raw remote JS via `defineAsyncComponent`)
 was judged a bigger security regression than Milestone 13's then-still-open capability-sandboxing
-gap. That condition has since changed - Milestones 13 and 14 are both closed now - so the
-original blocking rationale is worth re-checking rather than assumed to still hold as-is.
-- [ ] Re-review whether Milestone 13/14's now-closed sandboxing/trust model changes the
-  raw-remote-JS calculus at all
-- [ ] If still blocked, re-confirm no other mechanism exists (e.g. Vue's own runtime template
-  compiler, noted in devlog as a concretely-buildable declarative alternative, not proposed for
-  implementation yet)
+gap. Milestones 13 and 14 have since closed, so this was re-checked rather than left on the
+stale premise.
+- [x] Re-review whether Milestone 13/14's now-closed sandboxing/trust model changes the
+  raw-remote-JS calculus at all — **verdict: no change, still blocked.** Milestone 13's
+  scoping (path/URL allowlists, spawn-process permission gating) all lives inside the WASM
+  host-function layer (`host::*`, implemented in `wasm_plugin_runtime.rs`) - it scopes what a
+  WASM plugin's own enumerated primitives can do, and has no bearing on raw JS at all, which
+  never goes through that layer in the first place. Raw JS via `defineAsyncComponent` runs in
+  the same realm as the host app itself - same unmediated access to every `#[tauri::command]`
+  and every Pinia store in memory that existed before Milestone 13, unaffected by it tightening
+  a boundary that only ever applied to WASM's separate, narrower surface. Milestone 14
+  (signing, curated registry) doesn't change this either - it's a provenance/trust-in-the-author
+  gate on top of installing something, not a capability boundary on what installed code can do
+  once running; a signed, registry-pinned raw-JS bundle still has full-realm access, no sandbox
+- [x] Re-confirm no other mechanism exists — none found beyond what devlog already documents:
+  Vue's own runtime template compiler (`@vue/compiler-dom`) as a Playnite-XAML-style constrained
+  declarative alternative. Still not proposed for implementation - it's a different, narrower
+  feature (a tightly-scoped template string, not an arbitrary component override) than what this
+  milestone was ever scoped to cover, not a way to unblock `slots` itself
+
+Milestone 17 fully closed - re-review confirms the block still holds, for reasons independent of
+Milestone 13/14's closure. Not reopened as future work unless the underlying wall (WASM can't
+carry live components, raw JS has no capability boundary) changes.

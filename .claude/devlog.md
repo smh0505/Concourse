@@ -351,3 +351,33 @@ skipped-over stretch goal that later milestones passed by).
   longer made sense once M12 was consciously deferred rather than completed-then-followed;
   replaced with "1.0.0 marks the core roadmap done, Post-1.0 minor bumps track closing a
   Post-1.0 Roadmap milestone"
+
+## Milestone 17 — External Theme Plugins: Component-Override Tier (re-reviewed, still blocked)
+Re-review requested directly: does Milestone 13/14 closing change the original Milestone 9
+"blocked" verdict on the `slots` tier for external theme plugins? Worth actually re-deriving the
+reasoning rather than reflexively re-affirming the old note, since the premise it was originally
+conditioned on ("not pursued until/unless Milestone 13/14 land") had genuinely changed.
+- Re-traced where Milestone 13's scoping actually lives before concluding anything -
+  `grep`-confirmed `host::*` capability gating (path/URL allowlists, spawn-process permission
+  gate) is implemented entirely inside `wasm_plugin_runtime.rs`/`wasm_plugins.rs`, i.e. the WASM
+  host-function layer. That's the load-bearing fact: Milestone 13 scopes what a WASM plugin's
+  own enumerated primitives can reach, a boundary that only exists *because* WASM plugins go
+  through a typed host interface at all. Raw JS via `defineAsyncComponent` was never going to go
+  through that layer - it runs directly in the app's own JS realm - so tightening that boundary
+  has zero effect on the raw-JS option's actual exposure. The two didn't get closer together;
+  Milestone 13 improved one lane (WASM) that was already separate from the other (raw JS) from
+  the start
+- Milestone 14 (signing, curated registry, revocation) doesn't move this either, for a different
+  reason: it's a provenance/trust-in-the-author gate applied at install time, not a runtime
+  capability boundary. A raw-JS theme bundle that's signed and registry-pinned is still, once
+  running, full-realm code with unmediated access to every `#[tauri::command]` and every Pinia
+  store in memory - proving "this came from that repo's CI" says nothing about what it's allowed
+  to touch once it's executing
+- Net verdict: still blocked, and for the *original* two reasons (WASM structurally can't carry
+  a live Vue component; raw JS has no capability boundary to scope at all), not a new one -
+  Milestone 13/14 closing was a real, legitimate reason to re-check, it just doesn't turn out to
+  bear on this specific wall. Re-confirmed no third mechanism has emerged since Milestone 9's
+  review either - the Vue-runtime-template-compiler idea documented there remains a different,
+  narrower feature (a whitelisted template string) than an actual component-override tier, not a
+  way to unblock `slots` itself. Closed Milestone 17 on this negative-but-final result rather
+  than leaving it open pending some future condition that isn't currently identifiable

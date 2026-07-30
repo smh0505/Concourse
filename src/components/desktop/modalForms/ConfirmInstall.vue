@@ -68,16 +68,16 @@ async function onSubmit() {
         <dt>Kind</dt>
         <dd>{{ manifest.kind }}</dd>
       </dl>
-      <p v-if="manifest.kind === 'theme'" class="hint">
+      <small v-if="manifest.kind === 'theme'">
         This installs a data-only theme (colors/CSS variables only, no code).
-      </p>
+      </small>
       <template v-else>
-        <p class="hint">
+        <small>
           This downloads and runs code from the URL you provided. File/registry/network access
           is scoped to what it declares below (host-enforced) - but that scope is self-declared
           by the plugin's own author, not verified against what the code actually does. Only
           install plugins from sources you fully trust.
-        </p>
+        </small>
         <div v-if="manifest.pathScopes.length || manifest.httpScopes.length" class="scope-list">
           <p class="scope-list-title">Declares access to:</p>
           <ul>
@@ -124,10 +124,8 @@ async function onSubmit() {
   margin: 0;
 }
 
-.hint {
-  font-size: 0.75rem;
-  opacity: 0.8;
-}
+/* small (shared, styles.css) supplies the base look entirely - this component's own body is
+   already flex-column (BaseModal.vue's .modal-body), nothing extra needed locally. */
 
 .scope-list {
   margin-top: 0.5rem;

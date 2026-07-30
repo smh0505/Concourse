@@ -41,10 +41,10 @@ function submit() {
 <template>
   <BaseModal :open="open" title="Multiple matches found" max-width="480px" @close="submit">
     <template #body>
-      <p class="hint">
+      <small>
         Some providers found more than one match. Pick the right one per provider, or leave a
         section unselected to skip it.
-      </p>
+      </small>
       <div v-for="section in sections" :key="section.pluginId" class="section">
         <h3 class="section-title">{{ section.pluginName }}</h3>
         <ul class="candidate-list">
@@ -74,9 +74,9 @@ function submit() {
 </template>
 
 <style scoped>
-.hint {
-  font-size: 0.8rem;
-  opacity: 0.7;
+/* small (shared, styles.css) supplies the base look; this component's own body is already
+   flex-column (BaseModal.vue's .modal-body), so the margin below is the only extra needed. */
+small {
   margin: 0 0 0.75rem;
 }
 

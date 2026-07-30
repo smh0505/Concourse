@@ -136,10 +136,10 @@ onMounted(async () => {
 
     <div v-if="activeTab === 'source'" class="tab-panel">
       <p v-if="plugins.manifests.length === 0" class="empty">No plugins installed.</p>
-      <p v-else class="hint">
+      <small v-else>
         Scan order matters: on a same-titled game found by more than one source, the later
         source's launch path/platform wins. Reorder with the arrows below.
-      </p>
+      </small>
       <ul v-if="plugins.manifests.length > 0" class="plugin-list">
         <li class="plugin-row" v-for="manifest in orderedSourceManifests" :key="manifest.id">
           <label>
@@ -222,10 +222,10 @@ onMounted(async () => {
 
     <div v-else-if="activeTab === 'metadata'" class="tab-panel">
       <p v-if="metadataProviders.manifests.length === 0" class="empty">No providers installed.</p>
-      <p v-else class="hint">
+      <small v-else>
         Fetch order matters: for each field (description, release date, cover/background art),
         the first enabled provider that has an answer wins. Reorder with the arrows below.
-      </p>
+      </small>
       <ul v-if="metadataProviders.manifests.length > 0" class="plugin-list">
         <li class="plugin-row" v-for="manifest in orderedMetadataManifests" :key="manifest.id">
           <label>
@@ -366,9 +366,11 @@ onMounted(async () => {
   font-size: 0.85rem;
 }
 
-.hint {
-  opacity: 0.7;
-  font-size: 0.8rem;
+/* small (shared, styles.css) supplies the base look; .tab-panel isn't flex, so this also
+   needs an explicit display: block - a lone inline element wouldn't otherwise fill the
+   container width the way the original <p> did by default. */
+small {
+  display: block;
   margin: 0 0 0.5rem;
 }
 

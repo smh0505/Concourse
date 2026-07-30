@@ -1303,3 +1303,45 @@ it's not "scoped styling that still applies somewhere," it's just a dead label.
   assumed
 - `bun run build`/`cargo check` both clean; CSS bundle size unchanged (21.34kB) - expected,
   since no actual style rules were removed, just dead template references and a few comments
+
+**Converted `.hint` to a real primitive element (`<small>`), on user's further proposal.** The
+insight: since scoped styles can't be reused across components anyway, a class name repeated
+identically across many files gets nothing extra from staying a class if HTML already has the
+semantically-correct primitive for it - a global tag-selector rule (same mechanism `button`/
+`input`/`textarea`/`select` already use) works everywhere with zero class needed at all.
+- `grep`'d for `.hint` across the whole tree first rather than assuming which files had it -
+  5 real sites: `CandidatePicker.vue`, `ConfirmInstall.vue` (×2), `EditGame.vue`,
+  `PluginSettings.vue` (×2), mixed between `<p>` and `<span>` tags inconsistently despite being
+  the same semantic thing (secondary/muted helper text) everywhere
+  - Checked each site's actual rule content too, not just that the class name matched - found
+    they weren't quite identical: `CandidatePicker.vue`/`PluginSettings.vue` used
+    `font-size: 0.8rem; opacity: 0.7`, `ConfirmInstall.vue`/`EditGame.vue` used
+    `font-size: 0.75rem; opacity: 0.8` - a real fork needing a human call, same as the earlier
+    `8px` radius decision, not something to silently average or pick. User chose the
+    `0.8rem`/`0.7` pairing (as an actual paired combination that already existed somewhere, not
+    a new mix of the two files' separate values)
+- **Verified the inline-vs-block difference wouldn't visually break anything before
+  converting**, rather than assuming `<small>` (inline by default) is a drop-in replacement for
+  `<p>` (block) - checked each site's actual parent container:
+  - `BaseModal.vue`'s `.modal-body` and `EditGame.vue`'s `label` are both `display:flex;
+    flex-direction:column` - flex always blockifies its children for layout purposes
+    regardless of their own specified `display`, so `CandidatePicker.vue`/`ConfirmInstall.vue`/
+    `EditGame.vue`'s conversions are safe with no override needed
+  - `PluginSettings.vue`'s `.tab-panel` is a plain, non-flex `<div>` - a lone inline element
+    there would size to its content instead of filling the container width the way the
+    original `<p>` did, wrapping text at a different, narrower point. Added an explicit local
+    `small { display: block; }` override for just those two sites to guarantee equivalent
+    layout, rather than letting a real (if subtle) visual regression slip through
+- New global `small { font-size: 0.8rem; opacity: 0.7; }` in `styles.css`, alongside the
+  existing `button`/`input` primitive-element rules. Per-component overrides only where
+  genuinely needed: `CandidatePicker.vue` keeps its own `margin`, `PluginSettings.vue` keeps
+  `display: block` + `margin`; `ConfirmInstall.vue`/`EditGame.vue` need nothing extra at all,
+  fully covered by the shared primitive
+- Verified via compiled CSS: global `small{font-size:.8rem;opacity:.7}` present once, the two
+  per-component `small[data-v-*]` overrides contain exactly the expected extra properties,
+  zero `.hint` selector left anywhere. `bun run build`/`cargo check` both clean
+- **Found a related but different finding while doing this**: `.error` (byte-identical between
+  `AddGame.vue`/`EditGame.vue`, just `color: var(--color-danger)`) is a plain shared-class
+  duplicate, not a primitive-element match - there's no HTML tag that means "error message" the
+  way `<small>` means "secondary text." Left open, not bundled into this pass since it's a
+  genuinely different kind of finding from what was actually asked

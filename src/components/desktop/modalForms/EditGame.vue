@@ -181,9 +181,9 @@ async function onSave() {
               </option>
             </optgroup>
           </select>
-          <span v-if="wrapperPlugins.profiles.length === 0" class="hint">
+          <small v-if="wrapperPlugins.profiles.length === 0">
             No profiles found - install and enable a compatibility wrapper plugin in Settings first.
-          </span>
+          </small>
         </label>
         <div class="tags-section">
           <span>Tags</span>
@@ -293,8 +293,6 @@ async function onSave() {
   color: var(--color-danger);
 }
 
-.hint {
-  font-size: 0.75rem;
-  opacity: 0.8;
-}
+/* small (shared, styles.css) supplies the base look entirely - already inside a flex-column
+   label (.edit-game-form label), nothing extra needed locally. */
 </style>

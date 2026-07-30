@@ -343,3 +343,18 @@ reference them via `classList`/`querySelector`). Re-verified every other shared-
 individually first - most still have real local content and correctly keep both classes.
 `brick-block-theme`'s own `.focused` usage is unrelated (a different, separate component's own
 scoped rule) and untouched.
+
+Post-close follow-up 2: user proposed going further - some "unique" classes recurring across
+components could become real primitive-element styles instead of a shared class, since HTML
+already has a semantically-correct tag for some of them. Found `.hint` (5 sites across
+`CandidatePicker.vue`/`ConfirmInstall.vue`/`EditGame.vue`/`PluginSettings.vue`, mixed `<p>`/
+`<span>`, near-identical secondary/muted-text styling) as the real match - converted every site
+to `<small>`, styled globally in `styles.css` with no class needed anywhere. Standardized on
+`font-size: 0.8rem; opacity: 0.7` (a real fork - two files used `0.75rem`/`0.8` instead - user's
+call). Verified `<small>`'s inline-vs-`<p>`'s-block difference wouldn't visually break anything
+before converting: flex-column containers (`BaseModal.vue`'s `.modal-body`, `EditGame.vue`'s
+`label`) blockify children regardless of their own display, safe as-is; `PluginSettings.vue`'s
+`.tab-panel` isn't flex, so those two sites got an explicit local `display: block` override.
+`.error` (byte-identical in 2 files) found as a related but different finding - a plain shared-
+class candidate, not a primitive-element match (no HTML tag fits "error message") - left open,
+not bundled into this pass.

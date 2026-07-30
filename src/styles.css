@@ -140,6 +140,18 @@ select:focus {
   border-color: var(--color-accent);
 }
 
+/* Secondary/muted "hint" text - a real HTML primitive already exists for this (<small>), so
+   no class is needed anywhere at all, unlike a scoped class which can't be reused across
+   components. Components needing extra spacing add it locally via their own scoped
+   `small { margin: ...; }` rule (and `display: block` too, if their container isn't already
+   flex - flex always blockifies its children regardless of their own inline/block default,
+   but a plain block container doesn't, so an inline <small> there could wrap narrower than a
+   <p> would have). */
+small {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
 /* Themed scrollbars for desktop mode - Big Picture hides its own entirely (console
    aesthetic) via its own scoped rules, which win over this global one on specificity. */
 * {

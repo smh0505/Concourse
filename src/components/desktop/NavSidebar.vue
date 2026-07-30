@@ -30,14 +30,14 @@ const emit = defineEmits<{
     <div class="nav-items">
       <button
         class="nav-item"
-        :class="{ active: activeView === 'library' }"
+        :class="{ 'accent-active': activeView === 'library' }"
         @click="emit('update:activeView', 'library')"
       >
         Library
       </button>
       <button
         class="nav-item"
-        :class="{ active: activeView === 'settings' }"
+        :class="{ 'accent-active': activeView === 'settings' }"
         @click="emit('update:activeView', 'settings')"
       >
         Settings
@@ -100,10 +100,7 @@ const emit = defineEmits<{
   background: var(--color-surface0);
 }
 
-.nav-item.active {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-}
+/* .accent-active (shared, styles.css) supplies this rule's entire look. */
 
 .sidebar-enter-active,
 .sidebar-leave-active {

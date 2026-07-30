@@ -400,3 +400,19 @@ template too, same as the earlier vestigial-class cleanup. Verified via compiled
 `.input-with-button button`/`.tag-remove` both compile at `.75rem`, `.scan-button` keeps only
 `margin-top`, zero `add-plugin-button` left anywhere. `bun run build`/`cargo check` both clean;
 CSS bundle shrank slightly, 20.95kB → 20.88kB.
+
+Migrated the last audit finding: the `.active` accent-swap idiom repeated 3x
+(`NavSidebar.vue`'s `.nav-item.active`, `GameFilters.vue`'s `.filter-tag.active`,
+`PluginSettings.vue`'s `.tabs button.active`) - byte-identical
+(`background: var(--color-accent); color: var(--color-on-accent)`). New `.accent-active` in
+`styles.css`; each site's own `active` binding served no purpose beyond triggering this exact
+rule, so replaced the binding itself with `accent-active` rather than binding both. Verified
+via compiled CSS: shared class present exactly once, zero leftover `.active` selectors on any
+of the three. `bun run build`/`cargo check` both clean; CSS bundle shrank again, 20.88kB →
+20.67kB.
+
+Milestone 18's button-consistency follow-up is now fully closed: both real bugs, the exact
+duplicate, the font-size fork, and the `.active` idiom all resolved. Remaining open items from
+the original audit - `TitleBar.vue`'s chromeless window buttons (left alone, different genre)
+and a separate `--space-*` tokenization pass for off-scale spacing values - stay deliberately
+unscoped, not part of this pass.

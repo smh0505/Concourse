@@ -25,7 +25,7 @@ function toggleViewMode() {
     <div class="tags" v-if="library.allTags.length">
       <span
         class="tag-pill filter-tag"
-        :class="{ active: library.activeTagFilter === tag }"
+        :class="{ 'accent-active': library.activeTagFilter === tag }"
         v-for="tag in library.allTags"
         :key="tag"
         @click="library.toggleTagFilter(tag)"
@@ -67,8 +67,5 @@ function toggleViewMode() {
   cursor: pointer;
 }
 
-.filter-tag.active {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-}
+/* .accent-active (shared, styles.css) supplies this rule's entire look. */
 </style>

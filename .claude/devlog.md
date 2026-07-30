@@ -1454,3 +1454,39 @@ rather than picking a resolution unilaterally, same discipline as the earlier `8
   `add-plugin-button` string anywhere in the compiled output. `bun run build`/`cargo check`
   both clean; CSS bundle shrank slightly, 20.95kB → 20.88kB (expected - two rules got smaller,
   one disappeared entirely).
+
+**Migrated the last remaining audit finding: the repeated `.active` accent-swap idiom.**
+`NavSidebar.vue`'s `.nav-item.active`, `GameFilters.vue`'s `.filter-tag.active`, and
+`PluginSettings.vue`'s `.tabs button.active` were byte-identical
+(`background: var(--color-accent); color: var(--color-on-accent)`) - a genuine 3-way exact
+duplicate, same category as the `.compact-button`/`.registry-list button` finding earlier in
+this pass, not a design decision like the font-size fork.
+- New `.accent-active` in `styles.css`.
+- Checked each site's `active` class binding for any other purpose before touching it - in all
+  three files, `active`/`.active` existed *solely* to trigger this one now-shared rule (grepped
+  each file for every other `active` occurrence: component state variables like `activeTab`/
+  `activeView` don't count, and none of the three had a second CSS rule or JS `classList`/
+  `querySelector` reference to the bare class). Since nothing else depended on the `active`
+  class name itself, replaced each `:class="{ active: cond }"` binding directly with
+  `:class="{ 'accent-active': cond }"` rather than binding both classes side by side - there
+  was nothing left for a separate local `active` class to still mean.
+  - `PluginSettings.vue` had 5 tab buttons on this exact pattern (`source`/`theme`/`metadata`/
+    `controller`/`wrapper`); reformatted the 3 longer tab names' now-longer `:class`/`@click`
+    attribute pairs onto their own lines to stay under a reasonable line width, matching the
+    file's existing multi-line button formatting elsewhere.
+- Removed all three local scoped `.active` rules, replacing each with a comment pointing at
+  `.accent-active`.
+- Verified via compiled CSS: `.accent-active{background:var(--color-accent);color:var(--color-
+  on-accent)}` present exactly once; zero `nav-item.active`/`filter-tag.active`/
+  `tabs button.active` strings anywhere in the compiled output. `bun run build`/`cargo check`
+  both clean; CSS bundle shrank again, 20.88kB → 20.67kB.
+
+**Button-consistency follow-up fully closed.** Every finding from the delegated audit has now
+been resolved or explicitly deferred: the two real bugs (`.view-toggle-button`,
+`.icon-action-row`), the clean exact duplicate (`.compact-button`), the font-size fork
+(collapsed to one 0.75rem tier), and the `.active` idiom (`.accent-active`) are all done.
+`TitleBar.vue`'s chromeless window buttons were left alone throughout - a genuinely different
+genre of button (no border, transparent background, fixed 46px square), not a variant of any of
+the shared classes introduced this pass. The `--space-*` tokenization pass the audit flagged
+separately (hardcoded `0.25rem`/`0.35rem`/`0.4rem`/`2.2rem`/`46px` values off the spacing scale)
+remains open and unscoped - a distinct piece of follow-up work, not bundled into this pass.

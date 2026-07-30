@@ -367,3 +367,13 @@ small {
   font-size: 0.75rem;
   padding: 0.2rem 0.6rem;
 }
+
+/* Accent-swap "active" state - NavSidebar.vue's `.nav-item.active`, GameFilters.vue's
+   `.filter-tag.active`, PluginSettings.vue's `.tabs button.active`. Byte-identical across all
+   three; applied alongside each component's own base selector (`.nav-item.accent-active`, etc.)
+   rather than replacing it, since `.active` itself is still each component's own state-toggle
+   class bound via `:class`. */
+.accent-active {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}

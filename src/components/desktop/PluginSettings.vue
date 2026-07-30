@@ -117,19 +117,28 @@ onMounted(async () => {
       </button>
     </div>
     <div class="tabs">
-      <button :class="{ active: activeTab === 'source' }" @click="activeTab = 'source'">
+      <button :class="{ 'accent-active': activeTab === 'source' }" @click="activeTab = 'source'">
         Source
       </button>
-      <button :class="{ active: activeTab === 'theme' }" @click="activeTab = 'theme'">
+      <button :class="{ 'accent-active': activeTab === 'theme' }" @click="activeTab = 'theme'">
         Theme
       </button>
-      <button :class="{ active: activeTab === 'metadata' }" @click="activeTab = 'metadata'">
+      <button
+        :class="{ 'accent-active': activeTab === 'metadata' }"
+        @click="activeTab = 'metadata'"
+      >
         Metadata Provider
       </button>
-      <button :class="{ active: activeTab === 'controller' }" @click="activeTab = 'controller'">
+      <button
+        :class="{ 'accent-active': activeTab === 'controller' }"
+        @click="activeTab = 'controller'"
+      >
         Controller
       </button>
-      <button :class="{ active: activeTab === 'wrapper' }" @click="activeTab = 'wrapper'">
+      <button
+        :class="{ 'accent-active': activeTab === 'wrapper' }"
+        @click="activeTab = 'wrapper'"
+      >
         Wrapper
       </button>
     </div>
@@ -356,10 +365,7 @@ onMounted(async () => {
   margin-bottom: 0.75rem;
 }
 
-.tabs button.active {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-}
+/* .accent-active (shared, styles.css) supplies this rule's entire look. */
 
 .empty {
   opacity: 0.7;

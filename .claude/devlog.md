@@ -984,3 +984,27 @@ the converted theme against the original, surfacing several real gaps the accept
   the pre-`fontFaces` commit) was closed as stale once the second, complete one opened - same
   "two open bump PRs for one id, close the older" guidance from earlier in this session, now
   actually exercised for real rather than just documented as a rule
+
+## Milestone 18 — Shared Styles Convention (scoped, not started)
+User proposed a style-convention change directly: less `<style scoped>` per component, more
+shared CSS (colors, borders, radii, other repeated patterns) collected into a `styles.css`.
+Asked whether this was "huge enough" to warrant its own milestone rather than just doing it -
+judged yes, for two concrete reasons rather than a reflexive "big changes get milestones" rule:
+- Real scope. This session's Brick Block work touched `GameCard.vue`'s scoped styles five
+  separate times (`.card-visual`, `.cover-placeholder`, `.balloon` and its arrow tip), each time
+  because a value was hardcoded in one component's own scoped block with no way for a theme (or
+  any other consumer) to reach it. That's a real, repeated pattern across a real component, not
+  a one-off - auditing every other component (`BigPictureTile.vue`, the modal forms, etc.) for
+  the same shape is genuine, non-trivial work
+- A real, already-proven failure mode to design around, not a hypothetical. `.cover`/
+  `.cover-placeholder` had to move out of `<style scoped>` entirely earlier this session because
+  `CardVisualRenderer` (a separate component) needed to render them and Vue's scoped-CSS
+  mechanism (a compiled `data-v-<hash>` attribute, unique per component) meant a scoped rule
+  there would have silently never matched. Any "collect shared styles centrally" effort needs
+  to reckon with this same boundary deliberately, not rediscover it component-by-component the
+  way this session did
+- Scoped rather than started: three checklist items logged (audit real duplication before
+  moving anything, decide `styles.css`'s relationship to `App.vue`'s existing `:root` token
+  block, migrate with the same compiled-output verification discipline used for every CSS fix
+  this session, not a visual-assumption pass) - deliberately not designed further than that
+  without actually doing the audit first

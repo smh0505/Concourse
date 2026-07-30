@@ -258,3 +258,22 @@ just the acceptance test - see devlog for full detail:
   a font, never load one) - strictly validated, commit-pinned-URL only, CSP `font-src` opened
 - Re-verified Fusion Pixel Font's license against live upstream before redistributing it again;
   added `FONTS.md` + a `fonts` attribution field
+
+## Milestone 18 — Shared Styles Convention (scoped, not started)
+Style-convention shift: less `<style scoped>` per component, more centralized shared CSS
+(colors/borders/radii/other repeated patterns) collected into a `styles.css` - prompted directly
+by this session's Brick Block work repeatedly hitting the same wall (a value hardcoded in one
+component's own scoped block, invisible/unoverridable anywhere else, needing a one-off variable
+hook added each time a real need surfaced). A dedicated milestone rather than ad hoc mid-session
+- real scope (many existing components to audit), and a genuine convention change worth
+measuring before executing, not assumed.
+- [ ] Audit existing `<style scoped>` blocks (desktop + Big Picture components) for what's
+  *actually* duplicated/hardcoded vs. genuinely component-specific - same measure-first
+  discipline as Milestone 17, not a blanket move-everything pass
+- [ ] Decide `styles.css`'s relationship to `App.vue`'s existing `:root` token block (extract
+  it out entirely, or keep tokens in `App.vue` and add `styles.css` for shared component
+  patterns alongside)
+- [ ] Migrate identified shared patterns, verifying each move the same way this session's CSS
+  fixes were verified (compiled-output check, not just visual assumption - `<style scoped>`'s
+  boundary has already caused one real bug this session when a foreign component needed to
+  read rules that were scoped to somewhere else)

@@ -218,3 +218,9 @@ Scope going forward, not yet built:
 - [ ] Build the interpreter (`type` → `h()` dispatch, no dynamic code path of any kind)
 - [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not
   full parity — footer stays out of scope)
+
+Follow-up, deliberately not folded into this milestone yet: `concourse-plugin-registry`'s
+`kind` field only covers `source | wrapper | metadata` today. Once this tier ships as
+install-by-URL, extending the registry to a `theme` kind would carry the same reviewed-trust
+guarantee over to it - separate from (in addition to) whatever the AST interpreter's own
+code-execution-free design already guarantees structurally.

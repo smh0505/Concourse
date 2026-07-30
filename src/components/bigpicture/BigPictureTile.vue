@@ -18,7 +18,7 @@ const emit = defineEmits<{ select: []; hover: [] }>();
 .tile {
   background: none;
   border: 3px solid transparent;
-  border-radius: var(--radius-lg, 12px);
+  border-radius: var(--radius-xl, 10px);
   padding: 0;
   cursor: pointer;
   display: flex;

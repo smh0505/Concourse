@@ -1090,3 +1090,27 @@ well beyond what these two components needed).
   zero remaining literal `border-radius:8px`/`3px` anywhere in `src/` (a fresh `grep -rn`
   across the whole source tree, not limited to the audit's original file list, to make sure
   nothing else was missed a second time)
+
+**`--radius-panel` folded into the named scale, on further user direction.** Rather than keep
+`8px` as a one-off outside the `sm`/`md`/`lg` naming pattern, shifted the whole scale: old
+`--radius-lg` (10px) became `--radius-xl`, `--radius-panel` (8px) took over the `--radius-lg`
+name - `sm`/`md`/`lg` (4/6/10) becomes `sm`/`md`/`lg`/`xl` (4/6/8/10). This is exactly the
+higher-blast-radius option flagged (and set aside) during the original 8px decision - "would
+mean renaming --radius-lg and repointing its existing consumers, well beyond what these
+components actually need" - now deliberately chosen instead once the token had a real second
+use (`BaseModal.vue`) beyond the original two files.
+- `grep`'d every real consumer before touching anything, not just the ones already in this
+  session's working set: `BigPictureTile.vue`/`BigPictureSlideshow.vue` both had a live
+  `var(--radius-lg, 12px)` needing the rename too
+- **Fixed a real pre-existing bug while touching those two lines, not just renaming past it**:
+  the fallback literal `12px` never matched `--radius-lg`'s actual value (10px) - flagged in
+  the original Explore audit as a latent inconsistency ("if the variable were ever genuinely
+  undefined, the fallback would render visibly different from the token's real default") but
+  not fixed at the time since it wasn't in scope then. Now `var(--radius-xl, 10px)`, correctly
+  in sync
+- Verified via compiled CSS: all four scale values (`sm`/`md`/`lg`/`xl` = 4/6/8/10px) present
+  with correct values, zero stray `--radius-panel` or `12px` fallback left in either source or
+  build output
+- Left the historical devlog/milestones entries documenting `--radius-panel`'s original
+  creation as-is rather than rewritten - they're a record of what was true at the time, not a
+  live description of the current state; this entry is the update, not an edit to those

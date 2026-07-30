@@ -20,7 +20,7 @@
   align-items: center;
   gap: 0.75rem;
   border: 1px solid var(--color-surface1);
-  border-radius: var(--radius-panel);
+  border-radius: var(--radius-lg);
   padding: 0.5rem 0.75rem;
 }
 

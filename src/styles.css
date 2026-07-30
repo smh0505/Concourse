@@ -35,14 +35,11 @@
   /* Border-radius scale */
   --radius-sm: 4px;
   --radius-md: 6px;
-  --radius-lg: 10px;
-  /* Milestone 18 - a container radius exactly between --radius-md and --radius-lg, used by
-     both list-row shells and the modal frame (not narrowly "row" - renamed once a second,
-     unrelated consumer turned up using the same value). Kept as its own named value rather
-     than snapped onto --radius-md/--radius-lg (both were equally arbitrary fits) or folded
-     into the sm/md/lg scale itself (would mean renaming --radius-lg and repointing its
-     existing consumers, well beyond what these components actually need). */
-  --radius-panel: 8px;
+  /* Was its own one-off --radius-panel, used by list-row shells and the modal frame - folded
+     into the named scale proper once it became clear it wasn't a one-component special case.
+     The former --radius-lg (10px) shifted to --radius-xl to make room for this step. */
+  --radius-lg: 8px;
+  --radius-xl: 10px;
 
   /* Button frame */
   --button-border-width: 1px;

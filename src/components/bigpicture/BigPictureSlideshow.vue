@@ -202,7 +202,7 @@ function coverStyle(offset: number) {
   aspect-ratio: 3 / 4;
   padding: 0;
   border: 3px solid transparent;
-  border-radius: var(--radius-lg, 12px);
+  border-radius: var(--radius-xl, 10px);
   background: none;
   cursor: pointer;
   overflow: hidden;

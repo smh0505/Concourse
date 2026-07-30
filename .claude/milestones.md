@@ -290,3 +290,9 @@ measuring before executing, not assumed.
   new token renamed from an initial `--radius-row` to `--radius-panel` once it became clear a
   modal frame isn't a "row." Verified via compiled-CSS grep: token present, zero literal
   `8px`/`3px` radii left anywhere in `src/`
+- [x] `--radius-panel` folded into the named scale proper: shifted the old `--radius-lg`
+  (10px) to `--radius-xl`, renamed `--radius-panel` (8px) to `--radius-lg` - a real scale
+  change (sm/md/lg → sm/md/lg/xl), touching `BigPictureTile.vue`/`BigPictureSlideshow.vue`'s
+  existing `--radius-lg` consumers too. Also fixed a real pre-existing bug while touching those
+  two lines: their fallback literal (`var(--radius-lg, 12px)`) never matched the real token's
+  actual value (10px) - now `var(--radius-xl, 10px)`, correctly in sync

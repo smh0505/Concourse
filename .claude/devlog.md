@@ -749,3 +749,36 @@ no changes needed there). Went with the latter.
   (`rejects_a_theme_whose_bytes_dont_match_the_pinned_hash`) against a real HTTP server, not a
   unit test of the hash comparison in isolation - confirms the install aborts and nothing gets
   written to disk. Full `cargo test` suite (5/5) and `bun run build` both pass clean
+
+**Converted Brick Block into the new third-party system for real - caught a genuine bug the
+unit tests never would have.** Before writing the manifest content, tried to reason about
+whether `CardVisualRenderer`'s output would actually be styled correctly, rather than assuming
+"the interpreter works, so this'll just work." It wouldn't have: `.cover`/`.cover-placeholder`
+lived in `GameCard.vue`'s `<style scoped>` block, and Vue's scoped CSS works by compiling a
+`data-v-<hash>` attribute onto every element *that specific component's own template* renders -
+`CardVisualRenderer` is a separate component, so its `h()`-created elements would never carry
+GameCard's scope attribute, and the scoped rule would have silently never matched them. Same
+underlying category as why `.balloon` was already unscoped (Teleport breaks the parent-child
+DOM relationship scoped CSS depends on) - a different mechanism breaking the same assumption.
+Fixed by moving `.cover`/`.cover-placeholder` into the existing unscoped `<style>` block, and
+verified the fix for real: checked the compiled CSS output and confirmed the selector has no
+`[data-v-*]` qualifier anymore, rather than trusting the theoretical explanation alone.
+- This is exactly the kind of gap the earlier interpreter unit tests couldn't have caught -
+  they verified the AST validates and produces the right VNode *structure*, never that the
+  result would actually be *styled* correctly once rendered through a real theme. Doing the
+  real end-to-end conversion, not just trusting the component-level tests, is what surfaced it
+- `brick-block-data-theme` (in `data-theme-plugins`) gained a `cardVisual` field reproducing
+  the one real content difference this theme has from the default card - `★` instead of the
+  dynamic first-letter placeholder - verified against Concourse's actual
+  `validateCardVisualAst`/`renderCardVisualAst` (not just the repo's own schema validator,
+  which doesn't understand AST content at all) before committing. Bumped to `1.1.0` (new
+  capability, backward compatible)
+- Re-pinned the registry entry to the new commit + freshly-computed hash - a genuine
+  re-review-and-re-pin, not just a mechanical bump, since the content actually changed
+- What's still out of scope, unchanged from the earlier "still just GameCard" decision:
+  BigPictureTile has no equivalent AST region wired up at all, so its `.brick-frame` wrapper
+  gap stays unaddressed - this conversion only closes GameCard's gap, matching what was
+  actually built
+- Full visual confirmation in the actual running Tauri app wasn't done this session - only
+  automated/structural verification (compiled CSS, real validator/interpreter calls). Worth
+  running the real app to eyeball it before calling this fully done

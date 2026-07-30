@@ -38,7 +38,7 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
         <IconLoader2 :size="24" :stroke-width="1.75" class="spin" />
       </div>
 
-      <div class="footer">
+      <div class="footer icon-action-row">
         <button class="play" title="Play" @click="library.launchGame(game)">
           <IconPlayerPlay :size="15" :stroke-width="1.75" />
         </button>
@@ -115,11 +115,7 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
   transform: translateY(0);
 }
 
-.footer button {
-  flex: 1;
-  min-width: 0;
-  padding: 0.35rem 0;
-}
+/* .icon-action-row (shared, styles.css) supplies the button sizing entirely. */
 
 .fetch-overlay {
   position: absolute;

@@ -1350,3 +1350,52 @@ semantically-correct primitive for it - a global tag-selector rule (same mechani
 both files. New `.error-text` in `styles.css`, both components' local `.error` rules replaced
 with a comment pointing at it. Verified via compiled CSS: `.error-text{color:var(--color-
 danger)}` present once, zero leftover `.error[data-v-*]` rules anywhere. `bun run build` clean.
+
+**Button-styling consistency pass across components, on user's request.** Delegated to an
+Explore agent to audit every `<style scoped>` button rule in the tree, expecting the same kind
+of duplication findings as the rest of Milestone 18's follow-ups. The audit came back with
+something sharper: two of its findings weren't merely duplicated CSS, they were two components
+rendering the *same visual concept* with *actually divergent* results - real bugs, not just
+unmigrated repetition. Asked the user via `AskUserQuestion` whether to fix the two real bugs
+first or take the full list in file order; user chose fixing the bugs first, deferring the
+remaining duplication/design-decision findings.
+
+- **Bug 1: `.view-toggle-button` size mismatch.** `App.vue`'s Big Picture grid/slideshow toggle
+  and `GameFilters.vue`'s grid/list toggle both used the literal class name
+  `.view-toggle-button` - but only `GameFilters.vue`'s version had ever gotten the real
+  square-icon treatment (`width: 2.2rem`, `padding: 0`, centered flex). `App.vue`'s local rule
+  was a wider, padded button that just happened to reuse the same name, left over from before
+  either was migrated. Sharing a class name across two `<style scoped>` blocks does nothing -
+  scoped CSS only ever matches the component that compiled it - so this had silently been two
+  different-looking buttons the whole time, not a real shared style. Promoted
+  `GameFilters.vue`'s version (the correct, complete one) into `styles.css` as the single
+  `.view-toggle-button` rule; removed both local scoped rules, replacing each with a comment
+  pointing at the shared definition.
+- **Bug 2: `GameCard.vue`/`GameListRow.vue` icon-action row inconsistency.** Both components
+  render the identical 4-button set (play/fetch-metadata/edit/remove, same handlers, same
+  icons) - `GameCard.vue`'s `.footer` had a tighter icon-button treatment
+  (`flex: 1; min-width: 0; padding: 0.35rem 0`) that `GameListRow.vue`'s `.actions` never
+  received, leaving its buttons at the global default padding - a visible size/spacing mismatch
+  between two renderings of the same actual button row. Added `.icon-action-row button` to
+  `styles.css`; applied `icon-action-row` as a second class on both `GameCard.vue`'s `.footer`
+  div and `GameListRow.vue`'s `.actions` div (not on each button individually, since both
+  already used a `button` descendant selector). `GameCard.vue`'s own local `.footer button` rule
+  removed entirely (nothing extra remained); `GameListRow.vue` never had one to remove, so just
+  gained the shared behavior it had been missing.
+- Verified via compiled CSS (`dist/assets/index-B97rkwHp.css`, 21.05kB) after `bun run build`:
+  `.view-toggle-button{display:flex;align-items:center;justify-content:center;width:2.2rem;
+  flex-shrink:0;padding:0}` present exactly once, zero old scoped `.view-toggle-button`
+  leftovers; `.icon-action-row button{flex:1;min-width:0;padding:.35rem 0}` present exactly
+  once, zero old `.footer button` leftovers. `cargo check` run as formality (no Rust touched)
+  - clean.
+- Remaining audit findings deliberately left open, pending further direction: a clean exact
+  duplicate (`AddPlugin.vue`'s `.registry-list button`/`PluginSettings.vue`'s
+  `.permission-needed button`, `font-size: 0.75rem; padding: 0.2rem 0.6rem`, no decision
+  needed); a small/compact button font-size fork across `0.75rem`/`0.8rem`/`0.85rem` needing a
+  real design call (one tier vs. a genuine two-tier system, same category of decision as the
+  earlier `8px` radius and `.hint` font-size forks); `TitleBar.vue`'s chromeless window buttons
+  (likely a different genre, left alone by default); a repeated `.active` accent-swap idiom
+  across `.nav-item.active`/`.filter-tag.active`/`.tabs button.active` (lower priority, possible
+  future shared class). Also flagged separately by the audit, not yet scoped: a `--space-*`
+  tokenization pass for hardcoded values off the spacing scale (`0.25rem`/`0.35rem`/`0.4rem`/
+  `2.2rem`/`46px`).

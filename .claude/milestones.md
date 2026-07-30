@@ -362,3 +362,21 @@ not bundled into this pass.
 Post-close follow-up 3: migrated `.error` too, as a plain shared class (`.error-text`,
 `AddGame.vue`/`EditGame.vue`) - byte-identical, no design decision needed. Verified via
 compiled CSS: shared class present, zero leftover local `.error` rules.
+
+Post-close follow-up 4: user requested a button-styling consistency pass across components.
+Delegated audit surfaced two real inconsistency *bugs* (not just duplication) - fixed both,
+per user's choice to prioritize bugs first:
+- `.view-toggle-button`: `App.vue` and `GameFilters.vue` shared the exact class name but only
+  `GameFilters.vue` had the square icon-button treatment (fixed width, zero padding); `App.vue`'s
+  was a wider, padded button that just happened to share a name. Promoted the correct
+  (`GameFilters.vue`) version to `styles.css`, removed both local scoped rules.
+- Icon-action row: `GameCard.vue`'s `.footer` (play/fetch-metadata/edit/remove) and
+  `GameListRow.vue`'s `.actions` render the identical 4-button set with the same handlers, but
+  only `GameCard.vue` had the tighter icon-button sizing - `GameListRow.vue`'s was left at
+  default button padding. Added `.icon-action-row button` to `styles.css`, applied as a second
+  class on both containers.
+Verified via compiled-CSS grep: both shared rules present exactly once, zero leftover scoped
+rules for either. `cargo check` run as formality (no Rust touched). Remaining audit findings
+(one exact duplicate needing no decision, a small-button font-size fork needing a design call,
+TitleBar's chromeless buttons, a repeated `.active` accent-swap idiom) deliberately left open,
+pending further direction.

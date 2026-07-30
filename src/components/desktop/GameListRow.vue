@@ -25,7 +25,7 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
       </div>
     </div>
 
-    <div class="actions">
+    <div class="actions icon-action-row">
       <button class="play" title="Play" @click="library.launchGame(game)">
         <IconPlayerPlay :size="15" :stroke-width="1.75" />
       </button>
@@ -88,6 +88,8 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   opacity: 0.6;
 }
 
+/* .icon-action-row (shared, styles.css) supplies the button sizing - previously missing here
+   entirely, an inconsistency vs. GameCard.vue's identical button set. */
 .actions {
   display: flex;
   gap: 0.35rem;

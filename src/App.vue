@@ -149,9 +149,7 @@ onUnmounted(library.dispose);
   gap: var(--space-2);
 }
 
-.view-toggle-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* .view-toggle-button (shared, styles.css) supplies this rule's entire look. Previously local
+   here and missing the square treatment GameFilters.vue's identically-named class already had -
+   a real inconsistency, not a deliberate difference. */
 </style>

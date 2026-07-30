@@ -333,3 +333,29 @@ small {
 .error-text {
   color: var(--color-danger);
 }
+
+/* Icon-only square toggle button - App.vue's Big Picture grid/slideshow toggle,
+   GameFilters.vue's grid/list toggle. Both used this exact class name already, but only
+   GameFilters had gotten the real square treatment (fixed width, zero padding) - App.vue's
+   was a real inconsistency (a wider, padded button that just happened to share a name),
+   not a duplicate to remove. Promoted the correct version here for both to share. */
+.view-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+/* Icon-action button row - GameCard.vue's .footer (play/fetch-metadata/edit/remove) and
+   GameListRow.vue's .actions (the same 4 buttons, same handlers). Only GameCard had gotten
+   this tighter icon-button treatment - GameListRow's identical button set was inconsistently
+   left at the default button padding, a real visual mismatch between two renderings of the
+   same concept, not a deliberate difference. Applied as a second class on the row container
+   (not on each button individually) since both already use a `button` descendant selector. */
+.icon-action-row button {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0;
+}

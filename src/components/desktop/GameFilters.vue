@@ -53,14 +53,7 @@ function toggleViewMode() {
   flex: 1;
 }
 
-.view-toggle-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.2rem;
-  flex-shrink: 0;
-  padding: 0;
-}
+/* .view-toggle-button (shared, styles.css) supplies this rule's entire look. */
 
 .tags {
   display: flex;

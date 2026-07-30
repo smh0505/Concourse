@@ -188,7 +188,8 @@ select:focus {
   }
 }
 
-/* List-row shell - GameListRow.vue's .row, SkeletonRow.vue's .skeleton-row */
+/* List-row shell - GameListRow.vue, SkeletonRow.vue (their local .row/.skeleton-row classes
+   were removed entirely once nothing local remained to style - this is now their only class). */
 .list-row-shell {
   display: flex;
   align-items: center;
@@ -242,7 +243,8 @@ select:focus {
   outline: none;
 }
 
-/* Background-art backdrop image - identical in both files, nothing extra needed locally. */
+/* Background-art backdrop image - identical in both files; their local .backdrop classes
+   were removed entirely, this is their only class now. */
 .bp-backdrop {
   position: fixed;
   inset: 0;

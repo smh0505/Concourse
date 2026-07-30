@@ -1271,3 +1271,35 @@ decisions → this unused-token cleanup. Every step verified against real compil
 assumed correct from the source diff alone - caught real bugs at nearly every stage
 (`DataThemeManifest` silently dropping `cardVisual`, four separate mismatched fallback
 literals, a scoped-CSS/foreign-component break, sites the original audit itself missed twice).
+
+**Post-close cleanup: removed vestigial local classes left over from the migration.** User's
+observation, stated precisely and correctly: scoped styles aren't inherited/reused across
+components, so once a component's local class has had every property migrated out to a shared
+`styles.css` class, keeping that local class name in the template serves no purpose at all -
+it's not "scoped styling that still applies somewhere," it's just a dead label.
+- Checked every shared-class template site individually (`grep -rn` for each of the 12 shared
+  classes introduced this session) rather than assuming which ones were vestigial - most still
+  have real local content and correctly keep both classes (`.thumb`/`.thumb-placeholder`,
+  `.filter-tag`, `.tag`, `.empty` ×3, `.big-picture`/`.slideshow`, `.backdrop-overlay`,
+  `.strip-cover`/`.strip-cover-dummy`, `.tile`, `.tile-cover-placeholder`/
+  `.strip-cover-placeholder` all still carry genuinely-extra properties)
+- Found 4 truly empty ones: `GameListRow.vue`'s `.row`, `SkeletonRow.vue`'s `.skeleton-row`,
+  and `BigPictureGrid.vue`/`BigPictureSlideshow.vue`'s `.backdrop` - each had already been
+  reduced to a comment-only rule with zero actual properties during the earlier migrations.
+  Removed the class name from the template and the now-pointless comment from the `<style
+  scoped>` block; updated `styles.css`'s own header comments for `.list-row-shell`/
+  `.bp-backdrop` to stop referencing class names that no longer exist anywhere
+- **Found a second, related case while checking**: `focused`/`centered` on the base
+  `BigPictureTile.vue`/`BigPictureSlideshow.vue` are conditionally-bound state classes, not
+  permanent base classes, but the same principle applied - once `.tile.focused`/
+  `.strip-cover.centered` were replaced by `.tile.bp-cover-focused`/the shared
+  `.bp-cover-focused` earlier this session, nothing in CSS targeted bare `.focused`/`.centered`
+  anymore either. Confirmed via `grep` that no CSS rule and no JS (`classList`/`querySelector`)
+  referenced them before removing - `brick-block-theme`'s own separate `.brick-tile.focused`
+  rule is a different component's own scoped style, unrelated and untouched
+- Verified via compiled CSS same as every other step: old vestigial selectors produce zero
+  output now, the shared classes they were riding alongside still compile with the same
+  properties as before - this was a pure cleanup, no behavior change, confirmed rather than
+  assumed
+- `bun run build`/`cargo check` both clean; CSS bundle size unchanged (21.34kB) - expected,
+  since no actual style rules were removed, just dead template references and a few comments

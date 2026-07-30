@@ -1,5 +1,5 @@
 <template>
-  <div class="skeleton-row list-row-shell">
+  <div class="list-row-shell">
     <div class="skeleton-thumb list-row-thumb">
       <div class="shimmer" />
     </div>
@@ -15,8 +15,6 @@
 </template>
 
 <style scoped>
-/* .list-row-shell (shared, styles.css) supplies the shell layout/border/padding. */
-
 .skeleton-thumb {
   /* .list-row-thumb (shared, styles.css) supplies width/height/flex-shrink/radius. */
   background: var(--color-surface0);

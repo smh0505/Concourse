@@ -330,3 +330,16 @@ measuring before executing, not assumed.
 Milestone 18 fully closed - audit, `:root`/primitive-styles relocation, all identified
 duplicate-pattern migrations, the radius-scale decisions, and the unused-token cleanup are
 all done.
+
+Post-close follow-up: user noticed several migrated components still carried a now-fully-empty
+local class alongside the new shared one (e.g. `class="row list-row-shell"`, where `.row` had
+zero properties left - fully covered by `.list-row-shell`). Since scoped styles aren't reused
+across components, a local class with no rule targeting it is pure vestige. Removed 6 such
+cases: `.row`/`.skeleton-row`/`.backdrop` (×2) class names and their now-pointless
+comment-only rules, plus `focused`/`centered` state-toggle classes on the base
+`BigPictureTile.vue`/`BigPictureSlideshow.vue` (nothing targeted them standalone anymore, only
+`.bp-cover-focused` did - confirmed via `grep`, not assumed, including checking JS didn't
+reference them via `classList`/`querySelector`). Re-verified every other shared-class site
+individually first - most still have real local content and correctly keep both classes.
+`brick-block-theme`'s own `.focused` usage is unrelated (a different, separate component's own
+scoped rule) and untouched.

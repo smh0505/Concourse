@@ -90,7 +90,7 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
       <div
         v-if="focusedBackgroundUrl"
         :key="focusedBackgroundUrl"
-        class="backdrop bp-backdrop"
+        class="bp-backdrop"
         :style="{ backgroundImage: `url(${focusedBackgroundUrl})` }"
       />
     </Transition>
@@ -128,8 +128,6 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
 .big-picture::-webkit-scrollbar {
   display: none;
 }
-
-/* .bp-backdrop (shared, styles.css) supplies the backdrop image positioning entirely. */
 
 /* .bp-backdrop-overlay-base (shared, styles.css) supplies position/inset/z-index; the
    gradient's alpha stops are deliberately specific to this surface. */

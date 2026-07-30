@@ -9,7 +9,7 @@ const emit = defineEmits<{ select: []; hover: [] }>();
 <template>
   <button
     class="tile bp-cover-frame"
-    :class="{ focused, 'bp-cover-focused': focused }"
+    :class="{ 'bp-cover-focused': focused }"
     @click="emit('select')"
     @mouseenter="emit('hover')"
   >

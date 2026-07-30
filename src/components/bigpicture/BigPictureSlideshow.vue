@@ -78,7 +78,7 @@ function coverStyle(offset: number) {
       <div
         v-if="focusedGame?.background_art_url"
         :key="focusedGame.background_art_url"
-        class="backdrop bp-backdrop"
+        class="bp-backdrop"
         :style="{ backgroundImage: `url(${focusedGame.background_art_url})` }"
       />
     </Transition>
@@ -99,7 +99,7 @@ function coverStyle(offset: number) {
         <button
           v-else
           class="strip-cover bp-cover-frame"
-          :class="{ centered: item.offset === 0, 'bp-cover-focused': item.offset === 0 }"
+          :class="{ 'bp-cover-focused': item.offset === 0 }"
           :style="coverStyle(item.offset)"
           @click="item.offset === 0 ? library.launchGame(library.games[item.index]) : (focusedIndex = item.index)"
         >
@@ -122,8 +122,6 @@ function coverStyle(offset: number) {
 .slideshow {
   overflow: hidden;
 }
-
-/* .bp-backdrop (shared, styles.css) supplies the backdrop image positioning entirely. */
 
 /* .bp-backdrop-overlay-base (shared, styles.css) supplies position/inset/z-index; the
    gradient's alpha stops are deliberately specific to this surface. */
@@ -183,7 +181,7 @@ function coverStyle(offset: number) {
 }
 
 /* .bp-cover-focused (shared, styles.css) supplies border-color/box-shadow for the
-   .centered state - no extra needed locally beyond that. */
+   focused/centered cover - no extra needed locally beyond that. */
 
 .strip-cover img {
   width: 100%;

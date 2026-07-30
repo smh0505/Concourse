@@ -782,3 +782,36 @@ verified the fix for real: checked the compiled CSS output and confirmed the sel
 - Full visual confirmation in the actual running Tauri app wasn't done this session - only
   automated/structural verification (compiled CSS, real validator/interpreter calls). Worth
   running the real app to eyeball it before calling this fully done
+
+**Closed a real gap in theme parity: signing (Milestone 14) and the registry pin (Milestone 17
+follow-up) are separate, complementary mechanisms, and only one of them actually existed for
+themes.** User asked directly why a theme registry entry needs `wasmSha256` at all, given
+`data-theme-plugins` was never wired with the same `actions/attest-build-provenance` step the
+other 7 plugin repos got - re-checked that repo's `release-themes.yml` to confirm the absence
+was real, not assumed. Consequence: `verify_plugin_provenance` would call out to GitHub's
+attestations API on every theme install and always come back "not verified," not because
+anything was broken but because that CI step had simply never been added there. For themes,
+the registry pin wasn't a redundant second layer the way it is for WASM plugins - it was the
+*only* integrity check that existed at all.
+- Added the same `id-token: write`/`attestations: write` permissions and
+  `actions/attest-build-provenance@v2` step to `data-theme-plugins`' `release-themes.yml`,
+  `subject-path: "dist/*.json"` (a glob) producing one attestation per theme in a single step
+  rather than a step per theme - a data-only theme has no binary, so the manifest itself (now
+  the release asset, already renamed to `<id>.json`) is what gets attested
+- Verified the signing actually took effect for real, not just "the workflow ran green": the
+  push that added the CI step didn't itself trigger a run (path filter only watches
+  `themes/**`, same gotcha hit earlier with the plugin repos' notify-registry step), so used
+  `gh workflow run --repo ... workflow_dispatch` to force a real run instead of introducing a
+  spurious `themes/**` commit just to trigger one. Then ran `gh attestation verify` against the
+  actual published `brick-block-data-theme.json` - exit code 0, no visible summary text
+  (a rendering quirk in this shell, not a real problem) - confirmed by also running the same
+  command against the *wrong* repo and getting a real, visible `HTTP 404` and exit code 1,
+  proving the tool genuinely round-trips to GitHub's attestations API rather than trivially
+  passing
+- Added `midnight-neon-theme` and `sakura-theme` to `concourse-plugin-registry` too, completing
+  registry coverage for all three themes in the repo (previously only Brick Block had an
+  entry). Both reviewed (plain `cssVariables`, nothing exotic) and pinned the same
+  commit-SHA'd-raw-URL way as Brick Block's entry, for the same reason (the shared-tag release
+  model doesn't fit a tagged-release convention). All three themes now have both signing
+  (repo-wide CI, just added) and a reviewed registry pin (per-theme, just added) - full parity
+  with how the 8 WASM/metadata/wrapper plugin repos are already covered

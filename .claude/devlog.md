@@ -352,7 +352,12 @@ skipped-over stretch goal that later milestones passed by).
   replaced with "1.0.0 marks the core roadmap done, Post-1.0 minor bumps track closing a
   Post-1.0 Roadmap milestone"
 
-## Milestone 17 — External Theme Plugins: Component-Override Tier (re-reviewed, still blocked)
+## Milestone 17 (legacy) — External Theme Plugins: Component-Override Tier (re-reviewed, still blocked)
+**Superseded** - milestones.md's Milestone 17 now tracks a different, narrower mechanism (a
+constrained template tier), scoped from the Brick Block measurement below. Kept here as the
+historical record; its actual conclusion (raw-JS/WASM component-override for external plugins is
+blocked) is still correct and unaffected by the entry that replaces it in milestones.md.
+
 Re-review requested directly: does Milestone 13/14 closing change the original Milestone 9
 "blocked" verdict on the `slots` tier for external theme plugins? Worth actually re-deriving the
 reasoning rather than reflexively re-affirming the old note, since the premise it was originally
@@ -381,3 +386,52 @@ conditioned on ("not pursued until/unless Milestone 13/14 land") had genuinely c
   narrower feature (a whitelisted template string) than an actual component-override tier, not a
   way to unblock `slots` itself. Closed Milestone 17 on this negative-but-final result rather
   than leaving it open pending some future condition that isn't currently identifiable
+
+## Milestone 17 — External Theme Plugins: Constrained Template Tier (scoped, not built)
+Prompted by a direct observation: Brick Block wasn't just a theme, it was Milestone 5's own
+built-in proof that component-override themes have real demand and work as a mechanism. That
+reframes the legacy Milestone 17 above - its "still blocked" verdict is about whether *external*
+code can safely do what Brick Block does, not about whether the underlying idea (the Vue
+template-compiler tier, noted since Milestone 9) is worth building. Rather than write that
+verdict into milestones.md on vibes, measured it directly against Brick Block first.
+
+- **Measured Brick Block's actual gap against the base `GameCard.vue`/`BigPictureTile.vue`,
+  line by line**, instead of assuming `slots` themes are un-portable wholesale. Result: the part
+  of Brick Block's identity that reads as "the theme" at a glance - its full color palette,
+  `--font-pixel` - was *already* 100% `cssVariables`-portable and never depended on `slots` at
+  all (it applies app-wide, to buttons/forms/nav, with zero component override). The real,
+  `slots`-dependent gap was three things: (1) a static `★` glyph replacing the base's dynamic
+  `{{ game.title.charAt(0).toUpperCase() }}` placeholder, (2) one extra wrapper element,
+  `.brick-frame`, that the base tile has no equivalent of at all, (3) missing CSS-variable hooks
+  on the base components for things Brick Block wants styled that the base never exposed as
+  variables (balloon border, balloon `border-radius` override, per-element `font-family`). Of
+  those three, (3) turned out to be a wholly separate, unrelated task - it's just base-component
+  CSS not exposing enough knobs, fixable by adding variables to first-party code, nothing to do
+  with any external-plugin mechanism at all
+- **Checked whether the tier even needs the risky part of the original idea - `{{ }}`
+  interpolation - against that measured gap**, rather than assuming the idea's own stated caveat
+  ("interpolations are real evaluated JS, not inert") was the load-bearing risk here. It mostly
+  isn't: Brick Block doesn't introduce a single non-trivial mustache expression - it *removes*
+  the one the base had, replacing a computed method-call expression with static literal text.
+  What survives unchanged from the base into Brick Block are simple directive/attribute bindings
+  (`v-if="game.cover_art_url"`, `:src="game.cover_art_url"`, `:alt="game.title"`,
+  `:class="{ focused }"`) - same expression-evaluation category as `{{ }}` (a real evaluated JS
+  expression against a render-context scope), but the simplest possible slice of it: single-field
+  property access, no method calls, no computed logic, no formatting helpers. So the concrete
+  scope a whitelisted render context needs to cover, for this measured case, is narrower than
+  the original note assumed - plain read-only access to `game`'s own fields, nothing more
+- **Surfaced a real scope gap the original idea never accounted for**: Brick Block's footer
+  buttons (`launchGame`/`fetchMetadata`/`openEdit`/`deleteGame`) are real store-action dispatches,
+  not display data - and a template tier's whitelisted scope, as originally framed ("`game`
+  fields plus known formatting helpers"), has no provision for exposing actions at all. Brick
+  Block itself doesn't stress-test this - its footer is structurally identical to the base,
+  reskinned only via CSS, never rearranged - so this specific measurement can't answer whether
+  action-dispatch needs to be part of the tier. Left explicitly open in milestones.md rather than
+  silently assumed either way, since a future theme that *does* want to restructure the action bar
+  would hit this immediately
+- Net effect: replaced the legacy Milestone 17 entry in milestones.md rather than appending
+  alongside it - the new entry tracks a genuinely different, narrower mechanism (a scoped
+  template tier) with a concrete measured basis (Brick Block) instead of the original's
+  hypothetical Playnite-XAML comparison, and the legacy entry's own "blocked" conclusion (about
+  `slots`/raw-JS specifically) stays correct and undisturbed above, kept for history rather than
+  deleted

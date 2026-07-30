@@ -238,31 +238,39 @@ Carried over from Milestone 12 unstarted, in full.
 - [ ] Ubisoft Connect — research install detection and launch mechanism
 - [ ] Each ships as its own WASM plugin in a separate repo from day one
 
-## Milestone 17 — External Theme Plugins: Component-Override Tier (re-reviewed, still blocked)
-Carried over from Milestone 9, where the `slots` tier was reviewed and closed out as blocked -
-WASM export is structurally impossible (can't cross a live Vue component across the Component
-Model boundary), and the only technical alternative (raw remote JS via `defineAsyncComponent`)
-was judged a bigger security regression than Milestone 13's then-still-open capability-sandboxing
-gap. Milestones 13 and 14 have since closed, so this was re-checked rather than left on the
-stale premise.
-- [x] Re-review whether Milestone 13/14's now-closed sandboxing/trust model changes the
-  raw-remote-JS calculus at all — **verdict: no change, still blocked.** Milestone 13's
-  scoping (path/URL allowlists, spawn-process permission gating) all lives inside the WASM
-  host-function layer (`host::*`, implemented in `wasm_plugin_runtime.rs`) - it scopes what a
-  WASM plugin's own enumerated primitives can do, and has no bearing on raw JS at all, which
-  never goes through that layer in the first place. Raw JS via `defineAsyncComponent` runs in
-  the same realm as the host app itself - same unmediated access to every `#[tauri::command]`
-  and every Pinia store in memory that existed before Milestone 13, unaffected by it tightening
-  a boundary that only ever applied to WASM's separate, narrower surface. Milestone 14
-  (signing, curated registry) doesn't change this either - it's a provenance/trust-in-the-author
-  gate on top of installing something, not a capability boundary on what installed code can do
-  once running; a signed, registry-pinned raw-JS bundle still has full-realm access, no sandbox
-- [x] Re-confirm no other mechanism exists — none found beyond what devlog already documents:
-  Vue's own runtime template compiler (`@vue/compiler-dom`) as a Playnite-XAML-style constrained
-  declarative alternative. Still not proposed for implementation - it's a different, narrower
-  feature (a tightly-scoped template string, not an arbitrary component override) than what this
-  milestone was ever scoped to cover, not a way to unblock `slots` itself
+## Milestone 17 — External Theme Plugins: Constrained Template Tier (scoped, not built)
+Supersedes the original Milestone 17 (see devlog for that verdict, kept as legacy record - its
+conclusion still stands unchanged: `slots`/raw-JS component-override for *external* theme
+plugins is blocked, independent of Milestone 13/14's closure). This milestone instead scopes a
+narrower, different mechanism - a constrained declarative template tier - concretely, using
+Brick Block (M5's own built-in proof that component-override themes have real demand) as the
+measured acceptance case rather than a hypothetical.
+- [x] Measure how much of a real component-override theme (Brick Block) a template tier would
+  actually need to cover — color/typography identity was already 100% `cssVariables`-portable,
+  never needed `slots` at all. The real structural gap was small: a static content swap (glyph
+  vs. dynamic letter), one extra wrapper element (`.brick-frame`), and missing CSS-variable hooks
+  on the base components (border/radius/font-family) - the last of which is a separate, unrelated
+  first-party CSS task, not a templating problem at all
+- [x] Evaluate whether the tier even needs risky `{{ }}` interpolation, based on that measurement
+  — barely. Brick Block doesn't use a single non-trivial mustache expression; it *removes* the
+  one complex one the base component had (`{{ game.title.charAt(0).toUpperCase() }}`) in favor of
+  a static glyph. What it does keep are simple directive/attribute bindings (`v-if`,`:src`,`:alt`,
+  `:class`) on single `game` fields - same expression-evaluation category as `{{ }}` but the
+  simplest possible slice of it: no method calls, no computed logic, no formatting helpers
+- [x] Identify a real scope gap the original idea's note never covered: Brick Block's footer
+  buttons dispatch real store actions (`launchGame`/`fetchMetadata`/`openEdit`/`deleteGame`), not
+  just display. Brick Block itself never restructures them (same markup, CSS-only reskin), so
+  this case doesn't force an answer - but a template tier that ever wants to let a theme
+  *restructure* the action bar, not just recolor it, needs those exposed as safe, pre-bound
+  callables, not arbitrary method access. Left explicitly open, not assumed solved
 
-Milestone 17 fully closed - re-review confirms the block still holds, for reasons independent of
-Milestone 13/14's closure. Not reopened as future work unless the underlying wall (WASM can't
-carry live components, raw JS has no capability boundary) changes.
+Scope going forward, not yet built:
+- [ ] Expand `GameCard.vue`/`BigPictureTile.vue`'s CSS-variable surface (border-width, radius,
+  per-element font-family) - independent, first-party, doable now regardless of any decision below
+- [ ] Decide the action-dispatch boundary above before designing the whitelisted scope - template
+  tier only ever gets `game`'s own fields (read-only), or does it eventually need safe callables
+  too
+- [ ] Prototype: new manifest field (e.g. `template`), lazy `@vue/compiler-dom` import, whitelisted
+  render-context scope
+- [ ] Acceptance test: reproduce Brick Block's glyph + `.brick-frame` wrapper on the new tier - not
+  full parity (footer stays out of scope per the point above)

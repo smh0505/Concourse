@@ -553,3 +553,28 @@ assuming a Worker actually helps:
   validator implementation not started this session. `@vue/compiler-dom` stays as an explicit
   dependency for when this is built (same package, same use, no churn from removing and
   re-adding it later)
+
+**Tried a real data-only conversion of Brick Block, given the template tier is blocked for
+now.** Added `brick-block-data-theme` to the `data-theme-plugins` repo (separate `id` from the
+built-in `brick-block-theme` - same id would collide in the loader/`enabled_plugins`, they need
+to coexist as genuinely different plugins, not the same one migrated). The built-in `slots`
+version is untouched, not retired - this is a parallel, honestly-scoped alternative, not a
+replacement.
+- Full color palette carried over unchanged - was already 100% portable, as measured earlier
+- Also carries the button-border-width/balloon-border-width/balloon-radius/balloon-font-family
+  hooks added earlier this session - genuinely more of Brick Block's look is expressible now
+  than it would have been before those were added
+- **Real, not graceful, loss: the pixel font.** Data themes have zero code/asset-loading
+  capability - `cssVariables` are plain property values, there's no way to inject an
+  `@font-face` rule the way Brick Block's own `index.ts`'s `injectFont()` does. Checked whether
+  the CSS stack's second choice, `"Press Start 2P"`, would at least provide *some* pixel-font
+  fallback - it doesn't: `grep`-confirmed it's never actually loaded anywhere else in the app
+  either (no bundled `@font-face`, no CDN link), so it was already unreachable in practice even
+  in the built-in version unless a user happened to have that exact font installed system-wide.
+  The data-theme version's `--balloon-font-family` therefore falls straight through to the
+  default sans stack - the pixel-font identity is fully gone, not softened
+- Also lost, both genuinely structural rather than stylable: the star-glyph cover placeholder
+  (content, not CSS) and BigPictureTile's `.brick-frame` wrapper element (an extra DOM node the
+  base tile has no equivalent of) - exactly the two items this milestone's Brick Block
+  measurement already identified as needing the (currently blocked) template tier, now
+  confirmed by an actual conversion attempt rather than the earlier static analysis alone

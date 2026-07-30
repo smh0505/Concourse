@@ -975,3 +975,12 @@ the converted theme against the original, surfacing several real gaps the accept
   - `README.md` also gained documentation for `cardVisual`/`fontFaces`/`fonts`, none of which
     had been documented there since they were first added earlier this session - a real gap,
     not just this pass's own additions
+- All of the above committed and pushed once the user lifted the earlier "hold" instruction.
+  Confirmed the font URL actually resolves (`curl`, matched the real 668640-byte file) before
+  wiring `fontFaces` to it - a separate follow-up commit, since the URL needed that commit's
+  own SHA first. `validate.mjs`'s new `fontFaces`/`fonts` checks ran for real in CI this time,
+  not just locally. Both pushes to `data-theme-plugins` correctly dispatched their own registry
+  PR each (the diff-based dispatch logic distinguishing them correctly); the first (pointing at
+  the pre-`fontFaces` commit) was closed as stale once the second, complete one opened - same
+  "two open bump PRs for one id, close the older" guidance from earlier in this session, now
+  actually exercised for real rather than just documented as a rule

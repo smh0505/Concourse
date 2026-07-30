@@ -239,8 +239,10 @@ Scope going forward, not yet built:
 Milestone 17 fully closed - vocabulary, interpreter, acceptance test, and signing addon all
 done. Registry `theme`-kind extension stays a deliberate, separate follow-up (see above).
 
-Follow-up, deliberately not folded into this milestone yet: `concourse-plugin-registry`'s
-`kind` field only covers `source | wrapper | metadata` today. Once this tier ships as
-install-by-URL, extending the registry to a `theme` kind would carry the same reviewed-trust
-guarantee over to it - separate from (in addition to) whatever the AST interpreter's own
-code-execution-free design already guarantees structurally.
+Follow-up done: `concourse-plugin-registry` now covers `kind: "theme"` -
+`brick-block-data-theme` added as the first entry, pinned via a commit-SHA'd raw URL rather
+than a tagged release asset (`data-theme-plugins` reuses one release tag across every push,
+which would make that asset's own URL equivalent to `releases/latest`). `install_data_theme`
+now enforces the pinned hash as a hard reject, same as `install_wasm_plugin` - this was missing
+even after the signing addon above, caught and fixed here rather than shipping a registry
+extension that looked complete but didn't actually enforce anything for themes.

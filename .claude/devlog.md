@@ -710,3 +710,42 @@ against the manifest's own bytes instead of a `.wasm` binary.
   path)
 - Milestone 17 is now fully closed: vocabulary, interpreter, acceptance test, signing addon.
   Only the deliberately-separate registry `theme`-kind follow-up remains outside its scope
+
+**Registry `theme`-kind follow-up, done.** Real complication surfaced before writing anything:
+`data-theme-plugins`' `release-themes.yml` deliberately reuses one release tag (`themes`)
+across every push, for a stable freeform-install URL - checked, not assumed, and confirmed via
+its actual workflow file. That means `.../releases/download/themes/<id>.json` is functionally
+equivalent to `releases/latest/...`, the exact anti-pattern the registry's own README already
+rejects (a future unrelated push could change that asset's bytes with zero new review ever
+happening). Presented this to the user as a real fork rather than picking silently: change
+`data-theme-plugins`' release model to match the WASM repos' per-version tags (breaks the
+stable-URL property that model was built for), or pin against a commit-SHA'd
+`raw.githubusercontent.com` URL instead (immutable regardless of the repo's own release model,
+no changes needed there). Went with the latter.
+- `registry.json` gained `brick-block-data-theme` - `manifestUrl` is
+  `raw.githubusercontent.com/smh0505/data-theme-plugins/<commit-sha>/themes/brick-block-data-theme/manifest.json`
+  (the exact commit that introduced the file, found via `git log -1 -- <path>`), `wasmSha256`
+  is the real sha256 of that URL's actual bytes (fetched and hashed for real, not assumed)
+- Caught a real mistake mid-edit: the `Edit` that added the new registry entry accidentally
+  truncated the adjacent `rawg-wasm` entry's `wasmSha256` in the process (a copy-paste slip in
+  the replacement string). Caught immediately by re-reading the file after the edit rather than
+  trusting the diff blind, fixed before it ever reached a commit
+- `scripts/validate.sh` branches on `kind` now: `theme` entries hash `manifestUrl`'s own bytes
+  directly (no `.entry` sibling lookup - there's no separate binary for a data-only theme to
+  begin with), every other kind keeps the existing sibling-`.wasm` logic unchanged. Pushed and
+  confirmed the real CI run passes clean for the new entry, not just locally reasoned about
+- README updated to document the new `kind` value, the differing pinning convention per kind,
+  and that `theme` entries are added/re-pinned by hand - `data-theme-plugins` doesn't fire a
+  release dispatch at all, and its shared-tag model doesn't fit `bump-entry.sh`'s
+  tagged-release assumption anyway, so the automation built earlier this session doesn't
+  (and isn't meant to) extend to this kind
+- **Real gap caught on the Concourse side before considering this done**: `install_plugin`
+  already accepted `expected_sha256` as a parameter, but only ever threaded it into
+  `install_wasm_plugin` - `install_data_theme` had no hash-pin enforcement at all, meaning a
+  theme registry entry's pinned hash would've been cosmetically present in `registry.json` but
+  never actually checked at install time. Fixed by threading `expected_sha256` into
+  `install_data_theme` too, hard-rejecting on mismatch against the manifest's own bytes -
+  identical shape to `install_wasm_plugin`'s existing check. Added a real end-to-end test
+  (`rejects_a_theme_whose_bytes_dont_match_the_pinned_hash`) against a real HTTP server, not a
+  unit test of the hash comparison in isolation - confirms the install aborts and nothing gets
+  written to disk. Full `cargo test` suite (5/5) and `bun run build` both pass clean

@@ -310,6 +310,7 @@ async fn install_data_theme(
     dir: &Path,
     manifest_url: &str,
     manifest_bytes: &[u8],
+    expected_sha256: Option<&str>,
 ) -> Result<InstallResult, String> {
     let manifest: DataThemeManifest = serde_json::from_slice(manifest_bytes)
         .map_err(|e| format!("Invalid theme manifest: {}", e))?;
@@ -318,6 +319,23 @@ async fn install_data_theme(
     }
     if manifest.css_variables.is_empty() {
         return Err("Theme manifest has no cssVariables".to_string());
+    }
+
+    // Milestone 14/17 curated registry - unlike the Sigstore check below, a mismatch here is a
+    // hard reject: this hash was pinned by hand after actually reviewing this specific version,
+    // so a mismatch is a real "this isn't what was reviewed" signal, not just "no attestation
+    // exists yet." Mirrors install_wasm_plugin's identical check against a .wasm binary - here
+    // the manifest's own bytes are the whole artifact, there's nothing else to hash.
+    if let Some(expected) = expected_sha256 {
+        use sha2::{Digest, Sha256};
+        let actual = format!("{:x}", Sha256::digest(manifest_bytes));
+        if !actual.eq_ignore_ascii_case(expected) {
+            return Err(format!(
+                "Pinned hash mismatch - this download doesn't match what was reviewed \
+                 (expected {}, got {}). Install aborted.",
+                expected, actual
+            ));
+        }
     }
 
     let (verified, verification_note) =
@@ -370,7 +388,13 @@ pub async fn install_plugin(
     if kind == "source" || kind == "metadata" {
         install_wasm_plugin(&app, &url, &bytes, expected_sha256.as_deref()).await
     } else {
-        install_data_theme(&data_themes_dir(&app)?, &url, &bytes).await
+        install_data_theme(
+            &data_themes_dir(&app)?,
+            &url,
+            &bytes,
+            expected_sha256.as_deref(),
+        )
+        .await
     }
 }
 
@@ -523,8 +547,9 @@ mod tests {
         );
 
         let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
-        let result = tauri::async_runtime::block_on(install_data_theme(&temp.0, &url, &bytes))
-            .expect("install should succeed");
+        let result =
+            tauri::async_runtime::block_on(install_data_theme(&temp.0, &url, &bytes, None))
+                .expect("install should succeed");
         assert_eq!(result.id, "test-online-theme");
         assert!(!result.verified, "a localhost test server isn't hosted on github.com");
 
@@ -540,6 +565,34 @@ mod tests {
         uninstall_data_theme_from(&temp.0, &result.id).expect("uninstall should succeed");
         let manifests_after = list_data_themes_from(&temp.0).expect("list should succeed");
         assert!(manifests_after.is_empty(), "expected theme to be gone after uninstall");
+    }
+
+    // Milestone 17's registry extension - a theme entry's pinned wasmSha256 is a hard reject
+    // on mismatch, same as install_wasm_plugin's identical check. Real end-to-end against a
+    // real HTTP server, not a unit test of the hash comparison in isolation.
+    #[test]
+    fn rejects_a_theme_whose_bytes_dont_match_the_pinned_hash() {
+        let temp = TempDir::new("bad-pin");
+        let url = serve_once(
+            r##"{"id":"pinned-theme","name":"Pinned","version":"1.0.0","kind":"theme","cssVariables":{"--color-base":"#123456"}}"##,
+        );
+
+        let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let wrong_hash = "0000000000000000000000000000000000000000000000000000000000000000";
+        let result = tauri::async_runtime::block_on(install_data_theme(
+            &temp.0,
+            &url,
+            &bytes,
+            Some(wrong_hash),
+        ));
+
+        match result {
+            Ok(_) => panic!("expected a pinned-hash mismatch to reject the install"),
+            Err(msg) => assert!(msg.contains("Pinned hash mismatch")),
+        }
+
+        let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
+        assert!(manifests.is_empty(), "rejected install should not write anything to disk");
     }
 
     #[test]

@@ -264,7 +264,7 @@ async function onSave() {
 .tag {
   font-size: 0.7rem;
   background: var(--color-surface0);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   padding: 0.1rem 0.4rem;
   display: inline-flex;
   align-items: center;

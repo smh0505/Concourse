@@ -88,7 +88,7 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
 .modal-frame {
   background: var(--color-mantle);
   color: var(--color-text);
-  border-radius: 8px;
+  border-radius: var(--radius-panel);
   padding: 1.5rem;
   width: 90%;
   max-height: 85vh;

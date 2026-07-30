@@ -1067,3 +1067,26 @@ pointing at the new location instead of the block itself.
 - Migrating the actual Category 1 duplicate patterns into `styles.css`, and resolving the two
   off-token radius values, remain open - this pass was the audit + the one concrete decision
   (`:root`'s new home), not the full migration
+
+**Resolved the two off-token radius values.** `3px` (tag pills, `GameFilters.vue`/`EditGame.vue`)
+snapped onto `--radius-sm` (4px) directly - a 1px nudge, no real decision needed. `8px` (list-row
+shell) was genuinely ambiguous - exactly equidistant between `--radius-md` (6px) and
+`--radius-lg` (10px), no code-derivable answer - so asked rather than picking arbitrarily.
+User chose a new dedicated token over snapping onto either existing step or renaming/expanding
+the sm/md/lg scale itself (which would've meant repointing `--radius-lg`'s existing consumers,
+well beyond what these two components needed).
+- Added `--radius-row: 8px` to `styles.css` initially, wired `GameListRow.vue`/`SkeletonRow.vue`
+- **Caught a third, previously-unaudited occurrence of the same `8px` value while migrating**:
+  `BaseModal.vue`'s `.modal-frame` - the earlier Explore-delegated audit's Category 1 finding
+  only named the two list-row files, missing this one. Found by grepping the compiled CSS
+  output for any remaining literal `8px`/`3px` radius after the "fix," rather than trusting the
+  audit's file list as complete - a real gap in the earlier audit, not just extra diligence
+  that happened to turn up nothing
+  - This meant `--radius-row` was the wrong name after all - a modal frame isn't a "row."
+    Renamed to `--radius-panel` (covers both a list-row shell and a modal frame as generic
+    container semantics) before it could spread under a name that didn't fit, updated both
+    already-migrated consumers plus the new `BaseModal.vue` site
+- Verified via compiled CSS, not assumed: `--radius-panel: 8px` present in the token block,
+  zero remaining literal `border-radius:8px`/`3px` anywhere in `src/` (a fresh `grep -rn`
+  across the whole source tree, not limited to the audit's original file list, to make sure
+  nothing else was missed a second time)

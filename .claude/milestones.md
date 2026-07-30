@@ -283,5 +283,10 @@ measuring before executing, not assumed.
 - [ ] Migrate the identified shared patterns (Category 1 findings above), verifying each move
   the same way this session's CSS fixes were verified (compiled-output check, not just visual
   assumption)
-- [ ] Resolve the two off-token radius values (`8px` list-row shell, `3px` tag pills) - decide
-  whether to standardize onto an existing token or add as a genuinely new shared value
+- [x] Resolve the off-token radius values - `3px` tag pills snapped onto `--radius-sm` (1px
+  nudge, negligible); `8px` genuinely new (`--radius-panel`), since it sat exactly between
+  `--radius-md`/`--radius-lg` with no better-fitting existing step. A third, previously-unaudited
+  `8px` site (`BaseModal.vue`'s `.modal-frame`) turned up while migrating - fixed too, and the
+  new token renamed from an initial `--radius-row` to `--radius-panel` once it became clear a
+  modal frame isn't a "row." Verified via compiled-CSS grep: token present, zero literal
+  `8px`/`3px` radii left anywhere in `src/`

@@ -380,3 +380,12 @@ rules for either. `cargo check` run as formality (no Rust touched). Remaining au
 (one exact duplicate needing no decision, a small-button font-size fork needing a design call,
 TitleBar's chromeless buttons, a repeated `.active` accent-swap idiom) deliberately left open,
 pending further direction.
+
+Migrated the clean exact duplicate next: `AddPlugin.vue`'s `.registry-list button`
+(install-from-registry) and `PluginSettings.vue`'s `.permission-needed button` (grant-permission
+prompt, 2 sites) were byte-identical (`font-size: 0.75rem; padding: 0.2rem 0.6rem`) - no design
+decision needed. New `.compact-button` in `styles.css`, applied directly to each button element
+(not via a container descendant selector, since these aren't uniform button rows like
+`.icon-action-row`). Verified via compiled CSS: shared class present exactly once, zero leftover
+`.registry-list button`/`.permission-needed button` rules. `bun run build`/`cargo check` both
+clean.

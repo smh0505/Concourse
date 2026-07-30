@@ -359,3 +359,11 @@ small {
   min-width: 0;
   padding: 0.35rem 0;
 }
+
+/* Compact inline button - AddPlugin.vue's `.registry-list button` (install-from-registry),
+   PluginSettings.vue's `.permission-needed button` (grant-permission prompt). Byte-identical,
+   no design decision needed unlike the two button-audit findings above. */
+.compact-button {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+}

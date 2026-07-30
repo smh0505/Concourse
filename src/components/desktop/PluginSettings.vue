@@ -177,7 +177,7 @@ onMounted(async () => {
           </span>
           <p v-if="needsRunProgramsGrant(manifest)" class="permission-needed">
             Permission needed: this plugin runs other programs on your system.
-            <button type="button" @click="grantRunPrograms(manifest.id)">Grant</button>
+            <button type="button" class="compact-button" @click="grantRunPrograms(manifest.id)">Grant</button>
           </p>
         </li>
       </ul>
@@ -307,7 +307,7 @@ onMounted(async () => {
           />
           <p v-if="needsRunProgramsGrant(manifest)" class="permission-needed">
             Permission needed: this plugin runs other programs on your system.
-            <button type="button" @click="grantRunPrograms(manifest.id)">Grant</button>
+            <button type="button" class="compact-button" @click="grantRunPrograms(manifest.id)">Grant</button>
           </p>
         </li>
       </ul>
@@ -436,10 +436,7 @@ small {
   border-radius: var(--radius-sm);
 }
 
-.permission-needed button {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
-}
+/* .compact-button (shared, styles.css) supplies this rule's entire look. */
 
 .version {
   opacity: 0.6;

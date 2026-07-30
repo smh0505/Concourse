@@ -68,6 +68,7 @@ async function installFromRegistry(manifestUrl: string, wasmSha256: string) {
             <span class="registry-entry-repo">{{ entry.repo }}</span>
             <button
               type="button"
+              class="compact-button"
               :disabled="installing"
               @click="installFromRegistry(entry.manifestUrl, entry.wasmSha256)"
             >
@@ -145,10 +146,7 @@ async function installFromRegistry(manifestUrl: string, wasmSha256: string) {
   font-size: 0.75rem;
 }
 
-.registry-list button {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.6rem;
-}
+/* .compact-button (shared, styles.css) supplies this rule's entire look. */
 
 .registry-divider {
   font-size: 0.75rem;

@@ -1399,3 +1399,28 @@ remaining duplication/design-decision findings.
   future shared class). Also flagged separately by the audit, not yet scoped: a `--space-*`
   tokenization pass for hardcoded values off the spacing scale (`0.25rem`/`0.35rem`/`0.4rem`/
   `2.2rem`/`46px`).
+
+**Migrated the audit's clean exact duplicate.** `AddPlugin.vue`'s `.registry-list button`
+(the per-entry "Install" button in the curated-registry list) and `PluginSettings.vue`'s
+`.permission-needed button` (the "Grant" button on the run-programs permission prompt, appearing
+at 2 sites - source and wrapper plugin tabs both render the same permission-check markup) were
+byte-identical: `font-size: 0.75rem; padding: 0.2rem 0.6rem`. No design decision needed here,
+unlike the two bugs fixed earlier in this pass - straightforward migration.
+- New `.compact-button` in `styles.css`. Applied directly on each `<button>` element rather
+  than via a container descendant selector (unlike `.icon-action-row button`) - these aren't a
+  uniform row of several buttons sharing one parent, just individual buttons in otherwise
+  differently-shaped contexts (a `<li>` in a list, a `<p>` permission banner).
+  - Attempted the two `PluginSettings.vue` "Grant" button edits (both byte-identical lines) via
+    a PowerShell `Get-Content`/indexed-assignment/`Set-Content -NoNewline` script rather than
+    the Edit tool, since the two lines aren't independently unique. This collapsed the entire
+    file to a single line (`-NoNewline` interacting badly with an array of strings passed to
+    `Set-Content`) - caught immediately by re-reading the file, restored via
+    `git checkout -- <file>` before any further changes, then redone correctly with the Edit
+    tool's `replace_all: true` instead, safe here since both target lines are meant to receive
+    the exact same edit.
+- Removed both local scoped rules (`AddPlugin.vue`'s `.registry-list button`,
+  `PluginSettings.vue`'s `.permission-needed button`), replacing each with a comment pointing at
+  `.compact-button`.
+- Verified via compiled CSS: `.compact-button{font-size:.75rem;padding:.2rem .6rem}` present
+  exactly once, zero leftover `.registry-list button`/`.permission-needed button` selectors.
+  `bun run build` clean (20.95kB); `cargo check` clean (no Rust touched, checked anyway).

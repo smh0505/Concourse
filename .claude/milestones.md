@@ -175,7 +175,7 @@ Carried over from Milestone 12 unstarted, in full.
 - [ ] Ubisoft Connect — research install detection and launch mechanism
 - [ ] Each ships as its own WASM plugin in a separate repo from day one
 
-## Milestone 17 — External Theme Plugins: Constrained Template Tier (scoped, not built)
+## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier (scoped, not built)
 Supersedes the original Milestone 17 (see devlog, kept as legacy record — its conclusion still
 stands: `slots`/raw-JS component-override for *external* theme plugins is blocked). This
 milestone scopes a narrower, different mechanism instead — a constrained declarative template
@@ -201,13 +201,20 @@ Scope going forward, not yet built:
   separately, unresolved identifiers in `with(_ctx)` fall through to the real global scope
   (`window` reachable directly too). Naive same-realm compilation is fully equivalent to raw
   JS and is **not being built** — see devlog for both empirical tests
-- [x] Investigate real isolation instead — a dedicated Web Worker. Verified structurally sound:
-  `invoke()` is `window.__TAURI_INTERNALS__.invoke(...)`, and Workers have no `window` at all
-  (real `ReferenceError`, not convention); CSP's `connect-src` lockdown still governs the
-  worker's own `fetch` calls (workers inherit the owning document's CSP). Design sketch logged
-  in devlog, not yet built
-- [ ] Build the worker + postMessage protocol + strict output validator (main thread never
-  trust-executes what the worker sends, only interprets it as inert data against a fixed
-  allowlist)
+- [x] Investigate real isolation instead — a dedicated Web Worker. Verified structurally sound
+  (no `window`/`invoke` access, CSP still gates the worker's own `fetch`), but superseded below
+  before being built - see devlog
+- [x] Pivoted away from Worker isolation to a JSON-AST / server-driven-UI tier instead, after
+  weighing outside alternatives. A theme submits data (`{type, test, then, else, ...}`), a
+  hand-written interpreter walks it choosing tags from a fixed allowlist and resolving
+  `{field: ...}` via plain property lookup - no `eval`/`with`/`new Function` anywhere, so
+  there's no code-execution primitive to escape from at all, unlike the Worker plan which
+  still had to contain and validate real executed JS. Runs safely in the main realm - no
+  iframe/Worker/postMessage-validation layer needed. Also a smaller build than the Worker
+  protocol, and matches Brick Block's measured gap just as precisely
+- [ ] Design the AST vocabulary (node types, `{field: ...}` resolution, fixed tag allowlist)
+  covering Brick Block's measured gap - conditional image-or-placeholder, static content, one
+  wrapper element
+- [ ] Build the interpreter (`type` → `h()` dispatch, no dynamic code path of any kind)
 - [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not
   full parity — footer stays out of scope)

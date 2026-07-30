@@ -578,3 +578,41 @@ replacement.
   base tile has no equivalent of) - exactly the two items this milestone's Brick Block
   measurement already identified as needing the (currently blocked) template tier, now
   confirmed by an actual conversion attempt rather than the earlier static analysis alone
+
+**Pivoted from Worker isolation to a JSON-AST rendering tier**, after weighing three outside
+alternatives (Gemini's suggestions, brought back for a second opinion): iframe sandboxing,
+server-driven UI via a JSON AST, and code-signed dynamic `import()`. Evaluated each against what
+this milestone had already verified, not just in the abstract:
+- **Code-signed dynamic import - rejected outright.** This is raw-JS `slots` with a signature
+  check added. Milestone 14 already drew this exact distinction: signing proves *provenance*
+  ("this really came from that repo's CI"), not *safety* - a malicious author's own CI signs
+  their malicious code perfectly validly. Doesn't touch the actual problem (full realm access,
+  `invoke()` reachable, Pinia reachable) at all - conflating signing with sandboxing was already
+  identified as a mistake to avoid back in that milestone
+- **Iframe sandboxing (`sandbox="allow-scripts"`, no `allow-same-origin`) - a real alternative
+  to the Worker plan, comparable isolation, strictly more attack surface for capability this
+  tier doesn't need.** An opaque-origin iframe can't reach the host's `window` or Pinia, same
+  structural isolation property already verified for Workers - but unlike a Worker, it has a
+  real `document`, so a compromised template inside it can still build actual DOM (phishing
+  overlays, `<img src="https://attacker/...">` beacons) natively. Milestone 17 scoped this tier
+  as display/structure-only with no ambition for live interactive UI, so the iframe's extra DOM
+  power is pure unused risk here - worth it only if the tier's ambition ever grows past what's
+  actually measured
+- **JSON-AST / server-driven UI - adopted.** Fundamentally different in kind from both other
+  options, not just a variant: there is no expression evaluator at all. A theme submits data
+  (e.g. `{type: "if", test: {field: "cover_art_url"}, then: {type: "img", src: {field:
+  "cover_art_url"}}, else: {type: "text", content: "★"}}`), and a hand-written interpreter -
+  fully first-party code, no third-party input ever reaches `eval`/`with`/`new Function` -
+  walks it, choosing tags from a fixed allowlist and resolving `{field: ...}` references via
+  plain object property lookup. There's no `.constructor.constructor` escape possible because
+  there's no code-execution primitive to escape *from* in the first place - the interpreter
+  itself, not a sandboxed realm, is the entire security boundary. This sidesteps the exact bug
+  class the compiler-dom prototype hit (verified above), and does it more cheaply than the
+  Worker plan: no iframe/Worker, no postMessage structured-clone boundary, no output-validator
+  layer needed, because nothing untrusted ever executes anywhere, contained or not
+- Also matches Brick Block's measured gap precisely - conditional image-or-placeholder, static
+  literal content, one wrapper element are all directly expressible as AST node types, and
+  nothing measured needs more than that
+- Worker isolation work above stays in devlog as a real, verified, sound design - not wrong,
+  just superseded by a cheaper and stricter option found afterward. Milestone 17's plan now
+  targets the AST vocabulary + interpreter instead of the worker/message-protocol/validator

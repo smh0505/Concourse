@@ -152,11 +152,11 @@ async function onSubmit() {
 .permission-grant {
   display: flex;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-size: 0.8rem;
   margin-top: 0.6rem;
   padding: 0.5rem;
-  border: 1px solid var(--color-danger);
+  border: var(--button-border-width) solid var(--color-danger);
   border-radius: var(--radius-sm);
 }
 

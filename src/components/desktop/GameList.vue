@@ -33,7 +33,7 @@ const SKELETON_COUNT = 4;
 .list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 /* .empty-state (shared, styles.css) supplies this rule's entire look. */

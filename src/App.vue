@@ -137,7 +137,7 @@ onUnmounted(library.dispose);
 .content {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem 2rem;
+  padding: var(--space-5) var(--space-6);
 }
 
 .big-picture-controls {
@@ -146,7 +146,7 @@ onUnmounted(library.dispose);
   right: 1rem;
   z-index: 21;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .view-toggle-button {

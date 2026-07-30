@@ -1226,3 +1226,48 @@ sub-patterns of varying overlap:
 - Remaining from the original audit: Big Picture's whole cluster is now done; only the
   Category 2 unused-token findings (`--space-2`/`--space-3` gaps, `--space-5` padding,
   `--color-on-accent`) are still open
+
+**Migrated the remaining Category 2 unused-token findings, closing out Milestone 18.** Gathered
+exact locations for every pattern with `grep -rn` first, rather than fixing from memory of the
+audit's summary. ~20 sites across the app:
+- `1px` borders → `var(--button-border-width)`: the global `input`/`textarea`/`select` rule
+  and `.list-row-shell` (both in `styles.css`), `SkeletonCard.vue`, `ConfirmInstall.vue`'s and
+  `PluginSettings.vue`'s danger-callout borders, and two sites the original audit's
+  `border: 1px solid` search pattern had missed entirely -
+  `NavSidebar.vue`'s `border-right`/`border-top` (longhand properties, not `border` shorthand)
+- `0.5rem`/`0.75rem` gaps → `var(--space-2)`/`var(--space-3)` across ~18 sites (`App.vue`,
+  `AppSettings.vue`, `BaseModal.vue`, `GameFilters.vue`, `GameList.vue`,
+  `InstallableStatus.vue`, `AddPlugin.vue`, `ConfirmInstall.vue`, `EditGame.vue` (including the
+  `!important` variant), `PluginSettings.vue` ×5, `ToastContainer.vue`, `BigPictureTile.vue`,
+  `AddGame.vue`, `SettingsButton.vue`, `NavSidebar.vue`) - plus a third, previously-unaudited
+  site found only by re-`grep`-ing after the known ones were fixed: `GameListRow.vue`'s
+  `.meta` rule, a second `gap: 0.75rem` in the same file the audit's line reference for that
+  file hadn't captured
+- `4px` radius → `var(--radius-sm)` (`NavSidebar.vue`'s `.nav-item`)
+- `1.5rem` padding → `var(--space-5)` (`App.vue`'s `.content`, `BaseModal.vue`'s
+  `.modal-frame`) - `App.vue`'s companion value, `2rem`, also matched a token exactly
+  (`--space-6`), fixed alongside rather than leaving half the declaration hardcoded
+- `color: white` → `var(--color-on-accent)` (`TitleBar.vue`'s close-button hover)
+- **Deliberately excluded `brick-block-theme`'s own files** from all of the above, despite
+  several of its files containing the exact same literal values (`gap: 0.5rem`,
+  `border-radius: 4px`) that would otherwise have matched these patterns. Its hardcoded values
+  are the built-in theme's own deliberate visual choices - same category as its intentionally
+  thicker button/card borders (`2px`/`3px` vs. the app default `1px`) that this whole session
+  has consistently treated as theme content, not bugs. A theme overriding the default look on
+  purpose is not the same finding as a shared component that forgot to use an existing token
+- Verified via exhaustive `grep -rn` across all of `src/` for every pattern, both before making
+  changes (to catch sites the original audit missed) and after (to confirm zero literals
+  remained anywhere, `brick-block-theme` correctly still showing its own untouched values) -
+  not just trusting the original audit's file list as complete, the same lesson already
+  learned twice this session (`BaseModal.vue`'s missed `8px`, the mismatched-fallback literals)
+- `cargo check` clean (no Rust touched, checked anyway); `bun run build` clean; CSS bundle
+  20.92kB → 21.34kB (grew slightly - expected, since replacing several short literals with
+  longer `var(--name)` references isn't a duplication-removal step like the earlier migrations,
+  it's a correctness one)
+
+**Milestone 18 closed.** Audit → `:root`/primitive-styles relocation → all identified
+duplicate-pattern migrations (desktop, then Big Picture's cluster) → the two radius-scale
+decisions → this unused-token cleanup. Every step verified against real compiled output, not
+assumed correct from the source diff alone - caught real bugs at nearly every stage
+(`DataThemeManifest` silently dropping `cardVisual`, four separate mismatched fallback
+literals, a scoped-CSS/foreign-component break, sites the original audit itself missed twice).

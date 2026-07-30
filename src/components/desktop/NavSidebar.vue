@@ -53,10 +53,10 @@ const emit = defineEmits<{
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
   padding: 1rem 0.75rem;
   background: var(--color-mantle);
-  border-right: 1px solid var(--color-surface0);
+  border-right: var(--button-border-width) solid var(--color-surface0);
 }
 
 .gamepad-badge {
@@ -81,7 +81,7 @@ const emit = defineEmits<{
   flex-direction: column;
   gap: 0.25rem;
   margin-top: 0.5rem;
-  border-top: 1px solid var(--color-surface0);
+  border-top: var(--button-border-width) solid var(--color-surface0);
   padding-top: 0.75rem;
 }
 
@@ -90,7 +90,7 @@ const emit = defineEmits<{
   background: transparent;
   border: none;
   padding: 0.5rem 0.6rem;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   color: inherit;
   font-size: 0.85rem;
   cursor: pointer;

@@ -127,7 +127,7 @@ async function installFromRegistry(manifestUrl: string, wasmSha256: string) {
 .registry-list li {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-size: 0.85rem;
 }
 

@@ -134,6 +134,6 @@ onMounted(async () => {
 
 .titlebar-button.close:hover {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-on-accent);
 }
 </style>

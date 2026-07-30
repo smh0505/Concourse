@@ -85,7 +85,7 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 
 .meta {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--space-3);
   font-size: 0.7rem;
   opacity: 0.6;
 }

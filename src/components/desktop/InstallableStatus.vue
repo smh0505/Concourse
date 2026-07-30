@@ -61,7 +61,7 @@ onMounted(refreshFound);
 <style scoped>
 .installable-status {
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .status-ok {

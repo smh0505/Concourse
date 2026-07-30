@@ -89,13 +89,13 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
   background: var(--color-mantle);
   color: var(--color-text);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: var(--space-5);
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .modal-header h2 {
@@ -106,13 +106,13 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
 .modal-body {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .modal-enter-active,

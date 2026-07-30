@@ -24,7 +24,7 @@ const emit = defineEmits<{ select: []; hover: [] }>();
 .tile {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
   color: inherit;
   font-family: inherit;
   transition:

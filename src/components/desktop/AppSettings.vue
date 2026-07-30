@@ -27,7 +27,7 @@ const appSettings = useAppSettingsStore();
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-size: 0.9rem;
 }
 </style>

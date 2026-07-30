@@ -56,7 +56,7 @@ async function onSubmit() {
 .add-game-form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .add-game-form label {

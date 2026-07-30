@@ -341,7 +341,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin-bottom: 0.5rem;
 }
 
@@ -352,7 +352,7 @@ onMounted(async () => {
 
 .tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin-bottom: 0.75rem;
 }
 
@@ -375,7 +375,7 @@ onMounted(async () => {
 .row-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin-left: auto;
 }
 
@@ -409,7 +409,7 @@ onMounted(async () => {
 .plugin-row label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-size: 0.9rem;
 }
 
@@ -426,11 +426,11 @@ onMounted(async () => {
   flex-basis: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-size: 0.8rem;
   margin: 0.35rem 0 0;
   padding: 0.4rem 0.6rem;
-  border: 1px solid var(--color-danger);
+  border: var(--button-border-width) solid var(--color-danger);
   border-radius: var(--radius-sm);
 }
 

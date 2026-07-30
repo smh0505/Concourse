@@ -70,7 +70,7 @@ onMounted(loadValues);
 .settings-fields {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .settings-fields label {

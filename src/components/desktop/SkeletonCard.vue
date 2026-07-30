@@ -8,7 +8,7 @@
 .skeleton-card {
   aspect-ratio: 3 / 4;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface1);
+  border: var(--button-border-width) solid var(--color-surface1);
   background: var(--color-surface0);
   overflow: hidden;
   position: relative;

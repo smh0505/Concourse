@@ -212,7 +212,7 @@ async function onSave() {
 .edit-game-form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .edit-game-form label {
@@ -244,7 +244,7 @@ async function onSave() {
 .checkbox-label {
   flex-direction: row !important;
   align-items: center;
-  gap: 0.5rem !important;
+  gap: var(--space-2) !important;
 }
 
 .tags-section {

@@ -280,9 +280,8 @@ measuring before executing, not assumed.
 - [x] Decide `styles.css`'s relationship to `App.vue`'s existing `:root` token block — absorb
   it entirely. Moved verbatim into new `src/styles.css`, imported once in `main.ts`; verified
   the compiled output still contains every token, byte-identical values, not just assumed
-- [ ] Migrate the identified shared patterns (Category 1 findings above), verifying each move
-  the same way this session's CSS fixes were verified (compiled-output check, not just visual
-  assumption)
+- [x] Migrate the identified shared patterns (Category 1 findings above) - done as the two
+  entries below (desktop duplicates, then Big Picture's cluster)
 - [x] Resolve the off-token radius values - `3px` tag pills snapped onto `--radius-sm` (1px
   nudge, negligible); `8px` genuinely new (`--radius-panel`), since it sat exactly between
   `--radius-md`/`--radius-lg` with no better-fitting existing step. A third, previously-unaudited
@@ -316,3 +315,18 @@ measuring before executing, not assumed.
   `--shadow-lg`'s alpha, `--radius-md, 10px`) - none matched their tokens' real values;
   dropped the fallbacks entirely rather than correcting them, since these are base tokens
   always defined in `:root`, not opt-in ones. CSS bundle shrank again, 21.85kB → 20.92kB
+- [x] Migrated the remaining Category 2 unused-token findings across ~20 sites: hardcoded
+  `1px` borders → `--button-border-width`, `0.5rem`/`0.75rem` gaps → `--space-2`/`--space-3`,
+  `4px` radius → `--radius-sm`, `1.5rem` padding → `--space-5` (plus one `2rem` companion value
+  → `--space-6`), `color: white` → `--color-on-accent`. Found two more sites the original audit
+  had missed while doing the exhaustive final check (`GameListRow.vue`'s `.meta`,
+  `NavSidebar.vue`'s `border-right`/`border-top`, which used longhand properties the audit's
+  `border: 1px solid` search pattern didn't match). Deliberately excluded `brick-block-theme`'s
+  own files - its hardcoded values are the built-in theme's own deliberate visual choices, not
+  shared-component bugs, same as its intentionally-thicker button borders elsewhere. Verified
+  via exhaustive `grep -rn` across all of `src/` before and after, plus compiled-CSS spot
+  checks confirming `var()` references replaced every targeted literal
+
+Milestone 18 fully closed - audit, `:root`/primitive-styles relocation, all identified
+duplicate-pattern migrations, the radius-scale decisions, and the unused-token cleanup are
+all done.

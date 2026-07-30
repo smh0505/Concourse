@@ -27,7 +27,7 @@ const toasts = useToastStore();
   right: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
   z-index: 200;
   max-width: 320px;
 }

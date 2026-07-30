@@ -218,6 +218,11 @@ Scope going forward, not yet built:
 - [ ] Build the interpreter (`type` → `h()` dispatch, no dynamic code path of any kind)
 - [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not
   full parity — footer stays out of scope)
+- [ ] Addon, not a substitute for the above: sign the AST manifest file itself for provenance
+  (same `actions/attest-build-provenance`/`plugin_verification.rs` mechanism as WASM plugins,
+  generalized to a manifest's bytes instead of a `.wasm` binary) - catches tampering-in-transit
+  only, since the format has no code-execution primitive for signing to vouch for in the first
+  place; complementary to the interpreter's own safety, not redundant with it
 
 Follow-up, deliberately not folded into this milestone yet: `concourse-plugin-registry`'s
 `kind` field only covers `source | wrapper | metadata` today. Once this tier ships as

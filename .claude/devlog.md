@@ -874,3 +874,104 @@ Full chain confirmed:
   merged, and the post-merge `validate.yml` run on `main` passed clean
 - Full chain - push, diff, dispatch, PR, validate, merge, re-validate - works exactly as
   designed, for a real theme, not a synthetic test
+
+**Post-ship fidelity pass on Brick Block (Data)** - the user actually ran the app and compared
+the converted theme against the original, surfacing several real gaps the acceptance test
+(which only checked structure/safety, never visual output) never would have.
+- **Border shape was round, not sharp.** `.card-visual` had no variable hooks at all -
+  `border-radius: var(--radius-md)` and a hardcoded `1px` border, neither overridable. Added
+  `--card-radius`/`--card-border-width`, same opt-in pattern as the earlier balloon/button
+  hooks, defaulting to prior behavior exactly. `brick-block-data-theme` set `3px`/`0` to match
+  the original built-in's values
+- **Diagonal stripes + yellow glyph missing.** `.cover-placeholder` had `background`/`color`
+  hardcoded to plain `--color-surface0`/`--color-text`, no `text-shadow` or font-size hook at
+  all. Added `--cover-placeholder-background` (a CSS custom property can hold a full
+  `repeating-linear-gradient(...)` value just as well as a flat color, so no new node type or
+  AST change was needed), `-color`, `-text-shadow`, `-font-size`. `brick-block-data-theme` set
+  these to the original's exact stripe gradient, `#fce303` yellow, and drop shadow
+- **Balloon background/font copy request surfaced a real, separate bug.** Before even getting
+  to styling: `DataThemeManifest` (the Rust struct `list_data_themes` parses this file through)
+  had never declared a `cardVisual` field at all - it was silently dropped on every
+  install/list, regardless of what the manifest actually contained on disk. Caught by directly
+  inspecting the *cached* `theme.json` in app-data and finding `cardVisual` simply wasn't there,
+  not by assumption. Fixed by adding `card_visual: Option<serde_json::Value>` to the Rust
+  struct, and separately confirmed `PluginManifest`/`createDataThemePlugin` on the frontend
+  already threaded it through correctly via a plain object spread once Rust actually included
+  it - no additional TS-side bug, just the one Rust-side gap
+  - Copied the updated manifest directly into `%APPDATA%\com.bloppy.concourse\data-themes\
+    brick-block-data-theme\theme.json` to test each fix live without a full publish/registry
+    cycle each time - the manifest is what Concourse caches locally, the font file itself never
+    gets copied to app-data at all (see below)
+- **Balloon background** - `.balloon`'s `background` was hardcoded to `--color-crust`, no hook.
+  Added `--balloon-background`. Also fixed the arrow tip
+  (`.balloon-above/-below::after`'s `border-*-color`) to track that *same* new variable instead
+  of staying separately hardcoded to `--color-crust` - the original built-in `slots` version
+  had to manually duplicate its override across both the balloon body and the arrow tip
+  (`.brick-balloon` and `.brick-balloon.balloon-above/-below::after`), which meant they *could*
+  drift out of sync if someone touched one and not the other; tying both to one variable here
+  closes that off structurally rather than just avoiding it by convention
+- **Balloon font never actually loaded - and couldn't, structurally, no matter how the
+  `cssVariables` value was written.** `--balloon-font-family` only ever lets a theme *select* a
+  font by name; it can no more *load* a font file than any other CSS property value can. Real
+  loading needs an actual `@font-face` rule with `src: url(...)`, and the data-only tier only
+  ever sets flat custom-property values, never raw CSS rules - confirmed this structurally
+  before proposing anything, not assumed
+  - **New capability: `fontFaces`** (`ThemePlugin.fontFaces`/`PluginManifest.fontFaces`,
+    threaded through `createDataThemePlugin` and `DataThemeManifest.font_faces` the same way as
+    `cardVisual`). New `src/theme/fontFaceRegistry.ts`: `setActiveFontFaces`/
+    `clearActiveFontFaces`, wired into `theme.ts`'s activate/deactivate lifecycle
+  - This is declarative data (no code), but still untrusted third-party content going straight
+    into a real `<style>` block's text - a family name or url containing `"`/`;`/`{`/`}` could
+    otherwise break out of the `@font-face` rule and inject arbitrary CSS elsewhere on the
+    page. Every field validated against a strict allowlist before any CSS text is constructed:
+    `family`/`weight` against `^[A-Za-z0-9 -]{1,N}$`, `style` against a fixed enum, `url` parsed
+    via `new URL()` and required to be `https:`, plus a belt-and-suspenders reject on any
+    embedded `"`/`'`/`;`/`{`/`}` even though a well-formed https URL can't contain those per
+    spec - untrusted input doesn't get to rely on "shouldn't happen"
+  - Verified the validator for real against actual attack strings (CSS-injection via quote+brace
+    in the family name, embedded quotes in the url, non-`https:` and `file:` schemes, malformed
+    weight/style values) before trusting it, same discipline as the earlier compiler-dom escape
+    tests - all correctly rejected, valid entries correctly accepted
+  - CSP needed a real change: `font-src` wasn't set at all (falls back to `default-src 'self'`,
+    which would've blocked any external font regardless of the validator passing it). Added
+    `font-src 'self' https:`, mirroring the precedent `img-src 'self' data: https:` already set
+  - Discussed where the referenced font file should actually live before building anything -
+    a third-party CDN is meaningfully more vulnerable than self-hosting (unpinnable/mutable
+    content, no review trail, the exact thing the built-in theme already moved away from once
+    per its own history) versus a commit-pinned `raw.githubusercontent.com` URL into
+    `data-theme-plugins` itself (same immutability guarantee already trusted everywhere else
+    this session - `cardVisual`, every `wasmSha256` pin). Settled on the latter; `validate.mjs`
+    now enforces this as a real check (`fontFaces[].url` must start with
+    `https://raw.githubusercontent.com/smh0505/data-theme-plugins/`), not just a convention
+  - Clarified for the record: the font *file* lives only in the GitHub repo, never copied to
+    local app-data - the WebView itself fetches it live via `@font-face`'s `url(...)` at
+    CSS-parse time, the same way any browser loads any remote web font. Concourse's own code
+    never touches the font's bytes at all, unlike the manifest JSON which Concourse does
+    download and cache locally
+- **Re-verified Fusion Pixel Font's actual license against the live upstream repo** before
+  redistributing the same file a second time (in `data-theme-plugins`, alongside the copy
+  already bundled in Concourse itself), rather than trusting the locally-cached
+  `FUSION-PIXEL-OFL.txt` blindly. `gh api` against `TakWolf/fusion-pixel-font` directly:
+  - GitHub's repo-level API reports the license as "MIT" - checked further rather than taking
+    that at face value, and found the repo actually splits licensing in two: `LICENSE-OFL`
+    (the actual font files) and `LICENSE-MIT` (build tooling/scripts only), per the README's own
+    explicit "字体"/"构建程序" (Font/Build-tooling) section. GitHub's single `.license` field
+    just can't represent a two-license repo and picked one arbitrarily - not authoritative
+  - `diff`'d the live `LICENSE-OFL` against the locally-bundled `FUSION-PIXEL-OFL.txt` - byte-
+    identical, confirmed nothing drifted
+  - Checked the upstream component table too (every source font merged into Fusion Pixel - Ark
+    Pixel, Misaki, MisekiBitmap, BoutiqueBitmap7x7/9x9, Cubic-11, Galmuri) - all OFL-1.1 or an
+    OFL-compatible unlicensed font, no GPL/proprietary component hiding underneath
+  - Conclusion: redistributing the unmodified `.woff2` alongside its OFL license text (already
+    the existing pattern) is fully compliant - no conflict between that repo's license and
+    `data-theme-plugins`' own, since OFL only binds the font itself, not software bundling it
+  - Added `FONTS.md` at the repo root (credits, extensible to future themes) and a `fonts`
+    field on the manifest - deliberately separate from the functional `fontFaces` above (pure
+    attribution metadata, `{name, author, url, license}`, never consumed by Concourse at all,
+    not threaded through any Rust/TS type). `validate.mjs` gained a light shape check for both
+    new fields - verified it actually fires (not vacuously passing) against a deliberately bad
+    CDN URL and an incomplete `fonts` entry, since nothing in the existing manifests exercised
+    either branch before that test
+  - `README.md` also gained documentation for `cardVisual`/`fontFaces`/`fonts`, none of which
+    had been documented there since they were first added earlier this session - a real gap,
+    not just this pass's own additions

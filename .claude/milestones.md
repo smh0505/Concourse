@@ -246,3 +246,15 @@ which would make that asset's own URL equivalent to `releases/latest`). `install
 now enforces the pinned hash as a hard reject, same as `install_wasm_plugin` - this was missing
 even after the signing addon above, caught and fixed here rather than shipping a registry
 extension that looked complete but didn't actually enforce anything for themes.
+
+Post-ship fidelity pass, from actually using the converted Brick Block (Data) theme rather than
+just the acceptance test - see devlog for full detail:
+- Fixed two real bugs (`DataThemeManifest` silently dropped `cardVisual`; several
+  `.card-visual`/`.cover-placeholder` values still had no variable hooks)
+- Added `--card-border-width`/`--card-radius`/`--cover-placeholder-*`/`--balloon-background`
+  hooks (same opt-in pattern as earlier), balloon arrow-tip now tracks `--balloon-background`
+  automatically instead of risking drift
+- New capability: `fontFaces` (real `@font-face` loading, since `cssVariables` can only select
+  a font, never load one) - strictly validated, commit-pinned-URL only, CSP `font-src` opened
+- Re-verified Fusion Pixel Font's license against live upstream before redistributing it again;
+  added `FONTS.md` + a `fonts` attribution field

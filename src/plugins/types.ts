@@ -113,6 +113,13 @@ export interface ThemePlugin extends PluginBase {
    *  `theme/cardVisualAst`) - the value is untrusted data regardless of source and always goes
    *  through `validateCardVisualAst` before use; see `theme/cardVisualRegistry.ts`. */
   cardVisual?: unknown;
+  /** Real font files a theme wants loaded via @font-face while active - declarative data (no
+   *  code), but still untrusted third-party content injected into a real <style> block, so
+   *  `theme/fontFaceRegistry.ts` validates every field strictly (family/weight/style against a
+   *  safe-character allowlist, url must parse as https:) before ever constructing CSS text
+   *  from it - a family name or url containing `"`/`;`/`}` could otherwise break out of the
+   *  @font-face rule and inject arbitrary CSS elsewhere on the page. */
+  fontFaces?: unknown;
   /** Called when this theme becomes the active one. */
   activate?(): void | Promise<void>;
   /** Called when this theme is replaced by another (or deselected). */

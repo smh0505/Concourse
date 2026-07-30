@@ -95,6 +95,18 @@ pub struct DataThemeManifest {
     pub kind: String,
     #[serde(rename = "cssVariables")]
     pub css_variables: HashMap<String, String>,
+    /// Milestone 17 - a closed-vocabulary JSON AST overriding GameCard's cover-visual region.
+    /// Untyped here deliberately (not a Rust-side AST shape) - this is opaque, pass-through
+    /// data as far as the host is concerned; the frontend's `validateCardVisualAst` is the one
+    /// and only real gate it goes through before ever being trusted. `Option` (not required)
+    /// since every theme published before this field existed has no `cardVisual` at all.
+    #[serde(default, rename = "cardVisual", skip_serializing_if = "Option::is_none")]
+    pub card_visual: Option<serde_json::Value>,
+    /// Real font files to load via @font-face while this theme is active - same opaque
+    /// pass-through as `card_visual` above. The frontend (`theme/fontFaceRegistry.ts`)
+    /// validates every field strictly before constructing any CSS text from it.
+    #[serde(default, rename = "fontFaces", skip_serializing_if = "Option::is_none")]
+    pub font_faces: Option<serde_json::Value>,
 }
 
 /// Loosely-typed probe used only to tell a WASM plugin's manifest apart from a data-only

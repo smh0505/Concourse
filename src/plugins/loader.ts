@@ -174,6 +174,8 @@ function createDataThemePlugin(manifest: PluginManifest): ThemePlugin {
     id: manifest.id,
     name: manifest.name,
     cssVariables: manifest.cssVariables,
+    cardVisual: manifest.cardVisual,
+    fontFaces: manifest.fontFaces,
   };
 }
 

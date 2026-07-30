@@ -90,8 +90,12 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
 .card-visual {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-surface1);
+  /* --card-radius/--card-border-width aren't part of the base design-token scale - opt-in
+     per-element hooks (same pattern as --balloon-* above), undeclared by default so most
+     themes never think about them - only a theme wanting a chunkier/sharper card frame than
+     --radius-md's default look needs to set them. */
+  border-radius: var(--card-radius, var(--radius-md));
+  border: var(--card-border-width, 1px) solid var(--color-surface1);
 }
 
 .footer {
@@ -155,12 +159,18 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
 }
 
 .cover-placeholder {
-  background: var(--color-surface0);
-  color: var(--color-text);
+  /* Opt-in per-element hooks, same pattern as the balloon/card hooks above - undeclared by
+     default (falls back to the existing plain look), only set by a theme wanting something
+     richer than a flat background/color (e.g. a diagonal stripe pattern via a full
+     repeating-linear-gradient(...) value, which a CSS custom property can hold just as well
+     as a single color). */
+  background: var(--cover-placeholder-background, var(--color-surface0));
+  color: var(--cover-placeholder-color, var(--color-text));
+  text-shadow: var(--cover-placeholder-text-shadow, none);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
+  font-size: var(--cover-placeholder-font-size, 2rem);
 }
 
 /* Teleported to <body>, so this can't be a `scoped` style - the balloon is no longer a
@@ -174,7 +184,7 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
      --radius-sm's default look). */
   border: var(--balloon-border-width, 0) solid var(--color-surface1);
   border-radius: var(--balloon-radius, var(--radius-sm));
-  background: var(--color-crust);
+  background: var(--balloon-background, var(--color-crust));
   color: var(--color-text);
   box-shadow: var(--shadow-md);
   /* width: max-content (not fit-content/auto) is required here - a position:fixed box with
@@ -211,12 +221,14 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
    card when flipped below (near the top of the scroll area). */
 .balloon-above::after {
   top: 100%;
-  border-top-color: var(--color-crust);
+  /* Tracks --balloon-background (not hardcoded to --color-crust separately) so the arrow can
+     never visually drift from the balloon body it's attached to, regardless of theme. */
+  border-top-color: var(--balloon-background, var(--color-crust));
 }
 
 .balloon-below::after {
   bottom: 100%;
-  border-bottom-color: var(--color-crust);
+  border-bottom-color: var(--balloon-background, var(--color-crust));
 }
 
 .balloon-title,

@@ -22,6 +22,16 @@ export interface PluginManifest {
   /** Only present for `runtime: "data"` theme manifests - the whole plugin's content, since
    *  there's no separate compiled/bundled entry module to load it from. */
   cssVariables?: Record<string, string>;
+  /** Milestone 17 - a closed-vocabulary JSON AST overriding GameCard's cover-visual region,
+   *  optionally present alongside `cssVariables` on a `runtime: "data"` theme manifest.
+   *  Untyped here deliberately (not `AstNode` from `theme/cardVisualAst`) - untrusted data
+   *  regardless of source, always goes through `validateCardVisualAst` before use (see
+   *  `theme/cardVisualRegistry.ts`), same as `ThemePlugin.cardVisual`. */
+  cardVisual?: unknown;
+  /** Only present for `runtime: "data"` theme manifests wanting a real loaded font - see
+   *  `ThemePlugin.fontFaces`'s doc comment (src/plugins/types.ts) for the validation this goes
+   *  through before ever being trusted. */
+  fontFaces?: unknown;
   /** Declares user-configurable settings a WASM plugin needs (e.g. an API key) - the loader
    *  renders one generic form from this instead of every plugin needing its own custom
    *  settings UI, which WASM plugins have no other mechanism for (unlike TS-authored plugins'

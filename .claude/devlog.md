@@ -482,3 +482,74 @@ mutations, not just reading data) built speculatively for a need that's never on
 the same over-scoping M17's re-review was built to avoid. If a real theme ever needs to
 rearrange the action bar, that's new, separately-scoped work when it actually happens, not
 designed in now against a hypothetical.
+
+**Prototyped the naive template-compile approach - found it's a full sandbox escape, verified
+empirically rather than assumed.** Added `@vue/compiler-dom` as an explicit dependency (was
+already present transitively via `vue`, pinned to match `vue`'s own `^3.5.13` range rather than
+relying on an undeclared transitive version). Before wiring anything into `GameCard.vue`, wrote
+two throwaway Node scripts to test the exact mechanism devlog had been assuming was safe:
+`compile(template)` from `@vue/compiler-dom`, then `new Function("Vue", code)(Vue)` to
+materialize the render function - the same pattern the real Vue browser build uses internally
+for `Vue.compile`/`compileToFunction`.
+- **Test 1**: `{{ typeof window !== "undefined" ? window.secret : "no-window" }}`, with
+  `globalThis.window = { secret: "LEAKED-FROM-GLOBAL" }` set beforehand. Compiled code wraps the
+  expression in `with (_ctx) { ... }`, but `with` only intercepts identifiers *found on*
+  `_ctx` - anything not found there resolves through the normal scope chain, which for a
+  `new Function`-created function bottoms out at the real global object. Output:
+  `"LEAKED-FROM-GLOBAL"` - confirms the earlier note in this file ("no reaching window/document
+  unless explicitly put in scope") was wrong, and it was caught by testing before building on
+  it, not after
+  - This matters for something concretely: earlier, the risk-of-arbitrary-code question was
+    debated for the *naive raw-remote-JS* `slots` alternative and judged clearly worse than
+    WASM. This test shows the "constrained template" idea carries the identical risk via a
+    completely different-looking mechanism (directive/mustache compilation instead of
+    `import()`), just less obviously
+- **Test 2, the more serious one**: `{{ game.constructor.constructor("return typeof process")() }}`
+  with only `{ game: { title: "Test" } }` passed as context - no bare `window`/`document`
+  identifier referenced at all. `game.constructor` is `Object`, `Object.constructor` is
+  `Function`, and calling it executes arbitrary code - classic `constructor.constructor`
+  sandbox escape (the same unfixable class of bug that made Google abandon AngularJS's
+  expression sandbox in 1.x). Output: `"object"` (the real `typeof process` from the actual
+  execution environment). This is the load-bearing finding - it means passing *only* `game`'s
+  own fields into scope, the exact "safe, minimal whitelist" this milestone concluded was fine
+  two entries above, is fully equivalent to raw JS execution. Freezing the context object
+  doesn't help either - `Object.freeze` blocks writes, not reads of inherited `.constructor`.
+  **Conclusion: the naive same-realm compile-and-eval approach is not being built.** It carries
+  Milestone 9's original raw-JS verdict exactly, just less visibly
+
+**Investigated real isolation instead of abandoning the tier outright**, per explicit
+direction after reporting the escape - a dedicated Web Worker, rather than running the compiled
+render in the main JS realm. Verified the two load-bearing claims concretely rather than
+assuming a Worker actually helps:
+- `grep`-confirmed `@tauri-apps/api/core.js`'s `invoke()` is literally
+  `window.__TAURI_INTERNALS__.invoke(cmd, args, options)` - every Tauri command call is
+  `window`-scoped by construction, not by convention. A `DedicatedWorkerGlobalScope` has no
+  `window` at all (only `self`); referencing it is a real `ReferenceError`. A compiled-template
+  escape running inside a Worker structurally cannot reach a single Tauri command - no
+  file/process/registry/network host primitive, nothing
+  - Same reasoning extends to Pinia stores - they live in the main thread's JS heap; a Worker is
+    a genuinely separate execution context with its own heap, not just a different scope object,
+    so there's no direct-memory-access path at all, unlike the raw-JS-`slots` case where a
+    component literally runs in the same realm as every store
+- Checked `tauri.conf.json`'s CSP (`connect-src ipc: http://ipc.localhost`, no separate
+  `worker-src` set, which per spec falls back to `script-src 'self'` for the worker's own script
+  loading). Workers inherit the owning document's CSP for their own outbound requests - so a
+  fully-escaped worker's `fetch`/`XMLHttpRequest` calls are still restricted to
+  `ipc:`/`http://ipc.localhost`, same lockdown the main thread already has. Real attacker
+  exfiltration (a genuine `https://attacker.com` endpoint) stays blocked either way
+- Already had indirect evidence the render pipeline itself has no hidden DOM dependency - both
+  escape tests above ran the full `compile()` + `createElementBlock`/`toDisplayString` pipeline
+  in plain Node (no `document`, no DOM shim) without error, so a Worker (which also lacks DOM)
+  isn't blocked by the pipeline needing real DOM APIs it doesn't have
+- Residual risk in this design, honestly stated rather than glossed: a compromised worker can
+  still burn CPU/memory (mitigable with a render timeout + `worker.terminate()`), and the design
+  needs one more real piece not yet built - since the worker has no DOM, it can't produce a live
+  VNode tree with functions/Symbols in it (not structured-clone-able via `postMessage` anyway);
+  it has to emit a **plain-data description** of the result (tag name, string/number children,
+  known prop names only), and the main thread must treat that as inert data reconstructed
+  against a strict allowlist - never execute or trust-render anything the worker sends without
+  that revalidation step. That protocol + validator is real, unbuilt engineering, not a detail
+- Paused here on explicit direction - findings logged, actual worker script/message-protocol/
+  validator implementation not started this session. `@vue/compiler-dom` stays as an explicit
+  dependency for when this is built (same package, same use, no churn from removing and
+  re-adding it later)

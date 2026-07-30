@@ -195,7 +195,19 @@ Scope going forward, not yet built:
 - [x] Decide the action-dispatch boundary — display/structure-only; action bar is always
   host-rendered at a fixed insertion point (restyleable, not restructurable), whitelisted scope
   never includes callables
-- [ ] Prototype: new manifest field (e.g. `template`), lazy `@vue/compiler-dom` import,
-  whitelisted render-context scope
+- [x] Prototype the naive approach (`@vue/compiler-dom` + `new Function`, same JS realm) —
+  **verified full sandbox escape, not a hypothetical.** `game.constructor.constructor(...)()`
+  reaches `Function` and executes arbitrary code using only the "whitelisted" `game` object;
+  separately, unresolved identifiers in `with(_ctx)` fall through to the real global scope
+  (`window` reachable directly too). Naive same-realm compilation is fully equivalent to raw
+  JS and is **not being built** — see devlog for both empirical tests
+- [x] Investigate real isolation instead — a dedicated Web Worker. Verified structurally sound:
+  `invoke()` is `window.__TAURI_INTERNALS__.invoke(...)`, and Workers have no `window` at all
+  (real `ReferenceError`, not convention); CSP's `connect-src` lockdown still governs the
+  worker's own `fetch` calls (workers inherit the owning document's CSP). Design sketch logged
+  in devlog, not yet built
+- [ ] Build the worker + postMessage protocol + strict output validator (main thread never
+  trust-executes what the worker sends, only interprets it as inert data against a fixed
+  allowlist)
 - [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not
   full parity — footer stays out of scope)

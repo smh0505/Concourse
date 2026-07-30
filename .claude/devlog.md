@@ -1114,3 +1114,22 @@ use (`BaseModal.vue`) beyond the original two files.
 - Left the historical devlog/milestones entries documenting `--radius-panel`'s original
   creation as-is rather than rewritten - they're a record of what was true at the time, not a
   live description of the current state; this entry is the update, not an edit to those
+
+**Moved App.vue's remaining unscoped `<style>` block into `styles.css` too.** Clean split once
+looked at directly: App.vue's `<style scoped>` block (`.app-window`, `.app-shell`, `.content`,
+`.big-picture-controls`, `.view-toggle-button`) is genuinely App.vue's own template - stayed.
+Its separate unscoped `<style>` block (`*`/`*::before`/`*::after` box-sizing, `html`/`body`/
+`#app` reset, the `button`/`input`/`textarea`/`select` baseline and focus/disabled states, the
+themed-scrollbar rules) is universal primitive-element styling with nothing App.vue-specific
+about it at all - moved wholesale, same reasoning as the `:root` move earlier.
+- Verified via compiled output, not assumed identical just because it's "just a move": checked
+  for accidental duplication (`grep -c` on the `button{...}` base rule, the scrollbar rule, and
+  `:root` - each appears exactly once, not twice), and confirmed the `.app-window` scoped rule
+  still carries its `data-v-*` attribute correctly (proof the remaining scoped block still
+  compiles as scoped, not accidentally flattened by the edit)
+- Noted, not fixed (out of scope for a pure relocation): the global input/textarea/select rule
+  still hardcodes `1px` instead of `var(--button-border-width)` - one of the pervasive
+  `1px`-instead-of-token sites the original audit already flagged. Left for the actual
+  Category-1-pattern migration pass, not bundled into this move
+- `App.vue` now has zero non-scoped CSS of its own - every primitive/global rule lives in
+  `styles.css`, every remaining rule in `App.vue` is genuinely scoped to its own template

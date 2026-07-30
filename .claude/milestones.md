@@ -296,3 +296,8 @@ measuring before executing, not assumed.
   existing `--radius-lg` consumers too. Also fixed a real pre-existing bug while touching those
   two lines: their fallback literal (`var(--radius-lg, 12px)`) never matched the real token's
   actual value (10px) - now `var(--radius-xl, 10px)`, correctly in sync
+- [x] Moved `App.vue`'s entire unscoped `<style>` block (primitive-element resets: `*`,
+  `html`/`body`/`#app`, `button`/`input`/`textarea`/`select` baselines, scrollbars) into
+  `styles.css` too - none of it was App.vue-specific, only its own `<style scoped>` block
+  (`.app-window`, `.view-toggle-button`, etc.) stayed. Verified via compiled output: no
+  duplicated rules, scoped rules still carry their `data-v-*` attribute correctly

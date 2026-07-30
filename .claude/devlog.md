@@ -815,3 +815,45 @@ the registry pin wasn't a redundant second layer the way it is for WASM plugins 
   model doesn't fit a tagged-release convention). All three themes now have both signing
   (repo-wide CI, just added) and a reviewed registry pin (per-theme, just added) - full parity
   with how the 8 WASM/metadata/wrapper plugin repos are already covered
+
+**Extended the registry's version-bump automation (built earlier this session for the 8
+WASM/metadata/wrapper repos) to cover themes too - a real redesign, not a copy-paste.** The
+existing dispatch/bump mechanism assumed one repo maps to exactly one registry entry (true for
+all 8 of those repos) - `data-theme-plugins` breaks that assumption outright, hosting three
+themes (three separate registry entries) in one repo. Matching a dispatch by `repo` alone, the
+way `bump-entry.sh` did, would have updated all three entries at once regardless of which
+theme actually changed.
+- `bump-entry.sh` rewritten to match by `id` instead of `repo` - `id` is already guaranteed
+  unique per registry entry (unlike `repo`, now shared three ways), so it's the correct primary
+  key regardless of how many entries a given repo ends up hosting. `repo` is read back off the
+  matched entry itself rather than passed in separately. Also branches on the matched entry's
+  own `kind` (reusing the same theme-vs-everything-else logic `validate.sh` already had) to
+  build either a tagged-release URL+hash or a commit-pinned raw URL+hash
+- Payload shape changed from `{repo, tag}` to `{id, ref}` uniformly - `ref` is a version tag for
+  source/wrapper/metadata entries, a commit SHA for theme entries. Propagated to all 8 existing
+  plugin repos' `publish.yml` (each now reads its own `id` from `plugin.json` at dispatch time
+  via `jq`, rather than relying on `github.repository`)
+- Hit a real, reproducible bug while propagating the payload change across those 8 repos: a
+  plain Python string-replace script skipped `rawg-metadata-wasm-plugin` silently. Root cause -
+  that file had CRLF line endings (from an earlier `Edit`-tool touch this session), the other 7
+  had plain LF (appended via a raw Bash heredoc originally), so an exact-substring match against
+  an LF-only pattern never matched. Caught by actually diffing the file against the expected
+  block rather than assuming the skip meant "already patched," fixed by normalizing line
+  endings before matching and re-applying the target's original style on write
+- `data-theme-plugins`' `release-themes.yml` gained: `fetch-depth: 0` on checkout (needed to
+  diff `github.event.before` against `github.sha`), a step computing which theme(s) actually
+  changed in *this specific push* (this workflow re-validates/republishes every theme on every
+  push regardless of which one changed, so dispatching unconditionally would open a no-op PR
+  for every untouched theme alongside the one real change - only meaningful for `push` events,
+  skipped on manual `workflow_dispatch` since there's no `before` commit to diff against), and a
+  dispatch step per changed theme carrying `github.sha` as `ref`
+- Manual step still outstanding, not something this session can do: `REGISTRY_DISPATCH_TOKEN`
+  secret needs setting on `data-theme-plugins` (same PAT pattern as the 8 plugin repos) -
+  can't be done here since the token value was never retained after the user set it earlier,
+  by design (shouldn't sit in chat history). Asked the user to run `gh secret set
+  REGISTRY_DISPATCH_TOKEN --repo smh0505/data-theme-plugins` themselves
+- README updated to correct its own now-stale claim ("theme entries are added/re-pinned by
+  hand, not through the release-dispatch automation") now that this is wired up
+- Not yet verified end-to-end against a real push (blocked on the secret above) - the
+  push-vs-workflow_dispatch distinction and the CRLF bug were both caught through direct
+  inspection/testing of the scripts and files themselves, not a live dispatch test yet

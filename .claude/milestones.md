@@ -53,16 +53,10 @@ numbered as a continuing milestone sequence for the same devlog cross-reference 
 - [x] Metadata provider plugin support (new `metadata` plugin kind)
 - [x] Controller mapping profile plugins
 - [x] Background art on focus (Big Picture)
-- [x] Additional source plugins — Epic Games, GOG (emulator/ROM scanner moved to
-  Post-1.0 Roadmap, Milestone 15)
+- [x] Additional source plugins — Epic Games, GOG (ROM scanner moved to Milestone 15)
 - [x] Big Picture scroll fixes (hidden scrollbar, desktop scroll lock)
 - [x] Auto-launch into Big Picture on boot (toggle)
 - [x] Per-game compatibility wrappers (Locale Remulator + Locale Emulator)
-  - [x] Global path settings for both wrappers
-  - [x] `games.locale_profile_guid` + `games.locale_wrapper` (migrations v5/v6)
-  - [x] Launch commands for both wrappers
-  - [x] Playtime fallback via folder tracking
-  - [x] End-to-end verification (both wrappers)
 - [x] Playtime tracking for URI-launched games (Steam/Epic/GOG)
 
 ## Milestone 8 — Remote/Downloadable Plugins (future)
@@ -78,25 +72,13 @@ Pivoted to WASM — see devlog.
 - [x] (Stretch) Migrate Steam to a WASM plugin as a real-world proof
 
 ## Milestone 9 — Further WASM Adoption (stretch)
-- [x] Migrate GOG and/or Epic to WASM plugins
-  - [x] GOG — done (`gog-source-wasm-plugin`); built-in `gog.rs`/`src/plugins/gog/` fully retired (launch moved into the plugin's own `launch()` too, no host-side GOG code left)
-  - [x] Epic — done (`epic-source-wasm-plugin`); built-in `epic.rs`/`src/plugins/epic/` fully retired, verified against a real installed game
-- [x] Rename `steam-wasm` → `steam` cleanly — settled on the display-name-only version:
-  every plugin's `id` stays as-is (avoids desyncing anyone's persisted `enabled_plugins`),
-  just the `name` field drops the vestigial "(WASM)" suffix now that no built-in coexists
-  with any WASM plugin anymore (across all 7 repos, not just Steam)
-- [x] External theme plugins
-  - [x] Data-only tier (`cssVariables` only, install-by-URL, no code/WASM)
-  - [x] Review component-override tier (`slots`) for external feasibility — reviewed,
-    found blocked at the time; tracked separately as Milestone 17 (Post-1.0 Roadmap)
-- [x] Migrate SteamGridDB and IGDB metadata providers to WASM plugins
-  - [x] New `metadata-plugin-world` WIT world + `http-request` host primitive (custom
-    headers/method/body, needed for both providers' auth) + manifest-declared `settingsSchema`
-    (generic settings-form UI for WASM plugins needing user-supplied config, e.g. an API key)
-  - [x] `sgdb-metadata-wasm-plugin`, `igdb-metadata-wasm-plugin` — both verified for real
-    against live API keys, fetching real cover art / metadata
-  - [x] Built-in `sgdb.rs`/`igdb.rs`/`src/plugins/igdb/` fully retired once verified; GameCard's
-    dedicated cover-art button folded into the unified "Fetch Metadata" flow along the way
+- [x] Migrate GOG and Epic to WASM plugins, retire built-in `gog.rs`/`epic.rs`
+- [x] Rename `steam-wasm` → `steam` display name (id unchanged) across all 7 plugin repos
+- [x] External theme plugins: data-only tier (`cssVariables`, install-by-URL, no code/WASM)
+- [x] Review component-override tier (`slots`) for external feasibility — blocked at the time;
+  tracked separately as Milestone 17 (Post-1.0 Roadmap)
+- [x] Migrate SteamGridDB and IGDB metadata providers to WASM plugins, retire built-in
+  `sgdb.rs`/`igdb.rs`
 
 (Locale Remulator/Locale Emulator's WASM migration moved into Milestone 10.)
 
@@ -117,8 +99,7 @@ See devlog for context on why these two workstreams are combined.
 
 ## Milestone 11 — RAWG Metadata Provider (stretch)
 Follows the M9 SGDB/IGDB precedent — ships as a standalone WASM plugin repo, not built-in.
-- [x] `rawg-metadata-wasm-plugin` repo — fetch description/genres/release date from the RAWG API,
-  `metadata-plugin-world` + `http-request` + `settingsSchema` for the API key
+- [x] `rawg-metadata-wasm-plugin` repo
 - [x] Verify for real against a live API key, fetching real metadata
 - [x] Verify merge behavior against IGDB (first-non-null-wins)
 
@@ -126,69 +107,31 @@ Follows the M9 SGDB/IGDB precedent — ships as a standalone WASM plugin repo, n
 of its items were started, no reason to hold up 1.0 for a stretch goal untouched.)
 
 ## Milestone 13 — WASM Plugin Capability Sandboxing (security)
-Install-by-URL for WASM source plugins (Milestone 8) currently grants a plugin the same
-real-world system access as running an arbitrary downloaded `.exe` — see devlog for the gap.
-- [x] Interim: honest risk warning in the install confirmation UI and README (no real
-  sandboxing yet)
-- [x] Path allowlisting for file/registry host primitives (scope `read-file`/`write-file`/
-  `remove-dir`/`list-dir`/`path-exists`/registry reads to a plugin-declared directory
-  allowlist instead of arbitrary absolute paths)
-- [x] Permission gating for `spawn-process`/`run-and-wait` (visible, explicit user grant of
-  "this plugin can run other programs" before install, not silent)
-- [x] URL allowlisting or rate-limiting for `http-request`/`http-get`/`download-bytes` (the
-  new `http-request` primitive - arbitrary method/headers/body, added for metadata providers
-  like SGDB/IGDB - meaningfully widens exfiltration potential over plain GET: a plugin can now
-  POST stolen data to an attacker's server, not just leak it via a GET URL's query string)
+Install-by-URL for WASM source plugins granted the same real-world system access as running an
+arbitrary downloaded `.exe` — see devlog for the gap.
+- [x] Interim: honest risk warning in the install confirmation UI and README
+- [x] Path allowlisting for file/registry host primitives
+- [x] Permission gating for `spawn-process`/`run-and-wait`
+- [x] URL allowlisting/rate-limiting for `http-request`/`http-get`/`download-bytes`
 
 Milestone 13 fully closed - all four items done.
 
 ## Milestone 14 — Plugin Trust Model: Signing & Review (stretch)
-Even with Milestone 13 done, install-by-URL stays trust-based, not verified - anyone can paste
-any URL. This is a further, larger tier beyond capability sandboxing, not a prerequisite for it.
-- [x] Code signing for published plugin releases (sign `.wasm` + manifest; verify against a
-  known publisher key before install) - implemented as advisory (shown to the user, not yet a
-  hard install-time gate); proves provenance/integrity, explicitly not author trustworthiness
-  (see devlog)
-- [x] Curated/reviewed plugin registry (a moderated list of known-good plugin URLs) as an
-  alternative to freeform paste-any-URL - new `concourse-plugin-registry` repo, hand-pinned
-  `{id, manifestUrl, wasmSha256}` entries, install-time hash check is a hard reject (unlike
-  signing's advisory check)
-- [x] Revocation mechanism (blocklist a previously-trusted plugin id/version if later found
-  malicious) - pulling an entry from the registry repo *is* revocation, no separate mechanism;
-  install-time only for now, doesn't retroactively flag already-installed plugins (see devlog)
+Even with Milestone 13 done, install-by-URL stayed trust-based, not verified — see devlog.
+- [x] Code signing for published plugin releases (Sigstore attestation, advisory not a hard
+  install-time gate)
+- [x] Curated/reviewed plugin registry (`concourse-plugin-registry`, hash-pinned, hard reject
+  on mismatch)
+- [x] Revocation mechanism (pulling a registry entry *is* revocation, install-time only)
 
-Milestone 14 fully closed - all three bullets done.
-
-Idea: a separate whitelist repo/wiki listing `{plugin id, version, manifest URL, expected
-sha256}` entries, reviewed and pinned by hand, could cover the registry + revocation bullets
-in one lightweight piece (checking a download against a *pinned* hash you chose, not the
-hash the plugin's own release self-reports). Doesn't cover the signing bullet - GitHub's
-per-asset SHA256 proves integrity (bytes weren't corrupted/tampered in transit), not
-authenticity (it comes from the same channel as the artifact, so a compromised
-account/repo produces an equally legitimate-looking hash for a malicious release too).
-
-Update: the signing bullet turns out to be cheap too. GitHub Artifact Attestations
-(`actions/attest-build-provenance`) is free for public repos - all plugin repos are public -
-and uses Sigstore's public-good instance to bind a short-lived signing cert to the GitHub
-Actions OIDC identity (repo + workflow + commit), with the signature recorded in Rekor, a
-public transparency log independent of the repo/account itself. Verification is one command
-(`gh attestation verify <file> --repo <owner>/<repo>`). Unlike the whitelist-repo idea, this
-answers "did this really come from that repo's CI," not just "does this match a hash someone
-pinned" - real authenticity, not a integrity-only proxy for it. Wired in - see devlog for the
-full reasoning and implementation notes.
-
-Update: the registry's own version-bump busywork (re-download, re-hash, re-pin by hand on
-every plugin release) is now automated end to end, without weakening the manual-review gate -
-each plugin repo's release fires a cross-repo dispatch, the registry repo independently
-re-downloads and re-hashes the real asset and opens a PR, `validate.yml` re-verifies it again,
-and a human still has to actually merge. Verified for real against a live release. See devlog
-for the two real bugs this test run surfaced and fixed.
+Milestone 14 fully closed - all three bullets done. See devlog for the registry's own
+version-bump automation (dispatch on release → re-hash → PR), added after the milestone closed.
 
 ## Milestone 14.5 — UI Polish (Continuous, ongoing)
-This milestone doesn't close — UI polish is open-ended. See devlog for full detail on each
-item below; new items get appended in place rather than opening a new milestone. Numbered
-14.5 (not 9) since it sits alongside/after the closed core roadmap rather than blocking any
-milestone in sequence.
+This milestone doesn't close — UI polish is open-ended. See devlog for detail on each item;
+new items get appended in place rather than opening a new milestone. Numbered 14.5 (not 9)
+since it sits alongside/after the closed core roadmap rather than blocking any milestone in
+sequence.
 - [x] Custom window chrome
 - [x] Navigation shell
 - [x] Grid/list view toggle redesign
@@ -203,10 +146,8 @@ milestone in sequence.
 - [x] Modal polish
 - [x] Big Picture visual pass
 - [x] Big Picture slideshow view
-- [x] API-key/settings forms moved into modals (was inline under each plugin row); GameCard's
-  cover-art fetch folded into the unified "Fetch Metadata" button; all modal-form components
-  consolidated under `src/components/desktop/modalForms/`, `BaseModal.vue` absorbed the
-  separate title/layout wrapper
+- [x] API-key/settings forms moved into modals; modal-form components consolidated under
+  `src/components/desktop/modalForms/`
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at
@@ -217,16 +158,12 @@ a distinct, larger feature.
 
 # Post-1.0 Roadmap
 
-Second wave of milestones, opened after 1.0.0 shipped. Items below were carried over from the
-1.0 roadmap rather than blocking release on them — an unstarted stretch goal (Milestone 12) or
-one leftover sub-item (Milestone 7's ROM scanner) don't meet the bar for holding up a stable
-1.0. Numbering continues the same sequence/heading convention as above for devlog
-cross-reference.
+Second wave of milestones, opened after 1.0.0 shipped. Numbering continues the same
+sequence/heading convention as above for devlog cross-reference.
 
 ## Milestone 15 — Additional Source Plugins: Emulator/ROM Scanner
-Carried over from Milestone 7 (Polish & Extras) unstarted.
-- [ ] Research emulator/ROM directory conventions worth supporting first (scope: which
-  emulators/formats)
+Carried over from Milestone 7 unstarted.
+- [ ] Research emulator/ROM directory conventions worth supporting first
 - [ ] Scan configured ROM directories, map entries into core `GameEntry` format
 - [ ] Launch mechanism (emulator + ROM path)
 - [ ] Dedup against manually-added / other source-plugin entries
@@ -239,38 +176,24 @@ Carried over from Milestone 12 unstarted, in full.
 - [ ] Each ships as its own WASM plugin in a separate repo from day one
 
 ## Milestone 17 — External Theme Plugins: Constrained Template Tier (scoped, not built)
-Supersedes the original Milestone 17 (see devlog for that verdict, kept as legacy record - its
-conclusion still stands unchanged: `slots`/raw-JS component-override for *external* theme
-plugins is blocked, independent of Milestone 13/14's closure). This milestone instead scopes a
-narrower, different mechanism - a constrained declarative template tier - concretely, using
-Brick Block (M5's own built-in proof that component-override themes have real demand) as the
-measured acceptance case rather than a hypothetical.
-- [x] Measure how much of a real component-override theme (Brick Block) a template tier would
-  actually need to cover — color/typography identity was already 100% `cssVariables`-portable,
-  never needed `slots` at all. The real structural gap was small: a static content swap (glyph
-  vs. dynamic letter), one extra wrapper element (`.brick-frame`), and missing CSS-variable hooks
-  on the base components (border/radius/font-family) - the last of which is a separate, unrelated
-  first-party CSS task, not a templating problem at all
-- [x] Evaluate whether the tier even needs risky `{{ }}` interpolation, based on that measurement
-  — barely. Brick Block doesn't use a single non-trivial mustache expression; it *removes* the
-  one complex one the base component had (`{{ game.title.charAt(0).toUpperCase() }}`) in favor of
-  a static glyph. What it does keep are simple directive/attribute bindings (`v-if`,`:src`,`:alt`,
-  `:class`) on single `game` fields - same expression-evaluation category as `{{ }}` but the
-  simplest possible slice of it: no method calls, no computed logic, no formatting helpers
-- [x] Identify a real scope gap the original idea's note never covered: Brick Block's footer
-  buttons dispatch real store actions (`launchGame`/`fetchMetadata`/`openEdit`/`deleteGame`), not
-  just display. Brick Block itself never restructures them (same markup, CSS-only reskin), so
-  this case doesn't force an answer - but a template tier that ever wants to let a theme
-  *restructure* the action bar, not just recolor it, needs those exposed as safe, pre-bound
-  callables, not arbitrary method access. Left explicitly open, not assumed solved
+Supersedes the original Milestone 17 (see devlog, kept as legacy record — its conclusion still
+stands: `slots`/raw-JS component-override for *external* theme plugins is blocked). This
+milestone scopes a narrower, different mechanism instead — a constrained declarative template
+tier — measured concretely against Brick Block (M5's own built-in proof of component-override
+demand) rather than designed on a hypothetical. See devlog for the full measurement.
+- [x] Measure how much of Brick Block a template tier would need to cover — color/typography
+  already 100% `cssVariables`-portable; real gap was small (a static glyph swap, one wrapper
+  element, missing CSS-variable hooks on the base components — the last unrelated to templating)
+- [x] Evaluate whether the tier needs risky `{{ }}` interpolation — barely; Brick Block's
+  surviving expressions are plain single-field `game` access, no method calls/helpers
+- [x] Identify scope gap the original idea never covered — action-dispatch (footer buttons)
+  exposure is undecided, left explicitly open rather than assumed solved
 
 Scope going forward, not yet built:
 - [ ] Expand `GameCard.vue`/`BigPictureTile.vue`'s CSS-variable surface (border-width, radius,
-  per-element font-family) - independent, first-party, doable now regardless of any decision below
-- [ ] Decide the action-dispatch boundary above before designing the whitelisted scope - template
-  tier only ever gets `game`'s own fields (read-only), or does it eventually need safe callables
-  too
-- [ ] Prototype: new manifest field (e.g. `template`), lazy `@vue/compiler-dom` import, whitelisted
-  render-context scope
-- [ ] Acceptance test: reproduce Brick Block's glyph + `.brick-frame` wrapper on the new tier - not
-  full parity (footer stays out of scope per the point above)
+  per-element font-family) — independent, doable now
+- [ ] Decide the action-dispatch boundary before designing the whitelisted scope
+- [ ] Prototype: new manifest field (e.g. `template`), lazy `@vue/compiler-dom` import,
+  whitelisted render-context scope
+- [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not
+  full parity — footer stays out of scope)

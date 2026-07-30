@@ -158,7 +158,12 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
 .balloon {
   position: fixed;
   padding: 0.4rem 0.65rem;
-  border-radius: var(--radius-sm);
+  /* --balloon-border-width/--balloon-radius aren't part of the base design-token scale (like
+     --font-pixel below, they're opt-in per-element hooks, undeclared by default so most themes
+     never think about them - a theme only sets them if it wants a chunkier/sharper balloon than
+     --radius-sm's default look). */
+  border: var(--balloon-border-width, 0) solid var(--color-surface1);
+  border-radius: var(--balloon-radius, var(--radius-sm));
   background: var(--color-crust);
   color: var(--color-text);
   box-shadow: var(--shadow-md);
@@ -202,6 +207,11 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
 .balloon-below::after {
   bottom: 100%;
   border-bottom-color: var(--color-crust);
+}
+
+.balloon-title,
+.balloon-playtime {
+  font-family: var(--balloon-font-family, inherit);
 }
 
 .balloon-title {

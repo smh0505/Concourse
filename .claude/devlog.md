@@ -450,3 +450,21 @@ for now rather than retroactively migrated to the new variable - a separate, del
 for later, not bundled into this step. Balloon-specific hooks (border, `border-radius`
 override, per-element `font-family` on `.balloon-title`/`.balloon-playtime`) remain the
 outstanding part of this milestone item.
+
+**Balloon hooks added, closing out the CSS-variable-surface item.** Unlike
+`--button-border-width`, these follow the same undeclared-opt-in pattern as `--font-pixel`
+(not registered in `App.vue`'s `:root` token scale, just referenced with a fallback at the
+point of use) rather than the base design-token pattern - they're per-element hooks a theme
+opts into, not a scale every element consumes by default:
+- `.balloon`'s `border` gained `var(--balloon-border-width, 0)` (defaults to an invisible
+  0-width border, matching prior behavior exactly for every existing theme that doesn't set it)
+- `border-radius` changed from a hardcoded `var(--radius-sm)` to `var(--balloon-radius,
+  var(--radius-sm))` - a dedicated per-element override rather than repurposing the shared
+  `--radius-sm` token directly, since other `--radius-sm` consumers elsewhere in the app aren't
+  necessarily meant to go sharp just because a theme wants a chunky balloon
+- New `.balloon-title, .balloon-playtime { font-family: var(--balloon-font-family, inherit); }`
+  rule - `inherit` as the fallback is behaviorally identical to the previous no-declaration
+  state (already inherited from the teleported-to `<body>` ancestor), so no regression
+- Brick Block's own `.brick-balloon` override is untouched and still wins by selector
+  specificity (two classes beats one) - not migrated onto the new variables as part of this
+  step, same deliberate deferral as the button-border-width case above

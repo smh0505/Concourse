@@ -190,8 +190,8 @@ demand) rather than designed on a hypothetical. See devlog for the full measurem
   exposure is undecided, left explicitly open rather than assumed solved
 
 Scope going forward, not yet built:
-- [ ] Expand `GameCard.vue`/`BigPictureTile.vue`'s CSS-variable surface (border-width, radius,
-  per-element font-family) — independent, doable now
+- [x] Expand `GameCard.vue`/`BigPictureTile.vue`'s CSS-variable surface (`--button-border-width`
+  app-wide, `--balloon-border-width`/`--balloon-radius`/`--balloon-font-family` on the balloon)
 - [ ] Decide the action-dispatch boundary before designing the whitelisted scope
 - [ ] Prototype: new manifest field (e.g. `template`), lazy `@vue/compiler-dom` import,
   whitelisted render-context scope

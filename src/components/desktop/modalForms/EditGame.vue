@@ -199,7 +199,7 @@ async function onSave() {
           </form>
         </div>
       </form>
-      <p v-if="error" class="error">{{ error }}</p>
+      <p v-if="error" class="error-text">{{ error }}</p>
     </template>
     <template v-if="library.editingGame" #footer>
       <button type="button" @click="library.cancelEdit">Cancel</button>
@@ -289,9 +289,7 @@ async function onSave() {
   font-size: 0.85rem;
 }
 
-.error {
-  color: var(--color-danger);
-}
+/* .error-text (shared, styles.css) supplies this rule's entire look. */
 
 /* small (shared, styles.css) supplies the base look entirely - already inside a flex-column
    label (.edit-game-form label), nothing extra needed locally. */

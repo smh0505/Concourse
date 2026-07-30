@@ -1345,3 +1345,8 @@ semantically-correct primitive for it - a global tag-selector rule (same mechani
   duplicate, not a primitive-element match - there's no HTML tag that means "error message" the
   way `<small>` means "secondary text." Left open, not bundled into this pass since it's a
   genuinely different kind of finding from what was actually asked
+
+**Migrated `.error` too.** No design decision needed here, unlike `.hint` - byte-identical in
+both files. New `.error-text` in `styles.css`, both components' local `.error` rules replaced
+with a comment pointing at it. Verified via compiled CSS: `.error-text{color:var(--color-
+danger)}` present once, zero leftover `.error[data-v-*]` rules anywhere. `bun run build` clean.

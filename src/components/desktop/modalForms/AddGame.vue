@@ -43,7 +43,7 @@ async function onSubmit() {
           <input v-model="executablePath" placeholder="Executable path" />
         </label>
       </form>
-      <p v-if="error" class="error">{{ error }}</p>
+      <p v-if="error" class="error-text">{{ error }}</p>
     </template>
     <template #footer>
       <button type="button" @click="emit('close')">Cancel</button>
@@ -67,7 +67,5 @@ async function onSubmit() {
   text-align: left;
 }
 
-.error {
-  color: var(--color-danger);
-}
+/* .error-text (shared, styles.css) supplies this rule's entire look. */
 </style>

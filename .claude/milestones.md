@@ -358,3 +358,7 @@ before converting: flex-column containers (`BaseModal.vue`'s `.modal-body`, `Edi
 `.error` (byte-identical in 2 files) found as a related but different finding - a plain shared-
 class candidate, not a primitive-element match (no HTML tag fits "error message") - left open,
 not bundled into this pass.
+
+Post-close follow-up 3: migrated `.error` too, as a plain shared class (`.error-text`,
+`AddGame.vue`/`EditGame.vue`) - byte-identical, no design decision needed. Verified via
+compiled CSS: shared class present, zero leftover local `.error` rules.

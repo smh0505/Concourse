@@ -857,3 +857,20 @@ theme actually changed.
 - Not yet verified end-to-end against a real push (blocked on the secret above) - the
   push-vs-workflow_dispatch distinction and the CRLF bug were both caught through direct
   inspection/testing of the scripts and files themselves, not a live dispatch test yet
+
+**Verified end-to-end for real, once the secret was set.** Bumped `sakura-theme` to `1.0.2`
+(patch, no functional change - solely to exercise the chain) and pushed a real commit rather
+than using `workflow_dispatch`, since the dispatch step is deliberately guarded to `push` only.
+Full chain confirmed:
+- `release-themes.yml` validated, published (signed), correctly diffed `github.event.before`
+  against `github.sha` and dispatched *only* for `sakura-theme` - `midnight-neon-theme` and
+  `brick-block-data-theme`, unrelated to this push, were untouched, confirming the diff logic
+  actually discriminates rather than dispatching for every theme in the repo every time
+- Registry's `bump-entry.sh` matched the dispatch by `id` correctly (not `repo`, which all three
+  theme entries share) and opened a PR (`bump/sakura-theme-<short-sha>`) whose diff touched
+  *only* `sakura-theme`'s `manifestUrl`/`wasmSha256`, pointing at the exact new commit SHA
+- Hit the same one-time bot-PR `action_required` gate seen earlier this session for the very
+  first bot-authored PR against this repo - approved via the same `gh api ... /approve` call,
+  merged, and the post-merge `validate.yml` run on `main` passed clean
+- Full chain - push, diff, dispatch, PR, validate, merge, re-validate - works exactly as
+  designed, for a real theme, not a synthetic test

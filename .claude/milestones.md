@@ -227,11 +227,17 @@ Scope going forward, not yet built:
   `element` node reproduces the frame-wrapper case. Also verified the interpreter's safety
   properties directly: rejects an unknown field name, an unknown node type, depth overflow, and
   node-count overflow, all fail-closed rather than silently coerced
-- [ ] Addon, not a substitute for the above: sign the AST manifest file itself for provenance
-  (same `actions/attest-build-provenance`/`plugin_verification.rs` mechanism as WASM plugins,
-  generalized to a manifest's bytes instead of a `.wasm` binary) - catches tampering-in-transit
-  only, since the format has no code-execution primitive for signing to vouch for in the first
-  place; complementary to the interpreter's own safety, not redundant with it
+- [x] Addon, not a substitute for the above: sign the AST manifest file itself for provenance -
+  `install_data_theme` now calls the same `verify_plugin_provenance`/`parse_github_owner_repo`
+  used for WASM plugins, against the manifest's own bytes instead of a `.wasm` binary (that
+  function was already fully generic, no changes needed there). Frontend needed no changes -
+  `pluginInstall.ts`'s `verified`/`verificationNote` toast already applied to any plugin kind
+  generically. Catches tampering-in-transit only, since the format has no code-execution
+  primitive for signing to vouch for in the first place - complementary to the interpreter's
+  own safety, not redundant with it
+
+Milestone 17 fully closed - vocabulary, interpreter, acceptance test, and signing addon all
+done. Registry `theme`-kind extension stays a deliberate, separate follow-up (see above).
 
 Follow-up, deliberately not folded into this milestone yet: `concourse-plugin-registry`'s
 `kind` field only covers `source | wrapper | metadata` today. Once this tier ships as

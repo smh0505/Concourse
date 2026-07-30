@@ -684,3 +684,29 @@ type AstNode =
   overflow both reject rather than silently truncating. All fail-closed, none silently coerced
 - Both of Milestone 17's remaining build items (interpreter, acceptance test) are done. What's
   left: the manifest-signing addon, and the separately-tracked registry `theme`-kind follow-up
+
+**Built the manifest-signing addon - Milestone 17 fully closed.** `verify_plugin_provenance`
+(Milestone 14) turned out to already be fully generic - it just hashes and Sigstore-verifies
+whatever `&[u8]` it's given, nothing WASM-specific in its own logic at all. The only real work
+was threading a `manifest_url` parameter into `install_data_theme` (previously only took
+`dir`/`manifest_bytes`, no URL - never needed one before) and calling the exact same
+`parse_github_owner_repo`/`verify_plugin_provenance` pair `install_wasm_plugin` already uses,
+against the manifest's own bytes instead of a `.wasm` binary.
+- `install_data_theme` is now `async` (verification is a network call); both call sites updated
+  (`install_plugin`'s dispatch, and the existing real-HTTP-round-trip test)
+- Replaced the old hardcoded `verified: false, "Not applicable: data-only themes have no code
+  to verify"` - that reasoning held when themes were colors-only, but a manifest carrying a
+  `cardVisual` AST is real content worth tamper-detecting even though it's still never
+  executable. Same asymmetry as the WASM path, stated in the new doc comment: this only proves
+  the manifest is unmodified since that repo's CI published it, not that its author is
+  trustworthy - that's the registry's review process once extended to a `theme` kind (see the
+  separately-tracked follow-up), not this
+- Frontend needed zero changes - `pluginInstall.ts`'s `InstallResult.verified`/
+  `verificationNote` and its post-install toast were already generic across every plugin kind,
+  never WASM-specific to begin with
+- `cargo check` clean; full `cargo test` suite passes (4/4), including the updated real-HTTP
+  round-trip test, now asserting `!result.verified` explicitly (a localhost test server isn't
+  hosted on github.com, so this exercises the real "not verified" branch, not just the happy
+  path)
+- Milestone 17 is now fully closed: vocabulary, interpreter, acceptance test, signing addon.
+  Only the deliberately-separate registry `theme`-kind follow-up remains outside its scope

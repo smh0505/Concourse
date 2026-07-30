@@ -293,10 +293,24 @@ async fn install_wasm_plugin(
     Ok(InstallResult { id: manifest.id, verified, verification_note })
 }
 
-/// Caches a theme manifest under `<app data>/data-themes/<id>/theme.json` - no download beyond
-/// the manifest itself, since a data-only theme has no code, just `cssVariables`.
-/// `manifest_bytes` is the already-downloaded manifest content.
-fn install_data_theme(dir: &Path, manifest_bytes: &[u8]) -> Result<InstallResult, String> {
+/// Caches a theme manifest under `<app data>/data-themes/<id>/theme.json` - no separate
+/// download beyond the manifest itself, since a data-only theme has no code, just
+/// `cssVariables` (and, since Milestone 17, an optional `cardVisual` AST - still just data,
+/// never executable). `manifest_bytes` is the already-downloaded manifest content.
+///
+/// Milestone 17 addon: the manifest itself is signed the same way a WASM plugin's `.wasm` is
+/// (`verify_plugin_provenance` against the manifest's own bytes) - this was skipped originally
+/// on the reasoning "data-only themes have no code to verify," which was true when themes were
+/// colors-only, but a manifest carrying a `cardVisual` AST is real, meaningful content worth
+/// tamper-detecting even though it's still never executable. Same asymmetry as the WASM path:
+/// this only proves the manifest is unmodified since that repo's CI published it, not that its
+/// author is trustworthy - the registry's review process (once extended to cover `theme`, see
+/// milestones.md's follow-up note) is what answers that question, not this.
+async fn install_data_theme(
+    dir: &Path,
+    manifest_url: &str,
+    manifest_bytes: &[u8],
+) -> Result<InstallResult, String> {
     let manifest: DataThemeManifest = serde_json::from_slice(manifest_bytes)
         .map_err(|e| format!("Invalid theme manifest: {}", e))?;
     if manifest.id.trim().is_empty() {
@@ -306,6 +320,29 @@ fn install_data_theme(dir: &Path, manifest_bytes: &[u8]) -> Result<InstallResult
         return Err("Theme manifest has no cssVariables".to_string());
     }
 
+    let (verified, verification_note) =
+        match crate::plugin_verification::parse_github_owner_repo(manifest_url) {
+            Some((owner, repo)) => {
+                match crate::plugin_verification::verify_plugin_provenance(
+                    manifest_bytes,
+                    &owner,
+                    &repo,
+                )
+                .await
+                {
+                    Ok(()) => (
+                        true,
+                        format!("Verified: built by {}/{}'s own CI.", owner, repo),
+                    ),
+                    Err(e) => (false, format!("Not verified: {}", e)),
+                }
+            }
+            None => (
+                false,
+                "Not verified: this theme isn't hosted on github.com.".to_string(),
+            ),
+        };
+
     let theme_dir = dir.join(&manifest.id);
     std::fs::create_dir_all(&theme_dir)
         .map_err(|e| format!("Failed to create {}: {}", theme_dir.display(), e))?;
@@ -313,11 +350,7 @@ fn install_data_theme(dir: &Path, manifest_bytes: &[u8]) -> Result<InstallResult
     std::fs::write(theme_dir.join("theme.json"), manifest_json)
         .map_err(|e| format!("Failed to write theme.json: {}", e))?;
 
-    Ok(InstallResult {
-        id: manifest.id,
-        verified: false,
-        verification_note: "Not applicable: data-only themes have no code to verify.".to_string(),
-    })
+    Ok(InstallResult { id: manifest.id, verified, verification_note })
 }
 
 /// Installs a plugin from a user-pasted manifest URL - re-fetches the manifest (cheap, a few
@@ -337,7 +370,7 @@ pub async fn install_plugin(
     if kind == "source" || kind == "metadata" {
         install_wasm_plugin(&app, &url, &bytes, expected_sha256.as_deref()).await
     } else {
-        install_data_theme(&data_themes_dir(&app)?, &bytes)
+        install_data_theme(&data_themes_dir(&app)?, &url, &bytes).await
     }
 }
 
@@ -490,8 +523,10 @@ mod tests {
         );
 
         let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
-        let result = install_data_theme(&temp.0, &bytes).expect("install should succeed");
+        let result = tauri::async_runtime::block_on(install_data_theme(&temp.0, &url, &bytes))
+            .expect("install should succeed");
         assert_eq!(result.id, "test-online-theme");
+        assert!(!result.verified, "a localhost test server isn't hosted on github.com");
 
         let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
         assert_eq!(manifests.len(), 1);

@@ -1008,3 +1008,62 @@ judged yes, for two concrete reasons rather than a reflexive "big changes get mi
   block, migrate with the same compiled-output verification discipline used for every CSS fix
   this session, not a visual-assumption pass) - deliberately not designed further than that
   without actually doing the audit first
+
+**Audit done (delegated to Explore, 22 components read).** Real findings, organized the same
+way the milestone scoped it:
+- **Exact duplicate blocks worth centralizing**: the skeleton shimmer animation + `@keyframes`
+  (`SkeletonCard.vue`/`SkeletonRow.vue`, byte-identical); list-row shell + thumbnail dimensions
+  (`GameListRow.vue`/`SkeletonRow.vue`); tag pill styling (`GameFilters.vue`/`EditGame.vue`);
+  empty-state layout (`GameGrid.vue`/`GameList.vue`); and the biggest cluster - most of Big
+  Picture's dark-backdrop scheme (colors, z-index layering, fade transitions, placeholder
+  color, several `var(..., literal-fallback)` pairs) duplicated near-identically across
+  `BigPictureGrid.vue`/`BigPictureSlideshow.vue`/`BigPictureTile.vue`. Also flagged: two of
+  those duplicated fallback literals (`var(--shadow-lg, 0 12px 32px rgba(0,0,0,0.5))` and
+  `var(--radius-lg, 12px)`) don't even match the real tokens' actual values (`0.18` alpha,
+  `10px`) - if the variable were ever genuinely undefined, the fallback would render visibly
+  different from the token's real default, a latent inconsistency independent of the
+  duplication itself
+- **Existing tokens not used**: hardcoded `1px` borders (10+ files) where
+  `--button-border-width` already exists for exactly this; hardcoded `0.5rem`/`0.75rem` gaps
+  (10+ files) matching `--space-2`/`--space-3` exactly; `border-radius: 4px`
+  (`NavSidebar.vue`, the list-row thumbnail) matching `--radius-sm`; `padding: 1.5rem`
+  (`BaseModal.vue`) matching `--space-5`; `color: white` (`TitleBar.vue`) where the established
+  convention elsewhere is `--color-on-accent`
+- **Two off-token values needing a real decision, not a mechanical move**: `border-radius: 8px`
+  (list-row shell) and `3px` (tag pills) don't match any of `--radius-sm/md/lg` (4/6/10px) -
+  standardize onto an existing token, or these are genuinely a fourth radius value the scale
+  doesn't have yet. Left open rather than picked arbitrarily
+- **Category 3 (the scoped-CSS/foreign-component risk this milestone exists partly to design
+  around)**: no second live instance of the exact `GameCard.vue`/`CardVisualRenderer` bug found.
+  One correct usage of the same underlying pattern found instead - `PluginSettings.vue` reaches
+  into `InstallableStatus.vue`'s root class via Vue's `:deep()` combinator, which is
+  specifically designed to pierce the scoped-CSS boundary deliberately, unlike the `.cover`/
+  `.cover-placeholder` bug which just happened to work by accident until it didn't. Worth
+  documenting `:deep()` as the sanctioned escape hatch once `styles.css`'s conventions get
+  written up. One forward-looking risk noted, not urgent: `BigPictureTile.vue` is currently
+  swapped wholesale via `useThemeSlot` (a full component swap, safe), but if a "tile visual
+  AST" mechanism is ever added mirroring Milestone 17's card visual, `.tile-cover`/
+  `.tile-cover-placeholder` would need the same unscoped treatment pre-emptively, not
+  discovered the hard way again
+- Also flagged (not one of the three assigned categories, but real): `.settings-form` is a de
+  facto contract class name - any plugin kind's `settingsComponent` is expected to emit it
+  (`PluginSettings.vue` reads it via `:deep()` for every plugin kind) - a shared-contract class
+  that should probably be documented alongside whatever `styles.css` convention gets written,
+  since it's exactly the kind of implicit cross-component convention this milestone is trying
+  to make explicit
+
+**`:root` moved into `src/styles.css` - decided immediately after the audit, not left open.**
+User's call: absorb entirely, not split token-vs-pattern across two files. Moved the whole
+`:root {}` rule verbatim (including the `font-family`/`color`/`background-color` lines that
+live inside the same rule, not just the custom properties) into a new `src/styles.css`,
+imported once via `main.ts` (`import "./styles.css"`) rather than through `App.vue`, so the
+global stylesheet isn't tied to that component's own file. `App.vue` now has a one-line comment
+pointing at the new location instead of the block itself.
+- Verified for real rather than assumed: rebuilt, then `grep`'d the actual compiled CSS output
+  for the `:root` rule and confirmed every single token survived with byte-identical values
+  (colors, spacing, radii, shadows, `--button-border-width`) - not just "the build didn't
+  error," an actual diff-equivalent check against the pre-move values
+- `cargo check` unaffected (no Rust touched) - checked anyway rather than assumed safe
+- Migrating the actual Category 1 duplicate patterns into `styles.css`, and resolving the two
+  off-token radius values, remain open - this pass was the audit + the one concrete decision
+  (`:root`'s new home), not the full migration

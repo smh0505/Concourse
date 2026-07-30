@@ -267,13 +267,21 @@ component's own scoped block, invisible/unoverridable anywhere else, needing a o
 hook added each time a real need surfaced). A dedicated milestone rather than ad hoc mid-session
 - real scope (many existing components to audit), and a genuine convention change worth
 measuring before executing, not assumed.
-- [ ] Audit existing `<style scoped>` blocks (desktop + Big Picture components) for what's
-  *actually* duplicated/hardcoded vs. genuinely component-specific - same measure-first
-  discipline as Milestone 17, not a blanket move-everything pass
-- [ ] Decide `styles.css`'s relationship to `App.vue`'s existing `:root` token block (extract
-  it out entirely, or keep tokens in `App.vue` and add `styles.css` for shared component
-  patterns alongside)
-- [ ] Migrate identified shared patterns, verifying each move the same way this session's CSS
-  fixes were verified (compiled-output check, not just visual assumption - `<style scoped>`'s
-  boundary has already caused one real bug this session when a foreign component needed to
-  read rules that were scoped to somewhere else)
+- [x] Audit existing `<style scoped>` blocks (22 components) for what's *actually*
+  duplicated/hardcoded vs. genuinely component-specific - real findings, not vacuous: exact
+  duplicate blocks (skeleton shimmer, list-row shell/thumbnail, tag pills, empty-state layout,
+  most of Big Picture's dark-backdrop scheme across 3 files), tokens that exist but aren't used
+  (hardcoded `1px`/`0.5rem`/`0.75rem`/`4px` matching `--button-border-width`/`--space-2`/
+  `--space-3`/`--radius-sm` exactly), and two off-token values (`8px`, `3px` radii) needing a
+  real design decision, not a mechanical move. No second live instance of this session's
+  scoped-CSS/foreign-component bug found; one correct `:deep()` usage noted as the right
+  pattern; one forward-looking risk flagged (a future Big Picture tile-visual AST would need
+  the same unscoped treatment `GameCard.vue` already got). See devlog for the full report
+- [x] Decide `styles.css`'s relationship to `App.vue`'s existing `:root` token block — absorb
+  it entirely. Moved verbatim into new `src/styles.css`, imported once in `main.ts`; verified
+  the compiled output still contains every token, byte-identical values, not just assumed
+- [ ] Migrate the identified shared patterns (Category 1 findings above), verifying each move
+  the same way this session's CSS fixes were verified (compiled-output check, not just visual
+  assumption)
+- [ ] Resolve the two off-token radius values (`8px` list-row shell, `3px` tag pills) - decide
+  whether to standardize onto an existing token or add as a genuinely new shared value

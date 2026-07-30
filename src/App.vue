@@ -171,54 +171,7 @@ body,
   height: 100%;
 }
 
-:root {
-  /* Catppuccin Latte, as the compiled-in default (also the shipped default theme) */
-  --color-base: #eff1f5;
-  --color-mantle: #e6e9ef;
-  --color-crust: #dce0e8;
-  --color-text: #4c4f69;
-  --color-subtext: #5c5f77;
-  --color-surface0: #ccd0da;
-  --color-surface1: #bcc0cc;
-  --color-accent: #1e66f5;
-  --color-accent-alt: #8839ef;
-  --color-danger: #d20f39;
-  /* Separate from --color-text so a theme with saturated/dark button backgrounds (e.g.
-     Brick Block) can override just this one, without also recoloring body text that sits on
-     lighter backgrounds where --color-text already reads fine. */
-  --color-button-text: var(--color-text);
-  /* Text/icon color for anything rendered on top of --color-accent (submit buttons, active
-     tabs/nav items/filter tags, toasts) - separate from --color-base itself since a theme can
-     repurpose --color-base for something that isn't a light neutral (e.g. Brick Block uses it
-     as a saturated sky-blue background color, not a "text on accent" color). Defaults to
-     --color-base, matching every existing theme's actual light base color exactly. */
-  --color-on-accent: var(--color-base);
-
-  /* Spacing scale */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-
-  /* Border-radius scale */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-
-  /* Button frame */
-  --button-border-width: 1px;
-
-  /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.18);
-
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  color: var(--color-text);
-  background-color: var(--color-base);
-}
+/* Design tokens (:root) moved to src/styles.css - Milestone 18. */
 
 /* Consistent baseline for raw form controls - component-scoped styles (nav items,
    titlebar buttons, tag pills, ...) override where a distinct look is intentional. */

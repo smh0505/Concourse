@@ -1424,3 +1424,33 @@ unlike the two bugs fixed earlier in this pass - straightforward migration.
 - Verified via compiled CSS: `.compact-button{font-size:.75rem;padding:.2rem .6rem}` present
   exactly once, zero leftover `.registry-list button`/`.permission-needed button` selectors.
   `bun run build` clean (20.95kB); `cargo check` clean (no Rust touched, checked anyway).
+
+**Resolved the small/compact-button font-size fork, the audit's remaining design-decision
+finding.** Grepped every `font-size: 0.75rem|0.8rem|0.85rem` site across `.vue` files first to
+find the real button-specific instances (not every font-size hit - most were unrelated text
+sizing), then narrowed to actual `button`-selector rules: `.compact-button` (0.75rem, just
+migrated above), `PluginSettings.vue`'s `.reorder-buttons button` (0.75rem, the up/down arrow
+buttons) and `.uninstall-theme` (0.75rem, the data-theme "Remove" button), `EditGame.vue`'s
+`.input-with-button button` (0.8rem, a small button beside a text input) and `.tag-remove`
+(0.8rem, a borderless tag "x" button), and `PluginSettings.vue`'s `.scan-button`/
+`.add-plugin-button` (0.85rem). Presented the actual fork to the user via `AskUserQuestion`
+(collapse to one 0.75rem tier / keep a genuine two-tier 0.75rem-vs-0.8rem system / leave as-is)
+rather than picking a resolution unilaterally, same discipline as the earlier `8px` radius and
+`.hint` font-size forks. User chose collapsing to one tier, 0.75rem.
+- Turned out `.reorder-buttons button`/`.uninstall-theme` were already `0.75rem` - only
+  `EditGame.vue`'s two 0.8rem sites actually needed changing, a smaller diff than the fork
+  initially suggested.
+- **Found the `.scan-button`/`.add-plugin-button` 0.85rem declarations were pure redundancy
+  while investigating**, not a real third tier at all: `0.85rem` is literally the global
+  `button` element's own default font-size in `styles.css` (line 81), so these two explicit
+  overrides did nothing - removed both. `.add-plugin-button` then had zero properties left in
+  its `<style scoped>` block, so removed the now-vestigial class from its template too (the
+  `<button>` in `PluginSettings.vue`'s header), following the same "scoped styles aren't reused,
+  a class with no rule targeting it is dead" reasoning from the earlier vestigial-class cleanup
+  pass, not just this pass's own convention.
+- Verified via compiled CSS: `input-with-button button[data-v-*]{font-size:.75rem}` and
+  `.tag-remove[data-v-*]{...font-size:.75rem...}` both present with the new value;
+  `.scan-button[data-v-*]{margin-top:.5rem}` keeps only its real property; zero
+  `add-plugin-button` string anywhere in the compiled output. `bun run build`/`cargo check`
+  both clean; CSS bundle shrank slightly, 20.95kB → 20.88kB (expected - two rules got smaller,
+  one disappeared entirely).

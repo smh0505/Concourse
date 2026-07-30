@@ -112,7 +112,7 @@ onMounted(async () => {
   <div class="plugin-settings">
     <div class="plugin-settings-header">
       <h2>Plugins</h2>
-      <button type="button" class="add-plugin-button" @click="showAddPluginModal = true">
+      <button type="button" @click="showAddPluginModal = true">
         Add Plugin
       </button>
     </div>
@@ -445,10 +445,5 @@ small {
 
 .scan-button {
   margin-top: 0.5rem;
-  font-size: 0.85rem;
-}
-
-.add-plugin-button {
-  font-size: 0.85rem;
 }
 </style>

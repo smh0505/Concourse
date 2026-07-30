@@ -389,3 +389,14 @@ decision needed. New `.compact-button` in `styles.css`, applied directly to each
 `.icon-action-row`). Verified via compiled CSS: shared class present exactly once, zero leftover
 `.registry-list button`/`.permission-needed button` rules. `bun run build`/`cargo check` both
 clean.
+
+Resolved the small-button font-size fork - user's call: collapse to one tier, `0.75rem`. Actual
+work was smaller than it looked once inspected: `.reorder-buttons button`/`.uninstall-theme`
+were already `0.75rem`, only `EditGame.vue`'s `.input-with-button button`/`.tag-remove` (both
+`0.8rem`) needed changing. Also found `.scan-button`/`.add-plugin-button`'s explicit `0.85rem`
+was pure redundancy (already the global `button` default) - removed both declarations;
+`.add-plugin-button` then had zero properties left, so removed the now-vestigial class from its
+template too, same as the earlier vestigial-class cleanup. Verified via compiled CSS:
+`.input-with-button button`/`.tag-remove` both compile at `.75rem`, `.scan-button` keeps only
+`margin-top`, zero `add-plugin-button` left anywhere. `bun run build`/`cargo check` both clean;
+CSS bundle shrank slightly, 20.95kB → 20.88kB.

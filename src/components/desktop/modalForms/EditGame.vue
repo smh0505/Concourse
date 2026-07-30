@@ -238,7 +238,7 @@ async function onSave() {
 }
 
 .input-with-button button {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .checkbox-label {
@@ -273,7 +273,7 @@ async function onSave() {
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   line-height: 1;
   padding: 0;
   color: inherit;

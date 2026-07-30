@@ -207,6 +207,9 @@ body,
   --radius-md: 6px;
   --radius-lg: 10px;
 
+  /* Button frame */
+  --button-border-width: 1px;
+
   /* Elevation */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
@@ -234,7 +237,7 @@ button {
   justify-content: center;
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-surface0);
+  border: var(--button-border-width) solid var(--color-surface0);
   border-radius: var(--radius-md);
   background: var(--color-surface0);
   color: var(--color-button-text);

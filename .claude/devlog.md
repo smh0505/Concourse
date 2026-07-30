@@ -435,3 +435,18 @@ verdict into milestones.md on vibes, measured it directly against Brick Block fi
   hypothetical Playnite-XAML comparison, and the legacy entry's own "blocked" conclusion (about
   `slots`/raw-JS specifically) stays correct and undisturbed above, kept for history rather than
   deleted
+
+**Started the CSS-variable-surface expansion item.** Border-radius was already themeable
+(`--radius-md`, used by the global `button` rule in `App.vue`) - the actual gap was border
+*width*, hardcoded `1px` there with no variable at all. Added `--button-border-width` to
+`:root` and wired it into the global `button` rule, rather than scoping a new variable to
+GameCard's footer buttons specifically - explicit user direction: the lever should cover every
+button app-wide, not just the ones next to a cover image, so a future theme can go
+thick-bordered everywhere with one variable instead of needing `slots` just to reach GameCard's
+footer. `GameCard.vue`'s own footer buttons needed no edit - they already inherit the global
+`button` rule with no local override, so they pick up the new variable automatically. Brick
+Block's own hardcoded `2px` footer-button border (in its scoped component CSS) is left as-is
+for now rather than retroactively migrated to the new variable - a separate, deliberate call
+for later, not bundled into this step. Balloon-specific hooks (border, `border-radius`
+override, per-element `font-family` on `.balloon-title`/`.balloon-playtime`) remain the
+outstanding part of this milestone item.

@@ -192,7 +192,9 @@ demand) rather than designed on a hypothetical. See devlog for the full measurem
 Scope going forward, not yet built:
 - [x] Expand `GameCard.vue`/`BigPictureTile.vue`'s CSS-variable surface (`--button-border-width`
   app-wide, `--balloon-border-width`/`--balloon-radius`/`--balloon-font-family` on the balloon)
-- [ ] Decide the action-dispatch boundary before designing the whitelisted scope
+- [x] Decide the action-dispatch boundary — display/structure-only; action bar is always
+  host-rendered at a fixed insertion point (restyleable, not restructurable), whitelisted scope
+  never includes callables
 - [ ] Prototype: new manifest field (e.g. `template`), lazy `@vue/compiler-dom` import,
   whitelisted render-context scope
 - [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not

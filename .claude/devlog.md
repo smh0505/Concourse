@@ -468,3 +468,17 @@ opts into, not a scale every element consumes by default:
 - Brick Block's own `.brick-balloon` override is untouched and still wins by selector
   specificity (two classes beats one) - not migrated onto the new variables as part of this
   step, same deliberate deferral as the button-border-width case above
+
+**Action-dispatch boundary decided: display/structure-only, no callable exposure.** A template
+tier's whitelisted render context gets `game`'s own read-only fields, nothing else - the action
+bar (play/edit/remove/fetch-metadata) is always host-rendered at a fixed insertion point,
+restyleable via CSS variables (same lever as the button-frame/balloon work above) but not
+restructurable, removable, or rearrangeable by a theme's template. Reasoning: Brick Block is the
+only concrete evidence this app has ever had of component-override demand, and it never touches
+the footer's structure at all - identical markup and `@click` handlers to the base, styled only
+via CSS. Zero measured demand for restructuring the action bar exists. Exposing store actions as
+template-callable would be real, non-trivial attack surface (a compiled template invoking
+mutations, not just reading data) built speculatively for a need that's never once shown up -
+the same over-scoping M17's re-review was built to avoid. If a real theme ever needs to
+rearrange the action bar, that's new, separately-scoped work when it actually happens, not
+designed in now against a hypothetical.

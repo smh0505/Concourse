@@ -217,9 +217,16 @@ Scope going forward, not yet built:
   all), `image` hardcodes `src`/`alt` rather than a generic attrs bag, tag enum excludes every
   interactive element. Validated against both of Brick Block's measured gap items - sufficient
   and minimal. Needs depth/node-count caps at interpreter level (DoS guard, not a design gap)
-- [ ] Build the interpreter (`type` → `h()` dispatch, no dynamic code path of any kind)
-- [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not
-  full parity — footer stays out of scope)
+- [x] Build the interpreter — `src/theme/cardVisualAst.ts` (`validateCardVisualAst`/
+  `renderCardVisualAst`/`CardVisualRenderer`), `src/theme/cardVisualRegistry.ts` (validate-once
+  at theme-activation, not per-render), `ThemePlugin.cardVisual` field, wired into
+  `GameCard.vue`'s cover-visual region and `theme.ts`'s activate/deactivate lifecycle
+- [x] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier — both
+  verified for real (not just typechecked): the if/image/else-text shape renders the correct
+  branch for both cover-present and no-cover games, and wrapping that same subtree in one more
+  `element` node reproduces the frame-wrapper case. Also verified the interpreter's safety
+  properties directly: rejects an unknown field name, an unknown node type, depth overflow, and
+  node-count overflow, all fail-closed rather than silently coerced
 - [ ] Addon, not a substitute for the above: sign the AST manifest file itself for provenance
   (same `actions/attest-build-provenance`/`plugin_verification.rs` mechanism as WASM plugins,
   generalized to a manifest's bytes instead of a `.wasm` binary) - catches tampering-in-transit

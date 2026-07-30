@@ -9,11 +9,14 @@ import {
 } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import { useBalloonAnchor } from "../../composables/useBalloonAnchor";
+import { CardVisualRenderer } from "../../theme/cardVisualAst";
+import { useActiveCardVisual } from "../../theme/cardVisualRegistry";
 import type { Game } from "../../db";
 
 const props = defineProps<{ game: Game }>();
 
 const library = useLibraryStore();
+const activeCardVisual = useActiveCardVisual();
 
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
 const playtimeMinutes = computed(() => Math.round(props.game.total_playtime / 60));
@@ -25,8 +28,11 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
 <template>
   <div ref="cardEl" class="card" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave">
     <div class="card-visual">
-      <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
-      <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+      <CardVisualRenderer v-if="activeCardVisual" :node="activeCardVisual" :game="game" />
+      <template v-else>
+        <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
+        <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+      </template>
 
       <div v-if="fetchingMetadata" class="fetch-overlay">
         <IconLoader2 :size="24" :stroke-width="1.75" class="spin" />

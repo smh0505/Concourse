@@ -653,3 +653,34 @@ type AstNode =
   manifest could still cost excessive render time/stack depth. Needs a depth cap (e.g. 5) and a
   total node-count cap (e.g. 50) enforced by the interpreter itself - a DoS guard to build
   alongside the interpreter, not a gap in the vocabulary's design
+
+**Built the interpreter and verified it for real, not just typechecked.**
+- `src/theme/cardVisualAst.ts` - `validateCardVisualAst` (the single gate untrusted manifest
+  data passes through: closed `GameField`/`FieldTransform` enums, `MAX_DEPTH`/`MAX_NODES`
+  caps, fail-closed on anything unrecognized) and `renderCardVisualAst` (only ever called on
+  already-validated output, so the render path itself doesn't re-defend against malformed
+  input on every call - the validator is the boundary, not the renderer). `text` nodes return a
+  bare string rather than a wrapped element, so a themed placeholder's styling (set on its
+  `element` parent) applies directly instead of through an extra spurious node
+- `src/theme/cardVisualRegistry.ts` - validates once at theme-activation time (mirrors
+  `slotRegistry.ts`'s shape), not per-render; an invalid AST logs and falls back to the built-in
+  markup rather than breaking theme activation entirely
+- `ThemePlugin.cardVisual?: unknown` - deliberately untyped as `AstNode` in the interface
+  itself, since the raw value is untrusted regardless of which plugin kind it arrives from
+  (TS-authored built-in vs. data-theme JSON) and always has to go through the validator before
+  anything trusts it
+- Wired into `GameCard.vue` (renders `CardVisualRenderer` when an active AST exists, falls back
+  to the original `img`/`cover-placeholder` markup otherwise - footer/balloon/fetch-overlay
+  untouched, matching the decided action-dispatch boundary) and `theme.ts`'s activate/deactivate
+  lifecycle (parallel to `setActiveSlots`/`clearActiveSlots`)
+- `bun run build` (vue-tsc + vite build) passes clean
+- **Verified behavior directly**, not just "it typechecks" - wrote throwaway scripts (same
+  pattern as the earlier compiler-dom escape tests) exercising the real module: (1) Brick
+  Block's actual glyph-swap shape renders the image branch when `cover_art_url` is set and the
+  `★` text branch when it isn't; (2) wrapping that same subtree in one more `element` node
+  reproduces the `.brick-frame` wrapper case; (3) an unknown field name (tried smuggling
+  `"constructor"` specifically, given what broke the compiler-dom prototype) is rejected;
+  (4) an unknown node type (`"script"`) is rejected; (5) depth overflow and (6) node-count
+  overflow both reject rather than silently truncating. All fail-closed, none silently coerced
+- Both of Milestone 17's remaining build items (interpreter, acceptance test) are done. What's
+  left: the manifest-signing addon, and the separately-tracked registry `theme`-kind follow-up

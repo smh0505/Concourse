@@ -107,6 +107,12 @@ export interface ThemePlugin extends PluginBase {
   slots?: Partial<Record<ThemeSlotName, Component>>;
   /** CSS custom properties (e.g. "--color-base") applied to :root while this theme is active. */
   cssVariables?: Record<string, string>;
+  /** Milestone 17 - a closed-vocabulary JSON AST overriding GameCard's cover-visual region
+   *  (image-or-placeholder) without needing a real Vue component (`slots`, install-time only)
+   *  or executable code of any kind. Untyped here deliberately (not `AstNode` from
+   *  `theme/cardVisualAst`) - the value is untrusted data regardless of source and always goes
+   *  through `validateCardVisualAst` before use; see `theme/cardVisualRegistry.ts`. */
+  cardVisual?: unknown;
   /** Called when this theme becomes the active one. */
   activate?(): void | Promise<void>;
   /** Called when this theme is replaced by another (or deselected). */

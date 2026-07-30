@@ -85,16 +85,16 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
 </script>
 
 <template>
-  <div class="big-picture" ref="rootRef" tabindex="0" @keydown="onKeydown">
+  <div class="big-picture bp-surface" ref="rootRef" tabindex="0" @keydown="onKeydown">
     <Transition name="backdrop-fade">
       <div
         v-if="focusedBackgroundUrl"
         :key="focusedBackgroundUrl"
-        class="backdrop"
+        class="backdrop bp-backdrop"
         :style="{ backgroundImage: `url(${focusedBackgroundUrl})` }"
       />
     </Transition>
-    <div class="backdrop-overlay" />
+    <div class="backdrop-overlay bp-backdrop-overlay-base" />
     <div class="tile-grid" ref="gridRef">
       <component
         :is="tileComponent"
@@ -106,7 +106,7 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
         @select="library.launchGame(game)"
         @hover="focusedIndex = index"
       />
-      <div v-if="library.games.length === 0" class="empty">
+      <div v-if="library.games.length === 0" class="empty bp-empty-state">
         <IconInboxOff :size="48" :stroke-width="1.5" />
         <p>No games in library.</p>
       </div>
@@ -115,15 +115,10 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
 </template>
 
 <style scoped>
+/* .bp-surface (shared, styles.css) supplies the fixed dark-fullscreen base. */
 .big-picture {
-  position: fixed;
-  inset: 0;
-  background: #111;
-  color: #fff;
   overflow-y: auto;
   padding: 3rem;
-  z-index: 20;
-  outline: none;
   /* Console-style UI - scrolling still works (gamepad/keyboard nav scrollIntoView,
      mouse wheel), just without a visible scrollbar track. */
   scrollbar-width: none;
@@ -134,29 +129,12 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
   display: none;
 }
 
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  z-index: 0;
-}
+/* .bp-backdrop (shared, styles.css) supplies the backdrop image positioning entirely. */
 
-.backdrop-fade-enter-active,
-.backdrop-fade-leave-active {
-  transition: opacity 0.4s ease;
-}
-
-.backdrop-fade-enter-from,
-.backdrop-fade-leave-to {
-  opacity: 0;
-}
-
+/* .bp-backdrop-overlay-base (shared, styles.css) supplies position/inset/z-index; the
+   gradient's alpha stops are deliberately specific to this surface. */
 .backdrop-overlay {
-  position: fixed;
-  inset: 0;
   background: linear-gradient(180deg, rgba(17, 17, 17, 0.55) 0%, rgba(17, 17, 17, 0.9) 100%);
-  z-index: 1;
 }
 
 .tile-grid {
@@ -167,14 +145,10 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
   gap: var(--space-6, 2rem);
 }
 
+/* .bp-empty-state (shared, styles.css) supplies the shared look; this layers the
+   grid-specific full-width span and centered text on top. */
 .empty {
   grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3, 0.75rem);
-  opacity: 0.7;
-  font-size: 1.5rem;
   text-align: center;
 }
 </style>

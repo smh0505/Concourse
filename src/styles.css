@@ -225,3 +225,91 @@ select:focus {
   opacity: 0.7;
   text-align: center;
 }
+
+/* Big Picture's backdrop cluster - BigPictureGrid.vue, BigPictureSlideshow.vue,
+   BigPictureTile.vue. Big Picture runs its own dark palette independent of the light default
+   theme (#111/#fff/#444 aren't --color-* tokens), which is why these are literal colors
+   rather than variable references, same as the original per-file rules were. */
+
+/* Root full-screen surface - .big-picture, .slideshow. Each layers its own extra
+   (scroll/overflow handling, padding) locally. */
+.bp-surface {
+  position: fixed;
+  inset: 0;
+  background: #111;
+  color: #fff;
+  z-index: 20;
+  outline: none;
+}
+
+/* Background-art backdrop image - identical in both files, nothing extra needed locally. */
+.bp-backdrop {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+/* Backdrop cross-fade transition - both files' <Transition name="backdrop-fade"> already
+   forces these exact class names; genuinely identical, not just similar. */
+.backdrop-fade-enter-active,
+.backdrop-fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+
+.backdrop-fade-enter-from,
+.backdrop-fade-leave-to {
+  opacity: 0;
+}
+
+/* Dark overlay skeleton over the backdrop - position/inset/z-index are identical, but the
+   actual gradient alpha stops are a deliberate per-surface difference (the grid needs tiles
+   to stay more visible than the slideshow's hero cover flow needs), so `background` itself
+   stays local to each component rather than being folded in here too. */
+.bp-backdrop-overlay-base {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Tile/cover frame base - BigPictureTile.vue's .tile, BigPictureSlideshow.vue's .strip-cover.
+   Each keeps its own extra layout/transition-timing properties locally. */
+.bp-cover-frame {
+  background: none;
+  border: 3px solid transparent;
+  border-radius: var(--radius-xl, 10px);
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Focused/centered cover state - identical border-color/box-shadow in both files. Applied via
+   a template class binding alongside .bp-cover-frame, not a compound selector, so either
+   component can still layer its own extra behavior (e.g. .tile's added scale transform) via
+   its own local `.tile.bp-cover-focused` rule. */
+.bp-cover-focused {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Cover placeholder look - BigPictureTile.vue's .tile-cover-placeholder,
+   BigPictureSlideshow.vue's .strip-cover-placeholder. Dimensions/font-size differ per
+   context and stay local. */
+.bp-cover-placeholder {
+  background: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Empty-library state - BigPictureGrid.vue's .empty, BigPictureSlideshow.vue's .empty. Not
+   the same as the desktop .empty-state above - different values (font-size, no padding),
+   genuinely a different context, not the same pattern reused. */
+.bp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  opacity: 0.7;
+  font-size: 1.5rem;
+}

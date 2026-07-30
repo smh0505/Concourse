@@ -1170,3 +1170,59 @@ devtools/for future component-specific overrides) while eliminating the actual d
 - Left explicitly out of scope: Big Picture's own, much larger backdrop-styling duplication
   cluster (a separate audit finding, its own migration effort), and the remaining Category 2
   unused-token findings (`--space-2`/`--space-3` gaps, `--space-5` padding, `--color-on-accent`)
+
+**Migrated Big Picture's backdrop cluster - the audit's biggest single finding, spanning
+`BigPictureGrid.vue`/`BigPictureSlideshow.vue`/`BigPictureTile.vue`.** Read all three files
+fully before designing anything, rather than working from the audit summary alone - found the
+actual duplication was more granular than "the backdrop scheme," really seven separate
+sub-patterns of varying overlap:
+- `.bp-surface` - the root full-screen dark base (`position:fixed;inset:0;background:#111;
+  color:#fff;z-index:20;outline:none`), identical between `.big-picture`/`.slideshow`; each
+  keeps its own scroll/overflow handling locally
+- `.bp-backdrop` - the background-art image positioning, 100% identical, no local remainder
+  needed in either file
+- `backdrop-fade-*` transition classes - genuinely forced identical by both files' own
+  `<Transition name="backdrop-fade">`, not just similar - moved to `styles.css` unscoped with
+  the exact same class names Vue already requires
+- `.bp-backdrop-overlay-base` - position/inset/z-index only; deliberately did *not* fold in
+  the actual gradient `background` value, since the two files' alpha stops are a real design
+  difference (the grid needs tiles to stay more visible than the slideshow's hero cover flow
+  needs) - kept local per component rather than forcing a false unification
+- `.bp-cover-frame` - the button/tile visual base (background/border/radius/padding/cursor)
+  shared between `BigPictureTile.vue`'s `.tile` and `BigPictureSlideshow.vue`'s `.strip-cover`
+  - two different UI elements (grid tile vs. slideshow strip cover), not the same component,
+  but the same visual shape
+- `.bp-cover-focused` - the identical focused/centered border-color+box-shadow, applied via a
+  template class binding alongside `.bp-cover-frame` rather than a compound selector, so each
+  component can still layer its own extra behavior on the *same* shared class name locally
+  (`.tile.bp-cover-focused{transform:scale(1.05)}` - the strip-cover's centered state has no
+  such extra, needed nothing added)
+- `.bp-cover-placeholder` - the placeholder look (`background:#444;display:flex;align-items:
+  center;justify-content:center`), dimensions/font-size kept local since they genuinely differ
+  per context (grid tile vs. slideshow strip)
+- `.bp-empty-state` - deliberately a *different* shared class from the desktop `.empty-state`
+  added earlier, not a reuse - different values (font-size 1.5rem, no padding), genuinely a
+  different context, would have been a false unification to force onto the same class
+- **Found and fixed three more mismatched fallback literals** while touching these exact
+  lines, same category as the `--radius-xl` one fixed earlier this session:
+  `var(--color-accent, #fff)` (real value `#1e66f5`, a blue, nothing like white),
+  `var(--shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.5))` (real alpha `0.18`, not `0.5`), and
+  `var(--radius-md, 10px)` (real value `6px`, not `10px`) - none had been individually flagged
+  by name in the original audit, only discovered by actually looking at each line being
+  migrated rather than trusting the audit summary as the complete list of what needed fixing.
+  Dropped all three fallbacks entirely rather than correcting them to matching literals - these
+  are base tokens always defined in `:root` (unlike `--balloon-*`/`--font-pixel`'s genuinely
+  opt-in pattern), so a defensive fallback was never structurally necessary for them at all
+- Verified via compiled CSS with the same rigor as every prior migration this session: each of
+  the 7 shared classes present exactly once with the right properties; the `backdrop-fade-*`
+  transition present exactly once (not duplicated); every component's leftover scoped rule
+  contains only its genuinely-extra properties (`grep`'d each one individually -
+  `.big-picture`, `.slideshow`, `.tile`, `.strip-cover`, `.tile.bp-cover-focused`,
+  `.tile-cover-placeholder`, `.strip-cover-placeholder`, both `.empty` leftovers); confirmed
+  the old `.strip-cover.centered` compound selector is gone entirely, not just superseded;
+  confirmed all three old mismatched-fallback strings are gone from source, not just from the
+  one line each was found on
+- CSS bundle shrank again, 21.85kB → 20.92kB, consistent with real duplication removed
+- Remaining from the original audit: Big Picture's whole cluster is now done; only the
+  Category 2 unused-token findings (`--space-2`/`--space-3` gaps, `--space-5` padding,
+  `--color-on-accent`) are still open

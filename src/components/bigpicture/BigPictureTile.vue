@@ -7,20 +7,21 @@ const emit = defineEmits<{ select: []; hover: [] }>();
 </script>
 
 <template>
-  <button class="tile" :class="{ focused }" @click="emit('select')" @mouseenter="emit('hover')">
+  <button
+    class="tile bp-cover-frame"
+    :class="{ focused, 'bp-cover-focused': focused }"
+    @click="emit('select')"
+    @mouseenter="emit('hover')"
+  >
     <img v-if="game.cover_art_url" class="tile-cover" :src="game.cover_art_url" :alt="game.title" />
-    <div v-else class="tile-cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+    <div v-else class="tile-cover-placeholder bp-cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
     <div class="tile-title">{{ game.title }}</div>
   </button>
 </template>
 
 <style scoped>
+/* .bp-cover-frame (shared, styles.css) supplies background/border/radius/padding/cursor. */
 .tile {
-  background: none;
-  border: 3px solid transparent;
-  border-radius: var(--radius-xl, 10px);
-  padding: 0;
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -32,9 +33,9 @@ const emit = defineEmits<{ select: []; hover: [] }>();
     box-shadow 0.15s ease;
 }
 
-.tile.focused {
-  border-color: var(--color-accent, #fff);
-  box-shadow: var(--shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.5));
+/* .bp-cover-focused (shared, styles.css) supplies border-color/box-shadow; this layers the
+   tile-specific scale-up on top. */
+.tile.bp-cover-focused {
   transform: scale(1.05);
 }
 
@@ -42,18 +43,15 @@ const emit = defineEmits<{ select: []; hover: [] }>();
 .tile-cover-placeholder {
   width: 100%;
   aspect-ratio: 3 / 4;
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--radius-md);
 }
 
 .tile-cover {
   object-fit: cover;
 }
 
+/* .bp-cover-placeholder (shared, styles.css) supplies background/display/align/justify. */
 .tile-cover-placeholder {
-  background: #444;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 4rem;
 }
 

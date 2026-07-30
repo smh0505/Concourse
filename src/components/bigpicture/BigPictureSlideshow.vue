@@ -73,33 +73,33 @@ function coverStyle(offset: number) {
 </script>
 
 <template>
-  <div class="slideshow" ref="rootRef" tabindex="0" @keydown="onKeydown">
+  <div class="slideshow bp-surface" ref="rootRef" tabindex="0" @keydown="onKeydown">
     <Transition name="backdrop-fade">
       <div
         v-if="focusedGame?.background_art_url"
         :key="focusedGame.background_art_url"
-        class="backdrop"
+        class="backdrop bp-backdrop"
         :style="{ backgroundImage: `url(${focusedGame.background_art_url})` }"
       />
     </Transition>
-    <div class="backdrop-overlay" />
+    <div class="backdrop-overlay bp-backdrop-overlay-base" />
 
     <div v-if="focusedGame" class="info">
       <div class="info-title">{{ focusedGame.title }}</div>
       <div class="info-playtime">{{ playtimeMinutes }} min played</div>
     </div>
-    <div v-else class="empty">
+    <div v-else class="empty bp-empty-state">
       <IconInboxOff :size="48" :stroke-width="1.5" />
       <p>No games in library.</p>
     </div>
 
     <div class="cover-strip">
       <template v-for="item in visibleCovers" :key="item.kind === 'game' ? item.id : `dummy-${item.offset}`">
-        <div v-if="item.kind === 'dummy'" class="strip-cover strip-cover-dummy" />
+        <div v-if="item.kind === 'dummy'" class="strip-cover strip-cover-dummy bp-cover-frame" />
         <button
           v-else
-          class="strip-cover"
-          :class="{ centered: item.offset === 0 }"
+          class="strip-cover bp-cover-frame"
+          :class="{ centered: item.offset === 0, 'bp-cover-focused': item.offset === 0 }"
           :style="coverStyle(item.offset)"
           @click="item.offset === 0 ? library.launchGame(library.games[item.index]) : (focusedIndex = item.index)"
         >
@@ -108,7 +108,7 @@ function coverStyle(offset: number) {
             :src="library.games[item.index].cover_art_url!"
             :alt="library.games[item.index].title"
           />
-          <div v-else class="strip-cover-placeholder">
+          <div v-else class="strip-cover-placeholder bp-cover-placeholder">
             {{ library.games[item.index].title.charAt(0).toUpperCase() }}
           </div>
         </button>
@@ -118,39 +118,17 @@ function coverStyle(offset: number) {
 </template>
 
 <style scoped>
+/* .bp-surface (shared, styles.css) supplies the fixed dark-fullscreen base. */
 .slideshow {
-  position: fixed;
-  inset: 0;
-  background: #111;
-  color: #fff;
   overflow: hidden;
-  z-index: 20;
-  outline: none;
 }
 
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  z-index: 0;
-}
+/* .bp-backdrop (shared, styles.css) supplies the backdrop image positioning entirely. */
 
-.backdrop-fade-enter-active,
-.backdrop-fade-leave-active {
-  transition: opacity 0.4s ease;
-}
-
-.backdrop-fade-enter-from,
-.backdrop-fade-leave-to {
-  opacity: 0;
-}
-
+/* .bp-backdrop-overlay-base (shared, styles.css) supplies position/inset/z-index; the
+   gradient's alpha stops are deliberately specific to this surface. */
 .backdrop-overlay {
-  position: fixed;
-  inset: 0;
   background: linear-gradient(180deg, rgba(17, 17, 17, 0.35) 0%, rgba(17, 17, 17, 0.92) 100%);
-  z-index: 1;
 }
 
 .info {
@@ -171,17 +149,13 @@ function coverStyle(offset: number) {
   opacity: 0.7;
 }
 
+/* .bp-empty-state (shared, styles.css) supplies the shared look; this layers the
+   full-height centering on top. */
 .empty {
   position: relative;
   z-index: 2;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: var(--space-3, 0.75rem);
-  opacity: 0.7;
-  font-size: 1.5rem;
 }
 
 .cover-strip {
@@ -196,15 +170,11 @@ function coverStyle(offset: number) {
   gap: 1rem;
 }
 
+/* .bp-cover-frame (shared, styles.css) supplies background/border/radius/padding/cursor. */
 .strip-cover {
   flex-shrink: 0;
   width: 140px;
   aspect-ratio: 3 / 4;
-  padding: 0;
-  border: 3px solid transparent;
-  border-radius: var(--radius-xl, 10px);
-  background: none;
-  cursor: pointer;
   overflow: hidden;
   transition:
     transform 0.2s ease,
@@ -212,10 +182,8 @@ function coverStyle(offset: number) {
     border-color 0.2s ease;
 }
 
-.strip-cover.centered {
-  border-color: var(--color-accent, #fff);
-  box-shadow: var(--shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.5));
-}
+/* .bp-cover-focused (shared, styles.css) supplies border-color/box-shadow for the
+   .centered state - no extra needed locally beyond that. */
 
 .strip-cover img {
   width: 100%;
@@ -229,13 +197,10 @@ function coverStyle(offset: number) {
   pointer-events: none;
 }
 
+/* .bp-cover-placeholder (shared, styles.css) supplies background/display/align/justify. */
 .strip-cover-placeholder {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #444;
   font-size: 2.5rem;
 }
 </style>

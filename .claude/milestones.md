@@ -307,3 +307,12 @@ measuring before executing, not assumed.
   its genuinely extra properties locally, layered via a second class on the same element.
   CSS bundle shrank 22.65kB → 21.85kB. Big Picture's backdrop cluster and the remaining
   Category 2 (unused-token) findings stay open, not part of this pass
+- [x] Migrated Big Picture's whole backdrop cluster (the audit's biggest single finding) into
+  7 shared `styles.css` classes: `.bp-surface`, `.bp-backdrop`, the `backdrop-fade-*`
+  transition classes, `.bp-backdrop-overlay-base`, `.bp-cover-frame`, `.bp-cover-focused`,
+  `.bp-cover-placeholder`, `.bp-empty-state` - spanning `BigPictureGrid.vue`/
+  `BigPictureSlideshow.vue`/`BigPictureTile.vue`. Also fixed three more mismatched fallback
+  literals found directly on the lines being touched (`--color-accent, #fff`,
+  `--shadow-lg`'s alpha, `--radius-md, 10px`) - none matched their tokens' real values;
+  dropped the fallbacks entirely rather than correcting them, since these are base tokens
+  always defined in `:root`, not opt-in ones. CSS bundle shrank again, 21.85kB → 20.92kB

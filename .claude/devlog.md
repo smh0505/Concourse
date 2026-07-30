@@ -616,3 +616,40 @@ this milestone had already verified, not just in the abstract:
 - Worker isolation work above stays in devlog as a real, verified, sound design - not wrong,
   just superseded by a cheaper and stricter option found afterward. Milestone 17's plan now
   targets the AST vocabulary + interpreter instead of the worker/message-protocol/validator
+
+**Designed the AST vocabulary**, kept deliberately small and validated directly against Brick
+Block's two measured gap items rather than designed in the abstract:
+
+```ts
+type GameField = "cover_art_url" | "title";
+type FieldTransform = "firstLetterUpper";
+interface FieldRef { field: GameField; transform?: FieldTransform; }
+type AstNode =
+  | { type: "if"; test: FieldRef; then: AstNode; else?: AstNode }
+  | { type: "element"; tag: "div" | "span"; class?: string; children?: AstNode[] }
+  | { type: "image"; class?: string; src: FieldRef; alt: FieldRef }
+  | { type: "text"; content?: string; field?: FieldRef };
+```
+
+- `image` is its own node type rather than `element` with a generic `attrs` bag - hardcodes
+  exactly `src`/`alt` as bindable. No generic attribute dict exists anywhere in the format, so
+  there's no future path for an arbitrary attribute name (`onerror`, a `style` containing
+  `url(...)`) to ever reach the interpreter - closed by construction, not by a denylist that
+  would need maintaining
+- `FieldRef.field` is a closed enum, not arbitrary property access on `game` - an unrecognized
+  field name should reject the whole manifest at install/parse time (fail closed), not silently
+  render empty
+- `transform` is a fixed enum dispatched by string match on the host side to a real named
+  function - covers the base component's `charAt(0).toUpperCase()` need without introducing
+  any method-call syntax into the format at all
+- No event handlers, no interactive tags - `tag` enum is `div`/`span` only (plus the separate
+  `image` node) - matches the already-decided action-dispatch boundary (footer stays
+  host-rendered) by construction rather than by convention
+- Validated against both Brick Block gap items: the glyph swap is a straightforward
+  `if`/`image`/`else`-`text` tree; wrapping that same subtree in one more `element` node with
+  `class: "brick-frame"` covers the wrapper-div gap too. Vocabulary is sufficient without being
+  any bigger than what's actually needed
+- One real residual risk flagged, not a code-execution one: a maliciously huge or deeply-nested
+  manifest could still cost excessive render time/stack depth. Needs a depth cap (e.g. 5) and a
+  total node-count cap (e.g. 50) enforced by the interpreter itself - a DoS guard to build
+  alongside the interpreter, not a gap in the vocabulary's design

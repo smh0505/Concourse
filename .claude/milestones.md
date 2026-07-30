@@ -212,9 +212,11 @@ Scope going forward, not yet built:
   still had to contain and validate real executed JS. Runs safely in the main realm - no
   iframe/Worker/postMessage-validation layer needed. Also a smaller build than the Worker
   protocol, and matches Brick Block's measured gap just as precisely
-- [ ] Design the AST vocabulary (node types, `{field: ...}` resolution, fixed tag allowlist)
-  covering Brick Block's measured gap - conditional image-or-placeholder, static content, one
-  wrapper element
+- [x] Design the AST vocabulary — 4 node types (`if`/`element`/`image`/`text`), closed
+  `GameField` enum for `{field: ...}` refs, fixed `transform` enum (no method-call syntax at
+  all), `image` hardcodes `src`/`alt` rather than a generic attrs bag, tag enum excludes every
+  interactive element. Validated against both of Brick Block's measured gap items - sufficient
+  and minimal. Needs depth/node-count caps at interpreter level (DoS guard, not a design gap)
 - [ ] Build the interpreter (`type` → `h()` dispatch, no dynamic code path of any kind)
 - [ ] Acceptance test: reproduce Brick Block's glyph + wrapper element on the new tier (not
   full parity — footer stays out of scope)

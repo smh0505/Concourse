@@ -94,26 +94,6 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
   border: 1px solid var(--color-surface1);
 }
 
-.cover,
-.cover-placeholder {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 4;
-}
-
-.cover {
-  object-fit: cover;
-}
-
-.cover-placeholder {
-  background: var(--color-surface0);
-  color: var(--color-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-}
-
 .footer {
   position: absolute;
   left: 0;
@@ -159,6 +139,30 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
 </style>
 
 <style>
+/* .cover/.cover-placeholder can't be `scoped` either - when an active theme provides a
+   cardVisual AST (Milestone 17), CardVisualRenderer (a separate component) renders these
+   elements instead of GameCard's own template, so they'd never carry GameCard's compiled
+   data-v-* attribute and a scoped rule would silently never match them. */
+.cover,
+.cover-placeholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+}
+
+.cover {
+  object-fit: cover;
+}
+
+.cover-placeholder {
+  background: var(--color-surface0);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
 /* Teleported to <body>, so this can't be a `scoped` style - the balloon is no longer a
    descendant of this component's root element in the actual DOM. */
 .balloon {

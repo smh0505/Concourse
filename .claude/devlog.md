@@ -1133,3 +1133,40 @@ about it at all - moved wholesale, same reasoning as the `:root` move earlier.
   Category-1-pattern migration pass, not bundled into this move
 - `App.vue` now has zero non-scoped CSS of its own - every primitive/global rule lives in
   `styles.css`, every remaining rule in `App.vue` is genuinely scoped to its own template
+
+**Migrated 4 of the audit's Category 1 duplicate blocks into shared `styles.css` classes.**
+Pattern for each: identify the genuinely-shared subset of properties, add it as a shared class,
+keep only each component's real extra properties in its own `<style scoped>` block, and layer
+both classes on the same template element (`class="local-name shared-name"`) rather than
+picking one or the other - preserves each component's own semantic class name (useful in
+devtools/for future component-specific overrides) while eliminating the actual duplication.
+- `.shimmer` + `@keyframes shimmer` - `SkeletonCard.vue`/`SkeletonRow.vue`'s shimmer divs now
+  reference the shared class directly (`class="shimmer"`, replacing `skeleton-shimmer`); both
+  local `@keyframes shimmer` blocks and the duplicated gradient rule deleted entirely - neither
+  component had anything extra layered on top, so nothing stayed local for this one
+- `.list-row-shell` (shell layout/border/padding) and `.list-row-thumb` (dimensions/radius) -
+  `GameListRow.vue`'s `.row`/`.thumb`/`.thumb-placeholder` and `SkeletonRow.vue`'s
+  `.skeleton-row`/`.skeleton-thumb` templates gained the shared classes alongside their own
+  names; `GameListRow.vue`'s `.thumb` keeps only `object-fit: cover` locally (the original
+  combined `.thumb, .thumb-placeholder` selector applied `object-fit` to the placeholder `<div>`
+  too, which is a no-op there per spec - object-fit only affects replaced elements - so scoping
+  it to just `.thumb` changes nothing observable, just removes a meaningless line from the
+  placeholder's rule)
+- `.tag-pill` - `GameFilters.vue`'s `.tag` rule had nothing extra beyond the shared subset,
+  deleted entirely once `tag-pill` was added to its template class list. `EditGame.vue`'s
+  `.tag` kept its real extra properties (the remove-button's `inline-flex`/`gap` layout)
+- `.empty-state` - `GameList.vue`'s `.empty` was byte-for-byte the shared subset, deleted
+  entirely; `GameGrid.vue`'s kept just its one real extra property, `grid-column: 1 / -1`
+- **Verified via compiled CSS, not assumed correct just because the source diff looked clean**:
+  confirmed each of the 4 shared classes compiles exactly once with the expected properties;
+  confirmed `.row`/`.skeleton-row` (fully-emptied local rules) emit *zero* CSS output now, not
+  an empty-but-present rule; confirmed `.tag[data-v-*]` (EditGame's) only carries the 3 leftover
+  properties, not the full original set; confirmed the 4 distinct `.empty[data-v-*]` rules
+  still in the bundle are legitimately separate, untouched components
+  (`BigPictureGrid.vue`/`BigPictureSlideshow.vue`/`PluginSettings.vue`, plus `GameGrid.vue`'s
+  intentional one-property leftover) - not a sign anything was missed
+- CSS bundle shrank 22.65kB → 21.85kB, consistent with real duplication actually removed, not
+  just reorganized
+- Left explicitly out of scope: Big Picture's own, much larger backdrop-styling duplication
+  cluster (a separate audit finding, its own migration effort), and the remaining Category 2
+  unused-token findings (`--space-2`/`--space-3` gaps, `--space-5` padding, `--color-on-accent`)

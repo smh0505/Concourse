@@ -24,7 +24,7 @@ function toggleViewMode() {
     </div>
     <div class="tags" v-if="library.allTags.length">
       <span
-        class="tag filter-tag"
+        class="tag-pill filter-tag"
         :class="{ active: library.activeTagFilter === tag }"
         v-for="tag in library.allTags"
         :key="tag"
@@ -68,12 +68,7 @@ function toggleViewMode() {
   gap: 0.25rem;
 }
 
-.tag {
-  font-size: 0.7rem;
-  background: var(--color-surface0);
-  border-radius: var(--radius-sm);
-  padding: 0.1rem 0.4rem;
-}
+/* .tag-pill (shared, styles.css) supplies the pill's base look. */
 
 .filter-tag {
   cursor: pointer;

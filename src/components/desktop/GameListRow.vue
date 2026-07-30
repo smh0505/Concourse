@@ -12,9 +12,9 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 </script>
 
 <template>
-  <div class="row">
-    <img v-if="game.cover_art_url" class="thumb" :src="game.cover_art_url" :alt="game.title" />
-    <div v-else class="thumb-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+  <div class="row list-row-shell">
+    <img v-if="game.cover_art_url" class="thumb list-row-thumb" :src="game.cover_art_url" :alt="game.title" />
+    <div v-else class="thumb-placeholder list-row-thumb">{{ game.title.charAt(0).toUpperCase() }}</div>
 
     <div class="info">
       <div class="title">{{ game.title }}</div>
@@ -47,21 +47,10 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 </template>
 
 <style scoped>
-.row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border: 1px solid var(--color-surface1);
-  border-radius: var(--radius-lg);
-  padding: 0.5rem 0.75rem;
-}
+/* .list-row-shell (shared, styles.css) supplies the shell layout/border/padding. */
 
-.thumb,
-.thumb-placeholder {
-  width: 48px;
-  height: 64px;
-  flex-shrink: 0;
-  border-radius: 4px;
+.thumb {
+  /* .list-row-thumb (shared, styles.css) supplies width/height/flex-shrink/radius. */
   object-fit: cover;
 }
 

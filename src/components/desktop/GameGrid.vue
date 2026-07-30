@@ -19,7 +19,7 @@ const SKELETON_COUNT = 6;
       <SkeletonCard v-for="n in SKELETON_COUNT" :key="`skeleton-${n}`" />
     </template>
     <component :is="cardComponent" v-for="game in library.filteredGames" :key="game.id" :game="game" />
-    <div v-if="!plugins.scanning && library.filteredGames.length === 0" class="empty">
+    <div v-if="!plugins.scanning && library.filteredGames.length === 0" class="empty empty-state">
       <template v-if="library.games.length === 0">
         <IconInboxOff :size="32" :stroke-width="1.5" />
         <p>Your library is empty. Add a game or scan a source plugin to get started.</p>
@@ -38,14 +38,9 @@ const SKELETON_COUNT = 6;
   gap: 1rem;
 }
 
+/* .empty-state (shared, styles.css) supplies the shared layout; this layers the
+   grid-specific full-width span on top. */
 .empty {
   grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 2rem 1rem;
-  opacity: 0.7;
-  text-align: center;
 }
 </style>

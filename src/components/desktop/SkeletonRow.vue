@@ -1,34 +1,24 @@
 <template>
-  <div class="skeleton-row">
-    <div class="skeleton-thumb">
-      <div class="skeleton-shimmer" />
+  <div class="skeleton-row list-row-shell">
+    <div class="skeleton-thumb list-row-thumb">
+      <div class="shimmer" />
     </div>
     <div class="skeleton-lines">
       <div class="skeleton-line skeleton-line-title">
-        <div class="skeleton-shimmer" />
+        <div class="shimmer" />
       </div>
       <div class="skeleton-line skeleton-line-meta">
-        <div class="skeleton-shimmer" />
+        <div class="shimmer" />
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.skeleton-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border: 1px solid var(--color-surface1);
-  border-radius: var(--radius-lg);
-  padding: 0.5rem 0.75rem;
-}
+/* .list-row-shell (shared, styles.css) supplies the shell layout/border/padding. */
 
 .skeleton-thumb {
-  width: 48px;
-  height: 64px;
-  flex-shrink: 0;
-  border-radius: 4px;
+  /* .list-row-thumb (shared, styles.css) supplies width/height/flex-shrink/radius. */
   background: var(--color-surface0);
   overflow: hidden;
   position: relative;
@@ -57,25 +47,5 @@
   width: 25%;
 }
 
-.skeleton-shimmer {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 30%,
-    var(--color-surface1) 50%,
-    transparent 70%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  from {
-    background-position: 150% 0;
-  }
-  to {
-    background-position: -50% 0;
-  }
-}
+/* .shimmer (shared, styles.css) supplies the shimmer effect itself. */
 </style>

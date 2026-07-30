@@ -301,3 +301,9 @@ measuring before executing, not assumed.
   `styles.css` too - none of it was App.vue-specific, only its own `<style scoped>` block
   (`.app-window`, `.view-toggle-button`, etc.) stayed. Verified via compiled output: no
   duplicated rules, scoped rules still carry their `data-v-*` attribute correctly
+- [x] Migrated 4 of the audit's Category 1 duplicate blocks into shared `styles.css` classes:
+  `.shimmer` (skeleton loading effect + `@keyframes`), `.list-row-shell`/`.list-row-thumb`
+  (row shell + thumbnail dimensions), `.tag-pill`, `.empty-state`. Each component keeps only
+  its genuinely extra properties locally, layered via a second class on the same element.
+  CSS bundle shrank 22.65kB → 21.85kB. Big Picture's backdrop cluster and the remaining
+  Category 2 (unused-token) findings stay open, not part of this pass

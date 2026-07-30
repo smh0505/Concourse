@@ -17,7 +17,7 @@ const SKELETON_COUNT = 4;
       <SkeletonRow v-for="n in SKELETON_COUNT" :key="`skeleton-${n}`" />
     </template>
     <GameListRow v-for="game in library.filteredGames" :key="game.id" :game="game" />
-    <div v-if="!plugins.scanning && library.filteredGames.length === 0" class="empty">
+    <div v-if="!plugins.scanning && library.filteredGames.length === 0" class="empty-state">
       <template v-if="library.games.length === 0">
         <IconInboxOff :size="28" :stroke-width="1.5" />
         <p>Your library is empty. Add a game or scan a source plugin to get started.</p>
@@ -36,13 +36,5 @@ const SKELETON_COUNT = 4;
   gap: 0.5rem;
 }
 
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 2rem 1rem;
-  opacity: 0.7;
-  text-align: center;
-}
+/* .empty-state (shared, styles.css) supplies this rule's entire look. */
 </style>

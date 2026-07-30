@@ -188,7 +188,7 @@ async function onSave() {
         <div class="tags-section">
           <span>Tags</span>
           <div class="tags" v-if="tags.length">
-            <span class="tag" v-for="tag in tags" :key="tag">
+            <span class="tag-pill tag" v-for="tag in tags" :key="tag">
               {{ tag }}
               <button class="tag-remove" @click="library.removeTag(library.editingGame!, tag)">&times;</button>
             </span>
@@ -261,11 +261,9 @@ async function onSave() {
   gap: 0.25rem;
 }
 
+/* .tag-pill (shared, styles.css) supplies the pill's base look; this layers the
+   remove-button layout on top. */
 .tag {
-  font-size: 0.7rem;
-  background: var(--color-surface0);
-  border-radius: var(--radius-sm);
-  padding: 0.1rem 0.4rem;
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;

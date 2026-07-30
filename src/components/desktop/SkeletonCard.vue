@@ -1,6 +1,6 @@
 <template>
   <div class="skeleton-card">
-    <div class="skeleton-shimmer" />
+    <div class="shimmer" />
   </div>
 </template>
 
@@ -14,25 +14,5 @@
   position: relative;
 }
 
-.skeleton-shimmer {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 30%,
-    var(--color-surface1) 50%,
-    transparent 70%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  from {
-    background-position: 150% 0;
-  }
-  to {
-    background-position: -50% 0;
-  }
-}
+/* .shimmer (shared, styles.css) supplies the shimmer effect itself. */
 </style>

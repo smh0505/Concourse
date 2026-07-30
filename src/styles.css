@@ -165,3 +165,63 @@ select:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
 }
+
+/* Shared component patterns - Milestone 18. Each was an exact (or near-exact) duplicate
+   across 2+ components; genuinely extra per-component properties stay local to that
+   component's own <style scoped> block, layered via a second class on the same element. */
+
+/* Skeleton loading shimmer - SkeletonCard.vue, SkeletonRow.vue */
+.shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, var(--color-surface1) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+/* List-row shell - GameListRow.vue's .row, SkeletonRow.vue's .skeleton-row */
+.list-row-shell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--color-surface1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* List-row thumbnail dimensions - GameListRow.vue's .thumb/.thumb-placeholder,
+   SkeletonRow.vue's .skeleton-thumb. object-fit/background/etc. stay local per variant. */
+.list-row-thumb {
+  width: 48px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+/* Tag pill - GameFilters.vue's .tag, EditGame.vue's .tag */
+.tag-pill {
+  font-size: 0.7rem;
+  background: var(--color-surface0);
+  border-radius: var(--radius-sm);
+  padding: 0.1rem 0.4rem;
+}
+
+/* Empty-state layout - GameGrid.vue's .empty, GameList.vue's .empty */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  opacity: 0.7;
+  text-align: center;
+}

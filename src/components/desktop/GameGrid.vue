@@ -40,6 +40,7 @@ const SKELETON_COUNT = 6;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-bottom: var(--space-5);
 }
 

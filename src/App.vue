@@ -153,6 +153,7 @@ onUnmounted(library.dispose);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-bottom: var(--space-5);
 }
 

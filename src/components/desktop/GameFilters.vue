@@ -40,6 +40,7 @@ function toggleViewMode() {
 .filters {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: var(--space-2);
   margin-bottom: 1.5rem;
   /* Pinned to the top of App.vue's scrolling `.content` - stays visible while GameGrid/GameList
@@ -63,6 +64,11 @@ function toggleViewMode() {
 
 .search {
   flex: 1;
+  /* Browser default min-width for an <input> in a flex row is `auto` (its own intrinsic
+     content-based size), which can stop flex:1 from actually filling the remaining row width -
+     this was leaving visible empty space between the input's real edge and .view-toggle-button/
+     the row's own right edge instead of the input stretching to fill it. */
+  min-width: 0;
 }
 
 /* .view-toggle-button (shared, styles.css) supplies this rule's entire look. */

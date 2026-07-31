@@ -160,13 +160,15 @@ sequence.
 - [x] Pinned `GameFilters.vue` to the top of `App.vue`'s single `.content` scroll container via
   `position: sticky` - `GameGrid.vue`/`GameList.vue` scroll underneath it, `.content` itself
   stays the one scroll container it always was
-- [x] Fixed three visual bugs found once running it: a decorative border that looked wrong
+- [x] Fixed four visual bugs found once running it: a decorative border that looked wrong
   (removed); hovered `GameCard`s/their balloon rendering *over* the pinned bar instead of under
   it (`.filters`' `z-index` bumped to clear both `GameCard`'s hover `z-index` and its Teleported
-  balloon's, which competes at the document root, not template position); and hovered
-  edge-column cards in bar-adjacent rows bleeding sideways past `.content`'s edge (explicit
+  balloon's, which competes at the document root, not template position); hovered edge-column
+  cards in bar-adjacent rows bleeding sideways past `.content`'s edge (explicit
   `overflow-x: hidden` on `.content`, safe this time since its existing horizontal padding is
-  well over a card's max scale-driven overflow)
+  well over a card's max scale-driven overflow); and the search input stopping well short of
+  the row's full width (browser-default `min-width: auto` on `<input>` overriding `flex: 1`'s
+  attempt to fill the row - fixed with `min-width: 0`)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

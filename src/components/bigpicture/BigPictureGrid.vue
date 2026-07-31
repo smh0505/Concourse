@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch, type ComponentPublicInsta
 import { IconInboxOff } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import { useGamepadNav } from "../../composables/useGamepadNav";
+import { suppressMouseActivity, useMouseActivity } from "../../composables/useMouseActivity";
 import { useThemeSlot } from "../../theme/slotRegistry";
 import BigPictureTile from "./BigPictureTile.vue";
 
@@ -45,6 +46,8 @@ const { focusedIndex } = useGamepadNav({
   onCancel: () => emit("close"),
 });
 
+const mouseActive = useMouseActivity();
+
 function onKeydown(event: KeyboardEvent) {
   const count = library.games.length;
   if (count === 0) return;
@@ -52,17 +55,33 @@ function onKeydown(event: KeyboardEvent) {
   const current = Math.min(focusedIndex.value, count - 1);
   const col = current % cols;
 
-  if (event.key === "ArrowUp" && current - cols >= 0) focusedIndex.value = current - cols;
-  else if (event.key === "ArrowDown" && current + cols < count) focusedIndex.value = current + cols;
-  else if (event.key === "ArrowLeft" && col > 0) focusedIndex.value = current - 1;
-  else if (event.key === "ArrowRight" && col < cols - 1 && current + 1 < count) focusedIndex.value = current + 1;
-  else if (event.key === "Enter") {
+  if (event.key === "ArrowUp" && current - cols >= 0) {
+    suppressMouseActivity();
+    focusedIndex.value = current - cols;
+  } else if (event.key === "ArrowDown" && current + cols < count) {
+    suppressMouseActivity();
+    focusedIndex.value = current + cols;
+  } else if (event.key === "ArrowLeft" && col > 0) {
+    suppressMouseActivity();
+    focusedIndex.value = current - 1;
+  } else if (event.key === "ArrowRight" && col < cols - 1 && current + 1 < count) {
+    suppressMouseActivity();
+    focusedIndex.value = current + 1;
+  } else if (event.key === "Enter") {
     const game = library.games[focusedIndex.value];
     if (game) library.launchGame(game);
   } else if (event.key === "Escape") emit("close");
   else return;
 
   event.preventDefault();
+}
+
+/** Gates hover-driven focus changes - a tile's `mouseenter` fires whenever it moves under a
+ *  stationary cursor too (Big Picture's own focus-lift transform does exactly that), not only
+ *  on real cursor movement, so honoring every `mouseenter` right after a keyboard/gamepad move
+ *  would silently fight the input that just ran. See useMouseActivity.ts. */
+function onTileHover(index: number) {
+  if (mouseActive.value) focusedIndex.value = index;
 }
 
 const tileRefs = ref<(HTMLElement | null)[]>([]);
@@ -104,7 +123,7 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
         :game="game"
         :focused="index === focusedIndex"
         @select="library.launchGame(game)"
-        @hover="focusedIndex = index"
+        @hover="onTileHover(index)"
       />
       <div v-if="library.games.length === 0" class="empty bp-empty-state">
         <IconInboxOff :size="48" :stroke-width="1.5" />

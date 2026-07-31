@@ -98,6 +98,12 @@ const activeCardVisual = useActiveCardVisual();
   font-size: 1.25rem;
   font-weight: 600;
   text-align: center;
+  /* A long title otherwise overflows past this tile's own column width (it's absolutely
+     positioned, so it doesn't push/widen anything) and visually bleeds into neighboring tiles'
+     space instead of wrapping or clipping cleanly. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   /* --tile-title-font-family/--tile-title-text-shadow aren't part of the base design-token
      scale - opt-in per-element hooks, same reasoning as --balloon-font-family on GameCard.vue's
      balloon. Undeclared by default (inherits the tile's own font, no shadow) - only a theme

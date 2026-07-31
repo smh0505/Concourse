@@ -149,6 +149,9 @@ sequence.
 - [x] API-key/settings forms moved into modals; modal-form components consolidated under
   `src/components/desktop/modalForms/`
 - [x] Big Picture tile title hidden by default, reveals on hover/selection
+- [x] Long tile titles ellipsis instead of bleeding into neighboring tiles
+- [x] Fixed keyboard/gamepad focus fighting the mouse cursor in Big Picture's grid (a tile's
+  `mouseenter` firing when it moves under a stationary cursor, not just on real mouse movement)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

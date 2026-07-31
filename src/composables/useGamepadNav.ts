@@ -1,5 +1,6 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import { useControllerMappingStore } from "../stores/controllerMapping";
+import { suppressMouseActivity } from "./useMouseActivity";
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -33,6 +34,7 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
     else if (direction === "left" && col > 0) next = current - 1;
     else if (direction === "right" && col < cols - 1 && current + 1 < count) next = current + 1;
 
+    suppressMouseActivity();
     focusedIndex.value = next;
   }
 

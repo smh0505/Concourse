@@ -172,6 +172,12 @@ sequence.
   `GameFilters.vue`'s `.filters` spans `.content`'s full un-padded width rather than sharing the
   same inset as the grid/list - confirmed fixed, then gave `.filters` its own matching
   horizontal padding so its content still lines up visually with the grid/list below it
+- [x] Fixed a real balloon-placement bug the pinned bar exposed: `useBalloonAnchor.ts`'s
+  above/below decision assumed the visible area's top edge was the window's actual `y=0`, no
+  longer true now that the filter bar occupies that space. New `data-scroll-header` attribute on
+  `.filters` lets the composable measure the bar's real current height and use its bottom edge
+  as the boundary instead of a hardcoded guess. Also gave `.filters` its own bottom padding for
+  visual breathing room inside the bar, separate from its external `margin-bottom`
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

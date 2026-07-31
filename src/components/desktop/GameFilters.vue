@@ -10,7 +10,11 @@ function toggleViewMode() {
 </script>
 
 <template>
-  <div class="filters">
+  <!-- `data-scroll-header` is a dedicated hook for useBalloonAnchor.ts to measure this pinned
+       bar's real height (not tied to the `.filters` styling class name, which could change
+       independently) - GameCard.vue's balloon needs to know where the visible area actually
+       starts, since it can be scrolled to sit right behind this bar. -->
+  <div class="filters" data-scroll-header>
     <div class="search-row">
       <input v-model="library.search" class="search" placeholder="Search by title..." />
       <button
@@ -56,8 +60,10 @@ function toggleViewMode() {
   background: var(--color-base);
   /* Matches GameGrid.vue's `.grid`/GameList.vue's `.list` own horizontal padding, so this
      spans .content's full width (needed so the search input isn't visibly narrower than the
-     grid) while still lining up visually with the grid/list content below it. */
-  padding: var(--space-5) var(--space-6) 0;
+     grid) while still lining up visually with the grid/list content below it. Bottom padding
+     is purely visual breathing room inside the pinned bar's own background, separate from
+     `margin-bottom` below (the gap between the bar and the grid/list content). */
+  padding: var(--space-5) var(--space-6) var(--space-3);
 }
 
 .search-row {

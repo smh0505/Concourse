@@ -40,8 +40,13 @@ const SKELETON_COUNT = 6;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overflow-x: hidden;
-  padding-bottom: var(--space-5);
+  /* overflow-x:hidden would stop the horizontal scrollbar but also clips GameCard's
+     :hover scale(1.06) at the leftmost/rightmost column, cutting the card off instead of
+     letting it visually overflow like every other column already does into its neighbor's
+     gap. This side padding gives edge cards the same breathing room a middle column gets from
+     `gap` for free, so the scale transform never reaches this container's own edge in the
+     first place - no scrollbar, no clipping. */
+  padding: 0 var(--space-3) var(--space-5);
 }
 
 /* .empty-state (shared, styles.css) supplies the shared layout; this layers the

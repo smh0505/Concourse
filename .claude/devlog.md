@@ -1847,3 +1847,60 @@ never closes, by its own definition); Milestone 20 is still in progress, not clo
   against whatever a published `latest.json` claims - testing the update banner at all
   requires a real version difference between a locally-built "old" install and whatever gets
   published next, not just any arbitrary bump.
+
+**End-to-end release test, on user's request to actually verify the pipeline rather than trust
+it unread.** Built `1.3.1` locally first (`bunx tauri build`) as the "old" baseline install,
+then iterated through real tagged test releases until the whole chain actually worked. Took
+three failed attempts before succeeding - each one a real bug, not a retry-and-hope:
+
+- **`v1.3.2`** (first real tag push): job succeeded, but no `.sig`/`latest.json` ever appeared -
+  `tauri-action` logged `Signature not found for the updater JSON. Skipping upload...`. User's
+  own hypothesis was a corrupt signing key/password (plausible, since `gh secret set
+  --body-file` doesn't exist and the key had to be pasted manually into an interactive prompt
+  as a workaround). Checked the actual build log line-by-line before accepting that
+  explanation - the "Found artifacts:" list (what `tauri-action`'s own glob search actually
+  located, as opposed to "Looking for artifacts in:", the candidate paths it merely expected)
+  never contained any `.sig` file in either this run or a re-check of an even earlier
+  `workflow_dispatch` test run. Ruled out corruption: nothing pointed at the key/password
+  being the actual cause.
+- **`v1.3.3`** (switched `bundle.targets` from `"all"` to `["nsis"]`, guessing the ambiguity
+  between two Windows installer formats confused `tauri-action`'s artifact matching): same
+  exact failure, ruling that theory out too.
+- **Found the real cause via a targeted search of `tauri-apps/tauri-action`'s own issue
+  history** (`gh search issues`/`gh issue view`, not guesswork) - issue #1098's comment thread
+  states plainly: Tauri v2's bundler only ever writes `.sig` files at all when
+  `bundle.createUpdaterArtifacts: true` is explicitly set in `tauri.conf.json`. Never set it.
+  The signing secrets were correct the entire time; the bundler was never even trying to sign
+  anything, regardless of what secrets were present.
+- **`v1.3.4`** (added `createUpdaterArtifacts: true`): real progress - the build log now showed
+  `Finished 1 updater signature at: ...exe.sig`, and `tauri-action`'s own artifact search
+  correctly found both the installer and its signature this time. But the job then failed
+  outright with `Resource not accessible by integration` while trying to create the GitHub
+  release. Checked `gh api repos/.../actions/permissions/workflow` - the repo's default Actions
+  permission was `read`, which caps the token even though `release.yml` itself declares
+  `permissions: contents: write` at job level. Fixed via the same API call used earlier this
+  session for `concourse-plugin-registry`'s bot-PR permission gap. Re-ran the *same* failed job
+  (`gh run rerun --failed`) rather than re-tagging - hit the identical error again, because a
+  rerun reuses the token context issued when the run was **originally** queued, before the
+  permission fix; a genuinely new run was required, not a retry.
+- **`v1.3.5`** (fresh tag, fresh token, everything above in place): succeeded completely -
+  `Concourse_1.3.5_x64-setup.exe`, its `.sig`, and `latest.json` all uploaded. Downloaded
+  `latest.json` directly (`gh release download --pattern latest.json --output -`) and read its
+  actual content rather than trusting the upload succeeded: correct version (`1.3.5`), valid
+  minisign signature blocks for both `windows-x86_64` and `windows-x86_64-nsis` platform keys,
+  and a real (not placeholder) download URL. This is the first genuinely confirmed-working
+  piece of the whole auto-update feature - everything before this was written-but-unverified.
+- Cleaned up every failed intermediate test release/tag (`v1.3.2`, `v1.3.3`, `v1.3.4`) via `gh
+  release delete --cleanup-tag`/`git push origin :refs/tags/<tag>` as each was superseded,
+  rather than leaving broken draft releases cluttering the repo.
+- Also added `Swatinem/rust-cache@v2` to `release.yml` mid-investigation, on the user's own
+  observation that every run was taking ~15-20 minutes - the workflow had no Rust build
+  caching at all, so every run recompiled heavy dependencies (`wasmtime`, `sigstore-*`, `sqlx`)
+  completely from scratch every time. Didn't affect `v1.3.5`'s own run time (it was still
+  populating the cache for the first time), but should meaningfully speed up whatever comes
+  after it.
+- **Still pending, deliberately left to the user**: publishing the `v1.3.5` draft release (only
+  a published, non-draft release resolves via `/releases/latest`, which is what
+  `tauri-plugin-updater`'s `check()` actually queries), and then the real GUI verification this
+  session categorically cannot perform - launching the locally-built `1.3.1` install and
+  confirming the update banner appears, downloads, installs, and relaunches correctly.

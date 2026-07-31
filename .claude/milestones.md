@@ -258,11 +258,15 @@ tradeoffs behind the split.
   `github.com`/`*.githubusercontent.com`
 - [x] New `.github/workflows/release.yml` (none existed before) - builds/signs/publishes via
   `tauri-apps/tauri-action`, Windows-only per user's own call given the app's
-  Windows-specific dependencies (registry access, WebView2, LR/LE wrappers). Still needs
-  `TAURI_SIGNING_PRIVATE_KEY`/`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` set as repo secrets by the
-  user before it can actually sign a release
+  Windows-specific dependencies (registry access, WebView2, LR/LE wrappers)
 - [x] Frontend: new `stores/appUpdate.ts` + `AppUpdateBanner.vue`, wired into all three trigger
   moments (`App.vue`'s `onMounted`/window focus listener, `AddPlugin.vue`'s `open`-prop watcher)
+- [x] Verified end-to-end against a real published release (`v1.3.5`) - `latest.json` +
+  signed `.exe`/`.sig` all present and correct. Took 3 failed test releases to get here; see
+  devlog for the real root causes (`bundle.createUpdaterArtifacts` never set, and the repo's
+  default Actions permission capping `contents: write` even with the workflow's own grant)
+- [x] Added `Swatinem/rust-cache@v2` to `release.yml` - every run was a from-scratch ~15min
+  Rust compile with no caching at all
 
 **Plugin/theme self-update** (custom - no existing mechanism covers this):
 - [ ] Persist each installed WASM plugin/data theme's install origin (`source_url` for

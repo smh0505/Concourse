@@ -114,8 +114,6 @@ arbitrary downloaded `.exe` — see devlog for the gap.
 - [x] Permission gating for `spawn-process`/`run-and-wait`
 - [x] URL allowlisting/rate-limiting for `http-request`/`http-get`/`download-bytes`
 
-Milestone 13 fully closed - all four items done.
-
 ## Milestone 14 — Plugin Trust Model: Signing & Review (stretch)
 Even with Milestone 13 done, install-by-URL stayed trust-based, not verified — see devlog.
 - [x] Code signing for published plugin releases (Sigstore attestation, advisory not a hard
@@ -124,8 +122,8 @@ Even with Milestone 13 done, install-by-URL stayed trust-based, not verified —
   on mismatch)
 - [x] Revocation mechanism (pulling a registry entry *is* revocation, install-time only)
 
-Milestone 14 fully closed - all three bullets done. See devlog for the registry's own
-version-bump automation (dispatch on release → re-hash → PR), added after the milestone closed.
+See devlog for the registry's own version-bump automation (dispatch on release → re-hash → PR),
+added afterward.
 
 ## Milestone 14.5 — UI Polish (Continuous, ongoing)
 This milestone doesn't close — UI polish is open-ended. See devlog for detail on each item;
@@ -200,7 +198,7 @@ a constrained declarative template tier instead, measured against Brick Block's 
   field, bad node type, depth/count overflow) - all pass
 - [x] Sign the AST manifest itself for provenance, reusing the existing WASM-plugin signing path
 
-Milestone 17 fully closed. `concourse-plugin-registry` extended to `kind: "theme"`
+`concourse-plugin-registry` extended to `kind: "theme"`
 (`brick-block-data-theme` as first entry, hash-pinned and enforced same as WASM plugins - a gap
 caught and fixed here, not shipped silently unenforced). Post-ship fidelity pass (from real use,
 not just the acceptance test) fixed two real bugs (`cardVisual` silently dropped by the Rust
@@ -221,7 +219,7 @@ values in individual components' scoped blocks.
   old `--radius-lg` → `--radius-xl`)
 - [x] Migrate remaining unused-token findings (hardcoded borders/gaps/radii/colors → tokens)
 
-Milestone 18 fully closed. Post-close follow-ups (see devlog for full detail): vestigial
+Post-close follow-ups (see devlog for full detail): vestigial
 now-empty local classes removed; `.hint` converted to primitive `<small>`; `.error` → shared
 `.error-text`; a full button-styling consistency pass (two real bugs -
 `.view-toggle-button`/`.icon-action-row` - plus a clean duplicate, a font-size fork collapsed to
@@ -244,8 +242,8 @@ consumer - the built-in `brick-block-theme` plugin).
   and every `useThemeSlot`/`setActiveSlots`/`clearActiveSlots` call site - `GameGrid.vue`/
   `BigPictureGrid.vue` render `GameCard`/`BigPictureTile` directly now
 
-Milestone 19 fully closed. Component-swap theming is retired; `cardVisual` AST + CSS-variable
-hooks is now the only theming mechanism for both desktop and Big Picture, for every theme kind.
+Component-swap theming is retired; `cardVisual` AST + CSS-variable hooks is now the only
+theming mechanism for both desktop and Big Picture, for every theme kind.
 
 ## Milestone 20 — Auto-Update: App + Plugins/Themes (scoped, not started)
 Two genuinely separate mechanisms, both checked at the same three moments (app start, app

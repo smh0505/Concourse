@@ -12,7 +12,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -36,6 +36,6 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Concourse ${{ github.ref_name }}"
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           includeUpdaterJson: true

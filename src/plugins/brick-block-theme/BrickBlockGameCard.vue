@@ -144,7 +144,7 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
   min-width: 0;
   padding: 0.35rem 0;
   border-radius: 0;
-  border: 2px solid var(--color-surface1, #7c2c00);
+  border: 3px solid var(--color-surface1, #7c2c00);
 }
 
 .fetch-overlay {

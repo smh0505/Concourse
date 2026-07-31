@@ -88,8 +88,18 @@ button {
   justify-content: center;
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
-  border: var(--button-border-width) solid var(--color-surface0);
-  border-radius: var(--radius-md);
+  /* --button-border-color isn't part of the base design-token scale - opt-in per-element hook,
+     same reasoning as --button-radius below: undeclared by default so most themes never think
+     about it, since --color-surface0 already reads fine as a border on itself. Only a theme
+     whose card frame border uses a different color token (e.g. Brick Block's card frame uses
+     --color-surface1, a darker shade than its --color-surface0 button background) needs to set
+     this to keep its buttons' frame color consistent with its card frame. */
+  border: var(--button-border-width) solid var(--button-border-color, var(--color-surface0));
+  /* --button-radius isn't part of the base design-token scale - opt-in per-element hook, same
+     pattern as --card-radius/--balloon-radius, undeclared by default so most themes never think
+     about it - only a theme wanting sharp-cornered buttons (to match a sharp-cornered card
+     frame, e.g. Brick Block) needs to set it. */
+  border-radius: var(--button-radius, var(--radius-md));
   background: var(--color-surface0);
   color: var(--color-button-text);
   cursor: pointer;

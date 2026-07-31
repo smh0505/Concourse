@@ -1490,3 +1490,67 @@ genre of button (no border, transparent background, fixed 46px square), not a va
 the shared classes introduced this pass. The `--space-*` tokenization pass the audit flagged
 separately (hardcoded `0.25rem`/`0.35rem`/`0.4rem`/`2.2rem`/`46px` values off the spacing scale)
 remains open and unscoped - a distinct piece of follow-up work, not bundled into this pass.
+
+## Milestone 19 — Retire Component-Swap Theming (scoped, not started)
+
+**Groundwork: matched `brick-block-data-theme`'s button frame to its card frame, on user
+request ("try copying GameCards' frame style to buttons in brick block theme").** First applied
+to the *built-in* `brick-block-theme` plugin's own `.footer button` rule (bumped its border from
+an approximate `2px` to the card frame's real `3px`, both using `var(--color-surface1,
+#7c2c00)`) - a same-component scoped-CSS tweak, no new capability needed there. User then
+clarified the actual target was the *detached data-theme* (`brick-block-data-theme`), which has
+no scoped CSS of its own at all - its real app buttons render through the global `button`
+primitive in `styles.css`, using whatever `cssVariables` it declares.
+- Root cause: the global `button` rule's `border-radius: var(--radius-md)` had no opt-in
+  override (unlike `--card-radius`/`--balloon-radius`), and its border color was hardcoded to
+  `--color-surface0` with no way for a theme to point it at a different token - the color the
+  card frame actually uses (`--color-surface1`) in this theme's palette.
+- Added two new opt-in hooks to `styles.css`'s global `button` rule, same pattern as every other
+  per-element hook in this project: `--button-radius` (falls back to `--radius-md`),
+  `--button-border-color` (falls back to `--color-surface0`).
+- `brick-block-data-theme`'s manifest set both - `--button-radius: 0`, `--button-border-color:
+  #7c2c00` - alongside bumping `--button-border-width` from `2px` to `3px` to match the card
+  frame's real width (the manifest had shipped with only an approximation).
+- Version bumped in three small, independently-verified steps rather than one batched change:
+  1.2.0 → 1.2.1 (`--button-border-width` fix) → 1.2.2 (`--button-radius`) → 1.2.3
+  (`--button-border-color`) - each copied into the app's cached
+  `data-themes/brick-block-data-theme/theme.json` and confirmed before moving to the next.
+- `bun run build` clean after each `styles.css` addition; no Rust touched.
+
+**Reviewed `src/theme/` for what's load-bearing, on user's request.** All four files
+(`cardVisualAst.ts`, `cardVisualRegistry.ts`, `fontFaceRegistry.ts`, `slotRegistry.ts`) are
+genuinely wired in - not dead, not redundant with each other - but serve two structurally
+different theme mechanisms: `slotRegistry.ts` is the whole-component-swap path
+(`GameGrid.vue`/`BigPictureGrid.vue`'s `useThemeSlot`, `stores/theme.ts`'s
+`setActiveSlots`/`clearActiveSlots`), while the AST/registry/font-face trio is the data-only
+declarative path a JSON manifest can actually use.
+
+Follow-up question surfaced the real finding: **`slotRegistry.ts` has exactly one live
+consumer.** Grepped every `ThemePlugin` for a `slots` field - only the built-in
+`brick-block-theme` sets one. If that plugin were removed today, `slotRegistry.ts` and its call
+sites wouldn't error, they'd just go permanently inert (`activeSlots` never populated by
+anything, `useThemeSlot` always resolving to its fallback) - dead weight with nothing left to
+reactivate it, since a JSON data-theme manifest structurally can't ship a real Vue component the
+way `slots` requires.
+
+**Decided to retire component-swap theming entirely rather than leave it stranded.** Weighed the
+tradeoff directly: JSON-AST/tokens are strictly safer for untrusted third-party themes (no code
+execution, validated schema - see Milestone 17's sandbox-escape findings for why that matters)
+but bounded by whatever node types/hooks the core app has built; component-swap has no such
+ceiling but requires either build-time bundling (today's built-in-only limitation) or a much
+larger trust boundary for real third-party distribution. Given the project already committed to
+signed/sandboxed WASM distribution for source plugins, and this session's own hook additions
+(card frame, balloon, cover placeholder, and now button frame/radius/border-color) have closed
+nearly all of Brick Block's *desktop*-card visual gap already, kept component-swap only made
+sense as a temporary bridge, not a permanent second theming mechanism.
+
+**Scoped Milestone 19 around the one real blocker: Big Picture.** `BigPictureTile.vue` never
+got the AST-override treatment `GameCard.vue` did - flagged as a forward-looking risk back in
+Milestone 18's audit, now the concrete reason this can't just be deleted today.
+`BrickBlockBigPictureTile.vue`'s look (4px pixel border, diagonal-stripe placeholder, pixel
+font) has no data-theme equivalent path, and its frame/placeholder colors (`#111`/`#444`) are
+hardcoded literals, not tokenized like `GameCard.vue`'s already are. Scoped the milestone to
+close that gap first, prove full parity between the built-in and data-theme versions, and only
+then actually delete the built-in plugin and the now-fully-dead `slotRegistry.ts`/
+`ThemeSlotName` - deliberately not deleting anything before parity is verified, since that would
+silently regress Big Picture's Brick Block appearance for anyone still on the built-in version.

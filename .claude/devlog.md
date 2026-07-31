@@ -1904,3 +1904,7 @@ three failed attempts before succeeding - each one a real bug, not a retry-and-h
   `tauri-plugin-updater`'s `check()` actually queries), and then the real GUI verification this
   session categorically cannot perform - launching the locally-built `1.3.1` install and
   confirming the update banner appears, downloads, installs, and relaunches correctly.
+
+**Post-verification cleanup, on request:** bumped `actions/checkout` to `@v6` (was `@v4`), and
+switched `releaseDraft: true` → `false` - now that the pipeline is confirmed working end to
+end, future releases publish immediately instead of needing a manual un-draft step.

@@ -139,24 +139,24 @@ onUnmounted(library.dispose);
 .content {
   flex: 1;
   overflow-y: auto;
-  /* Explicit, rather than relying on overflow-y:auto to also imply x-axis clipping - a hovered
-     edge-column GameCard's scale(1.06) was bleeding sideways past this container specifically
-     for rows near the pinned filter bar. `var(--space-6)` (2rem) of horizontal padding already
-     comfortably exceeds a card's max scale-driven overflow (a few px), so this clips the bleed
-     without also clipping the intended hover effect itself. */
+  /* Still a safety net against any future horizontal overflow, though the actual buffer for
+     GameCard's hover scale-bleed now lives in GameGrid.vue's own `.grid` padding below, not
+     here - `.content` has no horizontal padding of its own anymore. */
   overflow-x: hidden;
-  /* Top padding moved onto GameFilters.vue's own `.filters` (as padding-top, alongside
-     `position: sticky`) so the visual gap above it stays identical whether it's at rest or
-     pinned to the top of this scroll container - a sticky element's "stuck" position ignores
-     an ancestor's own padding, so keeping the padding here would collapse to a flush top edge
-     the moment it stuck. */
-  padding: 0 var(--space-6) var(--space-5);
+  /* No horizontal padding here anymore - GameFilters.vue's `.filters` needs to span this
+     container's full width (its own search input was rendering visibly narrower than the grid
+     below it otherwise), so left/right inset moved down onto GameGrid.vue's `.grid`/
+     GameList.vue's `.list` themselves instead, and `.settings-panel` below for the other view.
+     Top padding stays on `.filters` itself (see its own comment); bottom stays here since both
+     views want the same scroll-end breathing room regardless of which child provides
+     left/right. */
+  padding: 0 0 var(--space-5);
 }
 
 /* Only the settings view needs this - the library view's own top gap comes from
    GameFilters.vue's sticky `.filters` (padding-top baked in there instead). */
 .settings-panel {
-  padding-top: var(--space-5);
+  padding: var(--space-5) var(--space-6) 0;
 }
 
 .big-picture-controls {

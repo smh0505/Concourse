@@ -34,6 +34,11 @@ const SKELETON_COUNT = 6;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 1rem;
+  /* App.vue's `.content` no longer provides horizontal inset (GameFilters.vue's `.filters`
+     needs to span its full width instead) - carries its own left/right padding here, plus
+     enough room for GameCard's hover scale(1.06) to bleed into without escaping `.content`'s
+     own edge (still `overflow-x: hidden` there as a safety net). */
+  padding: 0 var(--space-6);
 }
 
 /* .empty-state (shared, styles.css) supplies the shared layout; this layers the

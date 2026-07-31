@@ -34,6 +34,9 @@ const SKELETON_COUNT = 4;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* App.vue's `.content` no longer provides horizontal inset (GameFilters.vue's `.filters`
+     needs to span its full width instead) - carries its own left/right padding here. */
+  padding: 0 var(--space-6);
 }
 
 /* .empty-state (shared, styles.css) supplies this rule's entire look. */

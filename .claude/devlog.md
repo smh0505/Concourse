@@ -1635,3 +1635,36 @@ pass only needed the new `--tile-*` hooks set in `cssVariables`:
   than breaking). Copied into the app's cached `data-themes/brick-block-data-theme/theme.json`
   and verified live, same discipline as every other manifest change this session - not just
   assumed correct from the diff.
+
+**Verified full parity between the built-in `brick-block-theme` and the data-theme version,
+property by property rather than eyeballing it.** Read every visual rule in
+`BrickBlockGameCard.vue`/`BrickBlockBigPictureTile.vue` side-by-side against
+`brick-block-data-theme`'s `cssVariables`, matching each one to whichever opt-in hook (or lack
+of one) governs it on the host app side. Found two more real gaps this way, both closed with
+new hooks following the exact same pattern as everything else this milestone:
+- **Tile corner radius** - built-in `.brick-frame` uses `4px`; the shared `.bp-cover-frame` had
+  its `border-radius` hardcoded to `var(--radius-xl, 10px)` with no override at all (unlike
+  `--card-radius` on the desktop side, which *does* have one). Added `--tile-radius` (falls back
+  to the existing default), set to `4px` in the manifest.
+- **Focus-ring style** - built-in's `.brick-tile.focused .brick-frame` shows a solid
+  `0 0 0 4px var(--color-accent)` ring; the shared `.bp-cover-focused` uses `box-shadow:
+  var(--shadow-lg)` (a soft, generic elevation shadow) with no override. Added
+  `--tile-focus-shadow` (falls back to `var(--shadow-lg)`), set to
+  `0 0 0 4px var(--color-accent)` in the manifest - reusing the theme's own accent token rather
+  than a literal hex, consistent with `--balloon-background`/`--tile-border-color`'s existing
+  `var(--color-accent)`-style references.
+- Verified via compiled CSS: `.bp-cover-frame{...border-radius:var(--tile-radius, var(--radius-
+  xl, 10px))...}` and `.bp-cover-focused{border-color:var(--color-accent);box-shadow:var(--tile-
+  focus-shadow, var(--shadow-lg))}` both present with the expected fallback chain. `bun run
+  build`/`cargo check` both clean. Manifest bumped `1.3.0` → `1.3.1`, copied into the app's
+  cached theme.json, verified live.
+- Two more gaps found but deliberately left open, not real blockers: the built-in balloon's
+  title/playtime type sizes (`0.85rem`/`1.4` line-height, `0.75rem`) have no override hooks at
+  all (the base `GameCard.vue` balloon's own `.balloon-title`/`.balloon-playtime` font-size
+  rules were never tokenized, pre-dating this milestone entirely), and the built-in swap
+  deliberately renders the cover-placeholder star *larger* in Big Picture (`4rem`) than on the
+  desktop card (`2.5rem`) - since both contexts share one `cardVisual` AST and one set of
+  `--cover-placeholder-*` hooks by design, the data-theme version necessarily renders the same
+  size in both places. Closing either would mean doubling several hooks into desktop/tile-
+  specific variants purely for a cosmetic-only difference - not worth the added surface for what
+  it buys.

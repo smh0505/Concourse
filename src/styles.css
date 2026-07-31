@@ -308,7 +308,10 @@ small {
      has its own always-visible border/pattern (Brick Block's chunky border + diagonal stripe). */
   background: var(--tile-background, none);
   border: var(--tile-border-width, 3px) solid var(--tile-border-color, transparent);
-  border-radius: var(--radius-xl, 10px);
+  /* --tile-radius, same opt-in reasoning as above - undeclared by default (falls back to the
+     base --radius-xl scale step) so most themes never think about it, only one wanting a
+     sharper/blockier tile than the default rounded corners needs to set it. */
+  border-radius: var(--tile-radius, var(--radius-xl, 10px));
   /* Clips whatever renders inside (the built-in cover img/placeholder, or a theme's
      cardVisual-AST output) to this frame's own radius - same reasoning as GameCard.vue's
      `.card-visual` wrapper, since AST-rendered `.cover`/`.cover-placeholder` carry no radius
@@ -324,7 +327,10 @@ small {
    its own local `.tile.bp-cover-focused` rule. */
 .bp-cover-focused {
   border-color: var(--color-accent);
-  box-shadow: var(--shadow-lg);
+  /* --tile-focus-shadow, same opt-in reasoning as --tile-radius above - undeclared by default
+     (falls back to the base --shadow-lg elevation) so most themes never think about it, only
+     one wanting a solid accent-colored ring (instead of a soft drop shadow) needs to set it. */
+  box-shadow: var(--tile-focus-shadow, var(--shadow-lg));
 }
 
 /* Cover placeholder look - BigPictureTile.vue's .tile-cover-placeholder,

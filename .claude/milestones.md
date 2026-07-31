@@ -245,8 +245,16 @@ mechanism. See devlog for the full case and this session's prep work.
   star-glyph swap for both desktop and Big Picture (one shared registry), so this pass only
   needed the new `--tile-*` hooks set: stripe background, `4px` border matching the card frame,
   pixel font + drop-shadow title
-- [ ] Verify full parity between built-in `brick-block-theme` and the data-theme version
-  (desktop card + Big Picture tile)
+- [x] Verified full parity between built-in `brick-block-theme` and the data-theme version
+  (property-by-property, both files vs. manifest). Found and closed two more real gaps: tile
+  corner radius (`4px` vs. the shared default `10px`, no hook existed) and focus-ring style
+  (solid accent ring vs. the shared default's soft drop shadow, no hook existed) - new
+  `--tile-radius`/`--tile-focus-shadow` opt-in hooks close both. Two remaining cosmetic-only
+  gaps deliberately accepted, not closed: balloon title/playtime type sizing has no override
+  hooks, and the cover-placeholder star intentionally renders at one shared size in both
+  contexts (built-in swap uses a larger star specifically in Big Picture) - both minor, and
+  closing them would mean doubling several hooks into desktop/tile variants for a cosmetic-only
+  difference
 - [ ] Remove the built-in `brick-block-theme` plugin folder entirely
 - [ ] Delete `slotRegistry.ts`, `ThemeSlotName`, `ThemePlugin.slots`, and every
   `useThemeSlot`/`setActiveSlots`/`clearActiveSlots` call site

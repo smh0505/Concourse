@@ -300,9 +300,20 @@ small {
 /* Tile/cover frame base - BigPictureTile.vue's .tile, BigPictureSlideshow.vue's .strip-cover.
    Each keeps its own extra layout/transition-timing properties locally. */
 .bp-cover-frame {
-  background: none;
-  border: 3px solid transparent;
+  /* --tile-background/--tile-border-width/--tile-border-color aren't part of the base
+     design-token scale - opt-in per-element hooks, same pattern as --card-border-width/
+     --card-radius on GameCard.vue's own frame. Undeclared by default (invisible border, no
+     background) so most themes never think about them - only a theme wanting a permanently
+     visible tile frame (not just on focus) needs to set them, e.g. to match a card frame that
+     has its own always-visible border/pattern (Brick Block's chunky border + diagonal stripe). */
+  background: var(--tile-background, none);
+  border: var(--tile-border-width, 3px) solid var(--tile-border-color, transparent);
   border-radius: var(--radius-xl, 10px);
+  /* Clips whatever renders inside (the built-in cover img/placeholder, or a theme's
+     cardVisual-AST output) to this frame's own radius - same reasoning as GameCard.vue's
+     `.card-visual` wrapper, since AST-rendered `.cover`/`.cover-placeholder` carry no radius
+     of their own (that global rule is unscoped and radius-less by design). */
+  overflow: hidden;
   padding: 0;
   cursor: pointer;
 }

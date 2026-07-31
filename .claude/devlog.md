@@ -1554,3 +1554,52 @@ close that gap first, prove full parity between the built-in and data-theme vers
 then actually delete the built-in plugin and the now-fully-dead `slotRegistry.ts`/
 `ThemeSlotName` - deliberately not deleting anything before parity is verified, since that would
 silently regress Big Picture's Brick Block appearance for anyone still on the built-in version.
+
+**Gave `BigPictureTile.vue` a `cardVisual`-AST render path, closing the milestone's first real
+gap.** Wired in exactly the same pattern `GameCard.vue` already uses: `CardVisualRenderer`/
+`useActiveCardVisual` from the existing `theme/cardVisualAst.ts`/`cardVisualRegistry.ts` -
+deliberately the *same* shared `activeCardVisual` ref, not a second one, since a theme's
+`cardVisual` field describes one cover-art rendering concept, reusable wherever a game's cover
+needs rendering.
+- Found a real structural mismatch before wiring it in: `GameCard.vue`'s `.card-visual` wrapper
+  has `overflow: hidden` + its own radius, so the AST's `.cover`/`.cover-placeholder` output
+  (styled by a global, unscoped rule in `GameCard.vue` with no radius of its own by design) gets
+  clipped correctly by the wrapper. `BigPictureTile.vue`'s `.bp-cover-frame` had no
+  `overflow: hidden` - its own `.tile-cover`/`.tile-cover-placeholder` rounded themselves
+  individually instead. Without fixing this first, an active theme's AST output would have
+  rendered with square corners in Big Picture while working correctly on the desktop grid.
+  Added `overflow: hidden` to the shared `.bp-cover-frame` rule (also benefits
+  `BigPictureSlideshow.vue`'s `.strip-cover`, which shares the same class) - verified via
+  compiled CSS.
+- Confirmed no further sizing work was needed: the AST's `.cover`/`.cover-placeholder` classes'
+  global `width: 100%; aspect-ratio: 3/4; object-fit: cover` values already exactly matched
+  `.tile-cover`/`.tile-cover-placeholder`'s own values - not a coincidence, both were already
+  aligned during Milestone 18's tokenization pass.
+- `bun run build` (typecheck + build) clean; `cargo check` clean (no Rust touched).
+
+**Tokenized `BigPictureTile.vue`'s frame/title, the milestone's second checklist item.**
+Re-compared `BrickBlockBigPictureTile.vue`'s `.brick-frame` against the default
+`.bp-cover-frame` and found the AST path alone doesn't close the whole gap: Brick Block's tile
+has a *permanent* 4px border + diagonal-stripe background, visible even unfocused, while
+`.bp-cover-frame` is `border: 3px solid transparent` until a separate `.bp-cover-focused` state
+class swaps it to the accent color - there was no opt-in hook for a theme to give the frame a
+permanent look the way `GameCard.vue`'s `--card-border-width`/`--card-radius` already let it.
+Brick Block's tile title also uses a pixel font + a black drop-shadow for readability, with
+nothing on `.tile-title` to hook into either.
+- Added `--tile-background`/`--tile-border-width`/`--tile-border-color` to the shared
+  `.bp-cover-frame` rule (all undeclared by default - `none`/`3px`/`transparent`, matching
+  today's exact look with zero hooks set) and `--tile-title-font-family`/
+  `--tile-title-text-shadow` to `BigPictureTile.vue`'s own local `.tile-title` rule (same
+  reasoning as `--balloon-font-family`).
+- `.bp-cover-focused`'s existing `border-color: var(--color-accent)` still wins on focus
+  regardless of what a theme sets `--tile-border-color` to, matching
+  `.brick-tile.focused .brick-frame`'s own behavior exactly (focus always shows the accent
+  ring, no exception).
+- Verified via compiled CSS: `.bp-cover-frame{background:var(--tile-background, none);
+  border:var(--tile-border-width, 3px) solid var(--tile-border-color, transparent);...}` and
+  `.tile-title[data-v-*]{...font-family:var(--tile-title-font-family, inherit);
+  text-shadow:var(--tile-title-text-shadow, none)}` both present with the expected fallbacks.
+  `bun run build`/`cargo check` both clean.
+- Not yet done: actually setting these new hooks in `brick-block-data-theme`'s manifest to
+  reproduce Brick Block's Big Picture look for real (next checklist item) - this pass only
+  built the capability and verified it compiles with safe no-op defaults.

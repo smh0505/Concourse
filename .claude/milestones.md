@@ -220,7 +220,7 @@ now-empty local classes removed; `.hint` converted to primitive `<small>`; `.err
 one tier, and the `.active` accent-swap idiom, all folded into shared classes). `TitleBar.vue`'s
 chromeless buttons and a `--space-*` tokenization pass remain open, deliberately unscoped.
 
-## Milestone 19 — Retire Component-Swap Theming (scoped, not started)
+## Milestone 19 — Retire Component-Swap Theming (in progress)
 Milestone 17's JSON-AST/token mechanism was built to replace `slots`/component-swap theming;
 this milestone finishes that job. `slotRegistry.ts`/`ThemeSlotName` currently have exactly one
 real consumer (the built-in `brick-block-theme` plugin) - once that's gone, so is the whole
@@ -228,10 +228,14 @@ mechanism. See devlog for the full case and this session's prep work.
 - [x] Prep: opt-in `--button-radius`/`--button-border-color` hooks added to the global `button`
   rule, closing the button-frame gap between `brick-block-data-theme` and the built-in swap
   version
-- [ ] Give `BigPictureTile.vue` a `cardVisual`-AST-equivalent render path (reuse existing
-  AST/registry, second consumer alongside `GameCard.vue`)
-- [ ] Tokenize `BigPictureTile.vue`'s hardcoded frame/placeholder colors, same opt-in pattern as
-  `GameCard.vue`'s frame
+- [x] Gave `BigPictureTile.vue` a `cardVisual`-AST render path, same pattern as `GameCard.vue`
+  (`CardVisualRenderer`/`useActiveCardVisual`, second consumer of the same registry). Needed
+  `overflow: hidden` added to the shared `.bp-cover-frame` first, since AST-rendered
+  `.cover`/`.cover-placeholder` carry no radius of their own
+- [x] Tokenized `BigPictureTile.vue`'s frame/title, closing the gap with Brick Block's always-
+  visible chunky border: new opt-in `--tile-background`/`--tile-border-width`/
+  `--tile-border-color` hooks on `.bp-cover-frame`, `--tile-title-font-family`/
+  `--tile-title-text-shadow` on `.tile-title`
 - [ ] Port Brick Block's Big Picture tile look to `brick-block-data-theme`'s manifest, verify
   visual parity with the built-in component-swap version
 - [ ] Verify full parity between built-in `brick-block-theme` and the data-theme version

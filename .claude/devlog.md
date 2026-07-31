@@ -1829,3 +1829,21 @@ plugin, not new application logic with an unknown schema change blocking it.
   Tauri window, no way to trigger a real update check against a real release) - this is
   written and typechecks correctly but genuinely unverified end-to-end; flagged honestly
   rather than claimed as working.
+
+**Version bump, to actually enable testing the update path - user asked for the correct version
+to be evaluated, not just a placeholder bump.** Checked every milestone heading in
+`milestones.md`: Milestones 1-14 are the 1.0.0 baseline; Milestones 17, 18, and 19 have all
+fully closed since, each a real Post-1.0 Roadmap milestone closure the versioning policy ties
+a minor bump to - but the version string had stayed at `1.0.0` the entire time regardless,
+never actually bumped as those closures happened. Milestone 14.5 doesn't count (explicitly
+never closes, by its own definition); Milestone 20 is still in progress, not closed.
+- Correct version: `1.0.0` → `1.3.0` (three missed minor bumps, one per closed Post-1.0
+  milestone) → `1.3.1` (patch, for this session's in-progress Milestone 20 work, per "patch
+  bumps for fixes within a milestone").
+- Bumped `package.json`/`src-tauri/Cargo.toml`/`src-tauri/tauri.conf.json` together to
+  `1.3.1`, verified all three match via `grep`. `bun run build`/`cargo check` both clean.
+- This also matters functionally, not just for bookkeeping: `tauri-plugin-updater`'s `check()`
+  compares the *running app's* embedded version (from `tauri.conf.json` at build time)
+  against whatever a published `latest.json` claims - testing the update banner at all
+  requires a real version difference between a locally-built "old" install and whatever gets
+  published next, not just any arbitrary bump.

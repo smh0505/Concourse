@@ -77,11 +77,10 @@ pub struct PluginHostState {
     /// Tauri command call anyway (see `wasm_plugin_runtime.rs`), and the plugin that needs this
     /// (Steam) does its discovery-then-read all within one call/instantiation.
     dynamic_read_scopes: Vec<PathBuf>,
-    /// Manifest-declared allowed hostnames (Milestone 13's last item) - unlike file paths,
-    /// every plugin's real network usage turned out to be a small, fixed set of hostnames known
-    /// at author time (confirmed via `grep` across all plugin repos before implementing this -
-    /// Steam/GOG/Epic call none at all), so this needed no dynamic verified-scope mechanism the
-    /// way Steam's filesystem access did. Declared in `plugin.json`'s `httpScopes` field.
+    /// Manifest-declared allowed hostnames - unlike file paths, every plugin's real network
+    /// usage is a small, fixed set of hostnames known at author time, so this needs no dynamic
+    /// verified-scope mechanism the way Steam's filesystem access does. Declared in
+    /// `plugin.json`'s `httpScopes` field.
     http_scopes: Vec<String>,
 }
 
@@ -393,12 +392,10 @@ impl PluginHostState {
 
     /// Blocks until the child exits, unlike spawn_process - for a plugin's own managed-install
     /// flow, which needs to know when a visible third-party installer window has been closed
-    /// before continuing (mirrors the pre-migration wrapper_installer.rs's run_wrapper_installer).
-    /// Deliberately ignores the exit code, only the spawn itself can fail - LR/LE's installer
-    /// windows aren't real wizards with a meaningful success/failure exit status, they're just
-    /// closed by the user whenever, so treating a nonzero exit as failure would reject a
-    /// perfectly normal close (confirmed by a real test: force-closing the window here
-    /// previously turned a fully successful install into a reported failure).
+    /// before continuing. Deliberately ignores the exit code, only the spawn itself can fail -
+    /// LR/LE's installer windows aren't real wizards with a meaningful success/failure exit
+    /// status, they're just closed by the user whenever, so treating a nonzero exit as failure
+    /// would reject a perfectly normal close.
     fn do_run_and_wait(&mut self, path: String, args: Vec<String>, cwd: String) -> Result<(), String> {
         if !self.has_capability("run-programs") {
             return Err(

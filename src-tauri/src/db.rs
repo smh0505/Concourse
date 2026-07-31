@@ -7,18 +7,15 @@ pub const DB_URL: &str = "sqlite:library.db";
 // `sql`/`version` must never change - editing one in place desyncs that ledger from what's
 // already been applied to real databases. Add a new migration instead (see CLAUDE.md).
 //
-// Squashed to a single baseline pre-1.0.0 (was v1-v8, incremental `ALTER TABLE`s added over
-// the course of development) - safe only because the app has never shipped to a real user, so
-// no live database anywhere depends on the old incremental ledger except local dev copies
-// (reset those by deleting library.db; the squashed v1 recreates the same final schema from
-// scratch). Once 1.0.0 ships, migrations go back to strictly additive/append-only.
+// Squashed to a single baseline pre-1.0.0 - safe only because the app has never shipped to a
+// real user, so no live database anywhere depends on the old incremental ledger except local
+// dev copies (reset those by deleting library.db; the squashed v1 recreates the same final
+// schema from scratch). Once 1.0.0 ships, migrations go back to strictly additive/append-only.
 //
 // v1's `sql` string below must stay byte-for-byte identical to what already shipped (including
 // indentation) - tauri-plugin-sql hashes the migration content and refuses to run at all if a
 // previously-applied migration doesn't match anymore ("migration 1 was previously applied but
-// has been modified"), which is exactly what happened here once already: reformatting v1's
-// indentation while adding v2 below broke every existing local `library.db`, even though the
-// actual SQL semantics never changed.
+// has been modified").
 pub fn migrations() -> Vec<Migration> {
     vec![Migration {
         version: 1,

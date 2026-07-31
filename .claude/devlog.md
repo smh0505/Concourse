@@ -1732,3 +1732,20 @@ parity had just been verified.
 theming mechanism in the app, for both desktop and Big Picture, for every theme kind (built-in
 default, data-only, and any future third-party one) - `slots`/component-swap theming, which only
 ever had one real consumer, no longer exists at all.
+
+**Documentation tidy pass, on user request.** `milestones.md`'s Milestone 14.5/19 sections had
+drifted back into devlog-style multi-line narrative (the pinned-filter-bar saga especially,
+several paragraphs per bullet) - condensed both back to one-line-per-item, matching the
+convention already applied to Milestones 17/18 earlier. Also delegated a codebase-wide sweep
+(via Explore) for in-code comments narrating past events/decisions rather than documenting a
+present-tense invariant - found real candidates in `App.vue`, `GameFilters.vue`,
+`GameListRow.vue`, `stores/wrapperPlugins.ts`, `db.rs`, `plugin_installer.rs`, and
+`wasm_plugins.rs`. Trimmed each to keep only the load-bearing invariant (why a value must stay
+what it is, what would break if changed), dropping the "was"/"previously"/"this was skipped
+originally"/"confirmed by a real test" framing - that history already lives here in devlog.md,
+not in the code itself. Left several comments untouched where the agent's audit found the
+historical framing was actually necessary context (e.g. `plugin_registry.rs`/
+`plugin_verification.rs`'s module docs, most of `wasm_plugins.rs`'s Milestone 13 sandboxing
+comments) - not everything referencing a past milestone number is narrative bloat, only where
+the surrounding sentence was pure event narration with no bearing on how to safely edit the code
+today. `bun run build`/`cargo check` both clean (comment-only changes, no behavior change).

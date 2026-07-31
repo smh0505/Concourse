@@ -307,17 +307,15 @@ async fn install_wasm_plugin(
 
 /// Caches a theme manifest under `<app data>/data-themes/<id>/theme.json` - no separate
 /// download beyond the manifest itself, since a data-only theme has no code, just
-/// `cssVariables` (and, since Milestone 17, an optional `cardVisual` AST - still just data,
-/// never executable). `manifest_bytes` is the already-downloaded manifest content.
+/// `cssVariables` (and an optional `cardVisual` AST - still just data, never executable).
+/// `manifest_bytes` is the already-downloaded manifest content.
 ///
-/// Milestone 17 addon: the manifest itself is signed the same way a WASM plugin's `.wasm` is
-/// (`verify_plugin_provenance` against the manifest's own bytes) - this was skipped originally
-/// on the reasoning "data-only themes have no code to verify," which was true when themes were
-/// colors-only, but a manifest carrying a `cardVisual` AST is real, meaningful content worth
-/// tamper-detecting even though it's still never executable. Same asymmetry as the WASM path:
-/// this only proves the manifest is unmodified since that repo's CI published it, not that its
-/// author is trustworthy - the registry's review process (once extended to cover `theme`, see
-/// milestones.md's follow-up note) is what answers that question, not this.
+/// The manifest itself is signed the same way a WASM plugin's `.wasm` is
+/// (`verify_plugin_provenance` against the manifest's own bytes) - a manifest carrying a
+/// `cardVisual` AST is real, meaningful content worth tamper-detecting even though it's never
+/// executable. Same asymmetry as the WASM path: this only proves the manifest is unmodified
+/// since that repo's CI published it, not that its author is trustworthy - the registry's
+/// review process is what answers that question, not this.
 async fn install_data_theme(
     dir: &Path,
     manifest_url: &str,

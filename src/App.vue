@@ -143,13 +143,10 @@ onUnmounted(library.dispose);
      GameCard's hover scale-bleed now lives in GameGrid.vue's own `.grid` padding below, not
      here - `.content` has no horizontal padding of its own anymore. */
   overflow-x: hidden;
-  /* No horizontal padding here anymore - GameFilters.vue's `.filters` needs to span this
-     container's full width (its own search input was rendering visibly narrower than the grid
-     below it otherwise), so left/right inset moved down onto GameGrid.vue's `.grid`/
-     GameList.vue's `.list` themselves instead, and `.settings-panel` below for the other view.
-     Top padding stays on `.filters` itself (see its own comment); bottom stays here since both
-     views want the same scroll-end breathing room regardless of which child provides
-     left/right. */
+  /* No horizontal padding here - GameFilters.vue's `.filters` needs to span this container's
+     full width, so left/right inset lives on GameGrid.vue's `.grid`/GameList.vue's `.list`
+     instead (and `.settings-panel` below, for the other view). Bottom stays here since both
+     views want the same scroll-end breathing room regardless of which child owns left/right. */
   padding: 0 0 var(--space-5);
 }
 
@@ -168,7 +165,5 @@ onUnmounted(library.dispose);
   gap: var(--space-2);
 }
 
-/* .view-toggle-button (shared, styles.css) supplies this rule's entire look. Previously local
-   here and missing the square treatment GameFilters.vue's identically-named class already had -
-   a real inconsistency, not a deliberate difference. */
+/* .view-toggle-button (shared, styles.css) supplies this rule's entire look. */
 </style>

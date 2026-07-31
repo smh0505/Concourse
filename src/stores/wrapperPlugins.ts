@@ -6,10 +6,9 @@ import type { PluginManifest } from "../plugins/manifest";
 import type { LocaleProfile, WrapperPlugin } from "../plugins/types";
 
 const ENABLED_WRAPPERS_SETTING = "enabled_wrapper_plugins";
-// Unlike source/metadata plugins (opt-in), LR/LE launching was always-on before this
-// milestone's built-in-to-WASM-plugin migration - default both to enabled so existing
-// per-game wrapper selections (remapped to these ids by db migration v8) keep working
-// without the user having to know to go flip a new toggle in Settings.
+// Default both to enabled (unlike source/metadata plugins, which are opt-in) so existing
+// per-game wrapper selections, remapped to these ids by db migration v8, keep working without
+// requiring a new opt-in toggle.
 const DEFAULT_WRAPPER_IDS = ["locale-remulator-wasm", "locale-emulator-wasm"];
 
 export interface WrapperProfile extends LocaleProfile {

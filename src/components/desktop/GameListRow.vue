@@ -88,8 +88,7 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   opacity: 0.6;
 }
 
-/* .icon-action-row (shared, styles.css) supplies the button sizing - previously missing here
-   entirely, an inconsistency vs. GameCard.vue's identical button set. */
+/* .icon-action-row (shared, styles.css) supplies the button sizing. */
 .actions {
   display: flex;
   gap: 0.35rem;

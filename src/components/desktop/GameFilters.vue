@@ -74,9 +74,7 @@ function toggleViewMode() {
 .search {
   flex: 1;
   /* Browser default min-width for an <input> in a flex row is `auto` (its own intrinsic
-     content-based size), which can stop flex:1 from actually filling the remaining row width -
-     this was leaving visible empty space between the input's real edge and .view-toggle-button/
-     the row's own right edge instead of the input stretching to fill it. */
+     content-based size), which can stop flex:1 from actually filling the remaining row width. */
   min-width: 0;
 }
 

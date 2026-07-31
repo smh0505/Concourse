@@ -148,36 +148,14 @@ sequence.
 - [x] Big Picture slideshow view
 - [x] API-key/settings forms moved into modals; modal-form components consolidated under
   `src/components/desktop/modalForms/`
-- [x] Big Picture tile title hidden by default, reveals on hover/selection
-- [x] Long tile titles ellipsis instead of bleeding into neighboring tiles
+- [x] Big Picture tile title hidden by default, reveals on hover/selection, ellipsis on overflow
 - [x] Fixed keyboard/gamepad focus fighting the mouse cursor in Big Picture's grid (a tile's
   `mouseenter` firing when it moves under a stationary cursor, not just on real mouse movement)
-- [x] Attempted moving the desktop library's scrollbar off `App.vue`'s `.content` onto
-  `GameGrid.vue`/`GameList.vue` themselves, then reverted in full after two rounds of real
-  regressions (an unwanted horizontal scrollbar, then `GameCard.vue`'s hover scale getting
-  clipped at the grid's edge columns) - user redirected to a pinned filter bar instead, a
-  simpler fix for the same underlying complaint (GameFilters scrolling away with the list)
-- [x] Pinned `GameFilters.vue` to the top of `App.vue`'s single `.content` scroll container via
-  `position: sticky` - `GameGrid.vue`/`GameList.vue` scroll underneath it, `.content` itself
-  stays the one scroll container it always was
-- [x] Fixed several visual bugs found once running it: a decorative border that looked wrong
-  (removed); hovered `GameCard`s/their balloon rendering *over* the pinned bar instead of under
-  it (`.filters`' `z-index` bumped to clear both `GameCard`'s hover `z-index` and its Teleported
-  balloon's, which competes at the document root, not template position); hovered edge-column
-  cards in bar-adjacent rows bleeding sideways past `.content`'s edge (explicit
-  `overflow-x: hidden` on `.content`); and the search bar rendering visibly narrower than the
-  grid below it - a `min-width: 0` attempt on the search input didn't fix it, so per the user's
-  own direction, moved `.content`'s horizontal padding down onto `GameGrid.vue`'s
-  `.grid`/`GameList.vue`'s `.list` (and `.settings-panel` for the other view) instead, so
-  `GameFilters.vue`'s `.filters` spans `.content`'s full un-padded width rather than sharing the
-  same inset as the grid/list - confirmed fixed, then gave `.filters` its own matching
-  horizontal padding so its content still lines up visually with the grid/list below it
-- [x] Fixed a real balloon-placement bug the pinned bar exposed: `useBalloonAnchor.ts`'s
-  above/below decision assumed the visible area's top edge was the window's actual `y=0`, no
-  longer true now that the filter bar occupies that space. New `data-scroll-header` attribute on
-  `.filters` lets the composable measure the bar's real current height and use its bottom edge
-  as the boundary instead of a hardcoded guess. Also gave `.filters` its own bottom padding for
-  visual breathing room inside the bar, separate from its external `margin-bottom`
+- [x] Pinned `GameFilters.vue` to the top of the desktop library's scroll container
+  (`position: sticky`) instead of letting it scroll away with the list - see devlog for the
+  false start (a per-container-scrollbar approach, reverted) and the run of follow-on visual
+  fixes (stacking/z-index vs. hovered cards and their balloon, horizontal overflow, filter-bar
+  width/padding, and a real `useBalloonAnchor.ts` placement bug the pinned bar exposed)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at
@@ -252,45 +230,19 @@ chromeless buttons and a `--space-*` tokenization pass remain open, deliberately
 
 ## Milestone 19 — Retire Component-Swap Theming
 Milestone 17's JSON-AST/token mechanism was built to replace `slots`/component-swap theming;
-this milestone finishes that job. `slotRegistry.ts`/`ThemeSlotName` currently have exactly one
-real consumer (the built-in `brick-block-theme` plugin) - once that's gone, so is the whole
-mechanism. See devlog for the full case and this session's prep work.
-- [x] Prep: opt-in `--button-radius`/`--button-border-color` hooks added to the global `button`
-  rule, closing the button-frame gap between `brick-block-data-theme` and the built-in swap
-  version
+this milestone finishes that job (`slotRegistry.ts`/`ThemeSlotName` had exactly one real
+consumer - the built-in `brick-block-theme` plugin).
+- [x] Opt-in `--button-radius`/`--button-border-color`/`--tile-*` hooks added, closing the
+  visual gaps between `brick-block-data-theme` and the built-in swap version
 - [x] Gave `BigPictureTile.vue` a `cardVisual`-AST render path, same pattern as `GameCard.vue`
-  (`CardVisualRenderer`/`useActiveCardVisual`, second consumer of the same registry). Needed
-  `overflow: hidden` added to the shared `.bp-cover-frame` first, since AST-rendered
-  `.cover`/`.cover-placeholder` carry no radius of their own
-- [x] Tokenized `BigPictureTile.vue`'s frame/title, closing the gap with Brick Block's always-
-  visible chunky border: new opt-in `--tile-background`/`--tile-border-width`/
-  `--tile-border-color` hooks on `.bp-cover-frame`, `--tile-title-font-family`/
-  `--tile-title-text-shadow` on `.tile-title`
-- [x] Ported Brick Block's Big Picture tile look to `brick-block-data-theme`'s manifest
-  (`data-theme-plugins` repo, `1.2.3` → `1.3.0`) - the same `cardVisual` AST already covers the
-  star-glyph swap for both desktop and Big Picture (one shared registry), so this pass only
-  needed the new `--tile-*` hooks set: stripe background, `4px` border matching the card frame,
-  pixel font + drop-shadow title
-- [x] Verified full parity between built-in `brick-block-theme` and the data-theme version
-  (property-by-property, both files vs. manifest). Found and closed two more real gaps: tile
-  corner radius (`4px` vs. the shared default `10px`, no hook existed) and focus-ring style
-  (solid accent ring vs. the shared default's soft drop shadow, no hook existed) - new
-  `--tile-radius`/`--tile-focus-shadow` opt-in hooks close both. Two remaining cosmetic-only
-  gaps deliberately accepted, not closed: balloon title/playtime type sizing has no override
-  hooks, and the cover-placeholder star intentionally renders at one shared size in both
-  contexts (built-in swap uses a larger star specifically in Big Picture) - both minor, and
-  closing them would mean doubling several hooks into desktop/tile variants for a cosmetic-only
-  difference
-- [x] Removed the built-in `brick-block-theme` plugin folder entirely (component, manifest,
-  font asset) - the theme lives on only as `brick-block-data-theme`, installable separately
-- [x] Deleted `slotRegistry.ts`, `ThemeSlotName`, `ThemePlugin.slots`, and every
-  `useThemeSlot`/`setActiveSlots`/`clearActiveSlots` call site (`GameGrid.vue`,
-  `BigPictureGrid.vue`, `stores/theme.ts`) - `GameGrid.vue`/`BigPictureGrid.vue` render
-  `GameCard`/`BigPictureTile` directly now, no indirection left with nothing to indirect through
-- [x] Verified clean build (typecheck + build), `cargo check` clean, zero remaining code
-  references to the removed plugin/mechanism anywhere in `src/` (`grep -rn` across the whole
-  tree, only `.claude/milestones.md`/`devlog.md`'s own historical entries mention it now).
-  Default Catppuccin theme unaffected - it never used `slots` in the first place
+  (second consumer of the same registry)
+- [x] Ported Brick Block's Big Picture tile look to `brick-block-data-theme`'s manifest, then
+  verified full property-by-property parity against the built-in version - two more real gaps
+  found and closed (tile corner radius, focus-ring style); two cosmetic-only gaps deliberately
+  left open (balloon type sizing, cover-placeholder star size)
+- [x] Removed the built-in `brick-block-theme` plugin folder, `slotRegistry.ts`, `ThemeSlotName`,
+  and every `useThemeSlot`/`setActiveSlots`/`clearActiveSlots` call site - `GameGrid.vue`/
+  `BigPictureGrid.vue` render `GameCard`/`BigPictureTile` directly now
 
 Milestone 19 fully closed. Component-swap theming is retired; `cardVisual` AST + CSS-variable
 hooks is now the only theming mechanism for both desktop and Big Picture, for every theme kind.

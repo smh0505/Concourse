@@ -139,6 +139,12 @@ onUnmounted(library.dispose);
 .content {
   flex: 1;
   overflow-y: auto;
+  /* Explicit, rather than relying on overflow-y:auto to also imply x-axis clipping - a hovered
+     edge-column GameCard's scale(1.06) was bleeding sideways past this container specifically
+     for rows near the pinned filter bar. `var(--space-6)` (2rem) of horizontal padding already
+     comfortably exceeds a card's max scale-driven overflow (a few px), so this clips the bleed
+     without also clipping the intended hover effect itself. */
+  overflow-x: hidden;
   /* Top padding moved onto GameFilters.vue's own `.filters` (as padding-top, alongside
      `position: sticky`) so the visual gap above it stays identical whether it's at rest or
      pinned to the top of this scroll container - a sticky element's "stuck" position ignores

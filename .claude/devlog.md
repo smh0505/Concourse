@@ -1603,3 +1603,27 @@ nothing on `.tile-title` to hook into either.
 - Not yet done: actually setting these new hooks in `brick-block-data-theme`'s manifest to
   reproduce Brick Block's Big Picture look for real (next checklist item) - this pass only
   built the capability and verified it compiles with safe no-op defaults.
+
+**Ported Brick Block's Big Picture tile look to `brick-block-data-theme`'s manifest
+(`data-theme-plugins` repo).** No new AST work needed here at all - the manifest's existing
+`cardVisual` field (the `if`/`image`/`else`-`★` shape, already written for the desktop card back
+in Milestone 17) is the same shared registry `BigPictureTile.vue` now reads too, so the star
+glyph and cover-art swap already worked correctly the moment the AST render path landed. This
+pass only needed the new `--tile-*` hooks set in `cssVariables`:
+- `--tile-background`: the same diagonal-stripe `repeating-linear-gradient` pattern as
+  `--cover-placeholder-background`, at the built-in `BrickBlockBigPictureTile.vue`'s actual
+  stripe width (`12px`/`14px` stops, not the card's `10px`/`12px` - the two were never identical
+  even in the original built-in component, kept that intentional difference rather than
+  unifying it).
+- `--tile-border-width: 4px`, matching `.brick-frame`'s real width (thicker than the card
+  frame's `3px` - again an intentional built-in difference, not a bug to fix).
+- `--tile-border-color: var(--color-surface1)` - referenced the existing token rather than
+  repeating its literal hex, same pattern already used by `--balloon-background`.
+- `--tile-title-font-family`/`--tile-title-text-shadow`: identical values to
+  `--balloon-font-family` (the same pixel font) and the built-in title's `2px 2px 0 #000`
+  drop-shadow.
+- Version bumped `1.2.3` → `1.3.0` (minor - new capability usage via new `cssVariables` keys,
+  backward compatible since an older app build simply ignores unknown custom properties rather
+  than breaking). Copied into the app's cached `data-themes/brick-block-data-theme/theme.json`
+  and verified live, same discipline as every other manifest change this session - not just
+  assumed correct from the diff.

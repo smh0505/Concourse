@@ -236,8 +236,11 @@ mechanism. See devlog for the full case and this session's prep work.
   visible chunky border: new opt-in `--tile-background`/`--tile-border-width`/
   `--tile-border-color` hooks on `.bp-cover-frame`, `--tile-title-font-family`/
   `--tile-title-text-shadow` on `.tile-title`
-- [ ] Port Brick Block's Big Picture tile look to `brick-block-data-theme`'s manifest, verify
-  visual parity with the built-in component-swap version
+- [x] Ported Brick Block's Big Picture tile look to `brick-block-data-theme`'s manifest
+  (`data-theme-plugins` repo, `1.2.3` → `1.3.0`) - the same `cardVisual` AST already covers the
+  star-glyph swap for both desktop and Big Picture (one shared registry), so this pass only
+  needed the new `--tile-*` hooks set: stripe background, `4px` border matching the card frame,
+  pixel font + drop-shadow title
 - [ ] Verify full parity between built-in `brick-block-theme` and the data-theme version
   (desktop card + Big Picture tile)
 - [ ] Remove the built-in `brick-block-theme` plugin folder entirely

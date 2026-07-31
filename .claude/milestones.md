@@ -148,6 +148,7 @@ sequence.
 - [x] Big Picture slideshow view
 - [x] API-key/settings forms moved into modals; modal-form components consolidated under
   `src/components/desktop/modalForms/`
+- [x] Big Picture tile title hidden by default, reveals on hover/selection
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

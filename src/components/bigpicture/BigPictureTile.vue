@@ -72,5 +72,12 @@ const activeCardVisual = useActiveCardVisual();
      wanting a pixel/display font (needing a readability shadow to match) sets these. */
   font-family: var(--tile-title-font-family, inherit);
   text-shadow: var(--tile-title-text-shadow, none);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tile:hover .tile-title,
+.tile.bp-cover-focused .tile-title {
+  opacity: 1;
 }
 </style>

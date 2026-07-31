@@ -34,6 +34,13 @@ const SKELETON_COUNT = 6;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 1rem;
+  /* Owns the scrollbar now (App.vue's .content no longer scrolls) - flex:1/min-height:0 lets
+     this size to whatever's left below GameFilters, padding-bottom restores the breathing room
+     .content's own bottom padding used to provide before it moved here. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-5);
 }
 
 /* .empty-state (shared, styles.css) supplies the shared layout; this layers the

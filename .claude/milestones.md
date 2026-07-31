@@ -152,6 +152,9 @@ sequence.
 - [x] Long tile titles ellipsis instead of bleeding into neighboring tiles
 - [x] Fixed keyboard/gamepad focus fighting the mouse cursor in Big Picture's grid (a tile's
   `mouseenter` firing when it moves under a stationary cursor, not just on real mouse movement)
+- [x] Moved the desktop library's scrollbar off `App.vue`'s `.content` shell onto
+  `GameGrid.vue`/`GameList.vue` themselves, so it sits next to the actual scrolling content
+  rather than the whole view (GameFilters included)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

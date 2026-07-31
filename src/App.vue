@@ -87,8 +87,10 @@ onUnmounted(library.dispose);
         </template>
 
         <template v-else>
-          <AppSettings />
-          <PluginSettings />
+          <div class="settings-scroll">
+            <AppSettings />
+            <PluginSettings />
+          </div>
         </template>
       </main>
       <AddGame :open="showAddGameModal" @close="showAddGameModal = false" />
@@ -134,10 +136,24 @@ onUnmounted(library.dispose);
   overflow: hidden;
 }
 
+/* No longer the scroll container itself - GameGrid.vue/GameList.vue (or, for the settings
+   view, .settings-scroll below) own their own overflow-y now, so the scrollbar sits directly
+   next to the content it scrolls rather than the whole view including GameFilters/the
+   sidebar-adjacent padding. */
 .content {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--space-5) var(--space-6) 0;
+}
+
+.settings-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: var(--space-5) var(--space-6);
+  padding-bottom: var(--space-5);
 }
 
 .big-picture-controls {

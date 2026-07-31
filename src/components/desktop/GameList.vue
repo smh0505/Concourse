@@ -34,6 +34,13 @@ const SKELETON_COUNT = 4;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  /* Owns the scrollbar now (App.vue's .content no longer scrolls) - flex:1/min-height:0 lets
+     this size to whatever's left below GameFilters, padding-bottom restores the breathing room
+     .content's own bottom padding used to provide before it moved here. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-5);
 }
 
 /* .empty-state (shared, styles.css) supplies this rule's entire look. */

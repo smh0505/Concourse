@@ -40,6 +40,7 @@ function toggleViewMode() {
 .filters {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   gap: var(--space-2);
   margin-bottom: 1.5rem;
 }

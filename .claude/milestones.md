@@ -246,3 +246,27 @@ consumer - the built-in `brick-block-theme` plugin).
 
 Milestone 19 fully closed. Component-swap theming is retired; `cardVisual` AST + CSS-variable
 hooks is now the only theming mechanism for both desktop and Big Picture, for every theme kind.
+
+## Milestone 20 — Auto-Update: App + Plugins/Themes (scoped, not started)
+Two genuinely separate mechanisms, both checked at the same three moments (app start, app
+focus, install-plugin modal open) via one orchestrating call. See devlog for the design
+tradeoffs behind the split.
+
+**App self-update** (Tauri's own official plugin, not custom):
+- [ ] Add `tauri-plugin-updater` + `tauri-plugin-process` (relaunch-on-apply)
+- [ ] Generate a signing keypair, add `pubkey`/`endpoints` to `tauri.conf.json`
+- [ ] CI: publish a signed `latest.json` alongside each GitHub release
+- [ ] Frontend: `check()` at the three trigger moments, "update available" UI,
+  `downloadAndInstall()` + relaunch
+
+**Plugin/theme self-update** (custom - no existing mechanism covers this):
+- [ ] Persist each installed WASM plugin/data theme's install origin (`source_url` for
+  direct-URL installs, `registry_id` for curated-registry installs) - not currently stored at
+  all, the real gap blocking any update-checking
+- [ ] Rust command: re-fetch a plugin/theme's manifest from its stored origin, compare
+  version/hash against installed, report whether an update is available
+- [ ] Frontend: "update available" indicator per plugin/theme row in `PluginSettings.vue`
+- [ ] Apply-update path reuses the existing `install_wasm_plugin`/`install_data_theme`
+  pipeline, re-triggered from the update-available state instead of a fresh user-typed
+  URL/registry pick
+- [ ] Wire checks into the same three trigger moments as the app self-update

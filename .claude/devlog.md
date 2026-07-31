@@ -1749,3 +1749,32 @@ historical framing was actually necessary context (e.g. `plugin_registry.rs`/
 comments) - not everything referencing a past milestone number is narrative bloat, only where
 the surrounding sentence was pure event narration with no bearing on how to safely edit the code
 today. `bun run build`/`cargo check` both clean (comment-only changes, no behavior change).
+
+## Milestone 20 — Auto-Update: App + Plugins/Themes (scoped, not started)
+
+**Scoped from a design discussion, on user request.** User specified three concrete trigger
+moments up front (app start, app focus, install-plugin modal open) before asking for
+implementation approach - a good sign this had already been thought through as a real feature,
+not a vague "add auto-update" ask. Framed the response around the fact that "auto-update" here
+is actually two unrelated mechanisms that happen to share the same trigger moments, not one
+feature:
+
+- **The app updating itself** is a solved problem Tauri already ships an official answer for -
+  `tauri-plugin-updater` (checks a hosted, signed `latest.json`, verifies via a minisign
+  keypair, downloads, and `tauri-plugin-process` relaunches to apply). No reason to hand-roll
+  this; the real work is wiring CI to actually publish a signed `latest.json` per release and
+  generating/storing the signing keypair, not application logic.
+- **Plugins/themes updating themselves** has no existing mechanism at all, custom or otherwise,
+  and - checked before writing this up - a real structural gap blocks it entirely: the
+  persisted `WasmPluginManifest`/`DataThemeManifest` records on disk (`plugin_installer.rs`)
+  store `id`/`name`/`version`/etc. but never the manifest's *origin* (the URL it was installed
+  from, or which curated-registry entry it came from). Without that, there's nothing to
+  re-fetch and compare against later - this has to be added before any update-checking logic
+  can exist at all, not an optional nice-to-have.
+
+Scoped the milestone around this exact split: app self-update leans on Tauri's own plugin (CI
++ config work, not new application logic), plugin/theme self-update needs a real schema
+addition first (persisting install origin) before the check/compare/apply pipeline can be
+built at all. Both surfaces get checked at the same three moments via one orchestrating call,
+since the user's own framing ("the moments which the app recognizes updates on both") already
+implied unifying the trigger point even though the two mechanisms underneath stay separate.

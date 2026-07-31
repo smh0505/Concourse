@@ -45,13 +45,15 @@ function toggleViewMode() {
   /* Pinned to the top of App.vue's scrolling `.content` - stays visible while GameGrid/GameList
      scroll underneath it. padding-top (not `.content`'s own top padding, which is now 0) keeps
      the gap above this identical whether at rest or stuck; the solid background stops scrolled
-     game rows from showing through underneath once it's pinned. */
+     game rows from showing through underneath once it's pinned. z-index has to clear not just
+     GameCard.vue's own `.card:hover { z-index: 2 }` but also its Teleported-to-<body> balloon
+     (`z-index: 100`) - both need to render *under* this pinned bar, not over it, when a
+     top-row card's hover/balloon would otherwise overlap it. */
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 150;
   background: var(--color-base);
   padding-top: var(--space-5);
-  border-bottom: var(--button-border-width) solid var(--color-surface0);
 }
 
 .search-row {

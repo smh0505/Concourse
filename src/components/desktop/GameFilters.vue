@@ -54,7 +54,10 @@ function toggleViewMode() {
   top: 0;
   z-index: 150;
   background: var(--color-base);
-  padding-top: var(--space-5);
+  /* Matches GameGrid.vue's `.grid`/GameList.vue's `.list` own horizontal padding, so this
+     spans .content's full width (needed so the search input isn't visibly narrower than the
+     grid) while still lining up visually with the grid/list content below it. */
+  padding: var(--space-5) var(--space-6) 0;
 }
 
 .search-row {

@@ -170,7 +170,8 @@ sequence.
   own direction, moved `.content`'s horizontal padding down onto `GameGrid.vue`'s
   `.grid`/`GameList.vue`'s `.list` (and `.settings-panel` for the other view) instead, so
   `GameFilters.vue`'s `.filters` spans `.content`'s full un-padded width rather than sharing the
-  same inset as the grid/list
+  same inset as the grid/list - confirmed fixed, then gave `.filters` its own matching
+  horizontal padding so its content still lines up visually with the grid/list below it
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

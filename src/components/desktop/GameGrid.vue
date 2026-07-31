@@ -34,19 +34,6 @@ const SKELETON_COUNT = 6;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 1rem;
-  /* Owns the scrollbar now (App.vue's .content no longer scrolls) - flex:1/min-height:0 lets
-     this size to whatever's left below GameFilters, padding-bottom restores the breathing room
-     .content's own bottom padding used to provide before it moved here. */
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  /* overflow-x:hidden would stop the horizontal scrollbar but also clips GameCard's
-     :hover scale(1.06) at the leftmost/rightmost column, cutting the card off instead of
-     letting it visually overflow like every other column already does into its neighbor's
-     gap. This side padding gives edge cards the same breathing room a middle column gets from
-     `gap` for free, so the scale transform never reaches this container's own edge in the
-     first place - no scrollbar, no clipping. */
-  padding: 0 var(--space-3) var(--space-5);
 }
 
 /* .empty-state (shared, styles.css) supplies the shared layout; this layers the

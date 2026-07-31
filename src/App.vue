@@ -87,7 +87,7 @@ onUnmounted(library.dispose);
         </template>
 
         <template v-else>
-          <div class="settings-scroll">
+          <div class="settings-panel">
             <AppSettings />
             <PluginSettings />
           </div>
@@ -136,25 +136,21 @@ onUnmounted(library.dispose);
   overflow: hidden;
 }
 
-/* No longer the scroll container itself - GameGrid.vue/GameList.vue (or, for the settings
-   view, .settings-scroll below) own their own overflow-y now, so the scrollbar sits directly
-   next to the content it scrolls rather than the whole view including GameFilters/the
-   sidebar-adjacent padding. */
 .content {
   flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: var(--space-5) var(--space-6) 0;
+  overflow-y: auto;
+  /* Top padding moved onto GameFilters.vue's own `.filters` (as padding-top, alongside
+     `position: sticky`) so the visual gap above it stays identical whether it's at rest or
+     pinned to the top of this scroll container - a sticky element's "stuck" position ignores
+     an ancestor's own padding, so keeping the padding here would collapse to a flush top edge
+     the moment it stuck. */
+  padding: 0 var(--space-6) var(--space-5);
 }
 
-.settings-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-bottom: var(--space-5);
+/* Only the settings view needs this - the library view's own top gap comes from
+   GameFilters.vue's sticky `.filters` (padding-top baked in there instead). */
+.settings-panel {
+  padding-top: var(--space-5);
 }
 
 .big-picture-controls {

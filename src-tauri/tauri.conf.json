@@ -19,7 +19,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src ipc: http://ipc.localhost https://github.com https://*.githubusercontent.com"
     }
   },
   "bundle": {
@@ -32,5 +32,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFEODJGRDg5QTVENjJDM0IKUldRN0xOYWxpZjJDclFIbHN4SHoxQnFJcHdtOG13ZGJmRExpSzQ5alFjQWVrNFRmSUl2TEc3QmYK",
+      "endpoints": ["https://github.com/smh0505/Concourse/releases/latest/download/latest.json"]
+    }
   }
 }

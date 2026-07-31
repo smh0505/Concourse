@@ -245,17 +245,24 @@ consumer - the built-in `brick-block-theme` plugin).
 Component-swap theming is retired; `cardVisual` AST + CSS-variable hooks is now the only
 theming mechanism for both desktop and Big Picture, for every theme kind.
 
-## Milestone 20 — Auto-Update: App + Plugins/Themes (scoped, not started)
+## Milestone 20 — Auto-Update: App + Plugins/Themes (in progress)
 Two genuinely separate mechanisms, both checked at the same three moments (app start, app
 focus, install-plugin modal open) via one orchestrating call. See devlog for the design
 tradeoffs behind the split.
 
 **App self-update** (Tauri's own official plugin, not custom):
-- [ ] Add `tauri-plugin-updater` + `tauri-plugin-process` (relaunch-on-apply)
-- [ ] Generate a signing keypair, add `pubkey`/`endpoints` to `tauri.conf.json`
-- [ ] CI: publish a signed `latest.json` alongside each GitHub release
-- [ ] Frontend: `check()` at the three trigger moments, "update available" UI,
-  `downloadAndInstall()` + relaunch
+- [x] Added `tauri-plugin-updater` + `tauri-plugin-process` (Rust crates, JS packages,
+  `capabilities/default.json` permissions, registered in `lib.rs`)
+- [x] Generated the signing keypair (user's own machine, private key never touched this
+  session); public key + `endpoints` added to `tauri.conf.json`, CSP `connect-src` opened for
+  `github.com`/`*.githubusercontent.com`
+- [x] New `.github/workflows/release.yml` (none existed before) - builds/signs/publishes via
+  `tauri-apps/tauri-action`, Windows-only per user's own call given the app's
+  Windows-specific dependencies (registry access, WebView2, LR/LE wrappers). Still needs
+  `TAURI_SIGNING_PRIVATE_KEY`/`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` set as repo secrets by the
+  user before it can actually sign a release
+- [x] Frontend: new `stores/appUpdate.ts` + `AppUpdateBanner.vue`, wired into all three trigger
+  moments (`App.vue`'s `onMounted`/window focus listener, `AddPlugin.vue`'s `open`-prop watcher)
 
 **Plugin/theme self-update** (custom - no existing mechanism covers this):
 - [ ] Persist each installed WASM plugin/data theme's install origin (`source_url` for

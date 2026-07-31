@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from "vue";
 import BaseModal from "../BaseModal.vue";
 import { usePluginInstallStore } from "../../../stores/pluginInstall";
+import { useAppUpdateStore } from "../../../stores/appUpdate";
 
 // Generic install-by-URL modal - not theme-specific. Any plugin kind that grows its own
 // install-by-URL capability (source, metadata, etc.) can reuse this by passing its own
@@ -25,6 +26,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>();
 
 const pluginInstall = usePluginInstallStore();
+const appUpdate = useAppUpdateStore();
 const url = ref("");
 
 onMounted(() => {
@@ -34,7 +36,13 @@ onMounted(() => {
 watch(
   () => props.open,
   (isOpen) => {
-    if (isOpen) url.value = "";
+    if (isOpen) {
+      url.value = "";
+      // Third of the three update-check moments (app start/focus live in App.vue) - this
+      // component stays mounted the whole time PluginSettings.vue is (see its own `:open`
+      // prop), so the check has to be re-fired here, not in onMounted above.
+      appUpdate.checkForUpdate();
+    }
   },
 );
 

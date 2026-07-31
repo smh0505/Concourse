@@ -7,3 +7,8 @@
 /gen/schemas
 
 Cargo.lock
+
+# Auto-update signing key - private, never commit. The public key it prints goes into
+# tauri.conf.json's updater.pubkey instead; the private key + password become CI secrets.
+updater-private.key
+*.key

@@ -9,6 +9,7 @@ import { useMetadataProviderStore } from "./stores/metadataProviders";
 import { useControllerMappingStore } from "./stores/controllerMapping";
 import { useAppSettingsStore } from "./stores/appSettings";
 import { useWrapperPluginStore } from "./stores/wrapperPlugins";
+import { useAppUpdateStore } from "./stores/appUpdate";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
 import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
@@ -16,6 +17,7 @@ import AppSettings from "./components/desktop/AppSettings.vue";
 import AddGame from "./components/desktop/modalForms/AddGame.vue";
 import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
+import AppUpdateBanner from "./components/desktop/AppUpdateBanner.vue";
 import GameFilters from "./components/desktop/GameFilters.vue";
 import GameGrid from "./components/desktop/GameGrid.vue";
 import GameList from "./components/desktop/GameList.vue";
@@ -31,6 +33,7 @@ const metadataProviders = useMetadataProviderStore();
 const controllerMapping = useControllerMappingStore();
 const appSettings = useAppSettingsStore();
 const wrapperPlugins = useWrapperPluginStore();
+const appUpdate = useAppUpdateStore();
 const bigPicture = ref(false);
 const bigPictureViewMode = ref<"grid" | "slideshow">("grid");
 const activeView = ref<AppView>("library");
@@ -48,6 +51,8 @@ watch(bigPicture, (enabled) => {
   document.documentElement.style.overflow = enabled ? "hidden" : "";
 });
 
+let unlistenFocus: (() => void) | undefined;
+
 onMounted(async () => {
   await library.init();
   await plugins.init();
@@ -57,8 +62,19 @@ onMounted(async () => {
   await appSettings.init();
   await wrapperPlugins.init();
   if (appSettings.autoLaunchBigPicture) bigPicture.value = true;
+
+  // Two of the three update-check moments (app start, app focus) - the third (install-plugin
+  // modal open) lives in AddPlugin.vue. Not awaited - a failed/slow update check shouldn't
+  // delay the rest of startup.
+  appUpdate.checkForUpdate();
+  unlistenFocus = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+    if (focused) appUpdate.checkForUpdate();
+  });
 });
-onUnmounted(library.dispose);
+onUnmounted(() => {
+  library.dispose();
+  unlistenFocus?.();
+});
 </script>
 
 <template>
@@ -115,6 +131,7 @@ onUnmounted(library.dispose);
   </div>
 
   <ToastContainer />
+  <AppUpdateBanner />
   <CandidatePicker
     :open="metadataProviders.pendingCandidateSections !== null"
     :sections="metadataProviders.pendingCandidateSections ?? []"

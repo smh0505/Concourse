@@ -31,7 +31,6 @@ const activeCardVisual = useActiveCardVisual();
 .tile {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
   color: inherit;
   font-family: inherit;
   transition:
@@ -72,12 +71,23 @@ const activeCardVisual = useActiveCardVisual();
      wanting a pixel/display font (needing a readability shadow to match) sets these. */
   font-family: var(--tile-title-font-family, inherit);
   text-shadow: var(--tile-title-text-shadow, none);
+  /* Collapsed to zero height (not just opacity:0) so an unselected tile reserves no layout
+     space at all below its cover/placeholder - max-height/margin-top both animate open on
+     reveal, rather than the tile always taking up room for a title no one's looking at. */
+  max-height: 0;
+  margin-top: 0;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  overflow: hidden;
+  transition:
+    max-height 0.15s ease,
+    margin-top 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .tile:hover .tile-title,
 .tile.bp-cover-focused .tile-title {
+  max-height: 3rem;
+  margin-top: var(--space-3);
   opacity: 1;
 }
 </style>

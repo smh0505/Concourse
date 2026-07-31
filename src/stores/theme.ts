@@ -3,7 +3,6 @@ import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { settings as settingsRepo } from "../db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
-import { setActiveSlots, clearActiveSlots } from "../theme/slotRegistry";
 import { setActiveCardVisual, clearActiveCardVisual } from "../theme/cardVisualRegistry";
 import { setActiveFontFaces, clearActiveFontFaces } from "../theme/fontFaceRegistry";
 import { useToastStore } from "./toasts";
@@ -54,7 +53,6 @@ export const useThemeStore = defineStore("theme", () => {
 
   async function setActiveTheme(id: string | null) {
     if (activePlugin?.deactivate) await activePlugin.deactivate();
-    clearActiveSlots();
     clearActiveCardVisual();
     clearActiveFontFaces();
     applyCssVariables(undefined);
@@ -64,7 +62,6 @@ export const useThemeStore = defineStore("theme", () => {
       const plugin = await loadThemePlugin(id);
       if (plugin) {
         activePlugin = plugin;
-        setActiveSlots(plugin.slots ?? {});
         setActiveCardVisual(plugin.cardVisual);
         setActiveFontFaces(plugin.fontFaces);
         applyCssVariables(plugin.cssVariables);

@@ -1668,3 +1668,31 @@ new hooks following the exact same pattern as everything else this milestone:
   size in both places. Closing either would mean doubling several hooks into desktop/tile-
   specific variants purely for a cosmetic-only difference - not worth the added surface for what
   it buys.
+
+**Deleted the built-in `brick-block-theme` plugin and the now-fully-dead `slotRegistry.ts`,
+closing the milestone.** Confirmed via `AskUserQuestion` before doing it, since this removes a
+shipped built-in theme option (users would need to install `brick-block-data-theme` separately
+to get it back) - a real user-facing behavior change, not just an internal refactor, even though
+parity had just been verified.
+- `rm -rf src/plugins/brick-block-theme/` - the whole folder (both Vue components, the font
+  asset, `plugin.json`, `index.ts`).
+- `src/theme/slotRegistry.ts` deleted outright - grepped every `ThemePlugin` first (back when
+  scoping this milestone) and confirmed it had exactly one consumer; that consumer is now gone.
+- `ThemeSlotName` type and the `slots?` field removed from `ThemePlugin` (`plugins/types.ts`).
+- `stores/theme.ts`: removed the `setActiveSlots`/`clearActiveSlots` import and both call sites
+  (`setActiveTheme`'s reset path and its plugin-activation path) - `cardVisual`/`fontFaces`/
+  `cssVariables` handling untouched, they never depended on slots.
+- `GameGrid.vue`/`BigPictureGrid.vue`: removed `useThemeSlot` entirely, rendering `GameCard`/
+  `BigPictureTile` directly (`<GameCard v-for=... />`/`<BigPictureTile v-for=... />`) instead of
+  through a `<component :is="...">` indirection that only ever resolved to the same fallback now
+  anyway.
+- Verified via `grep -rn "brick-block-theme|slotRegistry|ThemeSlotName|useThemeSlot|setActiveSlots|clearActiveSlots"`
+  across all of `src/` - zero remaining hits (the one incidental match, `BigPictureSlideshow.vue`'s
+  local `const slots: CoverSlot[]`, is an unrelated local variable name, not this mechanism).
+  `bun run build` (typecheck + build) and `cargo check` both clean; JS/CSS bundle shrank as
+  expected (one fewer CSS chunk - the built-in plugin's own bundled `@font-face` asset is gone).
+
+**Milestone 19 fully closed.** `cardVisual` AST + CSS-variable opt-in hooks is now the only
+theming mechanism in the app, for both desktop and Big Picture, for every theme kind (built-in
+default, data-only, and any future third-party one) - `slots`/component-swap theming, which only
+ever had one real consumer, no longer exists at all.

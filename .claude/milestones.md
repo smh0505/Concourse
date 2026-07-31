@@ -224,7 +224,7 @@ now-empty local classes removed; `.hint` converted to primitive `<small>`; `.err
 one tier, and the `.active` accent-swap idiom, all folded into shared classes). `TitleBar.vue`'s
 chromeless buttons and a `--space-*` tokenization pass remain open, deliberately unscoped.
 
-## Milestone 19 — Retire Component-Swap Theming (in progress)
+## Milestone 19 — Retire Component-Swap Theming
 Milestone 17's JSON-AST/token mechanism was built to replace `slots`/component-swap theming;
 this milestone finishes that job. `slotRegistry.ts`/`ThemeSlotName` currently have exactly one
 real consumer (the built-in `brick-block-theme` plugin) - once that's gone, so is the whole
@@ -255,7 +255,16 @@ mechanism. See devlog for the full case and this session's prep work.
   contexts (built-in swap uses a larger star specifically in Big Picture) - both minor, and
   closing them would mean doubling several hooks into desktop/tile variants for a cosmetic-only
   difference
-- [ ] Remove the built-in `brick-block-theme` plugin folder entirely
-- [ ] Delete `slotRegistry.ts`, `ThemeSlotName`, `ThemePlugin.slots`, and every
-  `useThemeSlot`/`setActiveSlots`/`clearActiveSlots` call site
-- [ ] Verify clean build, no dangling imports, default Catppuccin theme unaffected
+- [x] Removed the built-in `brick-block-theme` plugin folder entirely (component, manifest,
+  font asset) - the theme lives on only as `brick-block-data-theme`, installable separately
+- [x] Deleted `slotRegistry.ts`, `ThemeSlotName`, `ThemePlugin.slots`, and every
+  `useThemeSlot`/`setActiveSlots`/`clearActiveSlots` call site (`GameGrid.vue`,
+  `BigPictureGrid.vue`, `stores/theme.ts`) - `GameGrid.vue`/`BigPictureGrid.vue` render
+  `GameCard`/`BigPictureTile` directly now, no indirection left with nothing to indirect through
+- [x] Verified clean build (typecheck + build), `cargo check` clean, zero remaining code
+  references to the removed plugin/mechanism anywhere in `src/` (`grep -rn` across the whole
+  tree, only `.claude/milestones.md`/`devlog.md`'s own historical entries mention it now).
+  Default Catppuccin theme unaffected - it never used `slots` in the first place
+
+Milestone 19 fully closed. Component-swap theming is retired; `cardVisual` AST + CSS-variable
+hooks is now the only theming mechanism for both desktop and Big Picture, for every theme kind.

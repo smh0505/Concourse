@@ -99,12 +99,7 @@ export interface WrapperPlugin extends PluginBase, Installable {
   launch(profileGuid: string, executablePath: string): Promise<void>;
 }
 
-/** Named, swappable UI regions a theme plugin can override. */
-export type ThemeSlotName = "GameCard" | "BigPictureTile";
-
 export interface ThemePlugin extends PluginBase {
-  /** Component overrides per slot; slots not listed fall back to the built-in component. */
-  slots?: Partial<Record<ThemeSlotName, Component>>;
   /** CSS custom properties (e.g. "--color-base") applied to :root while this theme is active. */
   cssVariables?: Record<string, string>;
   /** Milestone 17 - a closed-vocabulary JSON AST overriding GameCard's cover-visual region

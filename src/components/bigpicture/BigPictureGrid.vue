@@ -4,13 +4,11 @@ import { IconInboxOff } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import { useGamepadNav } from "../../composables/useGamepadNav";
 import { suppressMouseActivity, useMouseActivity } from "../../composables/useMouseActivity";
-import { useThemeSlot } from "../../theme/slotRegistry";
 import BigPictureTile from "./BigPictureTile.vue";
 
 const emit = defineEmits<{ close: [] }>();
 
 const library = useLibraryStore();
-const tileComponent = useThemeSlot("BigPictureTile", BigPictureTile);
 
 const gridRef = ref<HTMLElement | null>(null);
 const rootRef = ref<HTMLElement | null>(null);
@@ -115,8 +113,7 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
     </Transition>
     <div class="backdrop-overlay bp-backdrop-overlay-base" />
     <div class="tile-grid" ref="gridRef">
-      <component
-        :is="tileComponent"
+      <BigPictureTile
         v-for="(game, index) in library.games"
         :key="game.id"
         :ref="(el: Element | ComponentPublicInstance | null) => setTileRef(index, el)"

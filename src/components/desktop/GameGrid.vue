@@ -4,11 +4,9 @@ import GameCard from "./GameCard.vue";
 import SkeletonCard from "./SkeletonCard.vue";
 import { useLibraryStore } from "../../stores/library";
 import { usePluginStore } from "../../stores/plugins";
-import { useThemeSlot } from "../../theme/slotRegistry";
 
 const library = useLibraryStore();
 const plugins = usePluginStore();
-const cardComponent = useThemeSlot("GameCard", GameCard);
 
 const SKELETON_COUNT = 6;
 </script>
@@ -18,7 +16,7 @@ const SKELETON_COUNT = 6;
     <template v-if="plugins.scanning">
       <SkeletonCard v-for="n in SKELETON_COUNT" :key="`skeleton-${n}`" />
     </template>
-    <component :is="cardComponent" v-for="game in library.filteredGames" :key="game.id" :game="game" />
+    <GameCard v-for="game in library.filteredGames" :key="game.id" :game="game" />
     <div v-if="!plugins.scanning && library.filteredGames.length === 0" class="empty empty-state">
       <template v-if="library.games.length === 0">
         <IconInboxOff :size="32" :stroke-width="1.5" />

@@ -354,6 +354,12 @@ as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Bric
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
 
+- [x] `GameListRow.vue`'s cover placeholder now reads the same `--cover-placeholder-background`/
+  `-color`/`-text-shadow` opt-in hooks `GameCard.vue`'s placeholder already exposed - a theme
+  setting these (e.g. Brick Block's stripe pattern/star color) previously only applied in grid
+  view, silently falling back to plain defaults in list view. `-font-size` intentionally not
+  reused - list rows are far smaller (48x64 thumb) than a full grid card, so the grid-scaled
+  default would overflow
 - [x] Fixed a real bug: `AddPlugin.vue`'s registry list (`pluginInstall.loadRegistry()`) only
   ever ran once in `onMounted`, never again - since this component stays mounted for
   `PluginSettings.vue`'s entire lifetime, opening "Add Plugin" a second time (or after a

@@ -53,8 +53,12 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 }
 
 .thumb-placeholder {
-  background: var(--color-surface0);
-  color: var(--color-text);
+  /* Same opt-in hooks GameCard's .cover-placeholder uses (falls back to the same defaults),
+     so a theme that sets these once - Brick Block's stripe pattern/star color, e.g. - also
+     gets its intended placeholder look in list view, not just grid view. */
+  background: var(--cover-placeholder-background, var(--color-surface0));
+  color: var(--cover-placeholder-color, var(--color-text));
+  text-shadow: var(--cover-placeholder-text-shadow, none);
   display: flex;
   align-items: center;
   justify-content: center;

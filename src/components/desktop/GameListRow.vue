@@ -168,7 +168,10 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   margin-top: 0.15rem;
 }
 
-/* .icon-action-row (shared, styles.css) supplies the button sizing. */
+/* .icon-action-row (shared, styles.css) supplies `flex: 1` sizing, which relies on the row
+   being stretched to fill a fixed width (true for GameCard's full-width footer, not here) -
+   without that stretch, `flex: 1` + zero horizontal padding collapses each button down to
+   icon-only width. Overridden below for this row's own, unstretched context. */
 .actions {
   position: relative;
   z-index: 1;
@@ -179,6 +182,11 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
+}
+
+.actions button {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.6rem;
 }
 
 .list-row-shell:hover .actions {

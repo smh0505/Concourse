@@ -361,9 +361,17 @@ text, distinct from its own blue accent and green accent-alt.
   `opacity` transitions), matching `GameCard.vue`'s existing hover-reveal-footer convention.
   No-cover fallback still honors the shared `--cover-placeholder-*` hooks, using the `background`
   shorthand (not `background-image` alone) since the plain-color default isn't valid there.
-  Follow-up: `.actions`' button gap bumped `0.35rem` -> `var(--space-2)` and given
+  Follow-up 1: `.actions`' button gap bumped `0.35rem` -> `var(--space-2)` and given
   `padding-left: var(--space-3)`, so the buttons don't sit cramped right against the title/
   details text once revealed.
+  Follow-up 2: the buttons themselves were still icon-only-narrow - traced to the shared
+  `.icon-action-row button` rule's `flex: 1; padding: 0.35rem 0`, which only produces a
+  reasonably-wide button when the row itself is stretched to a fixed width (true for
+  `GameCard.vue`'s absolutely-positioned, full-card-width footer; not true for `.actions`
+  here, which is only as wide as its own content). Without that stretch, `flex: 1` plus zero
+  horizontal padding collapses each button to icon width. Added a `.actions button` override
+  (`flex: 0 0 auto; padding: 0.35rem 0.6rem`) scoped to this component instead of changing the
+  shared rule, since GameCard's footer still needs its own `flex: 1` stretch behavior
   `useSkeletonCount`'s `itemHeight` in `GameList.vue` updated (82 -> 44) to match the new,
   much shorter collapsed row height. `SkeletonRow.vue` matched to the same layout right after
   (single title-shaped shimmer bar, no thumbnail box, same 2.75rem min-height) - dropped the

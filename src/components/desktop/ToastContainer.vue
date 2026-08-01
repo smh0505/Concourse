@@ -69,14 +69,8 @@ const toasts = useToastStore();
   background: var(--color-danger);
 }
 
-/* --color-accent-alt (not --color-accent) - a theme's two brand colors are already meant to
-   be visually distinct from each other by construction (unlike --color-accent vs
-   --color-danger, which some themes - e.g. Brick Block, both red - can pick as near-identical
-   hues), so this reliably keeps success/error toasts telling apart regardless of theme. Also
-   happens to line up with the near-universal "green means success" convention wherever a
-   theme's accent-alt is actually green. */
 .toast-success {
-  background: var(--color-accent-alt);
+  background: var(--color-success);
 }
 
 .toast-info {

@@ -334,3 +334,11 @@ z-index) with a new actionable-toast shape instead. `stores/toasts.ts` gained
 buttons. Also simplified `stores/appUpdate.ts`'s internals while doing this - the `Update`
 class instance is now captured in a plain closure rather than any Vue `ref`, closing the
 earlier `shallowRef` fix's root cause structurally instead of just working around it.
+
+Also fixed toast contrast/colors under Brick Block: `.toast-info` text color now
+`--color-button-text` (was unreadable dark-on-dark), `.toast-actions` buttons right-aligned,
+and `.toast-success` moved off `--color-accent-alt` onto a new dedicated `--color-success`
+token (`styles.css`) so Brick Block's own success/error color fix doesn't recolor every other
+theme's success toast as a side effect (default Catppuccin Latte's `--color-accent-alt` is
+purple, not green). Brick Block's manifest (sibling `data-theme-plugins` repo) now sets
+`--color-success` to its existing green via `var(--color-accent-alt)`.

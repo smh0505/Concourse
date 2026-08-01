@@ -2201,3 +2201,26 @@ since the change is at the shared `.toast-actions` level, so it applies to every
 toast uniformly, not just that one.
 - Verified via compiled CSS: `.toast-success{background:var(--color-accent-alt)}`,
   `.toast-actions{...justify-content:flex-end...}`. `bun run build`/`cargo check` both clean.
+
+**Follow-up: `--color-accent-alt` reuse was wrong, reverted to a dedicated token.** User
+caught that switching `.toast-success` to `--color-accent-alt` recolors the default
+Catppuccin Latte theme's success toast from its old blue-ish accent to purple
+(`--color-accent-alt: #8839ef` there) - an unintended side effect of a Brick Block-specific
+fix. Confirmed via `grep -rln "color-accent-alt" src` that `.toast-success` was the only real
+*consumer* of the token (the other hits - `styles.css`'s own `:root` default plus the four
+`catppuccin-*/index.ts` files - only *declare* its per-theme value, they don't use it for
+anything else's appearance). No `--color-success` token had ever existed prior to this - the
+user's question named one, but the actual prior change was `--color-accent` -> `--color-accent-
+alt`, not from any `--color-success`.
+
+Fix: added a new dedicated `--color-success` token to `styles.css`'s `:root` (`#40a02b`,
+Catppuccin Latte's actual named "Green" swatch, matching how `--color-danger`/`--color-accent`
+already map to Latte's real named "Red"/"Blue"). `.toast-success` now reads
+`var(--color-success)` instead of `var(--color-accent-alt)`. In the sibling
+`data-theme-plugins` repo, Brick Block's `manifest.json` gained its own
+`--color-success: var(--color-accent-alt)` override (reusing its existing green rather than
+duplicating the literal hex), version bumped `1.3.1` -> `1.3.2`. Copied the updated manifest
+into the app's local theme cache (`%APPDATA%/com.bloppy.concourse/data-themes/brick-block-
+data-theme/theme.json`) for live testing, same pattern as earlier in the session.
+Verified via `bun run build` (clean) that `.toast-success{background:var(--color-success)}`
+compiles as expected.

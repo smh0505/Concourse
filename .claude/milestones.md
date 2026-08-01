@@ -160,9 +160,9 @@ sequence.
   there) paired with `--color-text` (also dark) was hard to read; reused `--color-button-text`
   instead, the same fix already applied to buttons for the identical reason. Default theme
   unaffected
-- [x] Fixed `.toast-success`/`.toast-error` both reading as red under Brick Block - switched
-  success to `--color-accent-alt` (a theme's two brand colors are guaranteed distinct from
-  each other by construction, unlike accent vs. danger). Right-aligned `.toast-actions`'
+- [x] Fixed `.toast-success`/`.toast-error` both reading as red under Brick Block - Brick
+  Block's own `--color-accent` changed to blue instead of touching the shared `.toast-success`
+  rule (still `--color-accent`, same as every other theme). Right-aligned `.toast-actions`'
   buttons too
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
@@ -336,9 +336,12 @@ class instance is now captured in a plain closure rather than any Vue `ref`, clo
 earlier `shallowRef` fix's root cause structurally instead of just working around it.
 
 Also fixed toast contrast/colors under Brick Block: `.toast-info` text color now
-`--color-button-text` (was unreadable dark-on-dark), `.toast-actions` buttons right-aligned,
-and `.toast-success` moved off `--color-accent-alt` onto a new dedicated `--color-success`
-token (`styles.css`) so Brick Block's own success/error color fix doesn't recolor every other
-theme's success toast as a side effect (default Catppuccin Latte's `--color-accent-alt` is
-purple, not green). Brick Block's manifest (sibling `data-theme-plugins` repo) now sets
-`--color-success` to its existing green via `var(--color-accent-alt)`.
+`--color-button-text` (was unreadable dark-on-dark), `.toast-actions` buttons right-aligned.
+Success/error color clash fixed at the theme level instead of the shared component: tried a
+dedicated `--color-success` token first, but every theme other than Brick Block only ever
+declared one real color for "success" (nothing else consumed the token), so it just recolored
+the default theme's success toast to green with no benefit. Reverted `.toast-success` to
+`--color-accent` (shared for all themes); Brick Block's manifest (sibling
+`data-theme-plugins` repo) changes its own `--color-accent` to blue (`#0058f8`, its existing
+pipe-blue) instead, keeping it visually distinct from `--color-accent-alt` (green) and
+`--color-danger` (dark red).

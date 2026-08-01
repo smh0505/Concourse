@@ -70,7 +70,7 @@ const toasts = useToastStore();
 }
 
 .toast-success {
-  background: var(--color-success);
+  background: var(--color-accent);
 }
 
 .toast-info {

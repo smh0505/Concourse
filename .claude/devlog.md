@@ -2202,25 +2202,38 @@ toast uniformly, not just that one.
 - Verified via compiled CSS: `.toast-success{background:var(--color-accent-alt)}`,
   `.toast-actions{...justify-content:flex-end...}`. `bun run build`/`cargo check` both clean.
 
-**Follow-up: `--color-accent-alt` reuse was wrong, reverted to a dedicated token.** User
-caught that switching `.toast-success` to `--color-accent-alt` recolors the default
-Catppuccin Latte theme's success toast from its old blue-ish accent to purple
-(`--color-accent-alt: #8839ef` there) - an unintended side effect of a Brick Block-specific
-fix. Confirmed via `grep -rln "color-accent-alt" src` that `.toast-success` was the only real
-*consumer* of the token (the other hits - `styles.css`'s own `:root` default plus the four
+**Follow-up 1: `--color-accent-alt` reuse was wrong, tried a dedicated token.** User caught
+that switching `.toast-success` to `--color-accent-alt` recolors the default Catppuccin Latte
+theme's success toast from its old blue-ish accent to purple (`--color-accent-alt: #8839ef`
+there) - an unintended side effect of a Brick Block-specific fix. Confirmed via
+`grep -rln "color-accent-alt" src` that `.toast-success` was the only real *consumer* of the
+token (the other hits - `styles.css`'s own `:root` default plus the four
 `catppuccin-*/index.ts` files - only *declare* its per-theme value, they don't use it for
 anything else's appearance). No `--color-success` token had ever existed prior to this - the
 user's question named one, but the actual prior change was `--color-accent` -> `--color-accent-
 alt`, not from any `--color-success`.
 
-Fix: added a new dedicated `--color-success` token to `styles.css`'s `:root` (`#40a02b`,
-Catppuccin Latte's actual named "Green" swatch, matching how `--color-danger`/`--color-accent`
-already map to Latte's real named "Red"/"Blue"). `.toast-success` now reads
-`var(--color-success)` instead of `var(--color-accent-alt)`. In the sibling
-`data-theme-plugins` repo, Brick Block's `manifest.json` gained its own
-`--color-success: var(--color-accent-alt)` override (reusing its existing green rather than
-duplicating the literal hex), version bumped `1.3.1` -> `1.3.2`. Copied the updated manifest
-into the app's local theme cache (`%APPDATA%/com.bloppy.concourse/data-themes/brick-block-
-data-theme/theme.json`) for live testing, same pattern as earlier in the session.
-Verified via `bun run build` (clean) that `.toast-success{background:var(--color-success)}`
-compiles as expected.
+First fix attempt: added a new dedicated `--color-success` token to `styles.css`'s `:root`
+(`#40a02b`, Catppuccin Latte's "Green"), pointed `.toast-success` at it, gave Brick Block its
+own `--color-success: var(--color-accent-alt)` override in the sibling `data-theme-plugins`
+repo (version `1.3.1` -> `1.3.2`).
+
+**Follow-up 2: reverted the token, fixed Brick Block's palette instead.** User tested and
+reported every theme's success toast looked identical (all green) - because no theme other
+than Brick Block ever gave `--color-success` a distinct value; the token added a layer with
+no real per-theme variation, all cost no benefit. Reverted `styles.css`/`ToastContainer.vue`
+back to `.toast-success { background: var(--color-accent); }`, removed the `--color-success`
+declaration entirely. Root problem was always Brick Block's own palette, not the shared
+component: `--color-accent` (`#e52521`, red) and `--color-danger` (`#b71c1c`, dark red) are
+too close, and `--color-accent` is also used everywhere else (buttons, active tabs, tile
+focus ring), so recoloring the toast rule alone wouldn't have fixed those other surfaces
+either. Fixed at the source: Brick Block's `manifest.json` `--color-accent` changed from
+`#e52521` to `#0058f8` (a Mario pipe-blue, distinct from `--color-accent-alt`'s green and
+`--color-danger`'s dark red), version bumped `1.3.2` -> `1.3.3`. This recolors every
+`--color-accent`-driven surface in Brick Block, not just toasts - buttons, active nav/tabs,
+tile focus ring all shift from red to blue too, which is the intended, theme-wide effect this
+time, not a scoped side effect to work around.
+
+Copied the updated manifest into the app's local theme cache (`%APPDATA%/com.bloppy.concourse/
+data-themes/brick-block-data-theme/theme.json`) for live testing each time, same pattern as
+earlier in the session. `bun run build` clean at every step.

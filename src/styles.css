@@ -13,10 +13,6 @@
   --color-accent: #1e66f5;
   --color-accent-alt: #8839ef;
   --color-danger: #d20f39;
-  /* Separate from --color-accent-alt so a theme whose two brand colors aren't green (e.g.
-     Brick Block: red/green, fine as-is, but a theme could be red/blue) doesn't get an
-     unintended success-toast recolor as a side effect of picking its own accent-alt. */
-  --color-success: #40a02b;
   /* Separate from --color-text so a theme with saturated/dark button backgrounds (e.g.
      Brick Block) can override just this one, without also recoloring body text that sits on
      lighter backgrounds where --color-text already reads fine. */

@@ -1,33 +1,30 @@
 <script setup lang="ts">
 import { IconCheck, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
-import { useCollectionsStore } from "../../stores/collections";
-import { useNamedItemManager } from "../../composables/useNamedItemManager";
+import { useTagsStore } from "../../../stores/tags";
+import { useNamedItemManager } from "../../../composables/useNamedItemManager";
 
-const collections = useCollectionsStore();
+const tags = useTagsStore();
 const manager = useNamedItemManager({
-  create: collections.create,
-  rename: collections.rename,
-  delete: collections.remove,
-  getUsageCounts: collections.getUsageCounts,
+  create: tags.create,
+  rename: tags.rename,
+  delete: tags.remove,
+  getUsageCounts: tags.getUsageCounts,
 });
 </script>
 
 <template>
   <div class="panel settings-panel">
     <div class="sticky-header">
-      <h2>Collections</h2>
-      <small>
-        Groups a series/franchise ("Final Fantasy") - a separate concept from tags, not
-        another kind of tag.
-      </small>
+      <h2>Tags</h2>
+      <small>Free-form labels for organizing your library ("Co-op", "Backlog").</small>
       <form class="add-form" @submit.prevent="manager.onCreate">
-        <input v-model="manager.newName" placeholder="New collection name" />
-        <button type="submit">Add Collection</button>
+        <input v-model="manager.newName" placeholder="New tag name" />
+        <button type="submit">Add Tag</button>
       </form>
     </div>
 
-    <ul v-if="collections.allCollections.length" class="item-list">
-      <li v-for="name in collections.allCollections" :key="name" class="item-row list-row-shell">
+    <ul v-if="tags.allTags.length" class="item-list">
+      <li v-for="name in tags.allTags" :key="name" class="item-row list-row-shell">
         <template v-if="manager.editingName === name">
           <input
             v-model="manager.editingValue"
@@ -58,6 +55,6 @@ const manager = useNamedItemManager({
         </template>
       </li>
     </ul>
-    <p v-else class="empty">No collections yet.</p>
+    <p v-else class="empty">No tags yet.</p>
   </div>
 </template>

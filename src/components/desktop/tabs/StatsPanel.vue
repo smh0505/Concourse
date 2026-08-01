@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
 import { IconChartBar, IconClock, IconDeviceGamepad2 } from "@tabler/icons-vue";
-import { useLibraryStore } from "../../stores/library";
-import { useStatsStore } from "../../stores/stats";
-import type { Game } from "../../db";
+import { useLibraryStore } from "../../../stores/library";
+import { useStatsStore } from "../../../stores/stats";
+import type { Game } from "../../../db";
 
 const library = useLibraryStore();
 const stats = useStatsStore();

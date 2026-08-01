@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { IconInboxOff } from "@tabler/icons-vue";
-import GameListRow from "./GameListRow.vue";
-import SkeletonRow from "./SkeletonRow.vue";
-import { useLibraryStore } from "../../stores/library";
-import { usePluginStore } from "../../stores/plugins";
-import { useSkeletonCount } from "../../composables/useSkeletonCount";
+import GameListRow from "../GameListRow.vue";
+import SkeletonRow from "../SkeletonRow.vue";
+import { useLibraryStore } from "../../../stores/library";
+import { usePluginStore } from "../../../stores/plugins";
+import { useSkeletonCount } from "../../../composables/useSkeletonCount";
 
 const library = useLibraryStore();
 const plugins = usePluginStore();

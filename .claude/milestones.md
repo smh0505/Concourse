@@ -187,6 +187,11 @@ own definition.
   tabs, not just "a lot of library actions." `library.ts` (378 -> 273 lines) keeps games
   CRUD/launch/search/view-mode; `filteredGames`/`refresh()` compose the two new stores
   instead of owning tag/collection data directly
+- [x] Moved every sidebar tab's own top-level component into a new
+  `src/components/desktop/tabs/` folder (`GameFilters`/`GameGrid`/`GameList`, `StatsPanel`,
+  `TagsPanel`, `CollectionsPanel`, `AppSettings`, `PluginSettings`, `UiTest`) - now six tabs'
+  worth of "which file renders this whole view" is grouped together, separate from the
+  smaller supporting components (`GameCard`, modals, etc.) they render
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

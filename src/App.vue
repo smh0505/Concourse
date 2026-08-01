@@ -14,18 +14,18 @@ import { usePluginUpdatesStore } from "./stores/pluginUpdates";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
 import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
-import AppSettings from "./components/desktop/AppSettings.vue";
-import StatsPanel from "./components/desktop/StatsPanel.vue";
-import TagsPanel from "./components/desktop/TagsPanel.vue";
-import CollectionsPanel from "./components/desktop/CollectionsPanel.vue";
+import AppSettings from "./components/desktop/tabs/AppSettings.vue";
+import StatsPanel from "./components/desktop/tabs/StatsPanel.vue";
+import TagsPanel from "./components/desktop/tabs/TagsPanel.vue";
+import CollectionsPanel from "./components/desktop/tabs/CollectionsPanel.vue";
 import AddGame from "./components/desktop/modalForms/AddGame.vue";
 import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
-import GameFilters from "./components/desktop/GameFilters.vue";
-import GameGrid from "./components/desktop/GameGrid.vue";
-import GameList from "./components/desktop/GameList.vue";
+import GameFilters from "./components/desktop/tabs/GameFilters.vue";
+import GameGrid from "./components/desktop/tabs/GameGrid.vue";
+import GameList from "./components/desktop/tabs/GameList.vue";
 import EditGame from "./components/desktop/modalForms/EditGame.vue";
-import PluginSettings from "./components/desktop/PluginSettings.vue";
+import PluginSettings from "./components/desktop/tabs/PluginSettings.vue";
 import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
 import BigPictureSlideshow from "./components/bigpicture/BigPictureSlideshow.vue";
 
@@ -50,7 +50,7 @@ const { connected: gamepadConnected, gamepadName } = useGamepadStatus();
 // bundle. This ternary is inlinable by Vite's build-time DEV replacement, so the whole
 // `import()` (and its chunk) is eliminated entirely in prod, not just hidden at runtime.
 const UiTest = import.meta.env.DEV
-  ? defineAsyncComponent(() => import("./components/desktop/UiTest.vue"))
+  ? defineAsyncComponent(() => import("./components/desktop/tabs/UiTest.vue"))
   : undefined;
 
 watch(bigPicture, (enabled) => {

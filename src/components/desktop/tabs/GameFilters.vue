@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { IconLayoutGrid, IconList } from "@tabler/icons-vue";
-import { useLibraryStore } from "../../stores/library";
-import { useTagsStore } from "../../stores/tags";
-import { useCollectionsStore } from "../../stores/collections";
+import { useLibraryStore } from "../../../stores/library";
+import { useTagsStore } from "../../../stores/tags";
+import { useCollectionsStore } from "../../../stores/collections";
 
 const library = useLibraryStore();
 const tags = useTagsStore();

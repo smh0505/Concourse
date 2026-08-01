@@ -596,6 +596,28 @@ mirrors tags exactly, same as their DB repositories already do).
   view-mode - genuinely just game-domain concerns now.
 - `bun run build` clean.
 
+**Follow-up, on user request: with six sidebar tabs now, group each one's own top-level
+component into a single folder under `src/components/desktop/`.** New
+`src/components/desktop/tabs/` - moved `GameFilters.vue`/`GameGrid.vue`/`GameList.vue`
+(Library), `StatsPanel.vue`, `TagsPanel.vue`, `CollectionsPanel.vue`, `AppSettings.vue`/
+`PluginSettings.vue` (Settings), and `UiTest.vue` (dev). Used `git mv` for each so history
+follows the file rather than showing as a delete+add. Deliberately left everything these
+render (`GameCard.vue`, `GameListRow.vue`, `SkeletonCard.vue`/`SkeletonRow.vue`, the
+`modalForms/` components) in place - those are supporting pieces used *by* a tab's root, not
+tab roots themselves.
+
+Grepped every one of the 9 moved files' own imports first rather than moving and fixing
+errors reactively - each needed its `../../stores/…`/`../../composables/…`/`../../db`/
+`../../plugins/…` imports bumped one level (`../../../…`, since the file is now one directory
+deeper), plus component-to-component siblings that *didn't* move: `GameGrid.vue`'s
+`./GameCard.vue`/`./SkeletonCard.vue`, `GameList.vue`'s `./GameListRow.vue`/`./SkeletonRow.vue`,
+and `PluginSettings.vue`'s `./modalForms/AddPlugin.vue`/`./modalForms/ConfirmInstall.vue` all
+became `../` instead of staying `./`, since those targets stayed in `desktop/`'s root while
+the importer moved into `desktop/tabs/`. Updated `App.vue`'s own imports for all 9
+(`./components/desktop/tabs/...`), including the dynamic `import()` behind `UiTest.vue`'s
+`DEV`-gated `defineAsyncComponent` call. Verified with a final grep across `src/` for any
+lingering `desktop/<name>` reference missing `/tabs/` - none found. `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

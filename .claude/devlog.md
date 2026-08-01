@@ -423,6 +423,56 @@ eliminated from the production graph entirely - confirmed by rebuilding, re-grep
 tagged release (which builds in production mode) automatically ships without the tab, with no
 separate CI-side exclusion step needed.
 
+**New "Tags & Collections" sidebar tab, on request, plus a genuinely new Collections
+feature the user asked for by name - separate from tags, for grouping a series/franchise.**
+Recommended a Tags/Collections manager as the other Stats-tab-adjacent suggestion earlier;
+user confirmed and explicitly scoped it further: standalone tag creation (not just the
+existing implicit-create-via-tagging-a-game), and Collections as its own concept, "not
+related to tags for series."
+
+- **Schema**: new migration `v3` (`db.rs`) - `collections`/`game_collections`, structurally
+  identical to `tags`/`game_tags` (`UNIQUE` name, cascade-on-delete join table). Deliberately a
+  separate table rather than a `"collection:"`-prefixed tag or a `kind` column on `tags` - the
+  user's own framing ("not related to tags") meant the two should never be able to collide or
+  need disambiguating in a shared table. Added as a new additive migration, not edited into
+  `v1`'s baseline - the app is past `1.0.0` now (real installs may already have a `library.db`
+  on disk), so `v1`'s squashed baseline text has to stay byte-for-byte frozen per its own
+  comment; `v2` (`plugin_capability_grants`) already established this precedent.
+- **`src/db/collections.ts`**: new `CollectionRepository`, mirrors `TagRepository`'s existing
+  4 methods (`addToGame`/`removeFromGame`/`getAll`/`getForGame`) exactly, plus 4 new management
+  methods both repositories now share: `create` (standalone, the actual "add tag" ask -
+  distinct from `addToGame`'s implicit-create-as-a-side-effect), `rename` (merges into the
+  target name if it already exists, rather than erroring on the `UNIQUE` constraint),
+  `delete` (cascades to the join table on its own), and `getUsageCounts` (games-per-tag/
+  collection, for the manager's own list - no existing aggregate covers this, same reasoning
+  as `PlaytimeRepository.getRecentlyPlayed` needing its own query for "last played"). Not
+  abstracted into one shared generic repository despite the two being structurally identical -
+  SQLite doesn't allow parameterizing table/column names via bound placeholders, so a truly
+  shared implementation would need runtime string interpolation into SQL for the table name,
+  which isn't worth the small duplication it would save.
+- **`stores/library.ts`**: added `gameCollections`/`allCollections`/`activeCollectionFilter`
+  state and `addCollection`/`removeCollection`/`toggleCollectionFilter` actions, mirroring the
+  existing tag state/actions exactly, plus the 8 new management actions
+  (`create`/`rename`/`delete`/`getUsageCounts` x2, tags and collections) needed by the new
+  manager tab. `refresh()`/`filteredGames` extended to also load and filter by collection,
+  alongside the existing tag logic.
+- **`TagsCollectionsPanel.vue`** (new): two sections (Tags, Collections), each with an
+  add-new form, and a list showing each name, its usage count, and inline rename (click the
+  pencil icon, `Enter`/`Esc` to confirm/cancel) plus delete - no confirm dialog on delete,
+  matching the existing lightweight `deleteGame`/`removeTag` convention elsewhere in the app
+  rather than introducing a new interaction pattern just for this screen.
+- **`EditGame.vue`**: added a "Collections" section, byte-identical in structure to the
+  existing "Tags" section (pill list + remove button + add form) just pointed at the new
+  collection actions - per-game assignment needed to exist somewhere for Collections to be
+  useful at all, and Tags' existing UI was the obvious template.
+- **`GameFilters.vue`**: added a second `.tags` row for collections, identical pattern to the
+  existing tag-filter row (click a pill to toggle `activeCollectionFilter`) - collections
+  existing purely as an `EditGame.vue`-only assignment with no way to actually browse the
+  library by series would have left the feature without its main practical payoff.
+- Wired into `NavSidebar.vue`'s `AppView` union (`"tagsCollections"`) and `App.vue`'s
+  view-switch, same pattern as the Stats tab.
+- `bun run build`/`cargo check` both clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

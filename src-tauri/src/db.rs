@@ -94,5 +94,27 @@ pub fn migrations() -> Vec<Migration> {
             );
         "#,
         kind: MigrationKind::Up,
+    }, Migration {
+        version: 3,
+        description: "add_collections",
+        sql: r#"
+            -- Deliberately its own table, not a `tags` row under some "collection:" naming
+            -- convention - a collection groups a series/franchise (e.g. "Final Fantasy"),
+            -- a different organizing concept than a tag (e.g. "Co-op", "Backlog"), and
+            -- keeping them structurally separate means neither's management UI/filter ever
+            -- has to guess which kind a given name is. Mirrors tags/game_tags exactly
+            -- otherwise (same UNIQUE name, same cascade-on-delete join table).
+            CREATE TABLE collections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE
+            );
+
+            CREATE TABLE game_collections (
+                game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+                collection_id INTEGER NOT NULL REFERENCES collections(id) ON DELETE CASCADE,
+                PRIMARY KEY (game_id, collection_id)
+            );
+        "#,
+        kind: MigrationKind::Up,
     }]
 }

@@ -37,6 +37,17 @@ function toggleViewMode() {
         {{ tag }}
       </span>
     </div>
+    <div class="tags" v-if="library.allCollections.length">
+      <span
+        class="tag-pill filter-tag"
+        :class="{ 'accent-active': library.activeCollectionFilter === name }"
+        v-for="name in library.allCollections"
+        :key="name"
+        @click="library.toggleCollectionFilter(name)"
+      >
+        {{ name }}
+      </span>
+    </div>
   </div>
 </template>
 

@@ -32,6 +32,7 @@ const form = ref<GameEditFields>({
 });
 const error = ref("");
 const newTag = ref("");
+const newCollection = ref("");
 
 /** Combines locale_wrapper + locale_profile_guid into one <select> value
  *  ("<pluginId>:<guid>" / ""), since GUIDs aren't namespaced against each other across
@@ -63,6 +64,17 @@ async function onAddTag() {
   if (!name || !library.editingGame) return;
   await library.addTag(library.editingGame, name);
   newTag.value = "";
+}
+
+const gameCollections = computed(() =>
+  library.editingGame ? library.gameCollections[library.editingGame.id] ?? [] : [],
+);
+
+async function onAddCollection() {
+  const name = newCollection.value.trim();
+  if (!name || !library.editingGame) return;
+  await library.addCollection(library.editingGame, name);
+  newCollection.value = "";
 }
 
 const fetchingBackground = computed(
@@ -195,6 +207,19 @@ async function onSave() {
           </div>
           <form class="add-tag-form" @submit.prevent="onAddTag">
             <input v-model="newTag" placeholder="Add tag" />
+            <button type="submit">+</button>
+          </form>
+        </div>
+        <div class="tags-section">
+          <span>Collections</span>
+          <div class="tags" v-if="gameCollections.length">
+            <span class="tag-pill tag" v-for="name in gameCollections" :key="name">
+              {{ name }}
+              <button class="tag-remove" @click="library.removeCollection(library.editingGame!, name)">&times;</button>
+            </span>
+          </div>
+          <form class="add-tag-form" @submit.prevent="onAddCollection">
+            <input v-model="newCollection" placeholder="Add collection" />
             <button type="submit">+</button>
           </form>
         </div>

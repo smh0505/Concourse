@@ -527,6 +527,87 @@ pub fn uninstall_data_theme(app: AppHandle, id: String) -> Result<(), String> {
     uninstall_data_theme_from(&data_themes_dir(&app)?, &id)
 }
 
+/// Loosely-typed probe - only `version` is ever needed to compare against what's installed,
+/// regardless of whether the URL points at a `WasmPluginManifest` or a `DataThemeManifest`
+/// (both use the same field name), so there's no need to know which shape it is up front.
+#[derive(Deserialize)]
+struct VersionProbe {
+    version: String,
+}
+
+/// Compares two version strings as dot-separated numeric segments (e.g. `"1.10.0" >
+/// "1.9.0"`) rather than plain string ordering, which would get that comparison backwards.
+/// Falls back to a plain inequality check if either side isn't all-numeric segments - good
+/// enough for the plain SemVer every plugin/theme manifest here actually uses, without pulling
+/// in a real SemVer crate for one comparison.
+fn version_is_newer(latest: &str, current: &str) -> bool {
+    fn parse(v: &str) -> Option<Vec<u64>> {
+        v.split('.').map(|part| part.parse::<u64>().ok()).collect()
+    }
+    match (parse(latest), parse(current)) {
+        (Some(l), Some(c)) => l > c,
+        _ => latest != current,
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateCheckResult {
+    pub id: String,
+    pub update_available: bool,
+    pub latest_version: Option<String>,
+    /// The manifest URL to actually reinstall from if `update_available` - for a registry
+    /// install this is the registry's *current* `manifestUrl` for this id, which may differ
+    /// from the old pinned one, so the frontend's apply-update call doesn't need to re-derive
+    /// registry-vs-direct routing itself.
+    pub latest_manifest_url: Option<String>,
+}
+
+/// Checks whether a newer version exists for an already-installed plugin/theme, given what was
+/// persisted about its install origin (see `WasmPluginManifest::source_url`/
+/// `installed_via_registry` and the `DataThemeManifest` equivalents). Two different lookup
+/// strategies depending on origin - see `installed_via_registry`'s doc comment for why a
+/// registry-pinned `source_url` can't just be re-fetched directly.
+#[tauri::command]
+pub async fn check_plugin_update(
+    id: String,
+    current_version: String,
+    source_url: Option<String>,
+    installed_via_registry: bool,
+) -> Result<UpdateCheckResult, String> {
+    let latest_manifest_url = if installed_via_registry {
+        let entries = crate::plugin_registry::fetch_plugin_registry().await?;
+        entries.into_iter().find(|e| e.id == id).map(|e| e.manifest_url)
+    } else {
+        source_url
+    };
+
+    // No known origin at all - either this id was pulled from the registry since install (a
+    // revoked/removed entry), or this is a pre-Milestone-20 install with no source_url ever
+    // recorded. Either way there's nothing left to check against; report "no update" rather
+    // than erroring the whole check.
+    let Some(manifest_url) = latest_manifest_url else {
+        return Ok(UpdateCheckResult {
+            id,
+            update_available: false,
+            latest_version: None,
+            latest_manifest_url: None,
+        });
+    };
+
+    let bytes = download_bytes(&manifest_url).await?;
+    let probe: VersionProbe = serde_json::from_slice(&bytes)
+        .map_err(|e| format!("Invalid manifest at {}: {}", manifest_url, e))?;
+
+    let update_available = version_is_newer(&probe.version, &current_version);
+    Ok(UpdateCheckResult {
+        id,
+        latest_version: Some(probe.version),
+        latest_manifest_url: if update_available { Some(manifest_url) } else { None },
+        update_available,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -707,5 +788,75 @@ mod tests {
 
         let unknown = ManifestKindProbe { kind: None, css_variables: None };
         assert!(detect_kind(&unknown).is_err());
+    }
+
+    #[test]
+    fn version_is_newer_compares_numerically_not_lexically() {
+        // The whole point of numeric comparison - "1.9.0" < "1.10.0" lexically, backwards from
+        // the real ordering.
+        assert!(version_is_newer("1.10.0", "1.9.0"));
+        assert!(!version_is_newer("1.9.0", "1.10.0"));
+        assert!(!version_is_newer("1.3.7", "1.3.7"), "identical versions aren't newer");
+        assert!(version_is_newer("2.0.0", "1.99.99"));
+        // Non-numeric segments (a stray pre-release tag, say) fall back to plain inequality
+        // rather than panicking or silently treating them as equal.
+        assert!(version_is_newer("1.3.0-beta", "1.2.0"));
+        assert!(!version_is_newer("1.3.0-beta", "1.3.0-beta"));
+    }
+
+    // Real end-to-end against a real HTTP server, same discipline as the install tests above -
+    // not a unit test of version_is_newer in isolation, the whole check_plugin_update command.
+    #[test]
+    fn check_plugin_update_detects_a_newer_direct_url_install() {
+        let url = serve_once(
+            r##"{"id":"direct-plugin","name":"Direct","version":"1.1.0","cssVariables":{}}"##,
+        );
+
+        let result = tauri::async_runtime::block_on(check_plugin_update(
+            "direct-plugin".to_string(),
+            "1.0.0".to_string(),
+            Some(url.clone()),
+            false,
+        ))
+        .expect("check should succeed");
+
+        assert!(result.update_available);
+        assert_eq!(result.latest_version.as_deref(), Some("1.1.0"));
+        assert_eq!(result.latest_manifest_url.as_deref(), Some(url.as_str()));
+    }
+
+    #[test]
+    fn check_plugin_update_reports_no_update_when_already_current() {
+        let url = serve_once(
+            r##"{"id":"direct-plugin","name":"Direct","version":"1.0.0","cssVariables":{}}"##,
+        );
+
+        let result = tauri::async_runtime::block_on(check_plugin_update(
+            "direct-plugin".to_string(),
+            "1.0.0".to_string(),
+            Some(url),
+            false,
+        ))
+        .expect("check should succeed");
+
+        assert!(!result.update_available);
+        assert_eq!(result.latest_version.as_deref(), Some("1.0.0"));
+        assert_eq!(result.latest_manifest_url, None, "no reinstall URL needed when up to date");
+    }
+
+    #[test]
+    fn check_plugin_update_reports_no_update_with_no_known_origin() {
+        // No source_url at all (a pre-Milestone-20 install) and not registry-installed -
+        // nothing to check against, should report "no update" rather than erroring.
+        let result = tauri::async_runtime::block_on(check_plugin_update(
+            "orphaned-plugin".to_string(),
+            "1.0.0".to_string(),
+            None,
+            false,
+        ))
+        .expect("check should succeed even with nothing to check against");
+
+        assert!(!result.update_available);
+        assert_eq!(result.latest_version, None);
     }
 }

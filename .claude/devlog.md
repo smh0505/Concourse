@@ -2001,3 +2001,43 @@ is the flag.
   one, so the test proves the actual hash-matching logic, not just that the flag gets set
   given some hash. All 5 `plugin_installer` tests pass; `cargo check`/`bun run build` both
   clean.
+
+**Added `check_plugin_update`, the Rust command that actually uses the new schema.** Two
+lookup strategies chosen by `installed_via_registry` (already covered in the schema entry
+above):
+- Registry install: re-fetch the whole registry via the existing `plugin_registry::
+  fetch_plugin_registry()` (no new registry-fetching code needed), find the entry matching
+  this plugin's `id`, use *its* `manifest_url` - which may have moved to a newer pinned commit
+  since install, unlike the old `source_url` which is frozen forever by design.
+- Direct-URL install: re-fetch `source_url` itself.
+- Either way, once a manifest URL is resolved, downloads it and parses only a `VersionProbe`
+  (`{ version: String }`) rather than the full `WasmPluginManifest`/`DataThemeManifest` shape -
+  both manifest kinds use the identically-named `version` field, so there's no need to know
+  which shape it is just to compare versions.
+- No known origin at all (registry entry removed/revoked since install, or a pre-Milestone-20
+  install with no `source_url` ever recorded) reports "no update" rather than erroring the
+  whole check - there's genuinely nothing left to check against, and a hard error here would
+  be a worse experience than just silently not offering an update for that one plugin.
+
+**Added real version comparison, not string equality.** `version_is_newer` splits both version
+strings on `.` and compares each segment numerically (`"1.10.0" > "1.9.0"`) rather than
+lexically (where the same comparison goes backwards - `"1.10.0" < "1.9.0"` as plain strings,
+since `'1' < '9'` character-by-character). Falls back to plain inequality if either side isn't
+all-numeric segments (e.g. a pre-release suffix), rather than pulling in a real SemVer crate
+for one comparison this app's actual manifests never need more than plain `x.y.z` for.
+
+**Caught and fixed my own mistake mid-edit.** The `Edit` tool call that inserted this new code
+accidentally deleted the `uninstall_data_theme` command function itself in the process (the
+`old_string`/`new_string` boundary swallowed it) - caught immediately by `cargo check` failing
+with `cannot find __tauri_command_name_uninstall_data_theme`, not by manual inspection. Fixed
+by re-adding the function; re-ran `cargo check` clean before moving on, rather than assuming
+the fix was correct from reading the diff alone.
+
+**Tests**: added 4 new ones alongside the 5 already there (9 total, all passing) -
+`version_is_newer_compares_numerically_not_lexically` (the actual bug numeric comparison
+exists to prevent, proven directly), plus three real end-to-end `check_plugin_update` tests
+against a real self-hosted HTTP server (same discipline as every other test in this file):
+detects a genuinely newer version, correctly reports no update when already current, and
+correctly reports no update when there's no known origin to check at all - rather than only
+testing the "happy path where an update exists" case. `cargo check`/`cargo test`/
+`bun run build` all clean.

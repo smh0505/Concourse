@@ -292,8 +292,11 @@ App self-update closed. Plugin/theme self-update (below) remains open.
   manifests (and any upstream author manifest, which never declares these) still parse fine,
   just showing `None`/`false` until reinstalled. Mirrored on the frontend `PluginManifest` TS
   type (`sourceUrl`/`installedViaRegistry`)
-- [ ] Rust command: re-fetch a plugin/theme's manifest from its stored origin, compare
-  version/hash against installed, report whether an update is available
+- [x] New `check_plugin_update` command (`plugin_installer.rs`) - two lookup strategies by
+  origin (re-fetch the registry's current entry by id for a registry install; re-fetch
+  `source_url` directly otherwise), numeric (not lexical) version comparison, reports the
+  actual reinstall URL to use if an update exists. 9 tests total (5 existing + 4 new: numeric-
+  vs-lexical comparison, a real newer-version detection, already-current, and no-known-origin)
 - [ ] Frontend: "update available" indicator per plugin/theme row in `PluginSettings.vue`
 - [ ] Apply-update path reuses the existing `install_wasm_plugin`/`install_data_theme`
   pipeline, re-triggered from the update-available state instead of a fresh user-typed

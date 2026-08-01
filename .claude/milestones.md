@@ -316,3 +316,11 @@ Milestone 20 fully closed - app self-update verified working end to end; plugin/
 self-update built and wired into all four check moments (three canonical + Settings-view
 open), though not GUI-tested the way app self-update was (no installed WASM plugin/data theme
 with a real newer version available to test against in this environment).
+
+Post-close polish: replaced the standalone `AppUpdateBanner.vue` (which silently sat on top of
+and hid toast notifications - both used identical fixed bottom-right positioning at the same
+z-index) with a new actionable-toast shape instead. `stores/toasts.ts` gained
+`actions?`/`pushAction()`; the update offer is now just a toast with "Update Now"/"Later"
+buttons. Also simplified `stores/appUpdate.ts`'s internals while doing this - the `Update`
+class instance is now captured in a plain closure rather than any Vue `ref`, closing the
+earlier `shallowRef` fix's root cause structurally instead of just working around it.

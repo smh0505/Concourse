@@ -18,7 +18,6 @@ import AppSettings from "./components/desktop/AppSettings.vue";
 import AddGame from "./components/desktop/modalForms/AddGame.vue";
 import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
-import AppUpdateBanner from "./components/desktop/AppUpdateBanner.vue";
 import GameFilters from "./components/desktop/GameFilters.vue";
 import GameGrid from "./components/desktop/GameGrid.vue";
 import GameList from "./components/desktop/GameList.vue";
@@ -151,7 +150,6 @@ onUnmounted(() => {
   </div>
 
   <ToastContainer />
-  <AppUpdateBanner />
   <CandidatePicker
     :open="metadataProviders.pendingCandidateSections !== null"
     :sections="metadataProviders.pendingCandidateSections ?? []"

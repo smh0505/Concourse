@@ -12,9 +12,20 @@ const toasts = useToastStore();
         :key="toast.id"
         class="toast"
         :class="`toast-${toast.type}`"
-        @click="toasts.dismiss(toast.id)"
+        @click="!toast.actions && toasts.dismiss(toast.id)"
       >
-        {{ toast.message }}
+        <span>{{ toast.message }}</span>
+        <div v-if="toast.actions?.length" class="toast-actions">
+          <button
+            v-for="action in toast.actions"
+            :key="action.label"
+            type="button"
+            class="compact-button"
+            @click.stop="action.onClick()"
+          >
+            {{ action.label }}
+          </button>
+        </div>
       </div>
     </TransitionGroup>
   </div>
@@ -33,12 +44,24 @@ const toasts = useToastStore();
 }
 
 .toast {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   padding: 0.6rem 0.9rem;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   font-size: 0.85rem;
   color: var(--color-on-accent);
   cursor: pointer;
+}
+
+.toast-actions {
+  display: flex;
+  gap: var(--space-2);
+  /* Buttons need their own normal (non-pointer-inherited-as-dismiss) cursor/click handling -
+     .stop on each button's own click (see template) keeps clicking an action from also
+     dismissing the toast via the parent div's click handler. */
+  cursor: default;
 }
 
 .toast-error {

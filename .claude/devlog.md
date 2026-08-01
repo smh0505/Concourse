@@ -2124,3 +2124,39 @@ WASM plugin or data theme with a real newer version published somewhere to check
 which wasn't set up here. Worth a real test pass before fully trusting it, the same way the app
 half needed three failed release attempts before its own real bugs (`createUpdaterArtifacts`,
 the workflow-permission gap, the `shallowRef` fix) surfaced.
+
+**Post-close polish: replaced the standalone update banner with an actionable toast, on user
+request.** `AppUpdateBanner.vue` and `ToastContainer.vue` both used identical `position: fixed;
+bottom; right; z-index: 200` placement - equal z-index means DOM order decides visual
+stacking, and the banner rendered after the toast container in `App.vue`, so it silently sat on
+top of and hid any toasts underneath it. Rather than just nudging one's position, folded the
+whole notification into the toast system itself as a new toast *shape* - an actionable toast
+with buttons - since a banner and a toast were never really two different concepts here, just
+two competing UI surfaces for the same kind of message.
+- `stores/toasts.ts`: new optional `Toast.actions?: ToastAction[]` (`{ label, onClick }`) and a
+  `pushAction(message, actions, type?)` alongside the existing `push()` - actionable toasts
+  never auto-dismiss (the whole point of offering a real choice, not losing it to the existing
+  5s timer), returning the new toast's id so a caller can dismiss it itself once an action is
+  taken.
+- `ToastContainer.vue`: renders `toast.actions` as buttons (reusing the shared `.compact-button`
+  sizing) when present; the toast body's own click-to-dismiss only fires when there are no
+  actions (`@click="!toast.actions && toasts.dismiss(...)"`), and each action button stops
+  propagation on its own click so clicking "Update Now" doesn't also immediately dismiss the
+  toast via the parent handler.
+- **Simplified `stores/appUpdate.ts` at the same time, closing the earlier `shallowRef` fix's
+  root cause structurally rather than just working around it.** The `Update` class instance is
+  now captured directly in a plain closure (`onClick: () => applyUpdate(update)`), never stored
+  in a Vue `ref`/`reactive` at all - a closure variable is never Proxy-wrapped by Vue's
+  reactivity, so there's no private-field brand-check failure possible in the first place, not
+  just one avoided via `shallowRef`. Dropped the `available`/`installing` state entirely (only
+  ever read by the now-deleted `AppUpdateBanner.vue`) - `checkForUpdate()` now pushes an
+  action-toast directly via `offerUpdate()`, tracking just the active toast's id (to avoid
+  stacking a duplicate offer if a re-check fires while one's still open) and the
+  last-dismissed version (unchanged behavior from before).
+- Deleted `AppUpdateBanner.vue` entirely and its usage in `App.vue` - confirmed via `grep` that
+  nothing else referenced `appUpdate.available`/`.installing` before removing them from the
+  store.
+- Verified via compiled CSS: `.toast`/`.toast-actions` both compile with the expected flex
+  layout. `bun run build` (typecheck + build) and `cargo check` both clean. Not visually
+  re-verified in a running app - same limitation as every other UI change this session, no
+  browser/screenshot tooling available in this environment.

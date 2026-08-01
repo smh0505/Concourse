@@ -164,6 +164,20 @@ sequence.
   Block's own `--color-accent` changed to blue instead of touching the shared `.toast-success`
   rule (still `--color-accent`, same as every other theme). Right-aligned `.toast-actions`'
   buttons too
+- [x] New "Stats" sidebar tab (`StatsPanel.vue`) - total games/hours summary, a "Most Played"
+  top-5 list, and a "Recently Played" list (new `stores/stats.ts` +
+  `PlaytimeRepository.getRecentlyPlayed`, since "last played per game" only exists in the
+  session log, not on the `games` row's own `total_playtime` aggregate). Reuses GameListRow's
+  cover-as-background row look, statically (no hover-expand, since these rows aren't actionable)
+- [x] "UI Test" is now dev-only, excluded from production/release builds entirely - not just
+  hidden from the nav. A plain template `v-if` doesn't achieve that: Vue's compiled render
+  function reads state through a reactive proxy, so Terser can't prove the condition is always
+  `false` and won't drop `UiTest.vue`'s code from the bundle (confirmed - the strings were
+  still present in a `bun run build` output even with the button hidden). Fixed by gating a
+  dynamic `import()` behind a literal `import.meta.env.DEV` ternary in `App.vue`'s `<script>`
+  instead (`defineAsyncComponent`) - that ternary is inlinable by Vite's build-time `DEV`
+  replacement, so the whole import is eliminated in production, verified by grepping the
+  built `dist/assets/*.js` for `UiTest`-only strings and finding none
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

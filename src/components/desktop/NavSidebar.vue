@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { IconDeviceGamepad, IconPlus } from "@tabler/icons-vue";
 
-export type AppView = "library" | "settings" | "uiTest";
+export type AppView = "library" | "stats" | "settings" | "uiTest";
+
+// import.meta.env isn't valid syntax inside a template expression (parsed in non-module
+// scope) - read once here instead, so the "UI Test" button (and its dead branch in App.vue)
+// gets tree-shaken out of production builds entirely, not just hidden at runtime.
+const isDev = import.meta.env.DEV;
 
 defineProps<{
   activeView: AppView;
@@ -37,12 +42,20 @@ const emit = defineEmits<{
       </button>
       <button
         class="nav-item"
+        :class="{ 'accent-active': activeView === 'stats' }"
+        @click="emit('update:activeView', 'stats')"
+      >
+        Stats
+      </button>
+      <button
+        class="nav-item"
         :class="{ 'accent-active': activeView === 'settings' }"
         @click="emit('update:activeView', 'settings')"
       >
         Settings
       </button>
       <button
+        v-if="isDev"
         class="nav-item"
         :class="{ 'accent-active': activeView === 'uiTest' }"
         @click="emit('update:activeView', 'uiTest')"

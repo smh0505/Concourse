@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { IconLayoutGrid, IconSlideshow } from "@tabler/icons-vue";
 import { useLibraryStore } from "./stores/library";
@@ -15,7 +15,7 @@ import { useGamepadStatus } from "./composables/useGamepadStatus";
 import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
 import AppSettings from "./components/desktop/AppSettings.vue";
-import UiTest from "./components/desktop/UiTest.vue";
+import StatsPanel from "./components/desktop/StatsPanel.vue";
 import AddGame from "./components/desktop/modalForms/AddGame.vue";
 import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
@@ -42,6 +42,14 @@ const activeView = ref<AppView>("library");
 const sidebarCollapsed = ref(false);
 const showAddGameModal = ref(false);
 const { connected: gamepadConnected, gamepadName } = useGamepadStatus();
+// Dynamic import gated by a literal `import.meta.env.DEV` check, not a plain v-if in the
+// template - Vue's compiled render function reads state through a proxy, so a v-if there
+// can't be proven statically false and won't drop UiTest.vue's code from a production
+// bundle. This ternary is inlinable by Vite's build-time DEV replacement, so the whole
+// `import()` (and its chunk) is eliminated entirely in prod, not just hidden at runtime.
+const UiTest = import.meta.env.DEV
+  ? defineAsyncComponent(() => import("./components/desktop/UiTest.vue"))
+  : undefined;
 
 watch(bigPicture, (enabled) => {
   getCurrentWindow()
@@ -125,6 +133,12 @@ onUnmounted(() => {
           <GameList v-else />
         </template>
 
+        <template v-else-if="activeView === 'stats'">
+          <div class="settings-panel">
+            <StatsPanel />
+          </div>
+        </template>
+
         <template v-else-if="activeView === 'settings'">
           <div class="settings-panel">
             <AppSettings />
@@ -132,9 +146,9 @@ onUnmounted(() => {
           </div>
         </template>
 
-        <template v-else>
+        <template v-else-if="activeView === 'uiTest'">
           <div class="settings-panel">
-            <UiTest />
+            <component :is="UiTest" v-if="UiTest" />
           </div>
         </template>
       </main>

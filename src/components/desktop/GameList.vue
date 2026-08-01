@@ -11,9 +11,10 @@ const library = useLibraryStore();
 const plugins = usePluginStore();
 
 const listEl = ref<HTMLElement | null>(null);
-// 82 ~= .list-row-shell's 64px thumb + its own top/bottom padding/border; 8 matches .list's
-// own row gap below. A slight underestimate is fine - see GameGrid.vue's identical reasoning.
-const SKELETON_COUNT = useSkeletonCount(listEl, { itemHeight: 82, gap: 8 });
+// 44 matches GameListRow's own collapsed min-height (2.75rem, border-box so already includes
+// its padding/border); 8 matches .list's own row gap below. A slight underestimate is fine -
+// see GameGrid.vue's identical reasoning.
+const SKELETON_COUNT = useSkeletonCount(listEl, { itemHeight: 44, gap: 8 });
 </script>
 
 <template>

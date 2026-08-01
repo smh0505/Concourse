@@ -354,6 +354,17 @@ as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Bric
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
 
+- [x] `GameListRow.vue` redesigned: dropped the separate 48x64 thumbnail entirely, cover art is
+  now the row's own `background-image` (with a left-to-right dark scrim for text legibility,
+  fading toward the art on the right). Collapsed by default to just the title; hovering
+  expands the row (`min-height` transition) and reveals description/meta/actions (`max-height`/
+  `opacity` transitions), matching `GameCard.vue`'s existing hover-reveal-footer convention.
+  No-cover fallback still honors the shared `--cover-placeholder-*` hooks, using the `background`
+  shorthand (not `background-image` alone) since the plain-color default isn't valid there.
+  `useSkeletonCount`'s `itemHeight` in `GameList.vue` updated (82 -> 44) to match the new,
+  much shorter collapsed row height. `SkeletonRow.vue` intentionally left as its old
+  thumbnail-based layout for now - a known, minor visual mismatch during scans, not fixed as
+  part of this pass
 - [x] Fixed a real bug: skeleton placeholder count was hardcoded (6 cards/4 rows), leaving a
   maximized/large window's scan-in-progress view mostly empty below the fold. New
   `useSkeletonCount` composable (`src/composables/`) measures the container's own width and

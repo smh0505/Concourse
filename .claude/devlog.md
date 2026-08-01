@@ -1908,3 +1908,34 @@ three failed attempts before succeeding - each one a real bug, not a retry-and-h
 **Post-verification cleanup, on request:** bumped `actions/checkout` to `@v6` (was `@v4`), and
 switched `releaseDraft: true` → `false` - now that the pipeline is confirmed working end to
 end, future releases publish immediately instead of needing a manual un-draft step.
+
+**Retested at `v1.3.6` (rebuilt the local `1.3.5` baseline from scratch, previous
+`target/release` folder had been deleted) - user reported a real runtime bug this time,
+`TypeError: Cannot read private member from an object whose class did not declare it`, caught
+via a screenshot since Tauri's release build has no devtools access and the toast couldn't be
+selected/copied (dragging to highlight text registered as a click and dismissed it).**
+
+- Recognized this immediately as the same bug class already fixed once this session in
+  `slotRegistry.ts` (`PluginSettings.vue`'s `shallowRef` vs `ref` fix for the "Vue received a
+  Component that was made a reactive object" warning) - a real class instance backed by
+  private fields gets deep-reactivized by a plain Pinia `ref()`, wrapping it in a Vue Proxy;
+  calling any method on that Proxy later fails the private-field brand check, since private
+  fields are tied to the exact original object identity, not whatever wraps it.
+  `@tauri-apps/plugin-updater`'s `Update` class (extends `Resource`, wraps a real Tauri
+  resource handle) is exactly this shape - `stores/appUpdate.ts` stored it in a plain `ref()`,
+  and clicking "Update Now" called `.downloadAndInstall()` on the now-proxied instance.
+- Fix: `available` changed from `ref<Update | null>` to `shallowRef<Update | null>` -
+  `shallowRef` only makes the ref's own reassignment reactive, never wraps the assigned value
+  itself, so the real `Update` instance (and its private fields) stays intact when its methods
+  are called later. `checking`/`installing` stayed plain `ref<boolean>` - primitives have no
+  reactivity/proxy concern at all.
+- `bun run build`/`cargo check` both clean.
+- Also confirmed `rust-cache`'s actual behavior on `v1.3.6`'s run: it restored nothing ("No
+  cache found"), total run time barely moved (~16.4min vs ~17-18min before). Traced the real
+  reason rather than assuming misconfiguration: `Swatinem/rust-cache`'s key is partly derived
+  from `Cargo.lock`'s content, which includes this crate's own `version` field - since every
+  single test iteration this session bumps the version specifically to test the updater,
+  `Cargo.lock` differs on every run by design, so the cache can never hit under this exact
+  testing pattern regardless of whether the dependency tree itself changed at all. Not a bug in
+  the caching setup - in real day-to-day usage (regular commits between infrequent actual
+  version bumps), it should behave as intended.

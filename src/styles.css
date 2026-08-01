@@ -401,6 +401,9 @@ small {
    rather than replacing it, since `.active` itself is still each component's own state-toggle
    class bound via `:class`. */
 .accent-active {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  /* Opt-in hooks, default to the shared accent tokens - a theme can override just the
+     "selected" indicator's color without recoloring --color-accent itself (which also drives
+     buttons/toasts/tile focus rings). */
+  background: var(--accent-active-background, var(--color-accent));
+  color: var(--accent-active-color, var(--color-on-accent));
 }

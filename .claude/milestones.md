@@ -345,3 +345,11 @@ the default theme's success toast to green with no benefit. Reverted `.toast-suc
 `data-theme-plugins` repo) changes its own `--color-accent` to blue (`#0058f8`, its existing
 pipe-blue) instead, keeping it visually distinct from `--color-accent-alt` (green) and
 `--color-danger` (dark red).
+
+Bumping `--color-accent` to blue then made the shared `.accent-active` class (active nav
+item/tag filter/Settings tab indicator) blue too, a side effect of `.accent-active` reading
+`--color-accent` directly. Gave it its own opt-in `--accent-active-background`/
+`--accent-active-color` hooks (default to `--color-accent`/`--color-on-accent`, same pattern
+as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Brick Block sets
+these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
+text, distinct from its own blue accent and green accent-alt.

@@ -2237,3 +2237,20 @@ time, not a scoped side effect to work around.
 Copied the updated manifest into the app's local theme cache (`%APPDATA%/com.bloppy.concourse/
 data-themes/brick-block-data-theme/theme.json`) for live testing each time, same pattern as
 earlier in the session. `bun run build` clean at every step.
+
+**Follow-up 3: the active-tab recolor turned out unwanted too, given its own opt-in hook.**
+The blue `--color-accent` bumped in follow-up 2 also recolored `.accent-active` (the shared
+"selected" indicator class - active nav item, tag filter, and every Settings tab, defined once
+in `styles.css`, reused across `NavSidebar.vue`/`GameFilters.vue`/`PluginSettings.vue`). Unlike
+buttons/tile-focus-ring (fine staying blue), user wanted the selected-tab highlight to *not*
+follow the accent color change, without reverting `--color-accent` itself or hardcoding an
+exception into the shared class. Gave `.accent-active` its own opt-in hooks instead -
+`background: var(--accent-active-background, var(--color-accent))` /
+`color: var(--accent-active-color, var(--color-on-accent))` - same fallback-hook pattern
+already used for `--button-border-color`/`--tile-*`/`--card-*`. Every theme that doesn't
+declare these two new variables is byte-for-byte unaffected (falls through to
+`--color-accent` exactly as before). Brick Block's `manifest.json` sets
+`--accent-active-background: #fce303` (its existing cover-placeholder star yellow) /
+`--accent-active-color: #1a1a2e` (dark navy, for contrast on yellow), version bumped
+`1.3.3` -> `1.3.4`. Verified via `bun run build` (clean) and re-synced the local theme cache
+copy again.

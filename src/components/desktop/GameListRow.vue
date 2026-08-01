@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { IconEdit, IconLoader2, IconPlayerPlay, IconTrash } from "@tabler/icons-vue";
+import {
+  IconEdit,
+  IconInfoCircle,
+  IconLoader2,
+  IconPlayerPlay,
+  IconTrash,
+} from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import type { Game } from "../../db";
 
@@ -36,10 +42,11 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
       </button>
       <button
         class="fetch-metadata"
+        title="Fetch Metadata"
         :disabled="fetchingMetadata"
         @click="library.fetchMetadata(game)"
       >
-        Info
+        <IconInfoCircle :size="15" :stroke-width="1.75" />
       </button>
       <button class="edit" title="Edit" @click="library.openEdit(game)">
         <IconEdit :size="15" :stroke-width="1.75" />
@@ -128,6 +135,5 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   display: flex;
   gap: 0.35rem;
   flex-shrink: 0;
-  font-size: 0.8rem;
 }
 </style>

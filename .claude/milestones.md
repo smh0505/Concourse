@@ -354,6 +354,10 @@ as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Bric
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
 
+- [x] `GameListRow.vue`'s "Info" text button swapped for an icon-only `IconInfoCircle` button
+  (title tooltip added), matching `GameCard.vue`'s equivalent button exactly. Dropped the now-
+  vestigial `.actions { font-size: 0.8rem }` override, no longer needed once nothing in that
+  row is text
 - [x] `GameListRow.vue`'s thumb now shows the same fetch-metadata spinner overlay
   `GameCard.vue` already has (`IconLoader2`, spin animation, dark scrim), instead of just
   disabling the "Info" button with `"..."` text - wrapped `.thumb`/`.thumb-placeholder` in a

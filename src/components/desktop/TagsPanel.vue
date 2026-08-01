@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { IconCheck, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
-import { useLibraryStore } from "../../stores/library";
+import { useTagsStore } from "../../stores/tags";
 import { useNamedItemManager } from "../../composables/useNamedItemManager";
 
-const library = useLibraryStore();
+const tags = useTagsStore();
 const manager = useNamedItemManager({
-  create: library.createTag,
-  rename: library.renameTag,
-  delete: library.deleteTag,
-  getUsageCounts: library.getTagUsageCounts,
+  create: tags.create,
+  rename: tags.rename,
+  delete: tags.remove,
+  getUsageCounts: tags.getUsageCounts,
 });
 </script>
 
@@ -23,8 +23,8 @@ const manager = useNamedItemManager({
       </form>
     </div>
 
-    <ul v-if="library.allTags.length" class="item-list">
-      <li v-for="name in library.allTags" :key="name" class="item-row list-row-shell">
+    <ul v-if="tags.allTags.length" class="item-list">
+      <li v-for="name in tags.allTags" :key="name" class="item-row list-row-shell">
         <template v-if="manager.editingName === name">
           <input
             v-model="manager.editingValue"

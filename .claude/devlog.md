@@ -561,6 +561,41 @@ same requirement the `.panel`/`.sticky-header` move faced moments earlier.
   `.panel.settings-panel{padding-top:0}` present and correctly overriding just that one
   longhand. `bun run build` clean.
 
+**Follow-up, on user question: `library.ts` had grown a lot of tag/collection actions - worth
+its own substore(s)?** Agreed it was: tags/collections now each have their own dedicated
+manager tab (`TagsPanel.vue`/`CollectionsPanel.vue`), a real separate domain from core game
+CRUD/launch/search, not just "many actions living in one file." Split into
+`stores/tags.ts`/`stores/collections.ts`, structurally identical to each other (collections
+mirrors tags exactly, same as their DB repositories already do).
+
+- Each new store owns its own `gameTags`/`allTags`/`activeFilter` (or the collection
+  equivalents), a `refresh(games: Game[])` that takes the current game list as a parameter
+  rather than owning it (a tags store has no business knowing which games exist, only which
+  tags each one carries), `toggleFilter`/`matches` for the library filter, `addToGame`/
+  `removeFromGame` for per-game assignment, and `create`/`rename`/`remove`/`getUsageCounts`
+  for the manager tab.
+- **Real efficiency gain, not just a file-organization one**: previously every tag/collection
+  mutation called the whole `library.ts` `refresh()` (reload games + tags + collections all
+  together), even though renaming a tag can't possibly change which games exist. Each new
+  store's own mutations now call a private `refreshSelf()` (re-runs just that store's own
+  `refresh()` against the current `useLibraryStore().games`) instead - a tag rename no longer
+  re-fetches the games list or collection data for no reason.
+- **Circular import, deliberately fine**: `tags.ts`/`collections.ts` import `useLibraryStore`
+  (to read `.games` inside `refreshSelf`), and `library.ts` imports both new stores (for
+  `filteredGames`/`refresh()`). This is a real circular module reference, but every use is
+  inside a function body (`useTagsStore()` called at call-time, never at module-evaluation
+  time), which is the standard, documented-safe way Pinia stores compose each other - the
+  cycle never actually executes during module load, only later once Pinia itself is already
+  installed and something calls into one of these functions.
+- Updated all 4 consumers: `EditGame.vue` (per-game assignment - renamed its own local `tags`
+  computed to `gameTags` to avoid shadowing the new `useTagsStore()` instance),
+  `GameFilters.vue` (the two filter rows), `TagsPanel.vue`/`CollectionsPanel.vue` (the
+  manager tabs, now calling the dedicated stores directly instead of via `library`'s
+  pass-through actions).
+- `library.ts` itself dropped from 378 to 273 lines, keeping only games CRUD/launch/search/
+  view-mode - genuinely just game-domain concerns now.
+- `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

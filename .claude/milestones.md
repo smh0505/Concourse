@@ -182,6 +182,11 @@ own definition.
   caller has to remember to wrap. `TagsPanel`/`CollectionsPanel`'s sticky-header cancel-trick
   reworked from a negative-margin hack to a `.panel.settings-panel { padding-top: 0 }`
   compound-selector override, since both classes now live on the same element
+- [x] Split tag/collection state and actions out of `library.ts` into their own
+  `stores/tags.ts`/`stores/collections.ts` - now a genuinely separate domain with its own UI
+  tabs, not just "a lot of library actions." `library.ts` (378 -> 273 lines) keeps games
+  CRUD/launch/search/view-mode; `filteredGames`/`refresh()` compose the two new stores
+  instead of owning tag/collection data directly
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

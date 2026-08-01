@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useLibraryStore } from "../../../stores/library";
+import { useTagsStore } from "../../../stores/tags";
+import { useCollectionsStore } from "../../../stores/collections";
 import { useWrapperPluginStore, type WrapperProfile } from "../../../stores/wrapperPlugins";
 import BaseModal from "../BaseModal.vue";
 import type { GameEditFields } from "../../../db";
 
 const library = useLibraryStore();
+const tags = useTagsStore();
+const collections = useCollectionsStore();
 const wrapperPlugins = useWrapperPluginStore();
 
 const profilesByPlugin = computed(() => {
@@ -55,25 +59,25 @@ const wrapperSelection = computed({
   },
 });
 
-const tags = computed(() =>
-  library.editingGame ? library.gameTags[library.editingGame.id] ?? [] : [],
+const gameTags = computed(() =>
+  library.editingGame ? tags.gameTags[library.editingGame.id] ?? [] : [],
 );
 
 async function onAddTag() {
   const name = newTag.value.trim();
   if (!name || !library.editingGame) return;
-  await library.addTag(library.editingGame, name);
+  await tags.addToGame(library.editingGame, [name]);
   newTag.value = "";
 }
 
 const gameCollections = computed(() =>
-  library.editingGame ? library.gameCollections[library.editingGame.id] ?? [] : [],
+  library.editingGame ? collections.gameCollections[library.editingGame.id] ?? [] : [],
 );
 
 async function onAddCollection() {
   const name = newCollection.value.trim();
   if (!name || !library.editingGame) return;
-  await library.addCollection(library.editingGame, name);
+  await collections.addToGame(library.editingGame, [name]);
   newCollection.value = "";
 }
 
@@ -199,10 +203,10 @@ async function onSave() {
         </label>
         <div class="tags-section">
           <span>Tags</span>
-          <div class="tags" v-if="tags.length">
-            <span class="tag-pill tag" v-for="tag in tags" :key="tag">
+          <div class="tags" v-if="gameTags.length">
+            <span class="tag-pill tag" v-for="tag in gameTags" :key="tag">
               {{ tag }}
-              <button class="tag-remove" @click="library.removeTag(library.editingGame!, tag)">&times;</button>
+              <button class="tag-remove" @click="tags.removeFromGame(library.editingGame!, tag)">&times;</button>
             </span>
           </div>
           <form class="add-tag-form" @submit.prevent="onAddTag">
@@ -215,7 +219,7 @@ async function onSave() {
           <div class="tags" v-if="gameCollections.length">
             <span class="tag-pill tag" v-for="name in gameCollections" :key="name">
               {{ name }}
-              <button class="tag-remove" @click="library.removeCollection(library.editingGame!, name)">&times;</button>
+              <button class="tag-remove" @click="collections.removeFromGame(library.editingGame!, name)">&times;</button>
             </span>
           </div>
           <form class="add-tag-form" @submit.prevent="onAddCollection">

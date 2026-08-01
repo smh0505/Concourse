@@ -7,8 +7,6 @@ import {
   games as gameRepo,
   playtime as playtimeRepo,
   settings as settingsRepo,
-  tags as tagRepo,
-  collections as collectionRepo,
   type Game,
   type GameEditFields,
 } from "../db";
@@ -16,6 +14,8 @@ import type { GameEntry } from "../plugins/types";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
+import { useTagsStore } from "./tags";
+import { useCollectionsStore } from "./collections";
 
 const VIEW_MODE_SETTING = "view_mode";
 
@@ -37,13 +37,7 @@ interface GameSessionEnded {
 
 export const useLibraryStore = defineStore("library", () => {
   const games = ref<Game[]>([]);
-  const gameTags = ref<Record<number, string[]>>({});
-  const allTags = ref<string[]>([]);
-  const gameCollections = ref<Record<number, string[]>>({});
-  const allCollections = ref<string[]>([]);
   const search = ref("");
-  const activeTagFilter = ref<string | null>(null);
-  const activeCollectionFilter = ref<string | null>(null);
   const fetchingMetadataFor = ref<number | null>(null);
   const fetchingBackgroundFor = ref<number | null>(null);
   const editingGame = ref<Game | null>(null);
@@ -52,104 +46,24 @@ export const useLibraryStore = defineStore("library", () => {
   let unlistenSessionEnded: UnlistenFn | undefined;
 
   const filteredGames = computed(() => {
+    const tags = useTagsStore();
+    const collections = useCollectionsStore();
     const query = search.value.trim().toLowerCase();
     return games.value.filter((game) => {
       const matchesSearch = !query || game.title.toLowerCase().includes(query);
-      const matchesTag =
-        !activeTagFilter.value || gameTags.value[game.id]?.includes(activeTagFilter.value);
-      const matchesCollection =
-        !activeCollectionFilter.value ||
-        gameCollections.value[game.id]?.includes(activeCollectionFilter.value);
-      return matchesSearch && matchesTag && matchesCollection;
+      return matchesSearch && tags.matches(game.id) && collections.matches(game.id);
     });
   });
 
   async function refresh() {
     games.value = await gameRepo.list();
-    const tagEntries = await Promise.all(
-      games.value.map(async (g) => [g.id, await tagRepo.getForGame(g.id)] as const),
-    );
-    gameTags.value = Object.fromEntries(tagEntries);
-    allTags.value = await tagRepo.getAll();
-    const collectionEntries = await Promise.all(
-      games.value.map(async (g) => [g.id, await collectionRepo.getForGame(g.id)] as const),
-    );
-    gameCollections.value = Object.fromEntries(collectionEntries);
-    allCollections.value = await collectionRepo.getAll();
-  }
-
-  function toggleTagFilter(tag: string) {
-    activeTagFilter.value = activeTagFilter.value === tag ? null : tag;
-  }
-
-  function toggleCollectionFilter(collection: string) {
-    activeCollectionFilter.value = activeCollectionFilter.value === collection ? null : collection;
+    await useTagsStore().refresh(games.value);
+    await useCollectionsStore().refresh(games.value);
   }
 
   async function setViewMode(mode: ViewMode) {
     viewMode.value = mode;
     await settingsRepo.set(VIEW_MODE_SETTING, mode);
-  }
-
-  async function addTag(game: Game, name: string) {
-    await tagRepo.addToGame(game.id, [name]);
-    await refresh();
-  }
-
-  async function removeTag(game: Game, tag: string) {
-    await tagRepo.removeFromGame(game.id, tag);
-    await refresh();
-  }
-
-  async function addCollection(game: Game, name: string) {
-    await collectionRepo.addToGame(game.id, [name]);
-    await refresh();
-  }
-
-  async function removeCollection(game: Game, name: string) {
-    await collectionRepo.removeFromGame(game.id, name);
-    await refresh();
-  }
-
-  /** Standalone tag/collection management (rename/merge/delete, usage counts) for the
-   *  "Tags & Collections" manager tab - distinct from the per-game add/remove actions above,
-   *  which only ever touch one game's own assignment. */
-  async function createTag(name: string) {
-    await tagRepo.create(name);
-    await refresh();
-  }
-
-  async function renameTag(oldName: string, newName: string) {
-    await tagRepo.rename(oldName, newName);
-    await refresh();
-  }
-
-  async function deleteTag(name: string) {
-    await tagRepo.delete(name);
-    await refresh();
-  }
-
-  async function getTagUsageCounts() {
-    return tagRepo.getUsageCounts();
-  }
-
-  async function createCollection(name: string) {
-    await collectionRepo.create(name);
-    await refresh();
-  }
-
-  async function renameCollection(oldName: string, newName: string) {
-    await collectionRepo.rename(oldName, newName);
-    await refresh();
-  }
-
-  async function deleteCollection(name: string) {
-    await collectionRepo.delete(name);
-    await refresh();
-  }
-
-  async function getCollectionUsageCounts() {
-    return collectionRepo.getUsageCounts();
   }
 
   /** One button, every enabled metadata provider - a provider can contribute text
@@ -166,7 +80,7 @@ export const useLibraryStore = defineStore("library", () => {
       if (meta) {
         await gameRepo.updateMetadata(game.id, meta.description, meta.releaseDate);
         if (meta.genres.length > 0) {
-          await tagRepo.addToGame(game.id, meta.genres);
+          await useTagsStore().addToGame(game, meta.genres);
         }
         if (meta.coverArtUrl) await gameRepo.updateCoverArt(game.id, meta.coverArtUrl);
         if (meta.backgroundArtUrl) await gameRepo.updateBackgroundArt(game.id, meta.backgroundArtUrl);
@@ -335,34 +249,14 @@ export const useLibraryStore = defineStore("library", () => {
 
   return {
     games,
-    gameTags,
-    allTags,
-    gameCollections,
-    allCollections,
     search,
-    activeTagFilter,
-    activeCollectionFilter,
     fetchingMetadataFor,
     fetchingBackgroundFor,
     editingGame,
     viewMode,
     filteredGames,
     refresh,
-    toggleTagFilter,
-    toggleCollectionFilter,
     setViewMode,
-    addTag,
-    removeTag,
-    addCollection,
-    removeCollection,
-    createTag,
-    renameTag,
-    deleteTag,
-    getTagUsageCounts,
-    createCollection,
-    renameCollection,
-    deleteCollection,
-    getCollectionUsageCounts,
     fetchMetadata,
     fetchBackgroundArt,
     addGame,

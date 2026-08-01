@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { IconLayoutGrid, IconList } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
+import { useTagsStore } from "../../stores/tags";
+import { useCollectionsStore } from "../../stores/collections";
 
 const library = useLibraryStore();
+const tags = useTagsStore();
+const collections = useCollectionsStore();
 
 function toggleViewMode() {
   library.setViewMode(library.viewMode === "grid" ? "list" : "grid");
@@ -26,24 +30,24 @@ function toggleViewMode() {
         <IconLayoutGrid v-else :size="18" :stroke-width="1.75" />
       </button>
     </div>
-    <div class="tags" v-if="library.allTags.length">
+    <div class="tags" v-if="tags.allTags.length">
       <span
         class="tag-pill filter-tag"
-        :class="{ 'accent-active': library.activeTagFilter === tag }"
-        v-for="tag in library.allTags"
+        :class="{ 'accent-active': tags.activeFilter === tag }"
+        v-for="tag in tags.allTags"
         :key="tag"
-        @click="library.toggleTagFilter(tag)"
+        @click="tags.toggleFilter(tag)"
       >
         {{ tag }}
       </span>
     </div>
-    <div class="tags" v-if="library.allCollections.length">
+    <div class="tags" v-if="collections.allCollections.length">
       <span
         class="tag-pill filter-tag"
-        :class="{ 'accent-active': library.activeCollectionFilter === name }"
-        v-for="name in library.allCollections"
+        :class="{ 'accent-active': collections.activeFilter === name }"
+        v-for="name in collections.allCollections"
         :key="name"
-        @click="library.toggleCollectionFilter(name)"
+        @click="collections.toggleFilter(name)"
       >
         {{ name }}
       </span>

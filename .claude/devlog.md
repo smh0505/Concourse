@@ -1931,11 +1931,30 @@ selected/copied (dragging to highlight text registered as a click and dismissed 
   reactivity/proxy concern at all.
 - `bun run build`/`cargo check` both clean.
 - Also confirmed `rust-cache`'s actual behavior on `v1.3.6`'s run: it restored nothing ("No
-  cache found"), total run time barely moved (~16.4min vs ~17-18min before). Traced the real
-  reason rather than assuming misconfiguration: `Swatinem/rust-cache`'s key is partly derived
-  from `Cargo.lock`'s content, which includes this crate's own `version` field - since every
-  single test iteration this session bumps the version specifically to test the updater,
-  `Cargo.lock` differs on every run by design, so the cache can never hit under this exact
-  testing pattern regardless of whether the dependency tree itself changed at all. Not a bug in
-  the caching setup - in real day-to-day usage (regular commits between infrequent actual
-  version bumps), it should behave as intended.
+  cache found"), total run time barely moved (~16.4min vs ~17-18min before). First guess
+  (`Cargo.lock`'s hash changing because this crate's own `version` field bumps every test) was
+  wrong - checked directly and the computed cache/restore keys were byte-identical across the
+  `v1.3.5`/`v1.3.6`/`v1.3.7` runs (`v0-rust-release-Windows_NT-x64-8af1e26a-37380225`), so key
+  content was never the issue. User asked to confirm precisely rather than accept the first
+  guess; `gh api repos/.../actions/caches` showed the real answer: two separate cache entries
+  existed, same key, but scoped to different refs (`refs/heads/refs/tags/v1.3.5` and
+  `refs/heads/refs/tags/v1.3.6`). GitHub Actions caches are scoped per-ref, falling back only
+  to the repo's default branch - two different tags have no fallback relationship to each
+  other at all, so each of this milestone's test releases (a new tag every time) gets its own
+  isolated cache no matter how identical the key is. Not a misconfiguration; in real usage the
+  cache would only ever pay off across commits sharing a ref (e.g. regular pushes to `main`),
+  never across one-off release tags the way this session's rapid-fire testing used it.
+
+**Final confirmation, from the user actually running it.** Rebuilt a local test install at
+version `1.3.6` from current (fixed) source - deliberately *not* committing/pushing the
+temporary version edit, since this was purely a local one-off build (`git checkout --
+package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json` restored the working tree to the
+real committed `1.3.7` immediately after). This mattered because the `TypeError` lives in
+whatever code is *currently installed and initiating the update check* (the old `1.3.5`
+baseline was built from pre-fix source, so it would have hit the bug regardless of how many
+fixed releases got published afterward) - needed a baseline built from the fix itself, at a
+lower version than the target release, to actually test the fix rather than just re-trigger
+the same old bug. Installed that `1.3.6` build, updated to the published `v1.3.7` release:
+download, install, and relaunch all completed successfully, no `TypeError`. App self-update is
+now fully verified working end to end, not just typechecked/built. Plugin/theme self-update
+(Milestone 20's other half) remains unstarted.

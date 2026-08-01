@@ -266,14 +266,21 @@ tradeoffs behind the split.
   devlog for the real root causes (`bundle.createUpdaterArtifacts` never set, and the repo's
   default Actions permission capping `contents: write` even with the workflow's own grant)
 - [x] Added `Swatinem/rust-cache@v2` to `release.yml` - every run was a from-scratch ~15min
-  Rust compile with no caching at all (though it can't actually hit while this milestone's own
-  testing keeps bumping the version every run, since that changes `Cargo.lock`'s hash each
-  time - not a misconfiguration, see devlog)
+  Rust compile with no caching at all. Confirmed via `gh api .../actions/caches` why it never
+  actually hits during this milestone's own testing: GitHub Actions scopes cache access per
+  ref, with fallback only to the repo's default branch - each test release uses a brand-new
+  tag, and one tag's cache is invisible to a different tag's run regardless of matching key.
+  Not a misconfiguration; would work as intended on `main` or across commits on the same ref
 - [x] Fixed a real bug caught by testing the actual GUI: `stores/appUpdate.ts` stored
   `@tauri-apps/plugin-updater`'s `Update` (a real class instance) in a plain `ref()`, which
   deep-reactivizes it into a Proxy that fails the class's private-field checks the moment
   `downloadAndInstall()` is called - same bug class as the earlier `slotRegistry.ts` fix this
   session. Fixed with `shallowRef`
+- [x] Confirmed fixed by the user, testing for real: a locally-built `1.3.6` install (current,
+  fixed source) updating to the published `v1.3.7` release completed successfully - download,
+  install, and relaunch all worked, no `TypeError`. App self-update is fully working end to end
+
+App self-update closed. Plugin/theme self-update (below) remains open.
 
 **Plugin/theme self-update** (custom - no existing mechanism covers this):
 - [ ] Persist each installed WASM plugin/data theme's install origin (`source_url` for

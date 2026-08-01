@@ -496,6 +496,23 @@ on property access, so `manager.foo` reads/writes `foo.value` transparently, the
 for this exact composable-return shape. Renamed `NavSidebar.vue`'s `AppView` variant from the
 single `"tagsCollections"` to `"tags"`/`"collections"`. `bun run build` clean.
 
+**Fixed a real bug reported directly: the sticky header touched the titlebar as the page
+scrolled.** `App.vue`'s shared `.settings-panel` wrapper supplies `padding: var(--space-5)
+var(--space-6) 0` around whatever view it hosts (Stats/Settings/UiTest/these two) - that
+padding-top only ever applies to `.settings-panel`'s own padded box, so it supplied the
+*initial* gap above `.sticky-header` correctly, but the moment the list scrolled, sticky
+positioning pins the header relative to the actual scroll container's top edge (`.content`),
+not `.settings-panel`'s padded position - the gap visually disappeared and the header sat
+flush against the titlebar. Exact same bug class `GameFilters.vue`'s `.filters` already hit
+and fixed once (see that milestone's own entry). Same fix here: `.panel` gets
+`margin-top: calc(var(--space-5) * -1)` to cancel the parent's padding-top entirely, and
+`.sticky-header` gains that same `var(--space-5)` back as its own `padding-top` - now living
+on the element that's actually sticky, so the gap persists at every scroll position instead of
+only before the first one. Didn't touch the shared `.settings-panel` rule itself, since
+Stats/Settings/UiTest have no sticky element inside them and rely on that padding-top working
+normally. Applied identically to both `TagsPanel.vue`/`CollectionsPanel.vue`. `bun run build`
+clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

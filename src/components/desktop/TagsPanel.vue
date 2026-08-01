@@ -62,6 +62,13 @@ const manager = useNamedItemManager({
 <style scoped>
 /* .list-row-shell (shared, styles.css) supplies the item rows' flex/border/radius/padding. */
 .panel {
+  /* Cancels App.vue's `.settings-panel` padding-top - that padding would otherwise only
+     supply the *initial* gap above `.sticky-header` below, then get visually "eaten" the
+     moment it's scrolled (sticky positions relative to the scroll container's own top, not
+     this panel's padded box) - the same bug `GameFilters.vue`'s `.filters` hit. Moving the
+     gap onto `.sticky-header`'s own padding instead keeps it present at every scroll
+     position, not just before the first scroll. */
+  margin-top: calc(var(--space-5) * -1);
   margin-bottom: var(--space-5);
 }
 
@@ -72,6 +79,7 @@ const manager = useNamedItemManager({
   top: 0;
   z-index: 10;
   background: var(--color-base);
+  padding-top: var(--space-5);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);
 }

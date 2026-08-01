@@ -65,6 +65,9 @@ const manager = useNamedItemManager({
 <style scoped>
 /* .list-row-shell (shared, styles.css) supplies the item rows' flex/border/radius/padding. */
 .panel {
+  /* Cancels App.vue's `.settings-panel` padding-top - see TagsPanel.vue's identical comment
+     for the full reasoning (same bug GameFilters.vue's `.filters` already hit). */
+  margin-top: calc(var(--space-5) * -1);
   margin-bottom: var(--space-5);
 }
 
@@ -75,6 +78,7 @@ const manager = useNamedItemManager({
   top: 0;
   z-index: 10;
   background: var(--color-base);
+  padding-top: var(--space-5);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);
 }

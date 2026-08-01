@@ -171,7 +171,9 @@ own definition.
   series/franchise, not another kind of tag) with the same management + per-game assignment
   (`EditGame.vue`) + library filter (`GameFilters.vue`) as tags already had. Each panel's own
   "add" form is pinned to the top of the scroll container (`GameFilters.vue`'s sticky pattern),
-  and item rows reuse the shared `.list-row-shell` look
+  and item rows reuse the shared `.list-row-shell` look. Fixed the sticky header touching the
+  titlebar on scroll (the parent's padding-top only applied before the first scroll; moved
+  onto the sticky element's own padding instead, same fix `GameFilters.vue` already needed)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

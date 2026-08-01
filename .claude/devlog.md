@@ -2041,3 +2041,26 @@ detects a genuinely newer version, correctly reports no update when already curr
 correctly reports no update when there's no known origin to check at all - rather than only
 testing the "happy path where an update exists" case. `cargo check`/`cargo test`/
 `bun run build` all clean.
+
+**Frontend "update available" indicator, wired into `PluginSettings.vue`.** New
+`stores/pluginUpdates.ts` - a thin Pinia wrapper around `check_plugin_update` keyed by plugin
+id, with `checkOne`/`checkAll`/`isUpdateAvailable`. `checkOne` no-ops for any manifest whose
+`runtime` isn't `"wasm"`/`"data"` - a build-time TS plugin was never installed through the
+pipeline that records `sourceUrl`/`installedViaRegistry` at all, so checking one would be a
+wasted round-trip against a command that can only ever report "no known origin" for it.
+- Added an `<span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">`
+  next to the existing `<span class="version">` in all 5 of `PluginSettings.vue`'s tabs
+  (source/theme/metadata/controller/wrapper) - all 5 were byte-identical, so used `replace_all`
+  the same way the earlier `.active`→`accent-active` migration did. Controller mappings are
+  always build-time TS today (no WASM support exists for that kind), so the badge will simply
+  never show there in practice - left the markup in anyway rather than special-casing it out,
+  since `isUpdateAvailable` already returns `false` safely for anything never checked.
+- Triggered via a single `pluginUpdates.checkAll([...five stores' manifests])` call in
+  `PluginSettings.vue`'s existing `onMounted` - explicitly a baseline for now, not the real
+  three-moment wiring the app self-update already has (that's the next, separate checklist
+  item). Passing every kind's manifests here (including controller's, which can never actually
+  have an origin to check) is harmless given `checkOne`'s no-op guard.
+- Verified via compiled CSS: `.update-badge` present exactly once, `--color-accent` colored,
+  matching count of markup usages (5 template sites + 1 style rule = 6 total occurrences of
+  the string, confirmed via `grep -c`). `bun run build` (typecheck + build) and `cargo check`
+  both clean.

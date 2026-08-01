@@ -297,7 +297,11 @@ App self-update closed. Plugin/theme self-update (below) remains open.
   `source_url` directly otherwise), numeric (not lexical) version comparison, reports the
   actual reinstall URL to use if an update exists. 9 tests total (5 existing + 4 new: numeric-
   vs-lexical comparison, a real newer-version detection, already-current, and no-known-origin)
-- [ ] Frontend: "update available" indicator per plugin/theme row in `PluginSettings.vue`
+- [x] Frontend: new `stores/pluginUpdates.ts` (wraps `check_plugin_update`, no-ops for
+  build-time TS manifests which were never installed through the runtime pipeline at all) +
+  an "Update available" badge next to each of the 5 tabs' version span in `PluginSettings.vue`.
+  Checked once on mount as a baseline for now - proper wiring into the same three trigger
+  moments as the app self-update is the next, separate checklist item
 - [ ] Apply-update path reuses the existing `install_wasm_plugin`/`install_data_theme`
   pipeline, re-triggered from the update-available state instead of a fresh user-typed
   URL/registry pick

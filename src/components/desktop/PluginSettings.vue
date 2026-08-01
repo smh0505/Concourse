@@ -7,6 +7,7 @@ import { useMetadataProviderStore } from "../../stores/metadataProviders";
 import { useControllerMappingStore } from "../../stores/controllerMapping";
 import { useWrapperPluginStore } from "../../stores/wrapperPlugins";
 import { usePluginInstallStore } from "../../stores/pluginInstall";
+import { usePluginUpdatesStore } from "../../stores/pluginUpdates";
 import { loadAllPlugins } from "../../plugins/loader";
 import AddPlugin from "./modalForms/AddPlugin.vue";
 import ConfirmInstall from "./modalForms/ConfirmInstall.vue";
@@ -27,6 +28,7 @@ const metadataProviders = useMetadataProviderStore();
 const controllerMapping = useControllerMappingStore();
 const wrapperPlugins = useWrapperPluginStore();
 const pluginInstall = usePluginInstallStore();
+const pluginUpdates = usePluginUpdatesStore();
 
 const activeTab = ref<Tab>("source");
 const showAddPluginModal = ref(false);
@@ -105,6 +107,17 @@ onMounted(async () => {
   allControllerPlugins.value = controllerPlugins;
   allWrapperPlugins.value = wrapperPluginsMap;
   await loadGrantedCapabilities([...plugins.manifests, ...wrapperPlugins.manifests]);
+  // Baseline trigger for now - proper wiring into the same three moments the app self-update
+  // uses (start/focus/install-modal-open) is a separate, later step. checkOne no-ops for any
+  // manifest that was never installed through the runtime pipeline (controller mappings are
+  // always build-time TS), so passing every kind's manifests here is harmless.
+  pluginUpdates.checkAll([
+    ...plugins.manifests,
+    ...theme.manifests,
+    ...metadataProviders.manifests,
+    ...controllerMapping.manifests,
+    ...wrapperPlugins.manifests,
+  ]);
 });
 </script>
 
@@ -159,6 +172,9 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
+            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
+              Update available
+            </span>
           </label>
           <span class="row-controls">
             <span v-if="plugins.enabledIds.includes(manifest.id)" class="reorder-buttons">
@@ -212,6 +228,9 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
+            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
+              Update available
+            </span>
           </label>
           <button
             v-if="manifest.runtime === 'data'"
@@ -245,6 +264,9 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
+            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
+              Update available
+            </span>
           </label>
           <span class="row-controls">
             <span v-if="metadataProviders.enabledIds.includes(manifest.id)" class="reorder-buttons">
@@ -288,6 +310,9 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
+            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
+              Update available
+            </span>
           </label>
           <component
             :is="allControllerPlugins.get(manifest.id)?.settingsComponent"
@@ -309,6 +334,9 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
+            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
+              Update available
+            </span>
           </label>
           <component
             :is="allWrapperPlugins.get(manifest.id)?.settingsComponent"
@@ -447,6 +475,12 @@ small {
 .version {
   opacity: 0.6;
   font-size: 0.75rem;
+}
+
+.update-badge {
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .scan-button {

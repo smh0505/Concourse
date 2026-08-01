@@ -16,16 +16,18 @@ const SKELETON_COUNT = 4;
     <template v-if="plugins.scanning">
       <SkeletonRow v-for="n in SKELETON_COUNT" :key="`skeleton-${n}`" />
     </template>
-    <GameListRow v-for="game in library.filteredGames" :key="game.id" :game="game" />
-    <div v-if="!plugins.scanning && library.filteredGames.length === 0" class="empty-state">
-      <template v-if="library.games.length === 0">
-        <IconInboxOff :size="28" :stroke-width="1.5" />
-        <p>Your library is empty. Add a game or scan a source plugin to get started.</p>
-      </template>
-      <template v-else>
-        <p>No games match your search/filters.</p>
-      </template>
-    </div>
+    <template v-else>
+      <GameListRow v-for="game in library.filteredGames" :key="game.id" :game="game" />
+      <div v-if="library.filteredGames.length === 0" class="empty-state">
+        <template v-if="library.games.length === 0">
+          <IconInboxOff :size="28" :stroke-width="1.5" />
+          <p>Your library is empty. Add a game or scan a source plugin to get started.</p>
+        </template>
+        <template v-else>
+          <p>No games match your search/filters.</p>
+        </template>
+      </div>
+    </template>
   </div>
 </template>
 

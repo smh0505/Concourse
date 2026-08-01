@@ -115,7 +115,10 @@ onUnmounted(() => {
           @add-game="showAddGameModal = true"
         />
       </Transition>
-      <main class="content">
+      <main
+        class="content"
+        :class="{ 'scroll-locked': activeView === 'library' && plugins.scanning }"
+      >
         <template v-if="activeView === 'library'">
           <GameFilters />
           <GameGrid v-if="library.viewMode === 'grid'" />
@@ -190,6 +193,14 @@ onUnmounted(() => {
      instead (and `.settings-panel` below, for the other view). Bottom stays here since both
      views want the same scroll-end breathing room regardless of which child owns left/right. */
   padding: 0 0 var(--space-5);
+}
+
+/* While a source plugin scan is running, GameGrid/GameList hide already-loaded games behind
+   skeleton placeholders only - locking scroll here too so there's nothing scrollable to reveal
+   underneath mid-scan (a long library would otherwise let you scroll past the visible
+   skeletons into empty space). */
+.content.scroll-locked {
+  overflow: hidden;
 }
 
 /* Only the settings view needs this - the library view's own top gap comes from

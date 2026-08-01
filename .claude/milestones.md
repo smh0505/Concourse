@@ -354,6 +354,14 @@ as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Bric
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
 
+- [x] Fixed a real bug: already-loaded games stayed visible and interactable underneath the
+  skeleton placeholders while a source plugin scan was running (`GameGrid.vue`/`GameList.vue`
+  rendered skeletons *and* real games at the same time). Restructured both to an `if`/`else`
+  (skeletons-only while `plugins.scanning`, real games otherwise) so loaded games are fully
+  hidden mid-scan, not just visually covered. Also locked `App.vue`'s `.content` scroll
+  (`overflow: hidden`) while scanning, scoped to `activeView === 'library'` specifically -
+  scanning can also be triggered from the Settings tab's own "Scan Now" button, where locking
+  `.content` would've been an unrelated side effect
 - [x] `GameListRow.vue`'s "Info" text button swapped for an icon-only `IconInfoCircle` button
   (title tooltip added), matching `GameCard.vue`'s equivalent button exactly. Dropped the now-
   vestigial `.actions { font-size: 0.8rem }` override, no longer needed once nothing in that

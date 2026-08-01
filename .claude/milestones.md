@@ -361,6 +361,9 @@ text, distinct from its own blue accent and green accent-alt.
   `opacity` transitions), matching `GameCard.vue`'s existing hover-reveal-footer convention.
   No-cover fallback still honors the shared `--cover-placeholder-*` hooks, using the `background`
   shorthand (not `background-image` alone) since the plain-color default isn't valid there.
+  Follow-up: `.actions`' button gap bumped `0.35rem` -> `var(--space-2)` and given
+  `padding-left: var(--space-3)`, so the buttons don't sit cramped right against the title/
+  details text once revealed.
   `useSkeletonCount`'s `itemHeight` in `GameList.vue` updated (82 -> 44) to match the new,
   much shorter collapsed row height. `SkeletonRow.vue` matched to the same layout right after
   (single title-shaped shimmer bar, no thumbnail box, same 2.75rem min-height) - dropped the

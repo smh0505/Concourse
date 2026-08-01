@@ -173,8 +173,9 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   position: relative;
   z-index: 1;
   display: flex;
-  gap: 0.35rem;
+  gap: var(--space-2);
   flex-shrink: 0;
+  padding-left: var(--space-3);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;

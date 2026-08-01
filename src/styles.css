@@ -398,3 +398,91 @@ small {
   background: var(--accent-active-background, var(--color-accent));
   color: var(--accent-active-color, var(--color-on-accent));
 }
+
+/* Named-item manager panel - TagsPanel.vue, CollectionsPanel.vue. Byte-identical (both wrap
+   useNamedItemManager.ts's create/rename/delete/usage-count UI); the margin-top cancels
+   App.vue's `.settings-panel` padding-top so `.sticky-header` below can supply that same gap
+   as its own padding instead, keeping it present at every scroll position rather than only
+   before the first scroll (same fix `.filters` below already needed). */
+.panel {
+  margin-top: calc(var(--space-5) * -1);
+  margin-bottom: var(--space-5);
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-base);
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.sticky-header h2 {
+  margin: 0;
+}
+
+.sticky-header small {
+  display: block;
+  margin: 0.25rem 0 var(--space-3);
+}
+
+.add-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.add-form input {
+  flex: 1;
+}
+
+.item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.item-name {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-count {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.edit-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-controls {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+}
+
+/* .empty-state exists (grid/list-specific), but this is a plain <p>, not that shared full
+   layout - TagsPanel.vue/CollectionsPanel.vue's empty state is a single line, not an
+   icon+message block. */
+.empty {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}

@@ -513,6 +513,19 @@ Stats/Settings/UiTest have no sticky element inside them and rely on that paddin
 normally. Applied identically to both `TagsPanel.vue`/`CollectionsPanel.vue`. `bun run build`
 clean.
 
+**Follow-up, on user question: does each panel still need its own root wrapper?** Answer:
+yes structurally (`.panel` is each component's actual template root, not an extra nested
+wrapper - a Vue SFC needs exactly one), but that prompted checking whether the two
+components' *style blocks* still needed to be duplicated now that the sticky-header fix made
+them fully byte-identical (`diff` confirmed - the only differences left were a shortened
+comment and "tag list" vs. "collection list" in a code comment, no actual rule differences).
+Moved the whole shared block (`.panel`/`.sticky-header`/`.add-form`/`.item-list`/`.item-name`/
+`.item-count`/`.edit-input`/`.row-controls`/`.icon-button`/`.empty`) into `styles.css`,
+following the Milestone 18 convention rather than leaving real duplication in place - removed
+both components' now-fully-empty `<style scoped>` blocks entirely. Verified via compiled CSS
+that `.panel`/`.sticky-header` each compile exactly once (not once per component), and via
+`bun run build` (clean, CSS bundle shrank slightly).
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

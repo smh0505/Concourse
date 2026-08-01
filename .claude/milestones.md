@@ -173,7 +173,9 @@ own definition.
   "add" form is pinned to the top of the scroll container (`GameFilters.vue`'s sticky pattern),
   and item rows reuse the shared `.list-row-shell` look. Fixed the sticky header touching the
   titlebar on scroll (the parent's padding-top only applied before the first scroll; moved
-  onto the sticky element's own padding instead, same fix `GameFilters.vue` already needed)
+  onto the sticky element's own padding instead, same fix `GameFilters.vue` already needed).
+  Once both panels' styles were byte-identical, moved the shared block into `styles.css`
+  (Milestone 18 convention) instead of leaving it duplicated across both components
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

@@ -26,6 +26,10 @@ export const useWrapperPluginStore = defineStore("wrapperPlugins", () => {
     await settingsRepo.set(ENABLED_WRAPPERS_SETTING, JSON.stringify([...enabledIds.value]));
   }
 
+  async function refreshManifests() {
+    manifests.value = await getAvailablePluginManifests("wrapper");
+  }
+
   async function refreshProfiles() {
     const perPlugin = await Promise.all(
       loadedPlugins.value.map(async (plugin) => {
@@ -85,6 +89,7 @@ export const useWrapperPluginStore = defineStore("wrapperPlugins", () => {
     toggleWrapper,
     launch,
     refreshProfiles,
+    refreshManifests,
     init,
   };
 });

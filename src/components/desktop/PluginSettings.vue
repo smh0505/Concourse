@@ -172,9 +172,14 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
-            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
-              Update available
-            </span>
+            <button
+              v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
+              type="button"
+              class="update-badge compact-button"
+              @click="pluginUpdates.applyUpdate(manifest)"
+            >
+              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+            </button>
           </label>
           <span class="row-controls">
             <span v-if="plugins.enabledIds.includes(manifest.id)" class="reorder-buttons">
@@ -228,9 +233,14 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
-            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
-              Update available
-            </span>
+            <button
+              v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
+              type="button"
+              class="update-badge compact-button"
+              @click="pluginUpdates.applyUpdate(manifest)"
+            >
+              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+            </button>
           </label>
           <button
             v-if="manifest.runtime === 'data'"
@@ -264,9 +274,14 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
-            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
-              Update available
-            </span>
+            <button
+              v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
+              type="button"
+              class="update-badge compact-button"
+              @click="pluginUpdates.applyUpdate(manifest)"
+            >
+              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+            </button>
           </label>
           <span class="row-controls">
             <span v-if="metadataProviders.enabledIds.includes(manifest.id)" class="reorder-buttons">
@@ -310,9 +325,14 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
-            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
-              Update available
-            </span>
+            <button
+              v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
+              type="button"
+              class="update-badge compact-button"
+              @click="pluginUpdates.applyUpdate(manifest)"
+            >
+              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+            </button>
           </label>
           <component
             :is="allControllerPlugins.get(manifest.id)?.settingsComponent"
@@ -334,9 +354,14 @@ onMounted(async () => {
             />
             {{ manifest.name }}
             <span class="version">v{{ manifest.version }}</span>
-            <span v-if="pluginUpdates.isUpdateAvailable(manifest.id)" class="update-badge">
-              Update available
-            </span>
+            <button
+              v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
+              type="button"
+              class="update-badge compact-button"
+              @click="pluginUpdates.applyUpdate(manifest)"
+            >
+              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+            </button>
           </label>
           <component
             :is="allWrapperPlugins.get(manifest.id)?.settingsComponent"
@@ -477,9 +502,12 @@ small {
   font-size: 0.75rem;
 }
 
+/* .compact-button (shared, styles.css) supplies the font-size/padding; this layers the
+   accent styling on top so it reads as a call to action, not just another neutral button. */
 .update-badge {
-  color: var(--color-accent);
-  font-size: 0.75rem;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
   font-weight: 600;
 }
 

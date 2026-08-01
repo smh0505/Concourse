@@ -302,7 +302,10 @@ App self-update closed. Plugin/theme self-update (below) remains open.
   an "Update available" badge next to each of the 5 tabs' version span in `PluginSettings.vue`.
   Checked once on mount as a baseline for now - proper wiring into the same three trigger
   moments as the app self-update is the next, separate checklist item
-- [ ] Apply-update path reuses the existing `install_wasm_plugin`/`install_data_theme`
-  pipeline, re-triggered from the update-available state instead of a fresh user-typed
-  URL/registry pick
+- [x] Apply-update path (`pluginUpdates.ts`'s new `applyUpdate`) reuses the existing
+  `install_plugin` command directly, no separate confirm dialog (this id is already installed
+  and trusted). Added `latest_sha256` to `UpdateCheckResult` so a registry-sourced update keeps
+  the same hard-reject-on-mismatch integrity check a fresh registry install gets. Also added
+  `refreshManifests()` to `wrapperPlugins.ts` - the one domain store that never had it, a real
+  pre-existing gap this surfaced
 - [ ] Wire checks into the same three trigger moments as the app self-update

@@ -561,6 +561,12 @@ pub struct UpdateCheckResult {
     /// from the old pinned one, so the frontend's apply-update call doesn't need to re-derive
     /// registry-vs-direct routing itself.
     pub latest_manifest_url: Option<String>,
+    /// The registry's *current* pinned hash for this id, carried through so applying the
+    /// update can pass it straight to `install_plugin`'s `expected_sha256` - preserving the
+    /// same hard-reject-on-mismatch integrity check a fresh registry install gets, rather than
+    /// silently downgrading a registry-sourced update to an unpinned one. Always `None` for a
+    /// direct-URL install (never pinned in the first place).
+    pub latest_sha256: Option<String>,
 }
 
 /// Checks whether a newer version exists for an already-installed plugin/theme, given what was
@@ -575,11 +581,14 @@ pub async fn check_plugin_update(
     source_url: Option<String>,
     installed_via_registry: bool,
 ) -> Result<UpdateCheckResult, String> {
-    let latest_manifest_url = if installed_via_registry {
+    let (latest_manifest_url, latest_sha256) = if installed_via_registry {
         let entries = crate::plugin_registry::fetch_plugin_registry().await?;
-        entries.into_iter().find(|e| e.id == id).map(|e| e.manifest_url)
+        match entries.into_iter().find(|e| e.id == id) {
+            Some(entry) => (Some(entry.manifest_url), Some(entry.wasm_sha256)),
+            None => (None, None),
+        }
     } else {
-        source_url
+        (source_url, None)
     };
 
     // No known origin at all - either this id was pulled from the registry since install (a
@@ -592,6 +601,7 @@ pub async fn check_plugin_update(
             update_available: false,
             latest_version: None,
             latest_manifest_url: None,
+            latest_sha256: None,
         });
     };
 
@@ -602,6 +612,7 @@ pub async fn check_plugin_update(
     let update_available = version_is_newer(&probe.version, &current_version);
     Ok(UpdateCheckResult {
         id,
+        latest_sha256: if update_available { latest_sha256 } else { None },
         latest_version: Some(probe.version),
         latest_manifest_url: if update_available { Some(manifest_url) } else { None },
         update_available,

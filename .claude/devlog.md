@@ -2064,3 +2064,36 @@ wasted round-trip against a command that can only ever report "no known origin" 
   matching count of markup usages (5 template sites + 1 style rule = 6 total occurrences of
   the string, confirmed via `grep -c`). `bun run build` (typecheck + build) and `cargo check`
   both clean.
+
+**Apply-update path.** Added `latest_sha256` to the Rust `UpdateCheckResult` first - a
+registry-sourced update needs to carry its *new* pinned hash forward so applying it keeps the
+same hard-reject-on-mismatch integrity check a fresh registry install already gets, rather than
+silently downgrading to an unpinned install just because it's an update. Only set when
+`update_available` is true (no point carrying a hash for a version that's already current).
+- `pluginUpdates.ts`'s new `applyUpdate(manifest)` calls the exact same `install_plugin`
+  command `pluginInstall.ts`'s `confirmInstall` already uses - installing over an existing id
+  is just an overwrite (`plugin_installer.rs`'s `replace_dir` already handles this correctly,
+  nothing new needed there). Deliberately skips the confirm-install dialog a brand-new install
+  goes through - this id is already installed and implicitly trusted, an update is refreshing
+  it, not vetting something unknown.
+- **Found and fixed a real pre-existing gap while wiring the refresh step**: every other
+  domain store (`plugins.ts`, `theme.ts`, `metadataProviders.ts`) has a `refreshManifests()`
+  used after an install/reinstall, but `wrapperPlugins.ts` never did - it only ever set
+  `manifests` once, in `init()`. Not something this milestone created, just never noticed
+  before since nothing previously needed to refresh a wrapper plugin's manifest after the
+  fact. Added it, mirroring the other three stores' identical one-line implementation.
+  Toggling a wrapper's enabled state already had its own separate `reloadPlugins()` path
+  (unaffected by this addition).
+- Turned the plain `<span>` badge into a real `<button class="update-badge compact-button">`
+  (reusing the existing shared `.compact-button` sizing, layering accent colors on top so it
+  reads as a call-to-action rather than another neutral button) showing the actual target
+  version ("Update to v1.2.0") rather than a generic "Update available" label, now that
+  clicking it does something. Verified it's safe to nest a `<button>` inside the row's
+  existing `<label>` (wrapping the enable/select checkbox or radio) - browsers don't forward a
+  label's click-activation to its associated control when the click target is itself another
+  interactive element (button/input/select/etc.), so clicking "Update" doesn't also
+  accidentally toggle the plugin's enabled state.
+- `cargo check`/`cargo test` (all 9 `plugin_installer` tests, no new ones added for this step -
+  no new Rust logic beyond the one added struct field, already covered by existing
+  `check_plugin_update` tests) and `bun run build` all clean. Verified via compiled CSS:
+  `.update-badge` present exactly once with the expected accent-color properties.

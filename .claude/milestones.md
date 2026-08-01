@@ -167,31 +167,16 @@ own definition.
 - [x] "UI Test" made genuinely dev-only (excluded from production builds via a `DEV`-gated
   dynamic import, not just hidden from the nav)
 - [x] New "Tags" and "Collections" sidebar tabs (separate, not combined) - standalone tag
-  creation/rename/delete, and a new Collections feature (separate schema, groups a
-  series/franchise, not another kind of tag) with the same management + per-game assignment
-  (`EditGame.vue`) + library filter (`GameFilters.vue`) as tags already had. Each panel's own
-  "add" form is pinned to the top of the scroll container (`GameFilters.vue`'s sticky pattern),
-  and item rows reuse the shared `.list-row-shell` look. Fixed the sticky header touching the
-  titlebar on scroll (the parent's padding-top only applied before the first scroll; moved
-  onto the sticky element's own padding instead, same fix `GameFilters.vue` already needed).
-  Once both panels' styles were byte-identical, moved the shared block into `styles.css`
-  (Milestone 18 convention) instead of leaving it duplicated across both components
+  create/rename/delete, and a new Collections feature (separate schema, groups a
+  series/franchise) with the same management + per-game assignment + library filter as tags
+- [x] Fixed the new tabs' sticky "add" header touching the titlebar on scroll (same fix
+  `GameFilters.vue` already needed), then moved their now-identical styles into `styles.css`
 - [x] Moved `.settings-panel` off an `App.vue`-owned wrapper div onto each affected
-  component's own root (`AppSettings`/`PluginSettings`/`StatsPanel`/`TagsPanel`/
-  `CollectionsPanel`/`UiTest`) - inset is now each component's own concern, not something the
-  caller has to remember to wrap. `TagsPanel`/`CollectionsPanel`'s sticky-header cancel-trick
-  reworked from a negative-margin hack to a `.panel.settings-panel { padding-top: 0 }`
-  compound-selector override, since both classes now live on the same element
-- [x] Split tag/collection state and actions out of `library.ts` into their own
-  `stores/tags.ts`/`stores/collections.ts` - now a genuinely separate domain with its own UI
-  tabs, not just "a lot of library actions." `library.ts` (378 -> 273 lines) keeps games
-  CRUD/launch/search/view-mode; `filteredGames`/`refresh()` compose the two new stores
-  instead of owning tag/collection data directly
-- [x] Moved every sidebar tab's own top-level component into a new
-  `src/components/desktop/tabs/` folder (`GameFilters`/`GameGrid`/`GameList`, `StatsPanel`,
-  `TagsPanel`, `CollectionsPanel`, `AppSettings`, `PluginSettings`, `UiTest`) - now six tabs'
-  worth of "which file renders this whole view" is grouped together, separate from the
-  smaller supporting components (`GameCard`, modals, etc.) they render
+  component's own root - inset is now each component's own concern, not the caller's
+- [x] Split tag/collection state out of `library.ts` into their own `stores/tags.ts`/
+  `stores/collections.ts` - a genuinely separate domain now, not just "a lot of actions"
+- [x] Grouped every sidebar tab's own top-level component into `src/components/desktop/tabs/`,
+  separate from the smaller supporting components they render
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

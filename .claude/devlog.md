@@ -618,6 +618,24 @@ the importer moved into `desktop/tabs/`. Updated `App.vue`'s own imports for all
 `DEV`-gated `defineAsyncComponent` call. Verified with a final grep across `src/` for any
 lingering `desktop/<name>` reference missing `/tabs/` - none found. `bun run build` clean.
 
+**Pre-release tidy pass, on request, before tag-pushing.** Audited `milestones.md`/
+`devlog.md` end to end rather than assuming the earlier misplacement/renumbering cleanup and
+devlog backfill (both done earlier this session) were still fully accurate after the several
+rounds of work since - confirmed clean: every Milestone 14 bullet added since then already had
+a matching devlog entry, and nothing had drifted back into Milestone 20's section. Compacted
+the 4 most-recently-added Milestone 14 bullets (Tags/Collections tabs, the sticky-header/
+shared-style fix, the tags/collections store split, the tabs/ folder move) down to one-liners
+each, same as the earlier tidy pass did for the older ones - devlog already carries the full
+detail, `milestones.md` doesn't need to repeat it.
+
+**Version bump for tag-push.** Milestone 20 (Auto-Update) fully closed since the last version
+bump (`1.3.7`, itself a patch bump for in-progress fixes *within* that milestone, set before
+it actually closed) - a real Post-1.0 Roadmap milestone closure, warranting the minor bump the
+project's own versioning policy ties to it. `1.3.7` -> `1.4.0` across `package.json`/
+`src-tauri/Cargo.toml`/`src-tauri/tauri.conf.json`; `cargo check` regenerated `Cargo.lock`'s
+matching `concourse` package entry rather than hand-editing it. `bun run build`/`cargo check`
+both clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

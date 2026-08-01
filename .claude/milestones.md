@@ -3,7 +3,7 @@
 Tracks *what's done*. For implementation rationale, decisions, and fixes behind each item,
 see `.claude/devlog.md`.
 
-**1.0.0** marks Milestones 1–14 (the core roadmap) closed and the app considered stable for
+**1.0.0** marks Milestones 1–13 (the core roadmap) closed and the app considered stable for
 real-world use. Further work continues under **Post-1.0 Roadmap** at the bottom of this file,
 numbered as a continuing milestone sequence for the same devlog cross-reference convention.
 
@@ -103,10 +103,7 @@ Follows the M9 SGDB/IGDB precedent — ships as a standalone WASM plugin repo, n
 - [x] Verify for real against a live API key, fetching real metadata
 - [x] Verify merge behavior against IGDB (first-non-null-wins)
 
-(Milestone 12, Xbox/EA/Ubisoft source plugins, moved to Post-1.0 Roadmap, Milestone 16 — none
-of its items were started, no reason to hold up 1.0 for a stretch goal untouched.)
-
-## Milestone 13 — WASM Plugin Capability Sandboxing (security)
+## Milestone 12 — WASM Plugin Capability Sandboxing (security)
 Install-by-URL for WASM source plugins granted the same real-world system access as running an
 arbitrary downloaded `.exe` — see devlog for the gap.
 - [x] Interim: honest risk warning in the install confirmation UI and README
@@ -114,8 +111,8 @@ arbitrary downloaded `.exe` — see devlog for the gap.
 - [x] Permission gating for `spawn-process`/`run-and-wait`
 - [x] URL allowlisting/rate-limiting for `http-request`/`http-get`/`download-bytes`
 
-## Milestone 14 — Plugin Trust Model: Signing & Review (stretch)
-Even with Milestone 13 done, install-by-URL stayed trust-based, not verified — see devlog.
+## Milestone 13 — Plugin Trust Model: Signing & Review (stretch)
+Even with Milestone 12 done, install-by-URL stayed trust-based, not verified — see devlog.
 - [x] Code signing for published plugin releases (Sigstore attestation, advisory not a hard
   install-time gate)
 - [x] Curated/reviewed plugin registry (`concourse-plugin-registry`, hash-pinned, hard reject
@@ -125,11 +122,11 @@ Even with Milestone 13 done, install-by-URL stayed trust-based, not verified —
 See devlog for the registry's own version-bump automation (dispatch on release → re-hash → PR),
 added afterward.
 
-## Milestone 14.5 — UI Polish (Continuous, ongoing)
+## Milestone 14 — UI Polish (Continuous, ongoing)
 This milestone doesn't close — UI polish is open-ended. See devlog for detail on each item;
-new items get appended in place rather than opening a new milestone. Numbered 14.5 (not 9)
-since it sits alongside/after the closed core roadmap rather than blocking any milestone in
-sequence.
+new items get appended in place rather than opening a new milestone. Sits right after the
+closed core roadmap (1–13) in sequence, but doesn't count toward it - it never closes, by its
+own definition.
 - [x] Custom window chrome
 - [x] Navigation shell
 - [x] Grid/list view toggle redesign
@@ -160,10 +157,84 @@ sequence.
   there) paired with `--color-text` (also dark) was hard to read; reused `--color-button-text`
   instead, the same fix already applied to buttons for the identical reason. Default theme
   unaffected
-- [x] Fixed `.toast-success`/`.toast-error` both reading as red under Brick Block - Brick
-  Block's own `--color-accent` changed to blue instead of touching the shared `.toast-success`
-  rule (still `--color-accent`, same as every other theme). Right-aligned `.toast-actions`'
-  buttons too
+- [x] Toast success/error color clash fixed under Brick Block - tried a dedicated
+  `--color-success` token first, but every theme other than Brick Block only ever declared one
+  real color for "success" (nothing else consumed the token), so it just recolored the default
+  theme's success toast to green with no benefit. Reverted `.toast-success` to `--color-accent`
+  (shared for all themes); Brick Block's manifest (sibling `data-theme-plugins` repo) changes
+  its own `--color-accent` to blue (`#0058f8`, its existing pipe-blue) instead, keeping it
+  visually distinct from `--color-accent-alt` (green) and `--color-danger` (dark red).
+  Right-aligned `.toast-actions`' buttons too
+- [x] Bumping `--color-accent` to blue then made the shared `.accent-active` class (active nav
+  item/tag filter/Settings tab indicator) blue too, a side effect of `.accent-active` reading
+  `--color-accent` directly. Gave it its own opt-in `--accent-active-background`/
+  `--accent-active-color` hooks (default to `--color-accent`/`--color-on-accent`, same pattern
+  as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Brick Block sets
+  these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
+  text, distinct from its own blue accent and green accent-alt
+- [x] Fixed a real theming gap: `BigPictureSlideshow.vue`'s strip covers rendered their own
+  hardcoded `img`/letter-placeholder markup, never wired into the `cardVisual` AST
+  (`CardVisualRenderer`/`useActiveCardVisual`) the way `GameCard.vue`/`BigPictureTile.vue`
+  already are (Milestone 19's "two consumers of the same registry" - now three). Under a
+  theme with a custom `cardVisual` (Brick Block's star placeholder, e.g.), grid/Big Picture
+  grid tiles showed it correctly while the slideshow silently fell back to a plain letter -
+  same fix pattern as both existing consumers, reusing the shared `.bp-cover-frame`/
+  `.bp-cover-placeholder` classes the slideshow already had
+- [x] `GameListRow.vue` redesigned: dropped the separate 48x64 thumbnail entirely, cover art is
+  now the row's own `background-image` (with a left-to-right dark scrim for text legibility,
+  fading toward the art on the right). Collapsed by default to just the title; hovering
+  expands the row (`min-height` transition) and reveals description/meta/actions (`max-height`/
+  `opacity` transitions), matching `GameCard.vue`'s existing hover-reveal-footer convention.
+  No-cover fallback still honors the shared `--cover-placeholder-*` hooks, using the `background`
+  shorthand (not `background-image` alone) since the plain-color default isn't valid there.
+  Follow-up 1: `.actions`' button gap bumped `0.35rem` -> `var(--space-2)` and given
+  `padding-left: var(--space-3)`, so the buttons don't sit cramped right against the title/
+  details text once revealed.
+  Follow-up 2: the buttons themselves were still icon-only-narrow - traced to the shared
+  `.icon-action-row button` rule's `flex: 1; padding: 0.35rem 0`, which only produces a
+  reasonably-wide button when the row itself is stretched to a fixed width (true for
+  `GameCard.vue`'s absolutely-positioned, full-card-width footer; not true for `.actions`
+  here, which is only as wide as its own content). Without that stretch, `flex: 1` plus zero
+  horizontal padding collapses each button to icon width. Added a `.actions button` override
+  (`flex: 0 0 auto; padding: 0.35rem 0.6rem`) scoped to this component instead of changing the
+  shared rule, since GameCard's footer still needs its own `flex: 1` stretch behavior.
+  Follow-up 3: button padding evened to `0.35rem` all around (was `0.35rem 0.6rem`, felt too
+  wide horizontally). Also gave `.actions` itself `max-width: 0` collapsed -> `12rem` on hover
+  (was just `opacity`, still taking up its full flex width invisibly) so the title can use the
+  row's entire width before hovering, not just up to wherever the invisible button group sat
+  `useSkeletonCount`'s `itemHeight` in `GameList.vue` updated (82 -> 44) to match the new,
+  much shorter collapsed row height. `SkeletonRow.vue` matched to the same layout right after
+  (single title-shaped shimmer bar, no thumbnail box, same 2.75rem min-height) - dropped the
+  now-fully-unused shared `.list-row-thumb` class from `styles.css` once nothing referenced
+  it anymore
+- [x] Fixed a real bug: skeleton placeholder count was hardcoded (6 cards/4 rows), leaving a
+  maximized/large window's scan-in-progress view mostly empty below the fold. New
+  `useSkeletonCount` composable (`src/composables/`) measures the container's own width and
+  its parent's height via `ResizeObserver` and computes how many placeholders actually fill
+  the visible area, deliberately overestimating (safely clipped by the scroll lock above)
+  rather than undershooting
+- [x] Fixed a real bug: already-loaded games stayed visible and interactable underneath the
+  skeleton placeholders while a source plugin scan was running (`GameGrid.vue`/`GameList.vue`
+  rendered skeletons *and* real games at the same time). Restructured both to an `if`/`else`
+  (skeletons-only while `plugins.scanning`, real games otherwise) so loaded games are fully
+  hidden mid-scan, not just visually covered. Also locked `App.vue`'s `.content` scroll
+  (`overflow: hidden`) while scanning, scoped to `activeView === 'library'` specifically -
+  scanning can also be triggered from the Settings tab's own "Scan Now" button, where locking
+  `.content` would've been an unrelated side effect
+- [x] `GameListRow.vue`'s "Info" text button swapped for an icon-only `IconInfoCircle` button
+  (title tooltip added), matching `GameCard.vue`'s equivalent button exactly. Dropped the now-
+  vestigial `.actions { font-size: 0.8rem }` override, no longer needed once nothing in that
+  row is text
+- [x] `GameListRow.vue`'s thumb now shows the same fetch-metadata spinner overlay
+  `GameCard.vue` already has (`IconLoader2`, spin animation, dark scrim), instead of just
+  disabling the "Info" button with `"..."` text - wrapped `.thumb`/`.thumb-placeholder` in a
+  `.thumb-wrap` to give the overlay something to position against
+- [x] `GameListRow.vue`'s cover placeholder now reads the same `--cover-placeholder-background`/
+  `-color`/`-text-shadow` opt-in hooks `GameCard.vue`'s placeholder already exposed - a theme
+  setting these (e.g. Brick Block's stripe pattern/star color) previously only applied in grid
+  view, silently falling back to plain defaults in list view. `-font-size` intentionally not
+  reused - list rows are far smaller (48x64 thumb) than a full grid card, so the grid-scaled
+  default would overflow
 - [x] New "Stats" sidebar tab (`StatsPanel.vue`) - total games/hours summary, a "Most Played"
   top-5 list, and a "Recently Played" list (new `stores/stats.ts` +
   `PlaytimeRepository.getRecentlyPlayed`, since "last played per game" only exists in the
@@ -199,7 +270,8 @@ Carried over from Milestone 7 unstarted.
 - [ ] Dedup against manually-added / other source-plugin entries
 
 ## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
-Carried over from Milestone 12 unstarted, in full.
+Originally a core-roadmap stretch goal, moved here unstarted - no reason to hold up 1.0 for a
+stretch goal nothing had been done on yet.
 - [ ] Xbox — research install detection and launch mechanism
 - [ ] EA app — research install detection and launch mechanism
 - [ ] Ubisoft Connect — research install detection and launch mechanism
@@ -349,88 +421,6 @@ buttons. Also simplified `stores/appUpdate.ts`'s internals while doing this - th
 class instance is now captured in a plain closure rather than any Vue `ref`, closing the
 earlier `shallowRef` fix's root cause structurally instead of just working around it.
 
-Also fixed toast contrast/colors under Brick Block: `.toast-info` text color now
-`--color-button-text` (was unreadable dark-on-dark), `.toast-actions` buttons right-aligned.
-Success/error color clash fixed at the theme level instead of the shared component: tried a
-dedicated `--color-success` token first, but every theme other than Brick Block only ever
-declared one real color for "success" (nothing else consumed the token), so it just recolored
-the default theme's success toast to green with no benefit. Reverted `.toast-success` to
-`--color-accent` (shared for all themes); Brick Block's manifest (sibling
-`data-theme-plugins` repo) changes its own `--color-accent` to blue (`#0058f8`, its existing
-pipe-blue) instead, keeping it visually distinct from `--color-accent-alt` (green) and
-`--color-danger` (dark red).
-
-Bumping `--color-accent` to blue then made the shared `.accent-active` class (active nav
-item/tag filter/Settings tab indicator) blue too, a side effect of `.accent-active` reading
-`--color-accent` directly. Gave it its own opt-in `--accent-active-background`/
-`--accent-active-color` hooks (default to `--color-accent`/`--color-on-accent`, same pattern
-as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Brick Block sets
-these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
-text, distinct from its own blue accent and green accent-alt.
-
-- [x] Fixed a real theming gap: `BigPictureSlideshow.vue`'s strip covers rendered their own
-  hardcoded `img`/letter-placeholder markup, never wired into the `cardVisual` AST
-  (`CardVisualRenderer`/`useActiveCardVisual`) the way `GameCard.vue`/`BigPictureTile.vue`
-  already are (Milestone 19's "two consumers of the same registry" - now three). Under a
-  theme with a custom `cardVisual` (Brick Block's star placeholder, e.g.), grid/Big Picture
-  grid tiles showed it correctly while the slideshow silently fell back to a plain letter -
-  same fix pattern as both existing consumers, reusing the shared `.bp-cover-frame`/
-  `.bp-cover-placeholder` classes the slideshow already had
-- [x] `GameListRow.vue` redesigned: dropped the separate 48x64 thumbnail entirely, cover art is
-  now the row's own `background-image` (with a left-to-right dark scrim for text legibility,
-  fading toward the art on the right). Collapsed by default to just the title; hovering
-  expands the row (`min-height` transition) and reveals description/meta/actions (`max-height`/
-  `opacity` transitions), matching `GameCard.vue`'s existing hover-reveal-footer convention.
-  No-cover fallback still honors the shared `--cover-placeholder-*` hooks, using the `background`
-  shorthand (not `background-image` alone) since the plain-color default isn't valid there.
-  Follow-up 1: `.actions`' button gap bumped `0.35rem` -> `var(--space-2)` and given
-  `padding-left: var(--space-3)`, so the buttons don't sit cramped right against the title/
-  details text once revealed.
-  Follow-up 2: the buttons themselves were still icon-only-narrow - traced to the shared
-  `.icon-action-row button` rule's `flex: 1; padding: 0.35rem 0`, which only produces a
-  reasonably-wide button when the row itself is stretched to a fixed width (true for
-  `GameCard.vue`'s absolutely-positioned, full-card-width footer; not true for `.actions`
-  here, which is only as wide as its own content). Without that stretch, `flex: 1` plus zero
-  horizontal padding collapses each button to icon width. Added a `.actions button` override
-  (`flex: 0 0 auto; padding: 0.35rem 0.6rem`) scoped to this component instead of changing the
-  shared rule, since GameCard's footer still needs its own `flex: 1` stretch behavior.
-  Follow-up 3: button padding evened to `0.35rem` all around (was `0.35rem 0.6rem`, felt too
-  wide horizontally). Also gave `.actions` itself `max-width: 0` collapsed -> `12rem` on hover
-  (was just `opacity`, still taking up its full flex width invisibly) so the title can use the
-  row's entire width before hovering, not just up to wherever the invisible button group sat
-  `useSkeletonCount`'s `itemHeight` in `GameList.vue` updated (82 -> 44) to match the new,
-  much shorter collapsed row height. `SkeletonRow.vue` matched to the same layout right after
-  (single title-shaped shimmer bar, no thumbnail box, same 2.75rem min-height) - dropped the
-  now-fully-unused shared `.list-row-thumb` class from `styles.css` once nothing referenced
-  it anymore
-- [x] Fixed a real bug: skeleton placeholder count was hardcoded (6 cards/4 rows), leaving a
-  maximized/large window's scan-in-progress view mostly empty below the fold. New
-  `useSkeletonCount` composable (`src/composables/`) measures the container's own width and
-  its parent's height via `ResizeObserver` and computes how many placeholders actually fill
-  the visible area, deliberately overestimating (safely clipped by the scroll lock above)
-  rather than undershooting
-- [x] Fixed a real bug: already-loaded games stayed visible and interactable underneath the
-  skeleton placeholders while a source plugin scan was running (`GameGrid.vue`/`GameList.vue`
-  rendered skeletons *and* real games at the same time). Restructured both to an `if`/`else`
-  (skeletons-only while `plugins.scanning`, real games otherwise) so loaded games are fully
-  hidden mid-scan, not just visually covered. Also locked `App.vue`'s `.content` scroll
-  (`overflow: hidden`) while scanning, scoped to `activeView === 'library'` specifically -
-  scanning can also be triggered from the Settings tab's own "Scan Now" button, where locking
-  `.content` would've been an unrelated side effect
-- [x] `GameListRow.vue`'s "Info" text button swapped for an icon-only `IconInfoCircle` button
-  (title tooltip added), matching `GameCard.vue`'s equivalent button exactly. Dropped the now-
-  vestigial `.actions { font-size: 0.8rem }` override, no longer needed once nothing in that
-  row is text
-- [x] `GameListRow.vue`'s thumb now shows the same fetch-metadata spinner overlay
-  `GameCard.vue` already has (`IconLoader2`, spin animation, dark scrim), instead of just
-  disabling the "Info" button with `"..."` text - wrapped `.thumb`/`.thumb-placeholder` in a
-  `.thumb-wrap` to give the overlay something to position against
-- [x] `GameListRow.vue`'s cover placeholder now reads the same `--cover-placeholder-background`/
-  `-color`/`-text-shadow` opt-in hooks `GameCard.vue`'s placeholder already exposed - a theme
-  setting these (e.g. Brick Block's stripe pattern/star color) previously only applied in grid
-  view, silently falling back to plain defaults in list view. `-font-size` intentionally not
-  reused - list rows are far smaller (48x64 thumb) than a full grid card, so the grid-scaled
-  default would overflow
 - [x] Fixed a real bug: `AddPlugin.vue`'s registry list (`pluginInstall.loadRegistry()`) only
   ever ran once in `onMounted`, never again - since this component stays mounted for
   `PluginSettings.vue`'s entire lifetime, opening "Add Plugin" a second time (or after a

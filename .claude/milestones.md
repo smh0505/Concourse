@@ -166,10 +166,12 @@ own definition.
   Played
 - [x] "UI Test" made genuinely dev-only (excluded from production builds via a `DEV`-gated
   dynamic import, not just hidden from the nav)
-- [x] New "Tags & Collections" sidebar tab - standalone tag creation/rename/delete, and a new
-  Collections feature (separate schema, groups a series/franchise, not another kind of tag)
-  with the same management + per-game assignment (`EditGame.vue`) + library filter
-  (`GameFilters.vue`) as tags already had
+- [x] New "Tags" and "Collections" sidebar tabs (separate, not combined) - standalone tag
+  creation/rename/delete, and a new Collections feature (separate schema, groups a
+  series/franchise, not another kind of tag) with the same management + per-game assignment
+  (`EditGame.vue`) + library filter (`GameFilters.vue`) as tags already had. Each panel's own
+  "add" form is pinned to the top of the scroll container (`GameFilters.vue`'s sticky pattern),
+  and item rows reuse the shared `.list-row-shell` look
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

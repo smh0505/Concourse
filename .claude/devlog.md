@@ -473,6 +473,29 @@ related to tags for series."
   view-switch, same pattern as the Stats tab.
 - `bun run build`/`cargo check` both clean.
 
+**Follow-up, on request: split the combined panel into two separate tabs, reuse GameList's
+row look, and pin the add-form to the top.** Split `TagsCollectionsPanel.vue` into
+`TagsPanel.vue`/`CollectionsPanel.vue` - genuinely identical create/rename/delete/usage-count
+interaction, differing only in which store actions they call, so extracted the shared state
+machine into a new `useNamedItemManager` composable (`create`/`rename`/`delete`/
+`getUsageCounts` passed in) rather than duplicating it twice. Item rows now use the shared
+`.list-row-shell` class (border/radius/padding) instead of a locally-duplicated near-identical
+rule, matching `GameListRow.vue`'s visual weight. Each panel's add-form is now pinned via
+`position: sticky; top: 0`, same pattern as `GameFilters.vue`'s `.filters`, so it stays
+reachable while scrolling a long list.
+
+Hit one real bug wiring the composable: it originally returned a plain object of refs
+(`{ counts, newName, ... }`), and a template accessing a *nested* property of a returned
+object (`manager.editingName`, `manager.counts[name]`) doesn't get Vue's ref-auto-unwrap
+behavior the way a *top-level* returned ref would - that only applies to the immediate
+binding, not properties reached via dot access on a plain object. `vue-tsc` caught this
+immediately as a real type error (comparing a `Ref<string|null>` to a `string`, indexing a
+`Ref` with a string key), not a runtime-only bug. Fixed by wrapping the composable's return
+value in `reactive({...})` instead of a plain object - `reactive()` auto-unwraps nested refs
+on property access, so `manager.foo` reads/writes `foo.value` transparently, the standard fix
+for this exact composable-return shape. Renamed `NavSidebar.vue`'s `AppView` variant from the
+single `"tagsCollections"` to `"tags"`/`"collections"`. `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

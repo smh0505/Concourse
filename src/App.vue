@@ -16,7 +16,8 @@ import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
 import AppSettings from "./components/desktop/AppSettings.vue";
 import StatsPanel from "./components/desktop/StatsPanel.vue";
-import TagsCollectionsPanel from "./components/desktop/TagsCollectionsPanel.vue";
+import TagsPanel from "./components/desktop/TagsPanel.vue";
+import CollectionsPanel from "./components/desktop/CollectionsPanel.vue";
 import AddGame from "./components/desktop/modalForms/AddGame.vue";
 import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
@@ -140,9 +141,15 @@ onUnmounted(() => {
           </div>
         </template>
 
-        <template v-else-if="activeView === 'tagsCollections'">
+        <template v-else-if="activeView === 'tags'">
           <div class="settings-panel">
-            <TagsCollectionsPanel />
+            <TagsPanel />
+          </div>
+        </template>
+
+        <template v-else-if="activeView === 'collections'">
+          <div class="settings-panel">
+            <CollectionsPanel />
           </div>
         </template>
 

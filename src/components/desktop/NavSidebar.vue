@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { IconDeviceGamepad, IconPlus } from "@tabler/icons-vue";
 
-export type AppView = "library" | "stats" | "tagsCollections" | "settings" | "uiTest";
+export type AppView = "library" | "stats" | "tags" | "collections" | "settings" | "uiTest";
 
 // import.meta.env isn't valid syntax inside a template expression (parsed in non-module
 // scope) - read once here instead, so the "UI Test" button (and its dead branch in App.vue)
@@ -49,10 +49,17 @@ const emit = defineEmits<{
       </button>
       <button
         class="nav-item"
-        :class="{ 'accent-active': activeView === 'tagsCollections' }"
-        @click="emit('update:activeView', 'tagsCollections')"
+        :class="{ 'accent-active': activeView === 'tags' }"
+        @click="emit('update:activeView', 'tags')"
       >
-        Tags &amp; Collections
+        Tags
+      </button>
+      <button
+        class="nav-item"
+        :class="{ 'accent-active': activeView === 'collections' }"
+        @click="emit('update:activeView', 'collections')"
+      >
+        Collections
       </button>
       <button
         class="nav-item"

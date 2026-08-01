@@ -1958,3 +1958,46 @@ the same old bug. Installed that `1.3.6` build, updated to the published `v1.3.7
 download, install, and relaunch all completed successfully, no `TypeError`. App self-update is
 now fully verified working end to end, not just typechecked/built. Plugin/theme self-update
 (Milestone 20's other half) remains unstarted.
+
+**Started plugin/theme self-update with the schema change it's blocked on.** Added two fields
+to both `WasmPluginManifest`/`DataThemeManifest` (`plugin_installer.rs`): `source_url` (the
+exact manifest URL this was installed from) and `installed_via_registry` (bool). The latter
+matters because a registry-curated install's `source_url` is a commit-SHA'd raw GitHub URL,
+frozen forever by design (that's the whole point of pinning a hash to a specific reviewed
+commit) - re-fetching that exact URL later would never show a newer version even once one
+exists, so an update-check for a registry-installed plugin needs a completely different
+strategy (re-fetch the registry's *current* entry for this plugin's `id`) than a freeform
+direct-URL install (just re-fetch `source_url` itself and compare `version`). Didn't add a
+separate parameter to derive this flag - `install_plugin`'s existing `expected_sha256:
+Option<String>` is already exactly this signal (`AddPlugin.vue` only ever passes a hash
+alongside a registry entry, never for a freeform pasted URL), so `expected_sha256.is_some()`
+is the flag.
+- `install_wasm_plugin` previously wrote the original downloaded `manifest_bytes` straight to
+  `plugin.json` verbatim; changed to serialize the (now-mutated) `manifest` struct instead so
+  the injected fields actually persist. Confirmed nothing downstream depends on the file's
+  exact original byte content - Milestone 14's signing check hashes the `.wasm` binary, not
+  `plugin.json`, so re-serializing is safe. `install_data_theme` already serialized the struct
+  (not raw bytes), so only needed the two field assignments added, no structural change.
+- **Assessed whether this breaks anything, since it touches a persisted on-disk format the
+  user specifically asked about.** Both new fields are `#[serde(default)]`/`Option` - an
+  already-installed manifest from before this change (missing both fields entirely) still
+  deserializes without error, just showing `None`/`false` until the user reinstalls; an
+  upstream plugin/theme author's own manifest.json (which never declares these fields at all,
+  since they're host-added metadata, not something an author writes) also parses fine.
+  Concluded this is **not a breaking change** - noted explicitly in the commit message as
+  asked, rather than leaving it ambiguous.
+- Mirrored the two new fields onto the frontend's `PluginManifest` TS type
+  (`src/plugins/manifest.ts`) as `sourceUrl`/`installedViaRegistry` - `loader.ts`'s
+  `invoke<PluginManifest[]>("list_wasm_plugins"/"list_data_themes")` calls already spread the
+  Rust-returned object through untyped, so the values would have flowed through either way;
+  this just gives them a declared type for whatever later step actually reads them (the
+  update-check UI, not yet built).
+- Extended the existing real-HTTP-server round-trip test (`installs_lists_and_uninstalls_a_
+  real_theme`) with assertions that `source_url`/`installed_via_registry` actually survive the
+  install → list round-trip, not just compile. Added a new test
+  (`marks_a_correctly_pinned_theme_as_installed_via_registry`) for the one path no existing
+  test exercised at all - a *successful* pinned-hash install (only the mismatch-rejection case
+  was covered before) - computing the real correct hash of served bytes rather than hardcoding
+  one, so the test proves the actual hash-matching logic, not just that the flag gets set
+  given some hash. All 5 `plugin_installer` tests pass; `cargo check`/`bun run build` both
+  clean.

@@ -81,6 +81,20 @@ pub struct WasmPluginManifest {
     /// See `wasm_plugins.rs`'s `is_allowed_host` - same visibility purpose as `path_scopes`.
     #[serde(default, rename = "httpScopes")]
     pub http_scopes: Vec<String>,
+    /// Milestone 20 - host-added install provenance, not part of the plugin author's own
+    /// manifest. The exact manifest URL this was installed from, so a later update-check can
+    /// re-fetch it and compare versions. `#[serde(default)]` so both an author-supplied
+    /// manifest (which never declares this) and an already-installed manifest from before this
+    /// field existed still parse fine - the latter just shows `None` until reinstalled.
+    #[serde(default, rename = "sourceUrl", skip_serializing_if = "Option::is_none")]
+    pub source_url: Option<String>,
+    /// True if installed via the curated registry's pinned-hash entry rather than a freeform
+    /// pasted URL. Matters for update-checking: a registry-pinned `source_url` is a
+    /// commit-SHA'd URL that will never itself show a newer version (it's frozen by design) -
+    /// checking for an update means re-fetching the *registry's* current entry for this
+    /// plugin's `id`, not re-fetching `source_url` again.
+    #[serde(default, rename = "installedViaRegistry")]
+    pub installed_via_registry: bool,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -107,6 +121,12 @@ pub struct DataThemeManifest {
     /// validates every field strictly before constructing any CSS text from it.
     #[serde(default, rename = "fontFaces", skip_serializing_if = "Option::is_none")]
     pub font_faces: Option<serde_json::Value>,
+    /// Milestone 20 - see `WasmPluginManifest::source_url`'s doc comment, identical reasoning.
+    #[serde(default, rename = "sourceUrl", skip_serializing_if = "Option::is_none")]
+    pub source_url: Option<String>,
+    /// Milestone 20 - see `WasmPluginManifest::installed_via_registry`'s doc comment.
+    #[serde(default, rename = "installedViaRegistry")]
+    pub installed_via_registry: bool,
 }
 
 /// Loosely-typed probe used only to tell a WASM plugin's manifest apart from a data-only
@@ -233,8 +253,14 @@ async fn install_wasm_plugin(
     manifest_bytes: &[u8],
     expected_sha256: Option<&str>,
 ) -> Result<InstallResult, String> {
-    let manifest: WasmPluginManifest = serde_json::from_slice(manifest_bytes)
+    let mut manifest: WasmPluginManifest = serde_json::from_slice(manifest_bytes)
         .map_err(|e| format!("Invalid plugin.json: {}", e))?;
+    // Milestone 20 - host-added provenance, not part of what the author's manifest.json
+    // declared. `expected_sha256.is_some()` is already the existing signal for "this install
+    // came from the curated registry" (AddPlugin.vue only ever passes a hash for a registry
+    // entry, never for a freeform pasted URL), so no new parameter is needed to derive it.
+    manifest.source_url = Some(manifest_url.to_string());
+    manifest.installed_via_registry = expected_sha256.is_some();
 
     if !SUPPORTED_WASM_KINDS.contains(&manifest.kind.as_str()) {
         return Err(format!(
@@ -294,7 +320,12 @@ async fn install_wasm_plugin(
         std::fs::remove_dir_all(&staging_dir).map_err(|e| e.to_string())?;
     }
     std::fs::create_dir_all(&staging_dir).map_err(|e| e.to_string())?;
-    std::fs::write(staging_dir.join("plugin.json"), manifest_bytes)
+    // Serializes the mutated struct (carrying source_url/installed_via_registry) rather than
+    // writing the original manifest_bytes verbatim - nothing downstream re-hashes plugin.json's
+    // exact on-disk bytes (Milestone 14's signing check hashes the .wasm binary, not this file),
+    // so re-serializing is safe.
+    let manifest_json = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+    std::fs::write(staging_dir.join("plugin.json"), manifest_json)
         .map_err(|e| format!("Failed to write plugin.json: {}", e))?;
     std::fs::write(staging_dir.join(&manifest.entry), &wasm_bytes)
         .map_err(|e| format!("Failed to write {}: {}", manifest.entry, e))?;
@@ -322,7 +353,7 @@ async fn install_data_theme(
     manifest_bytes: &[u8],
     expected_sha256: Option<&str>,
 ) -> Result<InstallResult, String> {
-    let manifest: DataThemeManifest = serde_json::from_slice(manifest_bytes)
+    let mut manifest: DataThemeManifest = serde_json::from_slice(manifest_bytes)
         .map_err(|e| format!("Invalid theme manifest: {}", e))?;
     if manifest.id.trim().is_empty() {
         return Err("Theme manifest is missing an id".to_string());
@@ -330,6 +361,10 @@ async fn install_data_theme(
     if manifest.css_variables.is_empty() {
         return Err("Theme manifest has no cssVariables".to_string());
     }
+    // Milestone 20 - see install_wasm_plugin's identical assignment for why
+    // expected_sha256.is_some() is already the right signal, no new parameter needed.
+    manifest.source_url = Some(manifest_url.to_string());
+    manifest.installed_via_registry = expected_sha256.is_some();
 
     // Milestone 14/17 curated registry - unlike the Sigstore check below, a mismatch here is a
     // hard reject: this hash was pinned by hand after actually reviewing this specific version,
@@ -571,6 +606,10 @@ mod tests {
             manifests[0].css_variables.get("--color-base").map(String::as_str),
             Some("#123456")
         );
+        // Milestone 20 - install origin actually persists to disk and survives the list
+        // round-trip, not just set in memory during install.
+        assert_eq!(manifests[0].source_url.as_deref(), Some(url.as_str()));
+        assert!(!manifests[0].installed_via_registry, "installed with no pinned hash");
 
         uninstall_data_theme_from(&temp.0, &result.id).expect("uninstall should succeed");
         let manifests_after = list_data_themes_from(&temp.0).expect("list should succeed");
@@ -603,6 +642,36 @@ mod tests {
 
         let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
         assert!(manifests.is_empty(), "rejected install should not write anything to disk");
+    }
+
+    // Milestone 20 - a *correct* pinned-hash install is the one real path that should set
+    // installed_via_registry: true (a freeform pasted URL never carries expected_sha256 at
+    // all, see AddPlugin.vue). No existing test exercised a successful pinned-hash install
+    // before this, only the mismatch-rejection case above.
+    #[test]
+    fn marks_a_correctly_pinned_theme_as_installed_via_registry() {
+        let temp = TempDir::new("good-pin");
+        let body = r##"{"id":"registry-theme","name":"Registry","version":"1.0.0","kind":"theme","cssVariables":{"--color-base":"#123456"}}"##;
+        let url = serve_once(body);
+
+        let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let correct_hash = {
+            use sha2::{Digest, Sha256};
+            format!("{:x}", Sha256::digest(&bytes))
+        };
+        let result = tauri::async_runtime::block_on(install_data_theme(
+            &temp.0,
+            &url,
+            &bytes,
+            Some(&correct_hash),
+        ))
+        .expect("install with a correct pinned hash should succeed");
+        assert_eq!(result.id, "registry-theme");
+
+        let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
+        assert_eq!(manifests.len(), 1);
+        assert!(manifests[0].installed_via_registry, "installed with a matching pinned hash");
+        assert_eq!(manifests[0].source_url.as_deref(), Some(url.as_str()));
     }
 
     #[test]

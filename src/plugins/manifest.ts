@@ -42,6 +42,17 @@ export interface PluginManifest {
    *  says (see `wasm_plugins.rs`'s `has_capability`) - this only drives whether the UI asks for
    *  an explicit grant at all. Absent/empty for plugins that never need one. */
   capabilities?: string[];
+  /** Milestone 20 - host-added install provenance, not something the plugin/theme author's own
+   *  manifest declares. The exact URL this was installed from, so a later update-check can
+   *  re-fetch it and compare versions. Absent for build-time TS plugins (never "installed" this
+   *  way) and for anything installed by an app build older than this field. */
+  sourceUrl?: string;
+  /** True if installed via the curated registry's pinned-hash entry rather than a freeform
+   *  pasted URL - see `plugin_installer.rs`'s `WasmPluginManifest::installed_via_registry` doc
+   *  comment for why this changes the update-check strategy (a registry-pinned `sourceUrl` is
+   *  commit-SHA'd and frozen forever; checking for an update means re-fetching the registry's
+   *  *current* entry for this plugin's `id`, not re-fetching `sourceUrl` again). */
+  installedViaRegistry?: boolean;
 }
 
 export interface SettingsSchemaField {

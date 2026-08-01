@@ -283,9 +283,15 @@ tradeoffs behind the split.
 App self-update closed. Plugin/theme self-update (below) remains open.
 
 **Plugin/theme self-update** (custom - no existing mechanism covers this):
-- [ ] Persist each installed WASM plugin/data theme's install origin (`source_url` for
-  direct-URL installs, `registry_id` for curated-registry installs) - not currently stored at
-  all, the real gap blocking any update-checking
+- [x] Persisted each installed WASM plugin/data theme's install origin - `source_url` (the
+  exact manifest URL installed from) and `installed_via_registry` (bool, since a
+  registry-pinned `source_url` is commit-SHA'd and frozen forever - checking that kind of
+  install for updates means re-fetching the registry's *current* entry for this plugin's `id`,
+  not re-fetching `source_url` again) on both `WasmPluginManifest`/`DataThemeManifest`. Not a
+  breaking change - both fields are `#[serde(default)]`/optional, so already-installed
+  manifests (and any upstream author manifest, which never declares these) still parse fine,
+  just showing `None`/`false` until reinstalled. Mirrored on the frontend `PluginManifest` TS
+  type (`sourceUrl`/`installedViaRegistry`)
 - [ ] Rust command: re-fetch a plugin/theme's manifest from its stored origin, compare
   version/hash against installed, report whether an update is available
 - [ ] Frontend: "update available" indicator per plugin/theme row in `PluginSettings.vue`

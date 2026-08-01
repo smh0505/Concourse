@@ -176,6 +176,12 @@ own definition.
   onto the sticky element's own padding instead, same fix `GameFilters.vue` already needed).
   Once both panels' styles were byte-identical, moved the shared block into `styles.css`
   (Milestone 18 convention) instead of leaving it duplicated across both components
+- [x] Moved `.settings-panel` off an `App.vue`-owned wrapper div onto each affected
+  component's own root (`AppSettings`/`PluginSettings`/`StatsPanel`/`TagsPanel`/
+  `CollectionsPanel`/`UiTest`) - inset is now each component's own concern, not something the
+  caller has to remember to wrap. `TagsPanel`/`CollectionsPanel`'s sticky-header cancel-trick
+  reworked from a negative-margin hack to a `.panel.settings-panel { padding-top: 0 }`
+  compound-selector override, since both classes now live on the same element
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

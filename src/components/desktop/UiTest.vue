@@ -39,7 +39,7 @@ function testLongMessageToast() {
 </script>
 
 <template>
-  <div class="ui-test">
+  <div class="ui-test settings-panel">
     <h2>UI Test</h2>
     <small>
       Manual triggers for UI states that are hard to reach otherwise (rare toasts, edge-case

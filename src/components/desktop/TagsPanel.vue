@@ -13,7 +13,7 @@ const manager = useNamedItemManager({
 </script>
 
 <template>
-  <div class="panel">
+  <div class="panel settings-panel">
     <div class="sticky-header">
       <h2>Tags</h2>
       <small>Free-form labels for organizing your library ("Co-op", "Backlog").</small>

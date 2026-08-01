@@ -526,6 +526,41 @@ both components' now-fully-empty `<style scoped>` blocks entirely. Verified via 
 that `.panel`/`.sticky-header` each compile exactly once (not once per component), and via
 `bun run build` (clean, CSS bundle shrank slightly).
 
+**Follow-up, on user observation: every non-library view except Settings' own two-component
+case uses `.settings-panel` identically, so why does `App.vue` own the wrapper div at all?**
+Agreed and moved it - `.settings-panel` only ever existed as a scoped rule in `App.vue`,
+matching the wrapper div App.vue itself rendered around each view's component(s). Real blocker
+found immediately: a scoped rule only matches elements carrying *that* component's own
+`data-v-*` attribute, so simply adding `class="settings-panel"` to a *child* component's own
+root (e.g. `StatsPanel.vue`) would never actually match `App.vue`'s scoped selector at all -
+had to move `.settings-panel`'s definition into `styles.css` as a real global class first,
+same requirement the `.panel`/`.sticky-header` move faced moments earlier.
+- Removed the wrapping `<div class="settings-panel">` from all five of `App.vue`'s non-library
+  branches; each now renders its component(s) directly. Added `settings-panel` as a second
+  class on each component's own root: `AppSettings.vue`'s `.app-settings`,
+  `PluginSettings.vue`'s `.plugin-settings`, `StatsPanel.vue`'s `.stats-panel`,
+  `TagsPanel.vue`/`CollectionsPanel.vue`'s `.panel`, and `UiTest.vue`'s `.ui-test`.
+- **Settings view is the one real wrinkle**: `AppSettings`/`PluginSettings` used to share one
+  `.settings-panel` wrapper (padding-top applied once, at the very top), relying on
+  `AppSettings.vue`'s own `margin-bottom: 1.5rem` for the gap before `PluginSettings`. With
+  both now independently carrying `settings-panel`, `PluginSettings` gets its own
+  `padding-top` too - removed `AppSettings.vue`'s now-redundant `margin-bottom` rather than
+  stacking both gaps, since `PluginSettings`' own new top padding (`var(--space-5)`, close
+  enough to the old `1.5rem`) already supplies equivalent separation on its own.
+- **`TagsPanel.vue`/`CollectionsPanel.vue`'s sticky-header cancel-trick needed rethinking**,
+  since it previously relied on `.panel` (child) and `.settings-panel` (separate parent
+  wrapper) being two different elements - a negative `margin-top` on the child pulling it up
+  through the parent's padding. With both classes now living on the *same* element, margin and
+  padding on one box don't cancel the way two nested boxes would (worked through the box-model
+  arithmetic by hand rather than assuming it still worked) - simplified to a direct compound-
+  selector override instead: `.panel.settings-panel { padding-top: 0 }`, which unconditionally
+  wins over `.settings-panel` alone regardless of source order (specificity, not a cascade-
+  order dependency this time). `.sticky-header`'s own `padding-top` is unchanged, still the
+  real persisted gap.
+- Verified via compiled CSS: `.settings-panel{padding:var(--space-5) var(--space-6) 0}` once,
+  `.panel.settings-panel{padding-top:0}` present and correctly overriding just that one
+  longhand. `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

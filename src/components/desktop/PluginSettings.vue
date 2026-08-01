@@ -123,7 +123,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="plugin-settings">
+  <div class="plugin-settings settings-panel">
     <div class="plugin-settings-header">
       <h2>Plugins</h2>
       <button type="button" @click="showAddPluginModal = true">

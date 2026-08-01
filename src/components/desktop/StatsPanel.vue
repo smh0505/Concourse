@@ -44,7 +44,7 @@ function hoursPlayed(game: Game) {
 </script>
 
 <template>
-  <div class="stats-panel">
+  <div class="stats-panel settings-panel">
     <div class="summary">
       <div class="summary-card">
         <IconDeviceGamepad2 :size="22" :stroke-width="1.75" />

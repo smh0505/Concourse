@@ -399,14 +399,27 @@ small {
   color: var(--accent-active-color, var(--color-on-accent));
 }
 
+/* Shared inset for every non-library view's own top-level component (each applies this class
+   to its own root, alongside its own class - not a wrapper div in App.vue anymore, so a
+   component's inset is part of its own styling, not something the caller has to remember to
+   provide). The library view's own top gap comes from GameFilters.vue's sticky `.filters`
+   (padding-top baked in there instead). */
+.settings-panel {
+  padding: var(--space-5) var(--space-6) 0;
+}
+
 /* Named-item manager panel - TagsPanel.vue, CollectionsPanel.vue. Byte-identical (both wrap
-   useNamedItemManager.ts's create/rename/delete/usage-count UI); the margin-top cancels
-   App.vue's `.settings-panel` padding-top so `.sticky-header` below can supply that same gap
-   as its own padding instead, keeping it present at every scroll position rather than only
-   before the first scroll (same fix `.filters` below already needed). */
+   useNamedItemManager.ts's create/rename/delete/usage-count UI). Cancels `.settings-panel`'s
+   own padding-top specifically (compound selector wins over `.settings-panel` alone
+   regardless of source order) - `.sticky-header` below supplies that same gap as its own
+   padding instead, keeping it present at every scroll position rather than only before the
+   first scroll. */
 .panel {
-  margin-top: calc(var(--space-5) * -1);
   margin-bottom: var(--space-5);
+}
+
+.panel.settings-panel {
+  padding-top: 0;
 }
 
 .sticky-header {

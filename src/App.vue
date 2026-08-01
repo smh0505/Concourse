@@ -136,34 +136,24 @@ onUnmounted(() => {
         </template>
 
         <template v-else-if="activeView === 'stats'">
-          <div class="settings-panel">
-            <StatsPanel />
-          </div>
+          <StatsPanel />
         </template>
 
         <template v-else-if="activeView === 'tags'">
-          <div class="settings-panel">
-            <TagsPanel />
-          </div>
+          <TagsPanel />
         </template>
 
         <template v-else-if="activeView === 'collections'">
-          <div class="settings-panel">
-            <CollectionsPanel />
-          </div>
+          <CollectionsPanel />
         </template>
 
         <template v-else-if="activeView === 'settings'">
-          <div class="settings-panel">
-            <AppSettings />
-            <PluginSettings />
-          </div>
+          <AppSettings />
+          <PluginSettings />
         </template>
 
         <template v-else-if="activeView === 'uiTest'">
-          <div class="settings-panel">
-            <component :is="UiTest" v-if="UiTest" />
-          </div>
+          <component :is="UiTest" v-if="UiTest" />
         </template>
       </main>
       <AddGame :open="showAddGameModal" @close="showAddGameModal = false" />
@@ -229,12 +219,6 @@ onUnmounted(() => {
    skeletons into empty space). */
 .content.scroll-locked {
   overflow: hidden;
-}
-
-/* Only the settings view needs this - the library view's own top gap comes from
-   GameFilters.vue's sticky `.filters` (padding-top baked in there instead). */
-.settings-panel {
-  padding: var(--space-5) var(--space-6) 0;
 }
 
 .big-picture-controls {

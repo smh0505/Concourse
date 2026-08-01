@@ -5,7 +5,7 @@ const appSettings = useAppSettingsStore();
 </script>
 
 <template>
-  <div class="app-settings">
+  <div class="app-settings settings-panel">
     <label class="checkbox-label">
       <input
         type="checkbox"
@@ -20,10 +20,6 @@ const appSettings = useAppSettingsStore();
 </template>
 
 <style scoped>
-.app-settings {
-  margin-bottom: 1.5rem;
-}
-
 .checkbox-label {
   display: flex;
   align-items: center;

@@ -358,5 +358,13 @@ text, distinct from its own blue accent and green accent-alt.
   ever ran once in `onMounted`, never again - since this component stays mounted for
   `PluginSettings.vue`'s entire lifetime, opening "Add Plugin" a second time (or after a
   registry update/new entry landed) kept showing the same stale list until a full app
-  restart. Added the same re-fetch to the existing `open`-prop watcher, alongside the two
-  update-check calls already living there for the identical reason
+  restart. Added the same re-fetch to the existing `open`-prop watcher
+
+Fixing that surfaced that the watcher's `appUpdate.checkForUpdate()`/`pluginUpdates.checkAll()`
+calls (the "third" trigger moment referenced above) were themselves redundant, not just the
+registry list: `AddPlugin.vue` only ever opens from inside `PluginSettings.vue`, and that
+component's own `onMounted` already re-checks updates every time Settings is (re)entered -
+opening the nested modal can't happen without that check already having just run. Removed
+both calls (and their now-unused store imports) from `AddPlugin.vue`'s watcher, leaving it
+responsible for the registry re-fetch only. Update checks now fire at three moments, not
+four: app start, app focus (`App.vue`), and Settings-view mount (`PluginSettings.vue`).

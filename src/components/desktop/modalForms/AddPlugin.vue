@@ -2,13 +2,6 @@
 import { onMounted, ref, watch } from "vue";
 import BaseModal from "../BaseModal.vue";
 import { usePluginInstallStore } from "../../../stores/pluginInstall";
-import { useAppUpdateStore } from "../../../stores/appUpdate";
-import { usePluginUpdatesStore } from "../../../stores/pluginUpdates";
-import { usePluginStore } from "../../../stores/plugins";
-import { useThemeStore } from "../../../stores/theme";
-import { useMetadataProviderStore } from "../../../stores/metadataProviders";
-import { useControllerMappingStore } from "../../../stores/controllerMapping";
-import { useWrapperPluginStore } from "../../../stores/wrapperPlugins";
 
 // Generic install-by-URL modal - not theme-specific. Any plugin kind that grows its own
 // install-by-URL capability (source, metadata, etc.) can reuse this by passing its own
@@ -32,13 +25,6 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>();
 
 const pluginInstall = usePluginInstallStore();
-const appUpdate = useAppUpdateStore();
-const pluginUpdates = usePluginUpdatesStore();
-const plugins = usePluginStore();
-const theme = useThemeStore();
-const metadataProviders = useMetadataProviderStore();
-const controllerMapping = useControllerMappingStore();
-const wrapperPlugins = useWrapperPluginStore();
 const url = ref("");
 
 onMounted(() => {
@@ -50,21 +36,14 @@ watch(
   (isOpen) => {
     if (isOpen) {
       url.value = "";
-      // Third of the three update-check moments (app start/focus live in App.vue) - this
-      // component stays mounted the whole time PluginSettings.vue is (see its own `:open`
-      // prop), so the check has to be re-fired here, not in onMounted above. Same reasoning
-      // applies to the registry list itself - onMounted's loadRegistry only ever ran once,
-      // so a new registry entry (or version bump) never showed up without a full app
-      // restart until this re-fetch was added.
+      // Re-fetch every open, not just onMounted - this component stays mounted the whole
+      // time PluginSettings.vue is (see its own `:open` prop), so onMounted's loadRegistry
+      // only ever ran once; a new registry entry or version bump never showed up without a
+      // full app restart until this re-fetch was added. (Update checks used to live here too,
+      // as a "third moment" alongside app start/focus - dropped as genuinely redundant, since
+      // this modal only opens from inside PluginSettings.vue, whose own onMounted already
+      // covers the same check every time Settings is (re)entered.)
       pluginInstall.loadRegistry();
-      appUpdate.checkForUpdate();
-      pluginUpdates.checkAll([
-        ...plugins.manifests,
-        ...theme.manifests,
-        ...metadataProviders.manifests,
-        ...controllerMapping.manifests,
-        ...wrapperPlugins.manifests,
-      ]);
     }
   },
 );

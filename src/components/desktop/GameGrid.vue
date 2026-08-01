@@ -1,18 +1,25 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { IconInboxOff } from "@tabler/icons-vue";
 import GameCard from "./GameCard.vue";
 import SkeletonCard from "./SkeletonCard.vue";
 import { useLibraryStore } from "../../stores/library";
 import { usePluginStore } from "../../stores/plugins";
+import { useSkeletonCount } from "../../composables/useSkeletonCount";
 
 const library = useLibraryStore();
 const plugins = usePluginStore();
 
-const SKELETON_COUNT = 6;
+const gridEl = ref<HTMLElement | null>(null);
+// 140/187 match .grid's own minmax(140px, 1fr) column width and the resulting 3:4 card aspect
+// ratio - an underestimate of the real rendered card size (auto-fill can stretch columns
+// wider than 140px), which is fine here: it only means slightly more skeletons than strictly
+// needed, safely clipped by .content's scroll lock during a scan rather than leaving a gap.
+const SKELETON_COUNT = useSkeletonCount(gridEl, { itemWidth: 140, itemHeight: 187, gap: 16 });
 </script>
 
 <template>
-  <div class="grid">
+  <div ref="gridEl" class="grid">
     <template v-if="plugins.scanning">
       <SkeletonCard v-for="n in SKELETON_COUNT" :key="`skeleton-${n}`" />
     </template>

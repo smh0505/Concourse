@@ -354,6 +354,12 @@ as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Bric
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
 
+- [x] Fixed a real bug: skeleton placeholder count was hardcoded (6 cards/4 rows), leaving a
+  maximized/large window's scan-in-progress view mostly empty below the fold. New
+  `useSkeletonCount` composable (`src/composables/`) measures the container's own width and
+  its parent's height via `ResizeObserver` and computes how many placeholders actually fill
+  the visible area, deliberately overestimating (safely clipped by the scroll lock above)
+  rather than undershooting
 - [x] Fixed a real bug: already-loaded games stayed visible and interactable underneath the
   skeleton placeholders while a source plugin scan was running (`GameGrid.vue`/`GameList.vue`
   rendered skeletons *and* real games at the same time). Restructured both to an `if`/`else`

@@ -1,18 +1,23 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { IconInboxOff } from "@tabler/icons-vue";
 import GameListRow from "./GameListRow.vue";
 import SkeletonRow from "./SkeletonRow.vue";
 import { useLibraryStore } from "../../stores/library";
 import { usePluginStore } from "../../stores/plugins";
+import { useSkeletonCount } from "../../composables/useSkeletonCount";
 
 const library = useLibraryStore();
 const plugins = usePluginStore();
 
-const SKELETON_COUNT = 4;
+const listEl = ref<HTMLElement | null>(null);
+// 82 ~= .list-row-shell's 64px thumb + its own top/bottom padding/border; 8 matches .list's
+// own row gap below. A slight underestimate is fine - see GameGrid.vue's identical reasoning.
+const SKELETON_COUNT = useSkeletonCount(listEl, { itemHeight: 82, gap: 8 });
 </script>
 
 <template>
-  <div class="list">
+  <div ref="listEl" class="list">
     <template v-if="plugins.scanning">
       <SkeletonRow v-for="n in SKELETON_COUNT" :key="`skeleton-${n}`" />
     </template>

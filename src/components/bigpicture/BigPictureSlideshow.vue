@@ -3,11 +3,14 @@ import { computed, onMounted, ref } from "vue";
 import { IconInboxOff } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import { useGamepadNav } from "../../composables/useGamepadNav";
+import { CardVisualRenderer } from "../../theme/cardVisualAst";
+import { useActiveCardVisual } from "../../theme/cardVisualRegistry";
 
 const emit = defineEmits<{ close: [] }>();
 
 const library = useLibraryStore();
 const rootRef = ref<HTMLElement | null>(null);
+const activeCardVisual = useActiveCardVisual();
 
 onMounted(() => rootRef.value?.focus());
 
@@ -103,14 +106,21 @@ function coverStyle(offset: number) {
           :style="coverStyle(item.offset)"
           @click="item.offset === 0 ? library.launchGame(library.games[item.index]) : (focusedIndex = item.index)"
         >
-          <img
-            v-if="library.games[item.index].cover_art_url"
-            :src="library.games[item.index].cover_art_url!"
-            :alt="library.games[item.index].title"
+          <CardVisualRenderer
+            v-if="activeCardVisual"
+            :node="activeCardVisual"
+            :game="library.games[item.index]"
           />
-          <div v-else class="strip-cover-placeholder bp-cover-placeholder">
-            {{ library.games[item.index].title.charAt(0).toUpperCase() }}
-          </div>
+          <template v-else>
+            <img
+              v-if="library.games[item.index].cover_art_url"
+              :src="library.games[item.index].cover_art_url!"
+              :alt="library.games[item.index].title"
+            />
+            <div v-else class="strip-cover-placeholder bp-cover-placeholder">
+              {{ library.games[item.index].title.charAt(0).toUpperCase() }}
+            </div>
+          </template>
         </button>
       </template>
     </div>

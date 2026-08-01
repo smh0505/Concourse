@@ -354,6 +354,14 @@ as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Bric
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
 
+- [x] Fixed a real theming gap: `BigPictureSlideshow.vue`'s strip covers rendered their own
+  hardcoded `img`/letter-placeholder markup, never wired into the `cardVisual` AST
+  (`CardVisualRenderer`/`useActiveCardVisual`) the way `GameCard.vue`/`BigPictureTile.vue`
+  already are (Milestone 19's "two consumers of the same registry" - now three). Under a
+  theme with a custom `cardVisual` (Brick Block's star placeholder, e.g.), grid/Big Picture
+  grid tiles showed it correctly while the slideshow silently fell back to a plain letter -
+  same fix pattern as both existing consumers, reusing the shared `.bp-cover-frame`/
+  `.bp-cover-placeholder` classes the slideshow already had
 - [x] `GameListRow.vue` redesigned: dropped the separate 48x64 thumbnail entirely, cover art is
   now the row's own `background-image` (with a left-to-right dark scrim for text legibility,
   fading toward the art on the right). Collapsed by default to just the title; hovering

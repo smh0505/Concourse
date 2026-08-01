@@ -10,6 +10,7 @@ import { useControllerMappingStore } from "./stores/controllerMapping";
 import { useAppSettingsStore } from "./stores/appSettings";
 import { useWrapperPluginStore } from "./stores/wrapperPlugins";
 import { useAppUpdateStore } from "./stores/appUpdate";
+import { usePluginUpdatesStore } from "./stores/pluginUpdates";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
 import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
@@ -34,6 +35,7 @@ const controllerMapping = useControllerMappingStore();
 const appSettings = useAppSettingsStore();
 const wrapperPlugins = useWrapperPluginStore();
 const appUpdate = useAppUpdateStore();
+const pluginUpdates = usePluginUpdatesStore();
 const bigPicture = ref(false);
 const bigPictureViewMode = ref<"grid" | "slideshow">("grid");
 const activeView = ref<AppView>("library");
@@ -53,6 +55,20 @@ watch(bigPicture, (enabled) => {
 
 let unlistenFocus: (() => void) | undefined;
 
+/** All five domain stores' manifests, gathered in one place for `pluginUpdates.checkAll` -
+ *  it already no-ops per-manifest for anything that was never installed through the runtime
+ *  pipeline (build-time TS plugins, controller mappings), so passing every kind here is
+ *  harmless rather than needing each call site to know which kinds are actually checkable. */
+function checkAllPluginUpdates() {
+  pluginUpdates.checkAll([
+    ...plugins.manifests,
+    ...theme.manifests,
+    ...metadataProviders.manifests,
+    ...controllerMapping.manifests,
+    ...wrapperPlugins.manifests,
+  ]);
+}
+
 onMounted(async () => {
   await library.init();
   await plugins.init();
@@ -67,8 +83,12 @@ onMounted(async () => {
   // modal open) lives in AddPlugin.vue. Not awaited - a failed/slow update check shouldn't
   // delay the rest of startup.
   appUpdate.checkForUpdate();
+  checkAllPluginUpdates();
   unlistenFocus = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-    if (focused) appUpdate.checkForUpdate();
+    if (focused) {
+      appUpdate.checkForUpdate();
+      checkAllPluginUpdates();
+    }
   });
 });
 onUnmounted(() => {

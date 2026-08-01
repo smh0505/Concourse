@@ -2097,3 +2097,30 @@ silently downgrading to an unpinned install just because it's an update. Only se
   no new Rust logic beyond the one added struct field, already covered by existing
   `check_plugin_update` tests) and `bun run build` all clean. Verified via compiled CSS:
   `.update-badge` present exactly once with the expected accent-color properties.
+
+**Wired plugin/theme update-checking into the same three trigger moments as app self-update,
+closing the milestone.** Extracted a small `checkAllPluginUpdates()` helper in `App.vue`
+(gathers all five domain stores' manifests, calls `pluginUpdates.checkAll`) and called it
+alongside `appUpdate.checkForUpdate()` at both existing spots - the `onMounted` block (after
+all five stores' own `init()` calls, so their manifests are actually populated by the time this
+runs) and the `onFocusChanged` listener. `AddPlugin.vue`'s existing `open`-prop watcher (the
+third moment, already home to `appUpdate.checkForUpdate()`) got the same five-store gather
+inlined directly, since that component doesn't share `App.vue`'s local helper scope.
+- Deliberately did **not** remove `PluginSettings.vue`'s own mount-time `checkAll` call, which
+  predates this step - reconsidered whether it was now-redundant scaffolding to clean up, and
+  concluded it isn't: opening the Settings view is a real, distinct user action from all three
+  canonical moments (someone can navigate to Settings without the app having just started,
+  regained focus, or had the install-plugin modal opened), so keeping it as a fourth check
+  point is a genuine UX improvement, not leftover clutter. Updated its comment to describe
+  itself accurately instead of the now-stale "baseline for now, proper wiring is later" framing.
+- `bun run build` (typecheck + build) and `cargo check` both clean.
+
+**Milestone 20 fully closed.** App self-update is verified working end to end (a real published
+release, a real GUI test, a real bug found and fixed along the way). Plugin/theme self-update
+is fully built and wired into four check moments - the schema change, the check command, the
+apply path, and the UI are all in place and pass their own tests - but unlike the app half,
+it was never GUI-tested end to end in this session: doing so would need an actually-installed
+WASM plugin or data theme with a real newer version published somewhere to check against,
+which wasn't set up here. Worth a real test pass before fully trusting it, the same way the app
+half needed three failed release attempts before its own real bugs (`createUpdaterArtifacts`,
+the workflow-permission gap, the `shallowRef` fix) surfaced.

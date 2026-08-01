@@ -245,7 +245,7 @@ consumer - the built-in `brick-block-theme` plugin).
 Component-swap theming is retired; `cardVisual` AST + CSS-variable hooks is now the only
 theming mechanism for both desktop and Big Picture, for every theme kind.
 
-## Milestone 20 — Auto-Update: App + Plugins/Themes (in progress)
+## Milestone 20 — Auto-Update: App + Plugins/Themes
 Two genuinely separate mechanisms, both checked at the same three moments (app start, app
 focus, install-plugin modal open) via one orchestrating call. See devlog for the design
 tradeoffs behind the split.
@@ -299,13 +299,20 @@ App self-update closed. Plugin/theme self-update (below) remains open.
   vs-lexical comparison, a real newer-version detection, already-current, and no-known-origin)
 - [x] Frontend: new `stores/pluginUpdates.ts` (wraps `check_plugin_update`, no-ops for
   build-time TS manifests which were never installed through the runtime pipeline at all) +
-  an "Update available" badge next to each of the 5 tabs' version span in `PluginSettings.vue`.
-  Checked once on mount as a baseline for now - proper wiring into the same three trigger
-  moments as the app self-update is the next, separate checklist item
+  an "Update available" badge next to each of the 5 tabs' version span in `PluginSettings.vue`
 - [x] Apply-update path (`pluginUpdates.ts`'s new `applyUpdate`) reuses the existing
   `install_plugin` command directly, no separate confirm dialog (this id is already installed
   and trusted). Added `latest_sha256` to `UpdateCheckResult` so a registry-sourced update keeps
   the same hard-reject-on-mismatch integrity check a fresh registry install gets. Also added
   `refreshManifests()` to `wrapperPlugins.ts` - the one domain store that never had it, a real
   pre-existing gap this surfaced
-- [ ] Wire checks into the same three trigger moments as the app self-update
+- [x] Wired `pluginUpdates.checkAll` into the same app start/focus moments as `appUpdate`
+  (`App.vue`'s existing `onMounted`/`onFocusChanged`) and `AddPlugin.vue`'s existing
+  `open`-prop watcher. Kept `PluginSettings.vue`'s own mount-time check too, as a fourth,
+  genuinely distinct moment (opening the Settings view itself) rather than removing it as
+  redundant
+
+Milestone 20 fully closed - app self-update verified working end to end; plugin/theme
+self-update built and wired into all four check moments (three canonical + Settings-view
+open), though not GUI-tested the way app self-update was (no installed WASM plugin/data theme
+with a real newer version available to test against in this environment).

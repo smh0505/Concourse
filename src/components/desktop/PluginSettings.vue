@@ -107,10 +107,11 @@ onMounted(async () => {
   allControllerPlugins.value = controllerPlugins;
   allWrapperPlugins.value = wrapperPluginsMap;
   await loadGrantedCapabilities([...plugins.manifests, ...wrapperPlugins.manifests]);
-  // Baseline trigger for now - proper wiring into the same three moments the app self-update
-  // uses (start/focus/install-modal-open) is a separate, later step. checkOne no-ops for any
-  // manifest that was never installed through the runtime pipeline (controller mappings are
-  // always build-time TS), so passing every kind's manifests here is harmless.
+  // A fourth check point beyond the three canonical ones (app start/focus live in App.vue,
+  // install-plugin modal open lives in AddPlugin.vue) - opening the Settings view itself is a
+  // real, distinct moment worth checking too, not just a stand-in for those three. checkOne
+  // no-ops for any manifest never installed through the runtime pipeline (controller mappings
+  // are always build-time TS), so passing every kind's manifests here is harmless.
   pluginUpdates.checkAll([
     ...plugins.manifests,
     ...theme.manifests,

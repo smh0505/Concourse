@@ -1,48 +1,26 @@
 <template>
   <div class="list-row-shell">
-    <div class="skeleton-thumb list-row-thumb">
+    <div class="skeleton-title">
       <div class="shimmer" />
-    </div>
-    <div class="skeleton-lines">
-      <div class="skeleton-line skeleton-line-title">
-        <div class="shimmer" />
-      </div>
-      <div class="skeleton-line skeleton-line-meta">
-        <div class="shimmer" />
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.skeleton-thumb {
-  /* .list-row-thumb (shared, styles.css) supplies width/height/flex-shrink/radius. */
-  background: var(--color-surface0);
-  overflow: hidden;
-  position: relative;
+/* Matches GameListRow.vue's collapsed (non-hovered) height and layout exactly - no separate
+   thumbnail box anymore, since the real row no longer has one either (cover art is its own
+   background now, not a thumbnail). */
+.list-row-shell {
+  min-height: 2.75rem;
 }
 
-.skeleton-lines {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.skeleton-line {
-  height: 0.75rem;
+.skeleton-title {
+  width: 30%;
+  height: 0.9rem;
   border-radius: var(--radius-sm);
   background: var(--color-surface0);
   overflow: hidden;
   position: relative;
-}
-
-.skeleton-line-title {
-  width: 40%;
-}
-
-.skeleton-line-meta {
-  width: 25%;
 }
 
 /* .shimmer (shared, styles.css) supplies the shimmer effect itself. */

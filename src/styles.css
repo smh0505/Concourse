@@ -221,15 +221,6 @@ small {
   padding: var(--space-2) var(--space-3);
 }
 
-/* List-row thumbnail dimensions - GameListRow.vue's .thumb/.thumb-placeholder,
-   SkeletonRow.vue's .skeleton-thumb. object-fit/background/etc. stay local per variant. */
-.list-row-thumb {
-  width: 48px;
-  height: 64px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-}
-
 /* Tag pill - GameFilters.vue's .tag, EditGame.vue's .tag */
 .tag-pill {
   font-size: 0.7rem;

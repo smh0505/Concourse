@@ -362,9 +362,10 @@ text, distinct from its own blue accent and green accent-alt.
   No-cover fallback still honors the shared `--cover-placeholder-*` hooks, using the `background`
   shorthand (not `background-image` alone) since the plain-color default isn't valid there.
   `useSkeletonCount`'s `itemHeight` in `GameList.vue` updated (82 -> 44) to match the new,
-  much shorter collapsed row height. `SkeletonRow.vue` intentionally left as its old
-  thumbnail-based layout for now - a known, minor visual mismatch during scans, not fixed as
-  part of this pass
+  much shorter collapsed row height. `SkeletonRow.vue` matched to the same layout right after
+  (single title-shaped shimmer bar, no thumbnail box, same 2.75rem min-height) - dropped the
+  now-fully-unused shared `.list-row-thumb` class from `styles.css` once nothing referenced
+  it anymore
 - [x] Fixed a real bug: skeleton placeholder count was hardcoded (6 cards/4 rows), leaving a
   maximized/large window's scan-in-progress view mostly empty below the fold. New
   `useSkeletonCount` composable (`src/composables/`) measures the container's own width and

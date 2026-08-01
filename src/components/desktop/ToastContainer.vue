@@ -74,7 +74,11 @@ const toasts = useToastStore();
 
 .toast-info {
   background: var(--color-surface1);
-  color: var(--color-text);
+  /* --color-button-text (not --color-text) - same reasoning as buttons: a theme with a
+     saturated/dark --color-surface1 (e.g. Brick Block) needs its own override here too, same
+     as it already needs for buttons sitting on that same surface color. --color-text alone
+     assumes a light neutral background, which --color-surface1 isn't guaranteed to be. */
+  color: var(--color-button-text);
 }
 
 .toast-enter-active,

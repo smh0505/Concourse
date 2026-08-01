@@ -15,6 +15,7 @@ import { useGamepadStatus } from "./composables/useGamepadStatus";
 import TitleBar from "./components/desktop/TitleBar.vue";
 import NavSidebar, { type AppView } from "./components/desktop/NavSidebar.vue";
 import AppSettings from "./components/desktop/AppSettings.vue";
+import UiTest from "./components/desktop/UiTest.vue";
 import AddGame from "./components/desktop/modalForms/AddGame.vue";
 import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
 import ToastContainer from "./components/desktop/ToastContainer.vue";
@@ -121,10 +122,16 @@ onUnmounted(() => {
           <GameList v-else />
         </template>
 
-        <template v-else>
+        <template v-else-if="activeView === 'settings'">
           <div class="settings-panel">
             <AppSettings />
             <PluginSettings />
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="settings-panel">
+            <UiTest />
           </div>
         </template>
       </main>

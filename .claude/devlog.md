@@ -2160,3 +2160,27 @@ two competing UI surfaces for the same kind of message.
   layout. `bun run build` (typecheck + build) and `cargo check` both clean. Not visually
   re-verified in a running app - same limitation as every other UI change this session, no
   browser/screenshot tooling available in this environment.
+
+**Added a "UI Test" sidebar tab, replacing the earlier throwaway test button.** New
+`AppView` value (`NavSidebar.vue`), new `UiTest.vue` component, wired into `App.vue`'s
+existing view-switch (`v-else-if`/`v-else` chain, now three branches instead of two). Moved
+the manual actionable-toast trigger here from its temporary spot in `AppSettings.vue`, and
+added four more: plain info/success/error toasts, plus a long-message one (to check text
+wrapping/sizing at a size the short test messages never exercised). All five are just manual
+UI-state triggers, not real functionality - explicitly labeled as such in the tab's own
+description text.
+
+**Fixed a real contrast bug in `.toast-info`, found via the Brick Block data theme.** User
+noticed info toasts were hard to read specifically under Brick Block - traced it to
+`.toast-info`'s `background: var(--color-surface1); color: var(--color-text)` pairing:
+Brick Block's `--color-surface1` (`#7c2c00`, a dark saturated brown - the same value used for
+button borders) paired with `--color-text` (`#1a1a2e`, dark navy) gives poor contrast, since
+`--color-text` assumes a light neutral background that `--color-surface1` isn't guaranteed to
+be. This is the exact same problem class already solved for buttons - `--color-button-text`
+exists specifically because "a theme with saturated/dark button backgrounds... can override
+just this one, without also recoloring body text" (its own doc comment in `styles.css`), and
+Brick Block already overrides it to white for that reason. Reused `--color-button-text` for
+`.toast-info` instead of `--color-text` - the default Catppuccin theme is unaffected (that
+token defaults to `var(--color-text)` there), only themes that override it (like Brick Block)
+get the improved contrast. Verified via compiled CSS. `bun run build`/`cargo check` both
+clean.

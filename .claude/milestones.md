@@ -154,6 +154,12 @@ sequence.
   false start (a per-container-scrollbar approach, reverted) and the run of follow-on visual
   fixes (stacking/z-index vs. hovered cards and their balloon, horizontal overflow, filter-bar
   width/padding, and a real `useBalloonAnchor.ts` placement bug the pinned bar exposed)
+- [x] New "UI Test" sidebar tab (manual triggers for hard-to-reach UI states - toasts of every
+  type/shape so far, not real functionality)
+- [x] Fixed `.toast-info`'s contrast under Brick Block - `--color-surface1` (dark, saturated
+  there) paired with `--color-text` (also dark) was hard to read; reused `--color-button-text`
+  instead, the same fix already applied to buttons for the identical reason. Default theme
+  unaffected
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

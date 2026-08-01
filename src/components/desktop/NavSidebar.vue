@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { IconDeviceGamepad, IconPlus } from "@tabler/icons-vue";
 
-export type AppView = "library" | "settings";
+export type AppView = "library" | "settings" | "uiTest";
 
 defineProps<{
   activeView: AppView;
@@ -41,6 +41,13 @@ const emit = defineEmits<{
         @click="emit('update:activeView', 'settings')"
       >
         Settings
+      </button>
+      <button
+        class="nav-item"
+        :class="{ 'accent-active': activeView === 'uiTest' }"
+        @click="emit('update:activeView', 'uiTest')"
+      >
+        UI Test
       </button>
     </div>
   </nav>

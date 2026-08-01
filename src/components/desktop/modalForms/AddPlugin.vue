@@ -52,7 +52,11 @@ watch(
       url.value = "";
       // Third of the three update-check moments (app start/focus live in App.vue) - this
       // component stays mounted the whole time PluginSettings.vue is (see its own `:open`
-      // prop), so the check has to be re-fired here, not in onMounted above.
+      // prop), so the check has to be re-fired here, not in onMounted above. Same reasoning
+      // applies to the registry list itself - onMounted's loadRegistry only ever ran once,
+      // so a new registry entry (or version bump) never showed up without a full app
+      // restart until this re-fetch was added.
+      pluginInstall.loadRegistry();
       appUpdate.checkForUpdate();
       pluginUpdates.checkAll([
         ...plugins.manifests,

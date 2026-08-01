@@ -353,3 +353,10 @@ item/tag filter/Settings tab indicator) blue too, a side effect of `.accent-acti
 as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Brick Block sets
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
+
+- [x] Fixed a real bug: `AddPlugin.vue`'s registry list (`pluginInstall.loadRegistry()`) only
+  ever ran once in `onMounted`, never again - since this component stays mounted for
+  `PluginSettings.vue`'s entire lifetime, opening "Add Plugin" a second time (or after a
+  registry update/new entry landed) kept showing the same stale list until a full app
+  restart. Added the same re-fetch to the existing `open`-prop watcher, alongside the two
+  update-check calls already living there for the identical reason

@@ -160,6 +160,10 @@ sequence.
   there) paired with `--color-text` (also dark) was hard to read; reused `--color-button-text`
   instead, the same fix already applied to buttons for the identical reason. Default theme
   unaffected
+- [x] Fixed `.toast-success`/`.toast-error` both reading as red under Brick Block - switched
+  success to `--color-accent-alt` (a theme's two brand colors are guaranteed distinct from
+  each other by construction, unlike accent vs. danger). Right-aligned `.toast-actions`'
+  buttons too
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

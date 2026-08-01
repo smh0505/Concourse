@@ -2184,3 +2184,20 @@ Brick Block already overrides it to white for that reason. Reused `--color-butto
 token defaults to `var(--color-text)` there), only themes that override it (like Brick Block)
 get the improved contrast. Verified via compiled CSS. `bun run build`/`cargo check` both
 clean.
+
+**Two more toast fixes, both found via Brick Block again.** (1) `.toast-success` and
+`.toast-error` were both red under Brick Block - `--color-accent` (`#e52521`) and
+`--color-danger` (`#b71c1c`) are both red-family hues in that theme's palette, hard to tell
+apart at a glance. Switched `.toast-success` to `--color-accent-alt` instead of
+`--color-accent` - a theme's two brand colors are already meant to be visually distinct from
+each other by construction (that's the whole reason a theme declares two of them), unlike
+`--color-accent` vs `--color-danger`, which nothing guarantees are different hues. Happens to
+also line up with the near-universal "green means success" convention for Brick Block
+specifically (`--color-accent-alt: #43b047`, a real green) and stays a real, distinct color for
+the default Catppuccin theme too (purple vs. red), even though it's not literally "green"
+there. (2) Right-aligned `.toast-actions`' buttons (`justify-content: flex-end`) rather than
+left-flush, per direct request - didn't extend this to the update-offer toast specifically
+since the change is at the shared `.toast-actions` level, so it applies to every actionable
+toast uniformly, not just that one.
+- Verified via compiled CSS: `.toast-success{background:var(--color-accent-alt)}`,
+  `.toast-actions{...justify-content:flex-end...}`. `bun run build`/`cargo check` both clean.

@@ -286,6 +286,143 @@ declare these two new variables is byte-for-byte unaffected (falls through to
 `1.3.3` -> `1.3.4`. Verified via `bun run build` (clean) and re-synced the local theme cache
 copy again.
 
+**`GameListRow.vue` brought closer to `GameCard.vue`'s feature parity, on direct request
+("GameList looks too basic, try some features from GameCard").** Suggested and implemented
+three concrete, cheap gaps rather than a vague pass:
+- `.thumb-placeholder` hardcoded `--color-surface0`/`--color-text` directly instead of the
+  same opt-in `--cover-placeholder-*` hooks `GameCard.vue`'s placeholder already exposed - a
+  theme setting these (Brick Block's stripe pattern/star color) previously only applied in
+  grid view, silently falling back to plain defaults in list view. Copied the same
+  background/color/text-shadow fallback pattern; `-font-size` deliberately not reused - list
+  rows are far smaller (48x64 thumb) than a full grid card, so the grid-scaled default would
+  overflow.
+- Added a fetch-metadata spinner overlay (`IconLoader2`, spin animation, dark scrim) matching
+  `GameCard.vue`'s, replacing the previous feedback (disabled button + `"..."` label). Wrapped
+  `.thumb`/`.thumb-placeholder` in a new `.thumb-wrap` so the overlay has something to
+  position against.
+- Swapped the "Info" text button for an icon-only `IconInfoCircle` button matching
+  `GameCard.vue`'s exactly (title tooltip added), dropping the now-vestigial
+  `.actions { font-size: 0.8rem }` override - nothing left in that row is text.
+
+`bun run build` clean after each of the three.
+
+**Fixed a real bug, on direct report: already-loaded games stayed visible and interactable
+underneath the skeleton placeholders while a source plugin scan was running.**
+`GameGrid.vue`/`GameList.vue` rendered skeleton cards/rows *and* the real, already-loaded
+games at the same time (skeletons prepended, real games still rendered below/around them) -
+restructured both from a bare `v-if` prefix into a proper `if`/`else` (skeletons-only while
+`plugins.scanning`, real games otherwise), so loaded games are fully hidden mid-scan, not just
+visually covered. Also locked `App.vue`'s `.content` scroll (`overflow: hidden`) via a new
+`scroll-locked` class bound to `activeView === 'library' && plugins.scanning` - scoped to the
+library view specifically, since scanning can also be triggered from the Settings tab's own
+"Scan Now" button, where locking `.content` would've been an unrelated side effect. `bun run
+build` clean.
+
+**Fixed a related real bug the user found immediately after maximizing the window: skeleton
+placeholder count was hardcoded (6 cards / 4 rows), leaving a large window's scan-in-progress
+view mostly empty below the fold.** Built a new `useSkeletonCount` composable
+(`src/composables/useSkeletonCount.ts`) instead of just bumping the hardcoded numbers higher -
+measures the container's own `clientWidth` (columns, grid view only) and its *parent's*
+`clientHeight` (rows) via `ResizeObserver`, recomputing on resize. Measuring the parent's
+height rather than the container's own was deliberate - `.grid`/`.list`'s own height is
+intrinsic to its children while only a handful of skeletons exist, so measuring it directly
+would be circular; the parent (`.content`, the actual scrollable viewport) has a stable height
+independent of what's currently rendered inside it. Deliberately overestimates rather than
+undershoots - during a scan the container's scroll is locked (previous fix), so a few
+extra off-screen skeletons just get clipped, not left as a visible gap. Wired into both
+`GameGrid.vue` (`itemWidth: 140, itemHeight: 187, gap: 16` - matching `.grid`'s own
+`minmax(140px, 1fr)` column width and the resulting 3:4 card aspect ratio) and
+`GameList.vue` (`itemHeight: 82, gap: 8`, no `itemWidth` since list rows are full-width).
+`bun run build` clean.
+
+**`GameListRow.vue` redesigned on direct request: drop the thumbnail, use cover art as the
+row's own background, collapse to just the title until hovered.** Removed the separate
+48x64 thumbnail entirely - cover art now sets `.list-row-shell`'s own `background-image`
+directly (`background-size: cover`), with a left-to-right dark scrim (`linear-gradient(to
+right, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.25))`) keeping title/details readable regardless of
+the art's own brightness, while still letting the art show through on the right. No-cover
+fallback uses the `background` shorthand (not `background-image` alone) pointed at the same
+`--cover-placeholder-*` hooks as before - the shorthand matters here since the plain-color
+default isn't valid syntax for `background-image` alone. Collapsed by default to just the
+title (`min-height: 2.75rem`); hovering expands the row (`min-height: 6rem` transition) and
+reveals description/meta/actions via `max-height`/`opacity` transitions - matching
+`GameCard.vue`'s existing hover-reveal-footer convention rather than inventing a new one.
+`useSkeletonCount`'s `GameList.vue` call updated `itemHeight` 82 -> 44 to match the new, much
+shorter collapsed height. `SkeletonRow.vue` matched to the same layout in the same pass (single
+title-shaped shimmer bar, no thumbnail box, same `2.75rem` min-height) - once nothing
+referenced the old `.list-row-thumb` shared class anymore, dropped it from `styles.css`
+entirely rather than leaving it dead. `bun run build` clean throughout.
+
+Three follow-up passes on the same component, all from direct feedback after the redesign
+landed:
+- **"Buttons need a little padding for spacing"**: `.actions`' button gap bumped `0.35rem` ->
+  `var(--space-2)`, plus `padding-left: var(--space-3)`, so the revealed buttons don't sit
+  cramped right against the title/details text.
+- **"I was meaning each button needs spacing, the button seems too narrow"**: traced to the
+  shared `.icon-action-row button` rule's `flex: 1; padding: 0.35rem 0` - that combination only
+  produces a reasonably-wide button when the row itself is stretched to a fixed width, true for
+  `GameCard.vue`'s absolutely-positioned, full-card-width footer, not true for `.actions` here
+  (only as wide as its own content). Without that stretch, `flex: 1` plus zero horizontal
+  padding collapses each button down to icon width. Fixed with a scoped `.actions button`
+  override (`flex: 0 0 auto; padding: 0.35rem 0.6rem`) rather than touching the shared rule,
+  since `GameCard.vue`'s footer still genuinely needs its own `flex: 1` stretch behavior.
+- **"0.6rem seems too thick, shorten to 0.35rem, also let the title use full length before
+  hovering"**: evened button padding to `0.35rem` all around. Separately, `.actions` had only
+  ever animated `opacity`, so it still occupied its full flex-row width invisibly even while
+  "hidden," capping how much space the title/details could actually use pre-hover. Changed
+  `.actions` to collapse via `max-width: 0 -> 12rem` (plus `padding-left`) instead, so the
+  title spans the row's entire width until hovered, not just up to wherever the invisible
+  button group sat.
+
+`bun run build` clean after each.
+
+**Fixed a real theming gap, on direct report: "the tiles in slide show doesn't match to grid
+ones."** Traced to `BigPictureSlideshow.vue`'s strip covers rendering their own hardcoded
+`img`/letter-placeholder markup, never wired into the `cardVisual` AST
+(`CardVisualRenderer`/`useActiveCardVisual`) the way `GameCard.vue`/`BigPictureTile.vue`
+already are (Milestone 19's "two consumers of the same registry" - now three). Under a theme
+with a custom `cardVisual` (Brick Block's star placeholder), grid and Big Picture grid tiles
+rendered it correctly while the slideshow silently fell back to a plain letter. Fixed with the
+identical pattern both existing consumers use, reusing the shared `.bp-cover-frame`/
+`.bp-cover-placeholder` classes the slideshow already had for layout - no new CSS needed.
+`bun run build` clean.
+
+**New "Stats" sidebar tab, on request after being asked what else the sidebar could use.**
+Recommended this over a tags/collections manager since playtime tracking is already a core
+proposal feature with no dedicated view surfacing it in aggregate - pure read-only presentation
+of data already being collected, no new interaction model. Added
+`PlaytimeRepository.getRecentlyPlayed(limit)` (`SELECT game_id, MAX(end_time) as last_played
+... GROUP BY game_id ORDER BY last_played DESC`) since "last played per game" only exists in
+the session log, never on the `games` row's own `total_playtime` aggregate - and a new
+`stores/stats.ts` wrapping it. `StatsPanel.vue` shows a total games/hours summary, a "Most
+Played" top-5 list (sorted client-side off `library.games`, already loaded - no new query
+needed for this part), and a "Recently Played" list (maps `stats.recentlyPlayed`'s ids back
+onto `library.games`, dropping any id whose game was since deleted). Deliberately reuses
+`GameListRow.vue`'s just-built cover-as-background row look for visual consistency, but
+static - no hover-expand, since these rows are informational, not actionable. Wired into
+`NavSidebar.vue`'s `AppView` union and `App.vue`'s view-switch. `bun run build` clean.
+
+**Made "UI Test" genuinely dev-only, not just hidden from the nav, per explicit instruction
+given before starting the Stats-tab work.** First attempt: gate the nav button and the
+`<UiTest>` usage behind a `v-if="import.meta.env.DEV"`. Hit two real problems in sequence: (1)
+`import.meta` isn't valid syntax inside a Vue template expression at all (parsed in
+non-module scope) - `vite build` failed outright with a parser error, fixed by reading it once
+into a script-level `const isDev = import.meta.env.DEV` and using `v-if="isDev"` instead. (2)
+Even with that fix, a `bun run build` + grep of the actual `dist/assets/*.js` output for
+`UiTest`-only strings (`testActionToast`, etc.) found them still present - a plain template
+`v-if` isn't provably `false` to Terser, since Vue's compiled render function reads component
+state through a reactive proxy (`_ctx.isDev`), not a traceable local constant it can fold. The
+whole `UiTest.vue` import stayed bundled despite the button being hidden. Real fix: gate a
+*dynamic* `import()` behind a literal `import.meta.env.DEV` ternary directly in `App.vue`'s
+`<script>` (`defineAsyncComponent(() => import("./components/desktop/UiTest.vue"))` when
+`DEV`, `undefined` otherwise), rendered via `<component :is="UiTest" v-if="UiTest" />`. That
+ternary sits at a scope Vite's build-time `DEV` replacement can fold to a literal `false`
+before Rollup bundles anything, so the whole import (and `UiTest.vue`'s compiled code) is
+eliminated from the production graph entirely - confirmed by rebuilding, re-grepping
+`dist/assets/*.js`, and finding zero `UiTest`-only strings this time. This also means any
+tagged release (which builds in production mode) automatically ships without the tab, with no
+separate CI-side exclusion step needed.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 
@@ -2257,4 +2394,26 @@ two competing UI surfaces for the same kind of message.
   layout. `bun run build` (typecheck + build) and `cargo check` both clean. Not visually
   re-verified in a running app - same limitation as every other UI change this session, no
   browser/screenshot tooling available in this environment.
+
+**Fixed a real bug reported directly: "the app's add plugin button doesn't update registry."**
+Traced to `AddPlugin.vue`'s `pluginInstall.loadRegistry()` call living only in `onMounted` -
+harmless-looking, until noticing this component stays mounted for `PluginSettings.vue`'s
+entire lifetime (controlled via its own `:open` prop, not `v-if`). `onMounted` only ever fires
+once per Settings visit, so the registry list was fetched exactly once and never refreshed on
+a second "Add Plugin" click, or after a registry update/new entry landed - stale until a full
+app restart. Fixed by adding the same `loadRegistry()` call to the existing `open`-prop watcher
+(idempotent re-fetch, safe to call again).
+
+Fixing that surfaced a second, smaller issue: the same watcher's `appUpdate.checkForUpdate()`/
+`pluginUpdates.checkAll()` calls (the "third" of Milestone 20's three canonical trigger
+moments) turned out to be genuinely redundant, not just the registry list. `AddPlugin.vue`
+only ever opens from inside `PluginSettings.vue`, and that component's own `onMounted` already
+re-checks updates every time Settings is (re)entered - opening the nested modal can't happen
+without that check having just run moments earlier. Removed both calls (and their now-unused
+store imports: `useAppUpdateStore`/`usePluginUpdatesStore`/`usePluginStore`/`useThemeStore`/
+`useMetadataProviderStore`/`useControllerMappingStore`/`useWrapperPluginStore`) from
+`AddPlugin.vue`, leaving its watcher responsible for the registry re-fetch only. Update checks
+now fire at three moments, not four: app start, app focus (`App.vue`), and Settings-view mount
+(`PluginSettings.vue`) - `AddPlugin.vue`'s own bundle even shrank slightly as a result.
+`bun run build` clean at both steps.
 

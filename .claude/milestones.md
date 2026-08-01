@@ -371,7 +371,11 @@ text, distinct from its own blue accent and green accent-alt.
   here, which is only as wide as its own content). Without that stretch, `flex: 1` plus zero
   horizontal padding collapses each button to icon width. Added a `.actions button` override
   (`flex: 0 0 auto; padding: 0.35rem 0.6rem`) scoped to this component instead of changing the
-  shared rule, since GameCard's footer still needs its own `flex: 1` stretch behavior
+  shared rule, since GameCard's footer still needs its own `flex: 1` stretch behavior.
+  Follow-up 3: button padding evened to `0.35rem` all around (was `0.35rem 0.6rem`, felt too
+  wide horizontally). Also gave `.actions` itself `max-width: 0` collapsed -> `12rem` on hover
+  (was just `opacity`, still taking up its full flex width invisibly) so the title can use the
+  row's entire width before hovering, not just up to wherever the invisible button group sat
   `useSkeletonCount`'s `itemHeight` in `GameList.vue` updated (82 -> 44) to match the new,
   much shorter collapsed row height. `SkeletonRow.vue` matched to the same layout right after
   (single title-shaped shimmer bar, no thumbnail box, same 2.75rem min-height) - dropped the

@@ -178,18 +178,25 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   display: flex;
   gap: var(--space-2);
   flex-shrink: 0;
-  padding-left: var(--space-3);
+  max-width: 0;
+  padding-left: 0;
   opacity: 0;
+  overflow: hidden;
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  transition:
+    max-width 0.2s ease,
+    padding-left 0.2s ease,
+    opacity 0.15s ease;
 }
 
 .actions button {
   flex: 0 0 auto;
-  padding: 0.35rem 0.6rem;
+  padding: 0.35rem;
 }
 
 .list-row-shell:hover .actions {
+  max-width: 12rem;
+  padding-left: var(--space-3);
   opacity: 1;
   pointer-events: auto;
 }

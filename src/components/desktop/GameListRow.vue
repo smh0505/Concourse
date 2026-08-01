@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { IconEdit, IconPlayerPlay, IconTrash } from "@tabler/icons-vue";
+import { IconEdit, IconLoader2, IconPlayerPlay, IconTrash } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import type { Game } from "../../db";
 
@@ -13,8 +13,13 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 
 <template>
   <div class="list-row-shell">
-    <img v-if="game.cover_art_url" class="thumb list-row-thumb" :src="game.cover_art_url" :alt="game.title" />
-    <div v-else class="thumb-placeholder list-row-thumb">{{ game.title.charAt(0).toUpperCase() }}</div>
+    <div class="thumb-wrap">
+      <img v-if="game.cover_art_url" class="thumb list-row-thumb" :src="game.cover_art_url" :alt="game.title" />
+      <div v-else class="thumb-placeholder list-row-thumb">{{ game.title.charAt(0).toUpperCase() }}</div>
+      <div v-if="fetchingMetadata" class="fetch-overlay">
+        <IconLoader2 :size="16" :stroke-width="1.75" class="spin" />
+      </div>
+    </div>
 
     <div class="info">
       <div class="title">{{ game.title }}</div>
@@ -34,7 +39,7 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
         :disabled="fetchingMetadata"
         @click="library.fetchMetadata(game)"
       >
-        {{ fetchingMetadata ? "..." : "Info" }}
+        Info
       </button>
       <button class="edit" title="Edit" @click="library.openEdit(game)">
         <IconEdit :size="15" :stroke-width="1.75" />
@@ -47,9 +52,35 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 </template>
 
 <style scoped>
+.thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .thumb {
   /* .list-row-thumb (shared, styles.css) supplies width/height/flex-shrink/radius. */
   object-fit: cover;
+}
+
+.fetch-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--color-on-accent);
+  border-radius: var(--radius-sm);
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .thumb-placeholder {

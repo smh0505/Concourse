@@ -354,6 +354,10 @@ as `--button-border-color`/`--tile-*`), so every other theme is unaffected. Bric
 these to yellow (`#fce303`, matching its existing cover-placeholder star color)/dark navy
 text, distinct from its own blue accent and green accent-alt.
 
+- [x] `GameListRow.vue`'s thumb now shows the same fetch-metadata spinner overlay
+  `GameCard.vue` already has (`IconLoader2`, spin animation, dark scrim), instead of just
+  disabling the "Info" button with `"..."` text - wrapped `.thumb`/`.thumb-placeholder` in a
+  `.thumb-wrap` to give the overlay something to position against
 - [x] `GameListRow.vue`'s cover placeholder now reads the same `--cover-placeholder-background`/
   `-color`/`-text-shadow` opt-in hooks `GameCard.vue`'s placeholder already exposed - a theme
   setting these (e.g. Brick Block's stripe pattern/star color) previously only applied in grid

@@ -180,6 +180,10 @@ own definition.
 - [x] Replaced the "Edit" modal with a full `GameDetail.vue` page (view mode by default,
   toggles to an edit mode in place) - `library.ts`'s `editingGame`/`openEdit`/`cancelEdit`
   renamed `viewingGame`/`openDetail`/`closeDetail`; saving no longer closes the page
+- [x] Moved `GameDetail.vue`'s page actions into a single sticky, bottom-right-aligned
+  `.action-bar` (both view mode's Play/Fetch Metadata/Edit/Remove and edit mode's
+  Cancel/Save), pinned to the bottom of the scroll container instead of scrolling away
+  inline with the page content
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

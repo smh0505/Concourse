@@ -666,6 +666,28 @@ branch, with a back button returning to them.
   file that no longer exists.
 - `bun run build` clean.
 
+**Follow-up, on direct feedback: move every page action to a sticky bottom-right bar.** The
+first pass left view mode's Play/Fetch Metadata/Edit/Remove buttons inline at the end of
+`.info` and edit mode's Cancel/Save inline at the end of the form - both scrolled away with
+the rest of the page on anything taller than the viewport. Restructured the template: added an
+outer `.game-detail-page` wrapper around the existing `.game-detail` column, with a new
+sibling `.action-bar` holding whichever button set applies (view vs. edit), right-aligned via
+`justify-content: flex-end` and pinned via `position: sticky; bottom: 0` - sticky rather than
+`fixed` specifically, so it stays anchored to `.content`'s own scroll area (only visible while
+`GameDetail.vue` itself is the active view) instead of floating over every other page in the
+app the way a viewport-fixed element would.
+
+Moving the edit-mode Save button outside the `<form>` element it used to live in required a
+small mechanical fix: a `type="submit"` button only submits the form it's physically nested
+inside, and the whole point of moving it into the shared `.action-bar` was to take it out of
+that nesting. Simplest fix over the alternative (linking it back via the button's `form="..."`
+attribute by id) - dropped `type="submit"` entirely and call `onSave()` directly via `@click`,
+since the component already had a plain function to call; the `<form>`'s own
+`@submit.prevent="onSave"` stays for Enter-key-in-a-text-input convenience, now just a second
+path to the same function rather than the button's only path.
+
+`bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

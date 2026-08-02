@@ -144,47 +144,36 @@ async function onDelete() {
 </script>
 
 <template>
-  <div class="game-detail">
-    <button class="back-button" @click="library.closeDetail()">
-      <IconArrowLeft :size="16" :stroke-width="1.75" />
-      Back to Library
-    </button>
+  <div class="game-detail-page">
+    <div class="game-detail">
+      <button class="back-button" @click="library.closeDetail()">
+        <IconArrowLeft :size="16" :stroke-width="1.75" />
+        Back to Library
+      </button>
 
-    <template v-if="!editing">
-      <div class="view">
-        <div class="cover-wrap">
-          <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
-          <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
-        </div>
-        <div class="info">
-          <h1>{{ game.title }}</h1>
-          <div class="meta">
-            <span v-if="game.platform">{{ game.platform }}</span>
-            <span v-if="game.release_date">{{ game.release_date }}</span>
-            <span>{{ playtimeMinutes }} min played</span>
+      <template v-if="!editing">
+        <div class="view">
+          <div class="cover-wrap">
+            <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
+            <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
           </div>
-          <p v-if="game.description" class="description">{{ game.description }}</p>
-          <div class="tags" v-if="gameTags.length || gameCollections.length">
-            <span class="tag-pill" v-for="tag in gameTags" :key="`t-${tag}`">{{ tag }}</span>
-            <span class="tag-pill" v-for="name in gameCollections" :key="`c-${name}`">{{ name }}</span>
-          </div>
-          <div class="actions">
-            <button class="play" @click="library.launchGame(game)">
-              <IconPlayerPlay :size="16" :stroke-width="1.75" />
-              Play
-            </button>
-            <button :disabled="fetchingMetadata" @click="library.fetchMetadata(game)">
-              <IconInfoCircle :size="16" :stroke-width="1.75" />
-              {{ fetchingMetadata ? "Fetching..." : "Fetch Metadata" }}
-            </button>
-            <button @click="startEdit">Edit</button>
-            <button class="remove" @click="onDelete">Remove</button>
+          <div class="info">
+            <h1>{{ game.title }}</h1>
+            <div class="meta">
+              <span v-if="game.platform">{{ game.platform }}</span>
+              <span v-if="game.release_date">{{ game.release_date }}</span>
+              <span>{{ playtimeMinutes }} min played</span>
+            </div>
+            <p v-if="game.description" class="description">{{ game.description }}</p>
+            <div class="tags" v-if="gameTags.length || gameCollections.length">
+              <span class="tag-pill" v-for="tag in gameTags" :key="`t-${tag}`">{{ tag }}</span>
+              <span class="tag-pill" v-for="name in gameCollections" :key="`c-${name}`">{{ name }}</span>
+            </div>
           </div>
         </div>
-      </div>
-    </template>
+      </template>
 
-    <template v-else>
+      <template v-else>
       <form class="edit-form" @submit.prevent="onSave">
         <label>
           Title
@@ -272,19 +261,46 @@ async function onDelete() {
           </form>
         </div>
         <p v-if="error" class="error-text">{{ error }}</p>
-        <div class="edit-actions">
-          <button type="button" @click="cancelEdit">Cancel</button>
-          <button type="submit">Save</button>
-        </div>
       </form>
-    </template>
+      </template>
+    </div>
+
+    <div class="action-bar">
+      <template v-if="!editing">
+        <button class="play" @click="library.launchGame(game)">
+          <IconPlayerPlay :size="16" :stroke-width="1.75" />
+          Play
+        </button>
+        <button :disabled="fetchingMetadata" @click="library.fetchMetadata(game)">
+          <IconInfoCircle :size="16" :stroke-width="1.75" />
+          {{ fetchingMetadata ? "Fetching..." : "Fetch Metadata" }}
+        </button>
+        <button @click="startEdit">Edit</button>
+        <button class="remove" @click="onDelete">Remove</button>
+      </template>
+      <template v-else>
+        <button type="button" @click="cancelEdit">Cancel</button>
+        <button type="button" @click="onSave">Save</button>
+      </template>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.game-detail-page {
+  /* min-height ensures the sticky action bar (below) has genuine room to stick within a short
+     page - without this, a game with little content would leave the bar floating mid-page
+     instead of pinned to the visible bottom. */
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .game-detail {
+  flex: 1;
   max-width: 720px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .back-button {
@@ -362,17 +378,8 @@ async function onDelete() {
 
 /* .tag-pill (shared, styles.css) supplies this rule's entire look. */
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.actions button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
+/* .action-bar (below) is the only actions container now - view mode's Play/Fetch Metadata/
+   Edit/Remove buttons live there instead of inline here. */
 
 .edit-form {
   display: flex;
@@ -447,9 +454,30 @@ async function onDelete() {
   font-size: 0.85rem;
 }
 
-.edit-actions {
+/* Sticky footer action bar - holds every top-level page action (view mode's Play/Fetch
+   Metadata/Edit/Remove, edit mode's Cancel/Save), right-aligned, pinned to the bottom of the
+   scroll container so it stays reachable without following the page's own left/right margins.
+   `position: sticky` (not `fixed`) - stays anchored to the bottom of `.content` (App.vue's
+   scroll container) while `.game-detail-page` is in view, rather than floating over every
+   other view too. */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-base);
+  border-top: var(--button-border-width) solid var(--color-surface0);
+}
+
+.action-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 /* .error-text (shared, styles.css) supplies this rule's entire look. */

@@ -52,7 +52,7 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
       >
         <IconInfoCircle :size="15" :stroke-width="1.75" />
       </button>
-      <button class="edit" title="Edit" @click="library.openEdit(game)">
+      <button class="edit" title="Edit" @click="library.openDetail(game)">
         <IconEdit :size="15" :stroke-width="1.75" />
       </button>
       <button class="remove" title="Remove" @click="library.deleteGame(game.id)">

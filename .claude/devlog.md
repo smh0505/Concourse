@@ -636,6 +636,36 @@ project's own versioning policy ties to it. `1.3.7` -> `1.4.0` across `package.j
 matching `concourse` package entry rather than hand-editing it. `bun run build`/`cargo check`
 both clean.
 
+**Replaced the "Edit" modal with a full detail page, on the user's own idea.** Scoped it via
+two quick decisions up front rather than guessing: the new page replaces `EditGame.vue`'s
+modal entirely (not an addition alongside it), and it's a `library`-internal state - not a new
+sidebar tab, not an overlay - so navigating into a game's detail temporarily swaps out
+`GameFilters.vue`/`GameGrid.vue`/`GameList.vue` within the existing `activeView === 'library'`
+branch, with a back button returning to them.
+
+- **`library.ts`**: `editingGame`/`openEdit`/`cancelEdit` renamed `viewingGame`/`openDetail`/
+  `closeDetail` (same shape, different name reflecting the new "viewing a page" framing rather
+  than "editing in a modal"). `saveEdit` changed behavior, not just name - it used to null out
+  `editingGame` after saving (closing the modal); now it re-reads the just-saved game from the
+  refreshed `games` list and keeps `viewingGame` pointed at it, since the whole point of "a
+  detail page convertible to an editing page" is that saving returns to the page's own view
+  mode, not exits the page entirely.
+- **New `GameDetail.vue`** (`src/components/desktop/`, a peer of `GameCard.vue`/
+  `GameListRow.vue` - not a `tabs/` root, since it's not a sidebar destination): a local
+  `editing` ref toggles between a read-only view (cover art, title, platform/release date/
+  playtime, description, tag/collection pills, Play/Fetch Metadata/Edit/Remove buttons) and an
+  edit form. The edit form is a straight port of the old modal's fields (title/executable
+  path/platform/cover+background art URLs with the existing fetch-background button/release
+  date/description/skip-dedup checkbox/wrapper profile select/tags/collections sections) -
+  same fields, same store actions, just laid out as a page section instead of a modal body.
+- `GameCard.vue`/`GameListRow.vue`'s "Edit" button now calls `library.openDetail(game)`
+  instead of the old `openEdit`.
+- Deleted `EditGame.vue` and its `<EditGame />` mount in `App.vue` entirely, per the "replace,
+  don't keep both" scoping decision. Updated three stale doc-comment references to it
+  (`CandidatePicker.vue`, two in `styles.css`) that would otherwise have kept pointing at a
+  file that no longer exists.
+- `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

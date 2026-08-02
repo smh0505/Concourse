@@ -5,7 +5,7 @@ import type { PendingCandidateSection } from "../../../stores/metadataProviders"
 
 // Mounted once globally (App.vue, same pattern as ToastContainer) - metadataProviders.ts's
 // fetchMetadata pauses mid-flow and awaits a promise that this modal resolves via
-// onSubmit, so it needs to be reachable regardless of which UI surface (GameCard, EditGame,
+// onSubmit, so it needs to be reachable regardless of which UI surface (GameCard, GameDetail,
 // GameListRow, ...) actually triggered the fetch.
 //
 // One section per ambiguous provider rather than a separate modal per provider - a click

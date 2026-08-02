@@ -221,7 +221,7 @@ small {
   padding: var(--space-2) var(--space-3);
 }
 
-/* Tag pill - GameFilters.vue's .tag, EditGame.vue's .tag */
+/* Tag pill - GameFilters.vue's .tag, GameDetail.vue's .tag */
 .tag-pill {
   font-size: 0.7rem;
   background: var(--color-surface0);
@@ -346,7 +346,7 @@ small {
   font-size: 1.5rem;
 }
 
-/* Form error message - AddGame.vue's .error, EditGame.vue's .error. Byte-identical, no HTML
+/* Form error message - AddGame.vue's .error, GameDetail.vue's .error. Byte-identical, no HTML
    primitive fits "error message" the way <small> fits secondary text, so this stays a class. */
 .error-text {
   color: var(--color-danger);

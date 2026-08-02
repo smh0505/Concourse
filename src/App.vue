@@ -24,7 +24,7 @@ import ToastContainer from "./components/desktop/ToastContainer.vue";
 import GameFilters from "./components/desktop/tabs/GameFilters.vue";
 import GameGrid from "./components/desktop/tabs/GameGrid.vue";
 import GameList from "./components/desktop/tabs/GameList.vue";
-import EditGame from "./components/desktop/modalForms/EditGame.vue";
+import GameDetail from "./components/desktop/GameDetail.vue";
 import PluginSettings from "./components/desktop/tabs/PluginSettings.vue";
 import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
 import BigPictureSlideshow from "./components/bigpicture/BigPictureSlideshow.vue";
@@ -130,9 +130,12 @@ onUnmounted(() => {
         :class="{ 'scroll-locked': activeView === 'library' && plugins.scanning }"
       >
         <template v-if="activeView === 'library'">
-          <GameFilters />
-          <GameGrid v-if="library.viewMode === 'grid'" />
-          <GameList v-else />
+          <GameDetail v-if="library.viewingGame" />
+          <template v-else>
+            <GameFilters />
+            <GameGrid v-if="library.viewMode === 'grid'" />
+            <GameList v-else />
+          </template>
         </template>
 
         <template v-else-if="activeView === 'stats'">
@@ -157,7 +160,6 @@ onUnmounted(() => {
         </template>
       </main>
       <AddGame :open="showAddGameModal" @close="showAddGameModal = false" />
-      <EditGame />
     </div>
   </div>
 

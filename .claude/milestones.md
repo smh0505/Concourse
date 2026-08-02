@@ -177,6 +177,9 @@ own definition.
   `stores/collections.ts` - a genuinely separate domain now, not just "a lot of actions"
 - [x] Grouped every sidebar tab's own top-level component into `src/components/desktop/tabs/`,
   separate from the smaller supporting components they render
+- [x] Replaced the "Edit" modal with a full `GameDetail.vue` page (view mode by default,
+  toggles to an edit mode in place) - `library.ts`'s `editingGame`/`openEdit`/`cancelEdit`
+  renamed `viewingGame`/`openDetail`/`closeDetail`; saving no longer closes the page
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

@@ -40,7 +40,7 @@ export const useLibraryStore = defineStore("library", () => {
   const search = ref("");
   const fetchingMetadataFor = ref<number | null>(null);
   const fetchingBackgroundFor = ref<number | null>(null);
-  const editingGame = ref<Game | null>(null);
+  const viewingGame = ref<Game | null>(null);
   const viewMode = ref<ViewMode>("grid");
 
   let unlistenSessionEnded: UnlistenFn | undefined;
@@ -95,7 +95,7 @@ export const useLibraryStore = defineStore("library", () => {
     }
   }
 
-  /** EditGameModal's dedicated "just refresh background art without leaving the modal"
+  /** GameDetail's dedicated "just refresh background art without leaving the page"
    *  button - goes through the same enabled-metadata-provider merge fetchMetadata() does,
    *  applying only backgroundArtUrl, rather than a SteamGridDB-specific command directly. */
   async function fetchBackgroundArt(game: Game) {
@@ -170,19 +170,23 @@ export const useLibraryStore = defineStore("library", () => {
     return { added, merged };
   }
 
-  function openEdit(game: Game) {
-    editingGame.value = game;
+  function openDetail(game: Game) {
+    viewingGame.value = game;
   }
 
-  function cancelEdit() {
-    editingGame.value = null;
+  function closeDetail() {
+    viewingGame.value = null;
   }
 
+  /** Unlike the old edit modal, saving here doesn't close the detail page - it stays open,
+   *  showing the just-saved data, matching the "detail page convertible to an editing page"
+   *  design (editing is a mode within the page, not a separate flow that exits on save). */
   async function saveEdit(fields: GameEditFields) {
-    if (!editingGame.value) return;
-    await gameRepo.update(editingGame.value.id, fields);
-    editingGame.value = null;
+    if (!viewingGame.value) return;
+    const id = viewingGame.value.id;
+    await gameRepo.update(id, fields);
     await refresh();
+    viewingGame.value = games.value.find((g) => g.id === id) ?? null;
   }
 
   async function launchGame(game: Game) {
@@ -252,7 +256,7 @@ export const useLibraryStore = defineStore("library", () => {
     search,
     fetchingMetadataFor,
     fetchingBackgroundFor,
-    editingGame,
+    viewingGame,
     viewMode,
     filteredGames,
     refresh,
@@ -262,8 +266,8 @@ export const useLibraryStore = defineStore("library", () => {
     addGame,
     deleteGame,
     importEntries,
-    openEdit,
-    cancelEdit,
+    openDetail,
+    closeDetail,
     saveEdit,
     launchGame,
     init,

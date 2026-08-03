@@ -960,6 +960,27 @@ anything in that case at all.
   by an explicit early guard in `reverseText`: `if (!backgroundArtUrl.value) return false;` -
   no backdrop now always means no reversal, regardless of theme. `bun run build` clean.
 
+- **Bug: `--color-text-reverse` defaulting to `--color-base` broke on long descriptions.**
+  The backdrop's mask gradient fades to ~5% opacity by 2/3 down the page, so a long enough
+  description scrolls its later lines past the art entirely, onto the flat page background -
+  which literally *is* `--color-base`. Reversed text set to that same value goes invisible
+  there, same failure mode as the earlier no-backdrop bug but now legitimately triggered with
+  real art present. Root cause: deriving `--color-text-reverse` from any other token
+  guarantees it'll eventually collide with that token's own normal use as a background.
+  Fixed by giving every theme its own **dedicated, hardcoded** value instead of a `var()`
+  default - `#ffffff` for light-classified themes (Latte, Sakura, Brick Block, and the
+  compiled-in default), `#000000` for dark-classified themes (Frappé, Macchiato, Mocha,
+  Midnight Neon). Updated `src/styles.css` plus all four built-in `src/plugins/catppuccin-*`
+  entries, then the three `data-theme-plugins` manifests (Brick Block, Midnight Neon, Sakura -
+  each version-bumped, committed, pushed), then re-pinned all three theme entries in
+  `concourse-plugin-registry`'s `registry.json` to the new commit SHA via a manual
+  `bump-entry.sh`-equivalent (the sandbox has no `jq`, so replicated its exact logic - fetch
+  the raw manifest at the new commit, `sha256sum` it, rewrite `manifestUrl`/`wasmSha256` in
+  place) - independently re-verified all three hashes via a fresh `curl` before committing,
+  same discipline as every other hash-pinned registry change this project has made. Landed via
+  PR #14 (main is protected), `validate` CI passed, squash-merged.
+  `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

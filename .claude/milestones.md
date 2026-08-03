@@ -235,6 +235,11 @@ own definition.
   inverts that to `true`, flipping text to `--color-text-reverse` (`--color-base`) even with
   no image behind it, making the text exactly the same color as the actual page background.
   No backdrop now always means no reversal, regardless of theme
+- [x] Fixed a real bug: `--color-text-reverse` defaulting to `var(--color-base)` matched the
+  flat page background exactly, so a long description scrolling past the backdrop's fade-out
+  went invisible. Replaced with a dedicated, explicit value per theme (not derived from any
+  other token) across every built-in Catppuccin flavor and every third-party theme
+  (Brick Block, Midnight Neon, Sakura) - bumped in `concourse-plugin-registry` too
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

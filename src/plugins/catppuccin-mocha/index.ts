@@ -8,6 +8,7 @@ const plugin: ThemePlugin = {
     "--color-mantle": "#181825",
     "--color-crust": "#11111b",
     "--color-text": "#cdd6f4",
+    "--color-text-reverse": "#000000",
     "--color-subtext": "#bac2de",
     "--color-surface0": "#313244",
     "--color-surface1": "#45475a",

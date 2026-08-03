@@ -319,16 +319,26 @@ async function onDelete() {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  /* Positioning context for `.hero`, which is taken out of normal flow below - without this,
+     `.hero` anchors to the next positioned ancestor up instead (likely `.content`, scrolling
+     with it incorrectly rather than staying put behind this page's own top). */
+  position: relative;
 }
 
-/* Fixed-height wrapper - a uniform backdrop area regardless of how tall the page's actual
-   content is (a long description/many tags no longer changes the banner's own size the way a
-   percentage-of-page-height would have). */
+/* Fixed-size background layer, not a normal-flow element - `position: absolute` so it doesn't
+   occupy space in `.game-detail-page`'s own layout (a flex child here would push `.game-detail`
+   down by its own height, which isn't what a backdrop should do). `.game-detail` overlaps it
+   directly instead of following after it. Fixed height (not tied to page content length) still
+   gives a uniform banner area regardless of how tall the actual content is. */
 .hero {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 320px;
   overflow: hidden;
-  flex-shrink: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* Background art, faded out top-to-bottom within `.hero`'s fixed box - fully visible at the

@@ -205,6 +205,10 @@ own definition.
   text to white when it's dark; tags/collections moved from next to the description to under
   the cover art; cover art + Back button (now grouped as `.sticky-side`) made sticky to the top
   alongside the description column, matching the existing sticky bottom action bar
+- [x] Fixed a real bug: `.hero` was a normal flex child, pushing the rest of the page down by
+  its own 320px height instead of acting as a backdrop. Changed to `position: absolute` (out of
+  flow entirely) so `.game-detail` overlaps it directly at the true page top instead of
+  following after it
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

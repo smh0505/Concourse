@@ -817,6 +817,22 @@ depends on the actual art and wasn't addressed with an extra scrim since it wasn
 tooling in this environment to confirm the sticky/backdrop/brightness behavior actually looks
 right in a running app.
 
+**Fixed a real bug caught immediately by the user testing it: `.hero` was still a normal-flow
+element, not a true background layer.** `.hero` was a `flex-shrink: 0` child of
+`.game-detail-page`'s own flex column - a completely valid way to reserve a fixed 320px block,
+but that's reserving *layout space*, not acting as a backdrop; `.game-detail` (the next flex
+child) got pushed down by `.hero`'s full height instead of overlapping it the way a backdrop
+image is supposed to sit behind foreground content. Fixed by taking `.hero` out of flow
+entirely - `position: absolute; top: 0; left: 0; right: 0` against `.game-detail-page` (which
+needed `position: relative` restored as the positioning context for this). `.game-detail`
+keeps its own `position: relative; z-index: 1` from the earlier pass, so it now starts at the
+page's true top and visually overlaps `.hero` directly, rather than following after it in
+normal flow. `.hero` also gained `pointer-events: none` (purely decorative, shouldn't intercept
+clicks meant for whatever overlaps it) and an explicit `z-index: 0` to make the stacking
+relationship with `.game-detail` unambiguous rather than relying on default paint order.
+
+`bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

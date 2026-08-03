@@ -981,6 +981,121 @@ anything in that case at all.
   PR #14 (main is protected), `validate` CI passed, squash-merged.
   `bun run build` clean.
 
+**Reworked backdrop text-reversal from a static whole-page decision into a live,
+scroll-following one, on user report ("the current status of the image brightness check seems
+unsatisfactory").** The previous `reverseText` computed made one boolean decision for the
+entire page and applied it via a blanket `color` on `.game-detail` - correct for whichever
+region it was tuned against, but wrong everywhere else on the page that isn't actually behind
+the backdrop image at a given scroll position, since `.hero` only ever visually covers the top
+slice of the scrollport (it's `position: sticky`, glued to the viewport's top edge, not the
+document's).
+
+- **The fix**: `background-clip: text` + `background-attachment: fixed` on a 2-stop gradient
+  (`--color-text-reverse` for the first *N* viewport pixels, `--color-text` after), applied
+  per text-bearing element (`h1`, `.meta`, `.description`, edit-form `<label>`s/`<small>`s,
+  the title `<input>`) rather than the `.info` wrapper, since `background-clip: text` clips to
+  an element's own text glyphs and `.info` has no direct text of its own.
+  `background-attachment: fixed` anchors the gradient to the *viewport* (the same anchoring
+  `.hero`'s own `position: sticky` achieves) instead of the element it's painted on, so each
+  line of text picks up the reversed color only while it's actually passing behind the
+  backdrop, then reverts once scrolled past - a live per-scroll-position decision instead of
+  one static choice. `background-position: 0 36px` accounts for `TitleBar.vue`'s own height,
+  since `.content`'s scrollport (and so `.hero`'s band) starts there, not at the window's true
+  top edge.
+- Both distances involved went from a fixed 320px to viewport-ratio-based, per a specific
+  follow-up request: `.hero`'s own height is `calc(100vh * 2 / 3)` (with `margin-bottom` at the
+  same negative value, to keep reclaiming its reserved flow space), and the reversal band is
+  `50vh` - deliberately shorter than the hero's own 2/3, since the backdrop's mask-image already
+  fades to ~5% opacity by its own bottom edge, so text right at that edge is already sitting on
+  a near-flat background. Both being vh-based keeps the 2:1.5 ratio intact at any window size.
+- `color: transparent` (required for the `background-clip: text` trick) inherits down to
+  descendants by default - reset back to `--color-text` for actual form controls/helper text
+  inside `<label>`s (inputs/textareas/selects/checkbox-row text) so only the label's own
+  caption picks up the reversal, not live field values. Also broke `caret-color` (inherits from
+  `color`), making the title input's text cursor invisible while editing - fixed with an
+  explicit `caret-color: var(--color-text)` (or `--color-text-reverse` under `.reverse-band`),
+  independent of whatever `color` resolves to.
+- **Not scroll-following**: the sticky-side Back button. `.sticky-side` is itself
+  `position: sticky`, pinned near the top of the scrollport for virtually the entire scroll
+  range (unlike `.info`'s text, which scrolls freely underneath the backdrop) - a flat
+  `wantsReverse`-driven color swap is enough there, no gradient/scroll-tracking needed.
+- **`useImageBrightness` gained a module-level cache** (`Map<url, Promise<boolean>>`, keyed by
+  URL, not per-component) - `check_image_brightness` re-downloads and fully re-decodes the
+  image on every call otherwise, so revisiting a game paid that full network+decode round-trip
+  again every time. Caches the in-flight `Promise` (not just the resolved value) so rapid
+  re-navigation to a game whose check hasn't resolved yet reuses the same request; failed
+  lookups are evicted immediately rather than cached, so a transient network error doesn't
+  permanently mislabel a URL. Unbounded, no TTL - values are tiny (a resolved boolean per URL),
+  not worth an eviction policy at this scale.
+- Also added an `isReady` flag to the composable - without it, `reverseText`/`wantsReverse`
+  briefly rendered against the default `isDark = false` guess before the real result landed,
+  flashing the wrong (pre-flip) color. `.info.text-pending { color: transparent }` hides
+  title/meta/description during that window instead (transparent, not
+  `visibility`/`display`, so no layout reflow once the real color is known).
+
+`bun run build` clean throughout.
+
+**Added a cross-fade transition between `GameDetail` and the grid/list browse view.**
+`App.vue`'s `v-if="library.viewingGame"` swap between `<GameDetail>` and `<GameFilters>` +
+`<GameGrid>`/`<GameList>` was an instant, jarring cut - wrapped both branches in a single
+`<Transition name="detail" mode="out-in">` (the grid/list branch needed a wrapping
+`<div class="library-browse">` first, since `Transition` needs exactly one root node per
+branch; `display: contents` on that wrapper keeps it a pure passthrough with no layout effect
+of its own). `mode="out-in"` waits for the old view to fully fade out before the new one fades
+in, so they never both occupy `.content`'s scroll position at once. 0.15s opacity-only
+cross-fade.
+
+**Widened `.game-detail`'s max-width, on user report ("the detail page seems narrow when
+maximized").** 720px (a single-column reading width) left the actual two-column layout
+(`.sticky-side` + `.info`) looking cramped on a maximized window - widened to 1200px, the
+standard wide-content max-width (Bootstrap's `container-xl`/Tailwind's `max-w-7xl` range).
+
+**Edit form pass**, several small requests in sequence:
+- `.tags`'s own `margin-bottom` moved to `.tags-section` instead (edit mode only needed it on
+  the section wrapper, not the tag-pill row itself, which the view-mode side also reuses).
+- Platform + Executable path put in one row (new `.field-row`, flex). Platform tried a few
+  widths (fixed 160px, then `fit-content`, then `max-content`) before landing on a completely
+  different direction: not an editable field at all. `<span>`s (view page's `.meta` and the
+  edit form) now show the game's actual source-plugin brand icon instead of raw platform text.
+  - New `iconForPlatform()` - a `switch` with one arm per known platform id (`"steam"`,
+    `"gog"`, `"epic"` - the exact lowercase literals each of `steam-source-wasm-plugin`,
+    `gog-source-wasm-plugin`, `epic-source-wasm-plugin`'s own `lib.rs` hardcodes) plus a
+    `default` wildcard arm, mirroring a Rust `match`'s `_ => ...` - returns a
+    `PlatformIcon` discriminated union (`{ kind: "brand", path, title }` from the new
+    `simple-icons` dependency, or `{ kind: "generic", title }` for the `default` arm, rendered
+    as Tabler's `IconDeviceGamepad2`). Covers manually-added games (`platform` is `null` -
+    `games.add()` never writes a value there at all) and any unrecognized string the same way.
+  - Checked all three platforms' actual trademark/brand guidelines before using their logos at
+    all: Steam's says the logo "may not be combined with any object" and can't imply
+    endorsement; Epic's says don't alter the logo's colors; GOG's wants legible, non-subordinate
+    sizing. Judged low-risk for a local, non-commercial personal tool showing a single small
+    monochrome glyph (standard practice among game launchers), but honored Epic's specifically:
+    `epicIconFill` forces strict `#000000`/`#ffffff` (never `currentColor`'s arbitrary
+    theme-tinted hex) for that one icon, derived the same way `--color-text-reverse`'s own
+    direction is (`themeIsLight`/`wantsReverse`).
+  - Executable path and Release date inputs made `readonly` (still populated/submittable, just
+    not user-editable) - both are planned to get dedicated pickers later (a file-browse dialog,
+    a calendar input) rather than raw text entry.
+  - Title/Platform/Executable path's `<label>` captions dropped in favor of placeholder text.
+    Title restyled to match the view page's plain `<h1>` (2em/bold/margin, no input chrome) -
+    needed `.edit-form input.title-input` (not just a bare class) to out-specificity
+    `styles.css`'s own global `input:not([type="checkbox"]):not([type="radio"])` rule, which was
+    otherwise winning the font-size cascade. Given a dashed `border-bottom` afterward as the
+    one remaining "this is a field" cue, since it no longer looks like the rest of the form's
+    boxed inputs.
+
+**Description rendered as sanitized Markdown**, on request ("make description
+markdown-compatible"). New `marked` + `dompurify` dependencies - `marked.parse()` (sync mode)
+converts the stored Markdown source to HTML, `DOMPurify.sanitize()` before `v-html`, since this
+text can originate from metadata provider plugins (IGDB/RAWG/TheGamesDB), not just what the
+user typed - untrusted input as far as XSS goes, same reasoning as any other externally-sourced
+HTML injection point. The edit-mode textarea is unchanged - still edits the raw Markdown
+source directly; its label now reads "Description (Markdown supported)". Added minimal
+`:deep()` styling for the rendered output's `p`/`ul`/`ol`/`a`/`code` (not scoped-reachable
+otherwise, since `v-html` content isn't template-authored).
+
+`bun run build` clean throughout this whole pass.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

@@ -1,35 +1,52 @@
 import { type Ref, ref, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
-/** Reports whether an image's average perceived luminance is dark enough that text on top of
- *  it should flip to a light color - used for GameDetail.vue's backdrop, where a game's own
- *  background art can be any brightness.
- *
- *  Delegates the actual sampling to the Rust `check_image_brightness` command
- *  (`image_utils.rs`) rather than a `<canvas>`/`getImageData` approach in the browser - reading
- *  pixel data from a cross-origin image requires the image to have been fetched in CORS mode
- *  *and* the server to send a matching `Access-Control-Allow-Origin` header, which cover/
- *  background art CDNs (SteamGridDB, IGDB, RAWG, TheGamesDB) generally don't send. That taints
- *  the canvas and silently defeats the whole feature regardless of the image's actual
- *  brightness - a host-side fetch isn't subject to that restriction at all. */
+// Module-level cache: check_image_brightness re-downloads/re-decodes the full image every
+// call, so cache by URL to skip that round-trip on revisit. Caches the Promise (not just the
+// result) so a rapid re-navigation reuses an in-flight request instead of duplicating it.
+const brightnessCache = new Map<string, Promise<boolean>>();
+
+function checkBrightnessCached(url: string): Promise<boolean> {
+  let pending = brightnessCache.get(url);
+  if (!pending) {
+    pending = invoke<boolean>("check_image_brightness", { url });
+    brightnessCache.set(url, pending);
+    // Don't cache a failure - a transient network error shouldn't permanently mark this URL "not dark".
+    pending.catch(() => brightnessCache.delete(url));
+  }
+  return pending;
+}
+
+/** Whether an image's average perceived luminance is dark enough that text over it should
+ *  flip to a light color (GameDetail.vue's backdrop). Sampling happens in Rust
+ *  (`check_image_brightness`, image_utils.rs) rather than via `<canvas>`/`getImageData` -
+ *  cover/background art CDNs generally don't send CORS headers, which silently taints the
+ *  canvas and defeats the whole feature; a host-side fetch isn't subject to that. */
 export function useImageBrightness(url: Ref<string | null | undefined>) {
   const isDark = ref(false);
+  // False until the check resolves - lets callers hide brightness-dependent styling instead of
+  // briefly rendering against the default (unresolved) guess.
+  const isReady = ref(false);
 
   watch(
     url,
     async (src) => {
       isDark.value = false;
-      if (!src) return;
+      isReady.value = false;
+      if (!src) {
+        isReady.value = true;
+        return;
+      }
       try {
-        isDark.value = await invoke<boolean>("check_image_brightness", { url: src });
+        isDark.value = await checkBrightnessCached(src);
       } catch (e) {
-        // Download/decode failure (bad URL, unsupported format, network error, ...) - leave
-        // `isDark` false rather than surfacing an error for something this cosmetic.
         console.error("check_image_brightness failed:", e);
+      } finally {
+        isReady.value = true;
       }
     },
     { immediate: true },
   );
 
-  return isDark;
+  return { isDark, isReady };
 }

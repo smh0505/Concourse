@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { IconArrowLeft, IconInfoCircle, IconPlayerPlay } from "@tabler/icons-vue";
+import { IconArrowLeft, IconDeviceGamepad2, IconInfoCircle, IconPlayerPlay } from "@tabler/icons-vue";
+import { siSteam, siGogdotcom, siEpicgames } from "simple-icons";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { useLibraryStore } from "../../stores/library";
 import { useTagsStore } from "../../stores/tags";
 import { useCollectionsStore } from "../../stores/collections";
@@ -87,17 +90,11 @@ const wrapperSelection = computed({
 const displayCoverUrl = computed(() => (editing.value ? form.value.cover_art_url : game.value.cover_art_url));
 
 const backgroundArtUrl = computed(() => game.value.background_art_url);
-const backdropIsDark = useImageBrightness(backgroundArtUrl);
+const { isDark: backdropIsDark, isReady: backdropReady } = useImageBrightness(backgroundArtUrl);
 
-/** Whether the *active theme itself* is light or dark - a dark backdrop image only needs
- *  --color-text-reverse on a light theme (where the default text is already dark); a dark
- *  theme's default text is already light, so it's a *bright* backdrop that needs reversing
- *  there instead. Derived from --color-text's own computed luminance rather than a new
- *  per-theme "is this dark mode" token, since every existing theme's text color already
- *  implies it (dark text -> light theme, light text -> dark theme) with no extra theme-file
- *  changes needed. Read once - nothing in this app's navigation lets the active theme change
- *  while a GameDetail page is already mounted (switching themes requires leaving this view for
- *  Settings first). */
+// Whether the active theme itself is light or dark, from --color-text's own computed
+// luminance (dark text -> light theme) - a dark backdrop needs reversing on a light theme, a
+// bright one on a dark theme. Read once; nothing lets the theme change while mounted.
 function isLightTheme(): boolean {
   const hex = getComputedStyle(document.documentElement).getPropertyValue("--color-text").trim();
   const match = /^#([0-9a-f]{6})$/i.exec(hex);
@@ -105,20 +102,54 @@ function isLightTheme(): boolean {
   const r = parseInt(match[1].slice(0, 2), 16);
   const g = parseInt(match[1].slice(2, 4), 16);
   const b = parseInt(match[1].slice(4, 6), 16);
-  // Same ITU-R BT.601 perceived-luminance weighting as the backdrop's own brightness check.
+  // Same ITU-R BT.601 luminance weighting as the backdrop's own brightness check.
   return 0.299 * r + 0.587 * g + 0.114 * b < 128;
 }
 
 const themeIsLight = isLightTheme();
-// Without a backdrop at all, `backdropIsDark` defaults to `false` ("not dark"/unset) - a dark
-// theme's branch below inverts that to `true`, which would flip text to
-// --color-text-reverse (--color-base) even though there's no image behind it, making the
-// text exactly the same color as the actual page background it's sitting on. No backdrop
-// must never trigger a reversal, regardless of theme.
-const reverseText = computed(() => {
-  if (!backgroundArtUrl.value) return false;
+// No backdrop, or brightness not resolved yet, must never trigger a reversal - see
+// textPending below for how the resolving window is hidden instead.
+const wantsReverse = computed(() => {
+  if (!backgroundArtUrl.value || !backdropReady.value) return false;
   return themeIsLight ? backdropIsDark.value : !backdropIsDark.value;
 });
+// Hides title/meta/description while brightness is unresolved, so they don't flash the
+// pre-flip color - scoped to .info, not .game-detail, since the sidebar doesn't depend on this.
+const textPending = computed(() => !!backgroundArtUrl.value && !backdropReady.value);
+
+// Known platform ids map to a simple-icons brand glyph; anything else (manually-added games,
+// unrecognized strings) falls back to a generic icon.
+type PlatformIcon = { kind: "brand"; path: string; title: string } | { kind: "generic"; title: string };
+
+// One arm per known platform id (the lowercase literal each of steam/gog/epic-source-wasm-
+// plugin's lib.rs hardcodes), like a Rust match - default is the `_ => ...` wildcard.
+function iconForPlatform(platform: string | null | undefined): PlatformIcon {
+  switch (platform?.trim().toLowerCase()) {
+    case "steam":
+      return { kind: "brand", path: siSteam.path, title: siSteam.title };
+    case "gog":
+      return { kind: "brand", path: siGogdotcom.path, title: siGogdotcom.title };
+    case "epic":
+      return { kind: "brand", path: siEpicgames.path, title: siEpicgames.title };
+    default:
+      return { kind: "generic", title: "Unknown platform" };
+  }
+}
+
+// View mode shows the saved game.platform; edit mode shows the in-progress form.platform.
+const displayPlatform = computed(() => (editing.value ? form.value.platform : game.value.platform));
+const platformIcon = computed(() => iconForPlatform(displayPlatform.value));
+const isEpicIcon = computed(() => displayPlatform.value?.trim().toLowerCase() === "epic");
+// Epic's trademark guidelines forbid altering their logo's colors - forced to strict
+// black/white (never currentColor's arbitrary theme hue), derived the same way
+// --color-text-reverse's own direction is.
+const epicIconFill = computed(() => (themeIsLight !== wantsReverse.value ? "#000000" : "#ffffff"));
+
+// Description is stored as Markdown, rendered to HTML for the view page only; sanitized since
+// it can come from metadata provider plugins, not just the user.
+const descriptionHtml = computed(() =>
+  game.value.description ? DOMPurify.sanitize(marked.parse(game.value.description, { async: false })) : "",
+);
 
 const gameTags = computed(() => tags.gameTags[game.value.id] ?? []);
 const gameCollections = computed(() => collections.gameCollections[game.value.id] ?? []);
@@ -193,9 +224,9 @@ async function onDelete() {
       />
     </div>
 
-    <div class="game-detail" :class="{ 'reverse-text': reverseText }">
+    <div class="game-detail">
       <div class="view">
-        <div class="sticky-side">
+        <div class="sticky-side" :class="{ 'reverse-band': wantsReverse }">
           <button class="back-button" @click="library.closeDetail()">
             <IconArrowLeft :size="16" :stroke-width="1.75" />
             Back to Library
@@ -242,30 +273,55 @@ async function onDelete() {
           </template>
         </div>
 
-        <div class="info">
+        <div class="info" :class="{ 'text-pending': textPending, 'reverse-band': wantsReverse }">
           <template v-if="!editing">
             <h1>{{ game.title }}</h1>
             <div class="meta">
-              <span v-if="game.platform">{{ game.platform }}</span>
+              <span
+                class="platform-tag"
+                :class="{ 'text-reverse': wantsReverse }"
+                :title="game.platform || 'Unknown platform'"
+              >
+                <svg
+                  v-if="platformIcon.kind === 'brand'"
+                  viewBox="0 0 24 24"
+                  class="platform-icon"
+                  role="img"
+                  :style="isEpicIcon ? { fill: epicIconFill } : undefined"
+                >
+                  <title>{{ platformIcon.title }}</title>
+                  <path :d="platformIcon.path" />
+                </svg>
+                <IconDeviceGamepad2 v-else class="platform-icon" :title="platformIcon.title" :stroke-width="1.75" />
+              </span>
               <span v-if="game.release_date">{{ game.release_date }}</span>
               <span>{{ playtimeMinutes }} min played</span>
             </div>
-            <p v-if="game.description" class="description">{{ game.description }}</p>
+            <div v-if="game.description" class="description" v-html="descriptionHtml"></div>
           </template>
 
           <form v-else class="edit-form" @submit.prevent="onSave">
-            <label>
-              Title
-              <input v-model="form.title" />
-            </label>
-            <label>
-              Executable path
-              <input v-model="form.executable_path" />
-            </label>
-            <label>
-              Platform
-              <input v-model="form.platform" />
-            </label>
+            <input v-model="form.title" placeholder="Title" class="title-input" />
+            <div class="field-row">
+              <span
+                class="platform-field"
+                :class="{ 'text-reverse': wantsReverse }"
+                :title="form.platform || 'Unknown platform'"
+              >
+                <svg
+                  v-if="platformIcon.kind === 'brand'"
+                  viewBox="0 0 24 24"
+                  class="platform-icon"
+                  role="img"
+                  :style="isEpicIcon ? { fill: epicIconFill } : undefined"
+                >
+                  <title>{{ platformIcon.title }}</title>
+                  <path :d="platformIcon.path" />
+                </svg>
+                <IconDeviceGamepad2 v-else class="platform-icon" :title="platformIcon.title" :stroke-width="1.75" />
+              </span>
+              <input v-model="form.executable_path" placeholder="Executable path" readonly />
+            </div>
             <label>
               Cover art URL
               <input v-model="form.cover_art_url" />
@@ -281,10 +337,10 @@ async function onDelete() {
             </label>
             <label>
               Release date
-              <input v-model="form.release_date" placeholder="YYYY-MM-DD" />
+              <input v-model="form.release_date" placeholder="YYYY-MM-DD" readonly />
             </label>
             <label>
-              Description
+              Description (Markdown supported)
               <textarea v-model="form.description" rows="4"></textarea>
             </label>
             <label class="checkbox-label">
@@ -342,39 +398,29 @@ async function onDelete() {
 
 <style scoped>
 .game-detail-page {
-  /* min-height (not a fixed height/overflow:hidden - a previous attempt locked this to exactly
-     .content's own height with overflow:hidden so only .info would scroll, but that also
-     disabled scrolling the *page* itself, which a narrow window genuinely needs - the sticky
-     side/action bar can end up taller than the viewport, with no way to reach the rest). Back
-     to a normal-flow page that .content scrolls as a whole; `.hero` below stays visually
-     pinned via its own `position: sticky` instead of the page giving up scrolling entirely. */
+  /* min-height, not a fixed height/overflow:hidden - the page scrolls as a whole; .hero below
+     stays pinned via its own position:sticky instead. */
   min-height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-/* Sticky background layer, not truly out of flow - `position: sticky; top: 0` keeps it pinned
-   to the top of the visible area as the page scrolls (rather than scrolling away with
-   everything else, the actual bug being fixed here), while the negative `margin-bottom` equal
-   to its own height reclaims the space it would otherwise reserve in the page's normal flow,
-   so `.game-detail` still starts right at the page's top and visually overlaps it - the same
-   net effect as the earlier `position: absolute` attempt, but without disabling the page's own
-   scroll to get there. Fixed height (not tied to page content length) still gives a uniform
-   banner area regardless of how tall the actual content is. */
+/* position:sticky keeps this pinned to the top of the scrollport; negative margin-bottom
+   equal to its own height reclaims the reserved flow space so .game-detail overlaps it. */
 .hero {
   position: sticky;
   top: 0;
-  height: 320px;
-  margin-bottom: -320px;
+  /* 2/3 of viewport height, not a fixed px - scales with window size. margin-bottom must
+     match height's negative to reclaim the space. */
+  height: calc(100vh * 2 / 3);
+  margin-bottom: calc(-100vh * 2 / 3);
   overflow: hidden;
   z-index: 0;
   pointer-events: none;
 }
 
-/* Background art, faded out top-to-bottom within `.hero`'s fixed box - fully visible at the
-   very top, nearly gone by the bottom, rather than a hard edge or a flat dark scrim over the
-   whole image. `mask-image` (not `opacity`) - opacity would fade the entire image uniformly;
-   a gradient mask fades transparency spatially, top to bottom. */
+/* mask-image (not opacity) fades transparency spatially top-to-bottom, rather than dimming
+   the whole image uniformly. */
 .backdrop {
   position: absolute;
   inset: 0;
@@ -384,20 +430,65 @@ async function onDelete() {
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
 }
 
-/* Flips to --color-text-reverse when the backdrop's brightness clashes with the active
-   theme's own default text color (a dark image under a light theme's dark text, or a bright
-   image under a dark theme's light text) - cascades to every descendant that doesn't set its
-   own color (h1/meta/description), same as the default (unset) case already inheriting from
-   --color-text. */
-.game-detail.reverse-text {
-  color: var(--color-text-reverse);
+/* Flips to --color-text-reverse only within the top 50vh of the viewport (shorter than
+   .hero's 2/3vh - its mask already fades to ~5% opacity by its own bottom edge), not the
+   whole page - .hero is sticky, so it only ever covers that top slice regardless of scroll.
+   background-attachment:fixed anchors the gradient to the viewport (same anchoring .hero's
+   sticky achieves), so each line picks up the reversed color only while passing behind the
+   backdrop, then reverts - a live per-scroll decision, not one static page-wide choice.
+   background-clip:text paints the gradient per-glyph; color:transparent lets it show through.
+   Applied per text-bearing element, not .info, since background-clip:text clips to an
+   element's own text and .info has no direct text of its own. */
+.reverse-band h1,
+.reverse-band .meta,
+.reverse-band .description,
+.reverse-band .edit-form > label,
+.reverse-band .edit-form label small,
+.reverse-band .edit-form input.title-input {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-text-reverse) 0,
+    var(--color-text-reverse) 50vh,
+    var(--color-text) 50vh,
+    var(--color-text) 20000px
+  );
+  /* Offset by TitleBar.vue's 36px height - .content's scrollport starts there, not the
+     window's true top edge. */
+  background-position: 0 36px;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Title sits at the very top, always within the reversed band when active. */
+.reverse-band .edit-form input.title-input {
+  caret-color: var(--color-text-reverse);
+}
+
+/* Labels inherit the transparent/gradient color above - reset actual form controls (and the
+   checkbox row's inline text) back to normal so only the caption/small text reverses. */
+.reverse-band .edit-form label input,
+.reverse-band .edit-form label textarea,
+.reverse-band .edit-form label select,
+.reverse-band .edit-form label.checkbox-label {
+  color: var(--color-text);
+}
+
+/* Hides title/meta/description while brightness is unresolved, so it never flashes the
+   pre-flip color. Transparent, not visibility/display, so no layout reflow once resolved. */
+.info.text-pending {
+  color: transparent;
 }
 
 .game-detail {
   position: relative;
   z-index: 1;
   flex: 1;
-  max-width: 720px;
+  /* Standard wide-content max-width (Bootstrap container-xl/Tailwind max-w-7xl range) - 720px
+     cramped this two-column layout on a maximized window. */
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
   padding: 0 var(--space-6);
@@ -414,6 +505,12 @@ async function onDelete() {
   font-size: 0.85rem;
   cursor: pointer;
   color: inherit;
+}
+
+/* .sticky-side is itself sticky - stays pinned near the top for virtually the whole scroll
+   range, so a flat color swap is enough here, unlike .info's scroll-following gradient. */
+.sticky-side.reverse-band .back-button {
+  color: var(--color-text-reverse);
 }
 
 .view {
@@ -471,23 +568,83 @@ async function onDelete() {
   margin: 0 0 var(--space-2);
 }
 
+/* Matches the view page's <h1> instead of the form's boxed input look. `input.title-input`
+   (not just the class) - needed to out-specificity styles.css's global input rule, which was
+   otherwise winning the font-size cascade. */
+.edit-form input.title-input {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0 0 var(--space-2);
+  padding: 0 0 var(--space-1);
+  border: none;
+  /* Dashed underline is the one "this is editable" cue left, since it's styled like the
+     view page's plain <h1> otherwise. */
+  border-bottom: 1px dashed var(--color-surface1);
+  background: none;
+  /* caret-color inherits from color, which the reverse-band rule sets transparent - set
+     explicitly so the text cursor stays visible. */
+  caret-color: var(--color-text);
+}
+
 .meta {
   display: flex;
+  align-items: center;
   gap: var(--space-3);
   font-size: 0.85rem;
   opacity: 0.7;
   margin-bottom: var(--space-3);
 }
 
+/* Escapes .meta's reverse-band gradient (color:transparent), which would otherwise make the
+   icon's currentColor fill vanish - same flat wantsReverse swap as .platform-field. */
+.platform-tag {
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+}
+
+/* Scaled to .meta's 0.85rem line height instead of the edit form's larger 32px. */
+.platform-tag .platform-icon {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.platform-tag.text-reverse {
+  color: var(--color-text-reverse);
+}
+
 .description {
   margin-bottom: var(--space-3);
+}
+
+/* Rendered markdown's child elements (marked's HTML output, injected via v-html) aren't
+   authored in this template, so scoped CSS won't reach them without :deep(). */
+.description :deep(p) {
+  margin: 0 0 var(--space-2);
+}
+
+.description :deep(ul),
+.description :deep(ol) {
+  margin: 0 0 var(--space-2);
+  padding-left: 1.4em;
+}
+
+.description :deep(a) {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.description :deep(code) {
+  font-family: monospace;
+  background: var(--color-surface0);
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--radius-sm);
 }
 
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  margin-bottom: var(--space-4);
 }
 
 /* .tag-pill (shared, styles.css) supplies this rule's entire look. */
@@ -507,6 +664,40 @@ async function onDelete() {
   gap: 0.25rem;
   font-size: 0.85rem;
   text-align: left;
+}
+
+.field-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.field-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-row .platform-field {
+  flex: none;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  padding-left: var(--space-3);
+}
+
+/* Same flat swap as .back-button, not the scroll-following gradient - .platform-field
+   doesn't scroll independently of the form. Flips the icon too, via currentColor. */
+.platform-field.text-reverse {
+  color: var(--color-text-reverse);
+}
+
+/* currentColor picks up the parent's color rather than simple-icons' hardcoded brand hex,
+   so it reads as a monochrome UI glyph consistent with the rest of the form. */
+.platform-icon {
+  width: 32px;
+  height: 32px;
+  fill: currentColor;
 }
 
 .edit-form input,
@@ -539,6 +730,7 @@ async function onDelete() {
   gap: 0.25rem;
   font-size: 0.85rem;
   text-align: left;
+  margin-bottom: var(--space-4);
 }
 
 .tag {

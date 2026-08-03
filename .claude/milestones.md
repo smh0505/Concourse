@@ -196,50 +196,48 @@ own definition.
 - [x] `GameDetail.vue` reshaped: edit mode now mirrors view mode's two-column layout (cover
   art preview on the left, tracking the live form value; fields on the right) instead of a
   flat single-column form. Moved "Fetch Metadata" into edit mode's action bar (was view mode's)
-- [x] Added the game's background art as a page backdrop - fades top-to-bottom via a gradient
-  mask (fully visible at top, nearly gone by two-thirds down), `position: absolute` against
-  the page itself rather than the viewport (unlike Big Picture's fixed backdrop)
-- [x] Four backdrop/layout follow-ups: moved the backdrop into a fixed-height `.hero` wrapper
-  (uniform banner area regardless of page content length, not a percentage of variable page
-  height); new `useImageBrightness` composable samples the art's average luminance and flips
-  text to white when it's dark; tags/collections moved from next to the description to under
-  the cover art; cover art + Back button (now grouped as `.sticky-side`) made sticky to the top
-  alongside the description column, matching the existing sticky bottom action bar
-- [x] Fixed a real bug: `.hero` was a normal flex child, pushing the rest of the page down by
-  its own 320px height instead of acting as a backdrop. Changed to `position: absolute` (out of
-  flow entirely) so `.game-detail` overlaps it directly at the true page top instead of
-  following after it
-- [x] Fixed a real bug: the backdrop/cover art/back button still scrolled away with the page,
-  since `.game-detail-page` itself scrolled inside `.content`. First fix locked
-  `.game-detail-page` to a fixed height with `overflow: hidden` so only `.info` scrolled
-  internally - too aggressive, it also disabled scrolling the *page* itself, breaking a narrow
-  window where the sticky side ends up taller than the viewport. Reverted to a normal
-  page-scroll model: `.hero` is `position: sticky; top: 0` with `margin-bottom` equal to its
-  own height (reclaims the space it would otherwise reserve, so `.game-detail` still overlaps
-  it) instead of `.content` giving up scrolling to keep it in place
-- [x] Fixed a real bug: `useImageBrightness` never actually worked - a browser `<canvas>`/
-  `getImageData` approach can't read cross-origin image pixels unless the server sends
-  matching CORS headers, which cover/background art CDNs generally don't; the canvas silently
-  taints and the whole feature quietly no-ops. Moved the sampling to a new Rust command,
-  `check_image_brightness` (`image_utils.rs`, new `image` crate dependency) - not subject to
-  browser CORS at all since it's a host-side `reqwest` fetch, not a browser request
-- [x] Fixed a real bug: the backdrop text-reversal logic only ever flipped to white, correct
-  for light themes but making text on a bright image unreadable under dark themes (Catppuccin
-  Macchiato, Midnight Neon), whose own default text is already light. New `--color-text-reverse`
-  token (defaults to `var(--color-base)` - already the opposite brightness of `--color-text`
-  for every existing theme, no per-theme override needed) and a theme-aware trigger: reverse on
-  a dark backdrop for a light theme, or a bright backdrop for a dark theme, derived from
-  `--color-text`'s own computed luminance rather than a new "is this theme dark" token
-- [x] Fixed a real bug: games with no background art still got text reversed under dark
-  themes - `backdropIsDark` defaults to `false` with no backdrop, and the dark-theme branch
-  inverts that to `true`, flipping text to `--color-text-reverse` (`--color-base`) even with
-  no image behind it, making the text exactly the same color as the actual page background.
-  No backdrop now always means no reversal, regardless of theme
-- [x] Fixed a real bug: `--color-text-reverse` defaulting to `var(--color-base)` matched the
-  flat page background exactly, so a long description scrolling past the backdrop's fade-out
-  went invisible. Replaced with a dedicated, explicit value per theme (not derived from any
-  other token) across every built-in Catppuccin flavor and every third-party theme
-  (Brick Block, Midnight Neon, Sakura) - bumped in `concourse-plugin-registry` too
+- [x] Added the game's background art as a page backdrop (`.hero`, sticky top-of-scrollport
+  banner, gradient-masked fade), tags/collections moved under the cover art, cover art + Back
+  button grouped into a sticky `.sticky-side` alongside the description column
+- [x] Three real bugs fixed getting the backdrop's layout/scroll behavior right: `.hero` as a
+  flex child pushing the page down instead of overlapping it; the backdrop/cover/back-button
+  scrolling away entirely once `.game-detail-page` itself became the scroller; and
+  `useImageBrightness` silently never working at all (browser `<canvas>`/`getImageData` can't
+  read cross-origin CDN images without matching CORS headers) - moved sampling to a new Rust
+  command, `check_image_brightness` (`image_utils.rs`)
+- [x] Three real bugs fixed getting backdrop text-reversal correct: hardcoded white-only flip
+  unreadable on dark themes (new theme-aware `--color-text-reverse` token + `isLightTheme()`
+  trigger); no-backdrop games still getting reversed (explicit guard); `--color-text-reverse`
+  defaulting to `var(--color-base)` going invisible once a long description scrolled onto the
+  flat page background sharing that same color (dedicated hardcoded value per theme instead,
+  across every built-in Catppuccin flavor and third-party theme - Brick Block, Midnight Neon,
+  Sakura, bumped in `concourse-plugin-registry` too)
+- [x] Reworked backdrop text-reversal from one static whole-page decision into a live,
+  scroll-following one: `.reverse-band`'s `background-clip: text` + `background-attachment:
+  fixed` gradient flips color only while a line of text is actually passing behind the
+  viewport-anchored sticky backdrop, reverting to normal `--color-text` once scrolled past -
+  `.hero`'s height and the reversal band are both viewport-ratio-based (2/3 and 1/2) rather
+  than fixed px, so the effect scales with window size. `useImageBrightness` gained a
+  module-level cache (keyed by URL, dedupes in-flight requests) since the Rust check
+  re-downloads/re-decodes the full image every call otherwise, plus an `isReady` flag so
+  text stays hidden rather than flashing the pre-flip color while a check is in flight. The
+  sticky-pinned back button uses a flat (non-scroll-following) swap of the same token instead,
+  since it doesn't scroll independently of the backdrop the way the description does
+- [x] Added a cross-fade `<Transition>` between `GameDetail` and the grid/list browse view in
+  `App.vue` (clicking a card's Edit button, or leaving detail) instead of an instant swap
+- [x] `.game-detail`'s max-width widened 720px -> 1200px (standard wide-content width; 720px
+  cramped the two-column layout on a maximized window)
+- [x] Edit form pass: Platform + Executable path share a row; Platform is no longer a free-text
+  field - shows the game's actual source-plugin brand icon instead (new `iconForPlatform()`
+  match-style lookup: `simple-icons` glyphs for Steam/GOG/Epic, generic `IconDeviceGamepad2`
+  fallback for manually-added/unrecognized platforms; Epic's icon forced to strict black/white
+  per its own no-recolor trademark guideline, checked against all three platforms' brand
+  guidelines before use). Executable path and Release date made read-only pending future
+  file-picker/calendar dialogs. Title/Platform/Executable path labels dropped for placeholder
+  text; Title restyled to match the view page's `<h1>` with a dashed-underline edit cue
+- [x] Description now renders as sanitized Markdown (`marked` + `DOMPurify.sanitize` - this
+  text can come from metadata provider plugins, not just the user, so it's untrusted input) on
+  the view page; the edit textarea still holds the raw Markdown source
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

@@ -1,7 +1,7 @@
 {
   "name": "concourse",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -18,7 +18,10 @@
     "@tauri-apps/plugin-sql": "^2.4.0",
     "@tauri-apps/plugin-updater": "^2.10.1",
     "@vue/compiler-dom": "^3.5.13",
+    "dompurify": "^3.4.13",
+    "marked": "^18.0.7",
     "pinia": "^4.0.2",
+    "simple-icons": "^16.28.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {

@@ -133,12 +133,14 @@ onUnmounted(() => {
         }"
       >
         <template v-if="activeView === 'library'">
-          <GameDetail v-if="library.viewingGame" />
-          <template v-else>
-            <GameFilters />
-            <GameGrid v-if="library.viewMode === 'grid'" />
-            <GameList v-else />
-          </template>
+          <Transition name="detail" mode="out-in">
+            <GameDetail v-if="library.viewingGame" key="detail" />
+            <div v-else key="browse" class="library-browse">
+              <GameFilters />
+              <GameGrid v-if="library.viewMode === 'grid'" />
+              <GameList v-else />
+            </div>
+          </Transition>
         </template>
 
         <template v-else-if="activeView === 'stats'">
@@ -233,6 +235,24 @@ onUnmounted(() => {
    living on the element that's actually sticky. */
 .content.no-bottom-inset {
   padding-bottom: 0;
+}
+
+/* Passthrough wrapper so GameFilters/GameGrid/GameList group under one root node for the
+   <Transition> above - no layout of its own. */
+.library-browse {
+  display: contents;
+}
+
+/* Cross-fade between GameDetail and the browse view - out-in waits for the old view to fade
+   out before the new one fades in, so they never both occupy .content's scroll position at once. */
+.detail-enter-active,
+.detail-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.detail-enter-from,
+.detail-leave-to {
+  opacity: 0;
 }
 
 .big-picture-controls {

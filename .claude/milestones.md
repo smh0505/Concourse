@@ -199,6 +199,12 @@ own definition.
 - [x] Added the game's background art as a page backdrop - fades top-to-bottom via a gradient
   mask (fully visible at top, nearly gone by two-thirds down), `position: absolute` against
   the page itself rather than the viewport (unlike Big Picture's fixed backdrop)
+- [x] Four backdrop/layout follow-ups: moved the backdrop into a fixed-height `.hero` wrapper
+  (uniform banner area regardless of page content length, not a percentage of variable page
+  height); new `useImageBrightness` composable samples the art's average luminance and flips
+  text to white when it's dark; tags/collections moved from next to the description to under
+  the cover art; cover art + Back button (now grouped as `.sticky-side`) made sticky to the top
+  alongside the description column, matching the existing sticky bottom action bar
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

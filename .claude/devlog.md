@@ -777,6 +777,46 @@ depends on the actual art and wasn't addressed with an extra scrim since it wasn
 
 `bun run build` clean.
 
+**Four follow-up visual fixes, on direct feedback after the backdrop/reshape pass above.**
+
+- **Uniform backdrop area regardless of page height**: the previous `.backdrop` used
+  `height: 66%` against `.game-detail-page`, whose own height varies with content (a long
+  description or many tags made the page - and therefore the backdrop - taller). New `.hero`
+  wrapper (`position: relative; height: 320px; overflow: hidden`) gives the banner a genuine
+  fixed size independent of content length; `.backdrop` simplifies to `position: absolute;
+  inset: 0` filling that fixed box instead of computing its own height off a moving target.
+- **New `useImageBrightness` composable** (`src/composables/`): loads the background art into
+  an off-screen `<canvas>`, downscaled to 16x16 (cheap - no need to read full-resolution pixel
+  data just to estimate overall brightness), and averages perceived luminance (ITU-R BT.601
+  weights: `0.299r + 0.587g + 0.114b`, matching how the eye actually perceives brightness
+  rather than a flat RGB average) across every sampled pixel. Below a threshold of 110/255,
+  `.game-detail` gets a `dark-backdrop` class flipping text to white via inheritance - nothing
+  downstream (`h1`/`.meta`/`.description`) needed its own explicit color before, so cascading
+  from one place is enough. Wrapped the canvas read in try/catch specifically for the
+  CORS-taint case: an image host without `Access-Control-Allow-Origin` makes `getImageData`
+  throw a `SecurityError`, treated as "not dark" (falls back to the existing default text
+  color) rather than guessing wrong or surfacing an error for something this cosmetic.
+- **Tags/collections moved from next to the description to under the cover art** - both the
+  view-mode read-only pill display and the edit-mode add/remove management UI moved into the
+  same left column as the cover art (now called `.sticky-side`), leaving the right column
+  (`.info`) to just the identity fields (title/meta/description in view mode; the edit form's
+  text fields in edit mode).
+- **Cover art + Back button made sticky to the top**, matching the page's existing sticky
+  bottom action bar: grouped both into `.sticky-side` (`position: sticky; top: 0`) alongside
+  the tags/collections that moved there in the same pass, so the whole "identity" cluster
+  stays pinned while `.info`'s title/description column scrolls past it. Confirmed this
+  doesn't reintroduce the padding-vs-sticky bug from earlier in this milestone: that bug was
+  specifically about `.content` (the actual scrolling ancestor) having its own padding: a
+  *non-scrolling* intermediate ancestor's padding (here, `.game-detail`/`.view`) doesn't
+  constrain how far a sticky descendant can travel, since sticky positioning resolves against
+  the nearest scrolling ancestor's scrollport, not every ancestor in between. Gave
+  `.sticky-side` and `.info` matching `padding-top: var(--space-5)` on themselves instead of a
+  shared ancestor, so both columns start at the same vertical position.
+
+`bun run build` clean. Same visual-verification caveat as the previous pass - no browser
+tooling in this environment to confirm the sticky/backdrop/brightness behavior actually looks
+right in a running app.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

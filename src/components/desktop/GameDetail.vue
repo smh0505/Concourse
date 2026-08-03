@@ -5,6 +5,7 @@ import { useLibraryStore } from "../../stores/library";
 import { useTagsStore } from "../../stores/tags";
 import { useCollectionsStore } from "../../stores/collections";
 import { useWrapperPluginStore, type WrapperProfile } from "../../stores/wrapperPlugins";
+import { useImageBrightness } from "../../composables/useImageBrightness";
 import type { Game, GameEditFields } from "../../db";
 
 const library = useLibraryStore();
@@ -85,6 +86,9 @@ const wrapperSelection = computed({
 // after saving.
 const displayCoverUrl = computed(() => (editing.value ? form.value.cover_art_url : game.value.cover_art_url));
 
+const backgroundArtUrl = computed(() => game.value.background_art_url);
+const backdropIsDark = useImageBrightness(backgroundArtUrl);
+
 const gameTags = computed(() => tags.gameTags[game.value.id] ?? []);
 const gameCollections = computed(() => collections.gameCollections[game.value.id] ?? []);
 const playtimeMinutes = computed(() => Math.round(game.value.total_playtime / 60));
@@ -150,22 +154,61 @@ async function onDelete() {
 
 <template>
   <div class="game-detail-page">
-    <div
-      v-if="game.background_art_url"
-      class="backdrop"
-      :style="{ backgroundImage: `url(${game.background_art_url})` }"
-    />
+    <div class="hero">
+      <div
+        v-if="backgroundArtUrl"
+        class="backdrop"
+        :style="{ backgroundImage: `url(${backgroundArtUrl})` }"
+      />
+    </div>
 
-    <div class="game-detail">
-      <button class="back-button" @click="library.closeDetail()">
-        <IconArrowLeft :size="16" :stroke-width="1.75" />
-        Back to Library
-      </button>
-
+    <div class="game-detail" :class="{ 'dark-backdrop': backdropIsDark }">
       <div class="view">
-        <div class="cover-wrap">
-          <img v-if="displayCoverUrl" class="cover" :src="displayCoverUrl" :alt="game.title" />
-          <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+        <div class="sticky-side">
+          <button class="back-button" @click="library.closeDetail()">
+            <IconArrowLeft :size="16" :stroke-width="1.75" />
+            Back to Library
+          </button>
+
+          <div class="cover-wrap">
+            <img v-if="displayCoverUrl" class="cover" :src="displayCoverUrl" :alt="game.title" />
+            <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+          </div>
+
+          <template v-if="!editing">
+            <div class="tags" v-if="gameTags.length || gameCollections.length">
+              <span class="tag-pill" v-for="tag in gameTags" :key="`t-${tag}`">{{ tag }}</span>
+              <span class="tag-pill" v-for="name in gameCollections" :key="`c-${name}`">{{ name }}</span>
+            </div>
+          </template>
+          <template v-else>
+            <div class="tags-section">
+              <span>Tags</span>
+              <div class="tags" v-if="gameTags.length">
+                <span class="tag-pill tag" v-for="tag in gameTags" :key="tag">
+                  {{ tag }}
+                  <button class="tag-remove" @click="tags.removeFromGame(game, tag)">&times;</button>
+                </span>
+              </div>
+              <form class="add-tag-form" @submit.prevent="onAddTag">
+                <input v-model="newTag" placeholder="Add tag" />
+                <button type="submit">+</button>
+              </form>
+            </div>
+            <div class="tags-section">
+              <span>Collections</span>
+              <div class="tags" v-if="gameCollections.length">
+                <span class="tag-pill tag" v-for="name in gameCollections" :key="name">
+                  {{ name }}
+                  <button class="tag-remove" @click="collections.removeFromGame(game, name)">&times;</button>
+                </span>
+              </div>
+              <form class="add-tag-form" @submit.prevent="onAddCollection">
+                <input v-model="newCollection" placeholder="Add collection" />
+                <button type="submit">+</button>
+              </form>
+            </div>
+          </template>
         </div>
 
         <div class="info">
@@ -177,10 +220,6 @@ async function onDelete() {
               <span>{{ playtimeMinutes }} min played</span>
             </div>
             <p v-if="game.description" class="description">{{ game.description }}</p>
-            <div class="tags" v-if="gameTags.length || gameCollections.length">
-              <span class="tag-pill" v-for="tag in gameTags" :key="`t-${tag}`">{{ tag }}</span>
-              <span class="tag-pill" v-for="name in gameCollections" :key="`c-${name}`">{{ name }}</span>
-            </div>
           </template>
 
           <form v-else class="edit-form" @submit.prevent="onSave">
@@ -243,32 +282,6 @@ async function onDelete() {
                 No profiles found - install and enable a compatibility wrapper plugin in Settings first.
               </small>
             </label>
-            <div class="tags-section">
-              <span>Tags</span>
-              <div class="tags" v-if="gameTags.length">
-                <span class="tag-pill tag" v-for="tag in gameTags" :key="tag">
-                  {{ tag }}
-                  <button class="tag-remove" @click="tags.removeFromGame(game, tag)">&times;</button>
-                </span>
-              </div>
-              <form class="add-tag-form" @submit.prevent="onAddTag">
-                <input v-model="newTag" placeholder="Add tag" />
-                <button type="submit">+</button>
-              </form>
-            </div>
-            <div class="tags-section">
-              <span>Collections</span>
-              <div class="tags" v-if="gameCollections.length">
-                <span class="tag-pill tag" v-for="name in gameCollections" :key="name">
-                  {{ name }}
-                  <button class="tag-remove" @click="collections.removeFromGame(game, name)">&times;</button>
-                </span>
-              </div>
-              <form class="add-tag-form" @submit.prevent="onAddCollection">
-                <input v-model="newCollection" placeholder="Add collection" />
-                <button type="submit">+</button>
-              </form>
-            </div>
             <p v-if="error" class="error-text">{{ error }}</p>
           </form>
         </div>
@@ -298,36 +311,44 @@ async function onDelete() {
 
 <style scoped>
 .game-detail-page {
-  /* min-height ensures the sticky action bar (below) has genuine room to stick within a short
-     page - without this, a game with little content would leave the bar floating mid-page
-     instead of pinned to the visible bottom. App.vue's `.content` cancels its own bottom
-     padding while this page is active (`.no-bottom-inset`) - a negative margin here can't
-     reach into a different element's own padding, so that has to happen on `.content` itself. */
+  /* min-height ensures the sticky action bar has genuine room to stick within a short page -
+     without this, a game with little content would leave the bar floating mid-page instead of
+     pinned to the visible bottom. App.vue's `.content` cancels its own bottom padding while
+     this page is active (`.no-bottom-inset`) - a negative margin here can't reach into a
+     different element's own padding, so that has to happen on `.content` itself. */
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  /* Positioning context for `.backdrop` below, which is absolutely positioned against this
-     element rather than `fixed` against the viewport (unlike Big Picture's `.bp-backdrop`) -
-     this page scrolls inside `.content`, it isn't its own immersive full-screen surface. */
-  position: relative;
 }
 
-/* Background art, faded out top-to-bottom - covers roughly the top two-thirds of the page,
-   fully visible at the very top and nearly gone by where it ends, rather than a hard edge or
-   a flat dark scrim over the whole image. `mask-image` (not `opacity`) - opacity would fade
-   the entire image uniformly; a gradient mask fades transparency spatially, top to bottom. */
+/* Fixed-height wrapper - a uniform backdrop area regardless of how tall the page's actual
+   content is (a long description/many tags no longer changes the banner's own size the way a
+   percentage-of-page-height would have). */
+.hero {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Background art, faded out top-to-bottom within `.hero`'s fixed box - fully visible at the
+   very top, nearly gone by the bottom, rather than a hard edge or a flat dark scrim over the
+   whole image. `mask-image` (not `opacity`) - opacity would fade the entire image uniformly;
+   a gradient mask fades transparency spatially, top to bottom. */
 .backdrop {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 66%;
+  inset: 0;
   background-size: cover;
   background-position: center top;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
-  z-index: 0;
-  pointer-events: none;
+}
+
+/* Flips to light text when useImageBrightness.ts samples the background art as dark - cascades
+   to every descendant that doesn't set its own color (h1/meta/description), same as the
+   default (unset) case already inheriting from --color-text. */
+.game-detail.dark-backdrop {
+  color: #fff;
 }
 
 .game-detail {
@@ -337,7 +358,7 @@ async function onDelete() {
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
-  padding: var(--space-5) var(--space-6) 0;
+  padding: 0 var(--space-6);
 }
 
 .back-button {
@@ -355,12 +376,23 @@ async function onDelete() {
 
 .view {
   display: flex;
+  align-items: flex-start;
   gap: var(--space-5);
 }
 
-.cover-wrap {
+/* Sticky alongside `.info` (below) - stays pinned to the top of the scroll area (back button,
+   cover art, tags/collections) while the title/description column scrolls past it, instead of
+   scrolling away together the way it did before this pass. */
+.sticky-side {
+  position: sticky;
+  top: 0;
+  padding-top: var(--space-5);
   flex-shrink: 0;
   width: 220px;
+}
+
+.cover-wrap {
+  margin-bottom: var(--space-3);
 }
 
 .cover,
@@ -388,6 +420,12 @@ async function onDelete() {
 .info {
   flex: 1;
   min-width: 0;
+  /* Matches `.sticky-side`'s own top padding so both columns start at the same vertical
+     position - neither column's padding lives on a shared ancestor, since `.sticky-side`
+     specifically needs its own (an ancestor's padding wouldn't constrain how far it can stick
+     upward, but keeping the pattern consistent here anyway rather than splitting it oddly
+     between one column's own rule and a shared parent). */
+  padding-top: var(--space-5);
 }
 
 .info h1 {

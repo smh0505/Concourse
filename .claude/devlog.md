@@ -711,6 +711,29 @@ floating above the true bottom edge, and give the page itself proper insets.**
 
 `bun run build` clean.
 
+**Real fix for the still-floating action bar, after the previous negative-margin attempt
+turned out not to work (caught by the user, not self-diagnosed).** The earlier fix put
+`margin-bottom: calc(var(--space-5) * -1)` on `GameDetail.vue`'s own `.game-detail-page` root,
+reasoning by (incorrect) analogy to the `.settings-panel` top-padding fix - but that fix worked
+because both the padding and its override lived on the *same* element
+(`.panel.settings-panel { padding-top: 0 }`, a compound selector on one class combo). Here,
+`.content`'s bottom padding is a property of `.content` itself, a completely different element
+owned by `App.vue` - a child's negative margin changes where *it* sits relative to its own
+containing block, it can't reach into and cancel a property declared on the ancestor. Verified
+this by actually working through the box model rather than assuming the analogy held: a
+negative margin-bottom on the last child doesn't remove or overlap the parent's own
+padding-bottom, which sits strictly outside the child's margin box regardless.
+
+Real fix, mirroring the *actual* mechanism the `scroll-locked` class already uses on the same
+element: added a second conditional class, `:class="{ 'no-bottom-inset': activeView ===
+'library' && library.viewingGame }"`, alongside the existing `scroll-locked` binding on
+`App.vue`'s own `<main class="content">`. New rule `.content.no-bottom-inset { padding-bottom:
+0 }` in `App.vue`'s own scoped style - zeroing the padding on the element that actually owns
+it, while `GameDetail.vue`'s `.action-bar` keeps supplying the visual gap back via its own
+padding. Removed the dead, ineffective `margin-bottom` from `GameDetail.vue`. Verified via
+compiled CSS that `.content.no-bottom-inset{padding-bottom:0}` exists in the built output.
+`bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

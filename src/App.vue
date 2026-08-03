@@ -127,7 +127,10 @@ onUnmounted(() => {
       </Transition>
       <main
         class="content"
-        :class="{ 'scroll-locked': activeView === 'library' && plugins.scanning }"
+        :class="{
+          'scroll-locked': activeView === 'library' && plugins.scanning,
+          'no-bottom-inset': activeView === 'library' && library.viewingGame,
+        }"
       >
         <template v-if="activeView === 'library'">
           <GameDetail v-if="library.viewingGame" />
@@ -221,6 +224,15 @@ onUnmounted(() => {
    skeletons into empty space). */
 .content.scroll-locked {
   overflow: hidden;
+}
+
+/* GameDetail.vue's own sticky `.action-bar` needs to reach `.content`'s true bottom edge -
+   this padding sits inside `.content`'s own scrollport, so a sticky descendant can only ever
+   reach its inner edge, leaving a dead gap below the bar otherwise. `.action-bar`'s own
+   padding supplies the visual gap back once this is zeroed, so it's still present, just
+   living on the element that's actually sticky. */
+.content.no-bottom-inset {
+  padding-bottom: 0;
 }
 
 .big-picture-controls {

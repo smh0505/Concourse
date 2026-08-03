@@ -183,10 +183,13 @@ own definition.
 - [x] Moved `GameDetail.vue`'s page actions into a single sticky, bottom-right-aligned
   `.action-bar` (both view mode's Play/Fetch Metadata/Edit/Remove and edit mode's
   Cancel/Save), pinned to the bottom of the scroll container instead of scrolling away
-  inline with the page content. Follow-up: removed the bar's border/margin, cancelled
-  `.content`'s bottom padding (same fix its top-padding counterpart already needed
-  elsewhere) so the bar reaches the true bottom edge instead of floating above it, and gave
-  the page itself top/left/right padding it was missing entirely
+  inline with the page content. Removed the bar's border/margin, and gave the page itself
+  top/left/right padding it was missing entirely
+- [x] Fixed a real bug: the sticky action bar still floated above `.content`'s true bottom
+  edge - a negative margin on `GameDetail.vue`'s own root can't reach into `App.vue`'s
+  `.content` padding, a different element entirely. Fixed on the actual owning element
+  instead: `.content` gets a conditional `no-bottom-inset` class (same pattern as its existing
+  `scroll-locked` binding) zeroing its bottom padding while `GameDetail.vue` is active
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

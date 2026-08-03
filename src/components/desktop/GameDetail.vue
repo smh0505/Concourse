@@ -290,17 +290,12 @@ async function onDelete() {
 .game-detail-page {
   /* min-height ensures the sticky action bar (below) has genuine room to stick within a short
      page - without this, a game with little content would leave the bar floating mid-page
-     instead of pinned to the visible bottom. */
+     instead of pinned to the visible bottom. App.vue's `.content` cancels its own bottom
+     padding while this page is active (`.no-bottom-inset`) - a negative margin here can't
+     reach into a different element's own padding, so that has to happen on `.content` itself. */
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  /* Cancels App.vue's `.content` bottom padding - that padding sits inside `.content`'s own
-     scrollport, so a `position: sticky; bottom: 0` element only ever reaches that padding's
-     inner edge, not `.content`'s true bottom, leaving the action bar floating above it with a
-     visible gap. Same fix already applied to `.settings-panel` consumers' top padding, mirrored
-     here for the bottom. `.action-bar`'s own padding-bottom (below) supplies the visual gap
-     back, so it's still present, just persisted through scroll instead of only before it. */
-  margin-bottom: calc(var(--space-5) * -1);
 }
 
 .game-detail {

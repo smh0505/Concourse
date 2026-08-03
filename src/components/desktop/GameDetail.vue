@@ -80,6 +80,11 @@ const wrapperSelection = computed({
   },
 });
 
+// The cover preview (left column, both view and edit mode) tracks the live form value while
+// editing - typing a new Cover art URL updates the preview immediately, rather than only
+// after saving.
+const displayCoverUrl = computed(() => (editing.value ? form.value.cover_art_url : game.value.cover_art_url));
+
 const gameTags = computed(() => tags.gameTags[game.value.id] ?? []);
 const gameCollections = computed(() => collections.gameCollections[game.value.id] ?? []);
 const playtimeMinutes = computed(() => Math.round(game.value.total_playtime / 60));
@@ -145,19 +150,26 @@ async function onDelete() {
 
 <template>
   <div class="game-detail-page">
+    <div
+      v-if="game.background_art_url"
+      class="backdrop"
+      :style="{ backgroundImage: `url(${game.background_art_url})` }"
+    />
+
     <div class="game-detail">
       <button class="back-button" @click="library.closeDetail()">
         <IconArrowLeft :size="16" :stroke-width="1.75" />
         Back to Library
       </button>
 
-      <template v-if="!editing">
-        <div class="view">
-          <div class="cover-wrap">
-            <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
-            <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
-          </div>
-          <div class="info">
+      <div class="view">
+        <div class="cover-wrap">
+          <img v-if="displayCoverUrl" class="cover" :src="displayCoverUrl" :alt="game.title" />
+          <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+        </div>
+
+        <div class="info">
+          <template v-if="!editing">
             <h1>{{ game.title }}</h1>
             <div class="meta">
               <span v-if="game.platform">{{ game.platform }}</span>
@@ -169,100 +181,98 @@ async function onDelete() {
               <span class="tag-pill" v-for="tag in gameTags" :key="`t-${tag}`">{{ tag }}</span>
               <span class="tag-pill" v-for="name in gameCollections" :key="`c-${name}`">{{ name }}</span>
             </div>
-          </div>
-        </div>
-      </template>
+          </template>
 
-      <template v-else>
-      <form class="edit-form" @submit.prevent="onSave">
-        <label>
-          Title
-          <input v-model="form.title" />
-        </label>
-        <label>
-          Executable path
-          <input v-model="form.executable_path" />
-        </label>
-        <label>
-          Platform
-          <input v-model="form.platform" />
-        </label>
-        <label>
-          Cover art URL
-          <input v-model="form.cover_art_url" />
-        </label>
-        <label>
-          Background art URL
-          <div class="input-with-button">
-            <input v-model="form.background_art_url" />
-            <button type="button" :disabled="fetchingBackground" @click="onFetchBackgroundArt">
-              {{ fetchingBackground ? "..." : "Fetch" }}
-            </button>
-          </div>
-        </label>
-        <label>
-          Release date
-          <input v-model="form.release_date" placeholder="YYYY-MM-DD" />
-        </label>
-        <label>
-          Description
-          <textarea v-model="form.description" rows="4"></textarea>
-        </label>
-        <label class="checkbox-label">
-          <input
-            type="checkbox"
-            :checked="form.skip_dedup === 1"
-            @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
-          />
-          Keep separate from plugin scans (don't merge/dedup this entry)
-        </label>
-        <label>
-          Compatibility wrapper profile
-          <select v-model="wrapperSelection">
-            <option value="">None</option>
-            <optgroup
-              v-for="[pluginId, profiles] in profilesByPlugin"
-              :key="pluginId"
-              :label="profiles[0].pluginName"
-            >
-              <option v-for="profile in profiles" :key="profile.guid" :value="`${pluginId}:${profile.guid}`">
-                {{ profile.name }}
-              </option>
-            </optgroup>
-          </select>
-          <small v-if="wrapperPlugins.profiles.length === 0">
-            No profiles found - install and enable a compatibility wrapper plugin in Settings first.
-          </small>
-        </label>
-        <div class="tags-section">
-          <span>Tags</span>
-          <div class="tags" v-if="gameTags.length">
-            <span class="tag-pill tag" v-for="tag in gameTags" :key="tag">
-              {{ tag }}
-              <button class="tag-remove" @click="tags.removeFromGame(game, tag)">&times;</button>
-            </span>
-          </div>
-          <form class="add-tag-form" @submit.prevent="onAddTag">
-            <input v-model="newTag" placeholder="Add tag" />
-            <button type="submit">+</button>
+          <form v-else class="edit-form" @submit.prevent="onSave">
+            <label>
+              Title
+              <input v-model="form.title" />
+            </label>
+            <label>
+              Executable path
+              <input v-model="form.executable_path" />
+            </label>
+            <label>
+              Platform
+              <input v-model="form.platform" />
+            </label>
+            <label>
+              Cover art URL
+              <input v-model="form.cover_art_url" />
+            </label>
+            <label>
+              Background art URL
+              <div class="input-with-button">
+                <input v-model="form.background_art_url" />
+                <button type="button" :disabled="fetchingBackground" @click="onFetchBackgroundArt">
+                  {{ fetchingBackground ? "..." : "Fetch" }}
+                </button>
+              </div>
+            </label>
+            <label>
+              Release date
+              <input v-model="form.release_date" placeholder="YYYY-MM-DD" />
+            </label>
+            <label>
+              Description
+              <textarea v-model="form.description" rows="4"></textarea>
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                :checked="form.skip_dedup === 1"
+                @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
+              />
+              Keep separate from plugin scans (don't merge/dedup this entry)
+            </label>
+            <label>
+              Compatibility wrapper profile
+              <select v-model="wrapperSelection">
+                <option value="">None</option>
+                <optgroup
+                  v-for="[pluginId, profiles] in profilesByPlugin"
+                  :key="pluginId"
+                  :label="profiles[0].pluginName"
+                >
+                  <option v-for="profile in profiles" :key="profile.guid" :value="`${pluginId}:${profile.guid}`">
+                    {{ profile.name }}
+                  </option>
+                </optgroup>
+              </select>
+              <small v-if="wrapperPlugins.profiles.length === 0">
+                No profiles found - install and enable a compatibility wrapper plugin in Settings first.
+              </small>
+            </label>
+            <div class="tags-section">
+              <span>Tags</span>
+              <div class="tags" v-if="gameTags.length">
+                <span class="tag-pill tag" v-for="tag in gameTags" :key="tag">
+                  {{ tag }}
+                  <button class="tag-remove" @click="tags.removeFromGame(game, tag)">&times;</button>
+                </span>
+              </div>
+              <form class="add-tag-form" @submit.prevent="onAddTag">
+                <input v-model="newTag" placeholder="Add tag" />
+                <button type="submit">+</button>
+              </form>
+            </div>
+            <div class="tags-section">
+              <span>Collections</span>
+              <div class="tags" v-if="gameCollections.length">
+                <span class="tag-pill tag" v-for="name in gameCollections" :key="name">
+                  {{ name }}
+                  <button class="tag-remove" @click="collections.removeFromGame(game, name)">&times;</button>
+                </span>
+              </div>
+              <form class="add-tag-form" @submit.prevent="onAddCollection">
+                <input v-model="newCollection" placeholder="Add collection" />
+                <button type="submit">+</button>
+              </form>
+            </div>
+            <p v-if="error" class="error-text">{{ error }}</p>
           </form>
         </div>
-        <div class="tags-section">
-          <span>Collections</span>
-          <div class="tags" v-if="gameCollections.length">
-            <span class="tag-pill tag" v-for="name in gameCollections" :key="name">
-              {{ name }}
-              <button class="tag-remove" @click="collections.removeFromGame(game, name)">&times;</button>
-            </span>
-          </div>
-          <form class="add-tag-form" @submit.prevent="onAddCollection">
-            <input v-model="newCollection" placeholder="Add collection" />
-            <button type="submit">+</button>
-          </form>
-        </div>
-        <p v-if="error" class="error-text">{{ error }}</p>
-      </form>
-      </template>
+      </div>
     </div>
 
     <div class="action-bar">
@@ -271,15 +281,15 @@ async function onDelete() {
           <IconPlayerPlay :size="16" :stroke-width="1.75" />
           Play
         </button>
-        <button :disabled="fetchingMetadata" @click="library.fetchMetadata(game)">
-          <IconInfoCircle :size="16" :stroke-width="1.75" />
-          {{ fetchingMetadata ? "Fetching..." : "Fetch Metadata" }}
-        </button>
         <button @click="startEdit">Edit</button>
         <button class="remove" @click="onDelete">Remove</button>
       </template>
       <template v-else>
         <button type="button" @click="cancelEdit">Cancel</button>
+        <button type="button" :disabled="fetchingMetadata" @click="library.fetchMetadata(game)">
+          <IconInfoCircle :size="16" :stroke-width="1.75" />
+          {{ fetchingMetadata ? "Fetching..." : "Fetch Metadata" }}
+        </button>
         <button type="button" @click="onSave">Save</button>
       </template>
     </div>
@@ -296,9 +306,33 @@ async function onDelete() {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  /* Positioning context for `.backdrop` below, which is absolutely positioned against this
+     element rather than `fixed` against the viewport (unlike Big Picture's `.bp-backdrop`) -
+     this page scrolls inside `.content`, it isn't its own immersive full-screen surface. */
+  position: relative;
+}
+
+/* Background art, faded out top-to-bottom - covers roughly the top two-thirds of the page,
+   fully visible at the very top and nearly gone by where it ends, rather than a hard edge or
+   a flat dark scrim over the whole image. `mask-image` (not `opacity`) - opacity would fade
+   the entire image uniformly; a gradient mask fades transparency spatially, top to bottom. */
+.backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 66%;
+  background-size: cover;
+  background-position: center top;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
+  z-index: 0;
+  pointer-events: none;
 }
 
 .game-detail {
+  position: relative;
+  z-index: 1;
   flex: 1;
   max-width: 720px;
   margin: 0 auto;
@@ -388,7 +422,6 @@ async function onDelete() {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  max-width: 420px;
 }
 
 .edit-form label {

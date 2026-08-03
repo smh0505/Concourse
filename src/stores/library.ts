@@ -40,7 +40,14 @@ export const useLibraryStore = defineStore("library", () => {
   const search = ref("");
   const fetchingMetadataFor = ref<number | null>(null);
   const fetchingBackgroundFor = ref<number | null>(null);
-  const viewingGame = ref<Game | null>(null);
+  // Derived from `games` by id rather than a static ref holding a Game object directly - any
+  // `refresh()` (metadata fetch, background art fetch, a plugin scan, ...) replaces `games`
+  // wholesale with fresh objects from a new DB query, which would otherwise leave a plain ref
+  // pointing at a stale, orphaned object that never reflects those updates.
+  const viewingGameId = ref<number | null>(null);
+  const viewingGame = computed(() =>
+    viewingGameId.value !== null ? games.value.find((g) => g.id === viewingGameId.value) ?? null : null,
+  );
   const viewMode = ref<ViewMode>("grid");
 
   let unlistenSessionEnded: UnlistenFn | undefined;
@@ -171,22 +178,22 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   function openDetail(game: Game) {
-    viewingGame.value = game;
+    viewingGameId.value = game.id;
   }
 
   function closeDetail() {
-    viewingGame.value = null;
+    viewingGameId.value = null;
   }
 
   /** Unlike the old edit modal, saving here doesn't close the detail page - it stays open,
    *  showing the just-saved data, matching the "detail page convertible to an editing page"
-   *  design (editing is a mode within the page, not a separate flow that exits on save). */
+   *  design (editing is a mode within the page, not a separate flow that exits on save).
+   *  `viewingGame` picks up the refreshed data on its own (derived from `games` by id), no
+   *  manual re-assignment needed here anymore. */
   async function saveEdit(fields: GameEditFields) {
     if (!viewingGame.value) return;
-    const id = viewingGame.value.id;
-    await gameRepo.update(id, fields);
+    await gameRepo.update(viewingGame.value.id, fields);
     await refresh();
-    viewingGame.value = games.value.find((g) => g.id === id) ?? null;
   }
 
   async function launchGame(game: Game) {

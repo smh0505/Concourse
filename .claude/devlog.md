@@ -734,6 +734,49 @@ padding. Removed the dead, ineffective `margin-bottom` from `GameDetail.vue`. Ve
 compiled CSS that `.content.no-bottom-inset{padding-bottom:0}` exists in the built output.
 `bun run build` clean.
 
+**Three more requests, delivered together: move Fetch Metadata into the edit side, reshape
+edit mode to match view mode's layout (including cover art), and add a fading background-art
+backdrop.**
+
+- **Found and fixed a real, independent bug while wiring the first two changes together**:
+  `library.ts`'s `viewingGame` was a plain `ref<Game | null>`, set once by `openDetail(game)` to
+  a direct object reference. Any subsequent `refresh()` (a metadata fetch, a background-art
+  fetch, a plugin scan while the page happened to stay open, ...) reassigns `games.value`
+  wholesale from a fresh DB query - brand-new object instances every time - which left
+  `viewingGame` pointing at an orphaned, stale copy that never picked up those updates. This
+  meant "Fetch Metadata" already silently didn't work correctly even before this pass (it
+  updated the DB and the `games` list, but the *displayed* game object on the page never
+  changed). Fixed by making `viewingGame` a `computed` derived from `games` by id
+  (`viewingGameId` ref underneath) instead of a static object reference - `openDetail`/
+  `closeDetail` now just set/clear the id, and `saveEdit` no longer needs its own manual
+  re-assignment after `refresh()` either, since the computed picks up the refreshed object on
+  its own.
+- **Reshaped edit mode to match view mode's two-column layout**: both modes now share the same
+  `.view` flex row (cover art on the left, content on the right) instead of edit mode being a
+  flat single-column form. The cover preview now uses a new `displayCoverUrl` computed that
+  tracks `form.cover_art_url` live while editing (typing a new URL updates the preview
+  immediately) and `game.cover_art_url` otherwise - "including cover art" specifically meant
+  the preview should reflect in-progress edits, not just be a second copy of the read-only one.
+- **Moved "Fetch Metadata" into edit mode's `.action-bar`** (was view mode's) - Cancel/Fetch
+  Metadata/Save now sit together while editing; view mode keeps Play/Edit/Remove.
+- **Background art backdrop**: new `.backdrop` div, `position: absolute` against
+  `.game-detail-page` itself (given its own `position: relative`) rather than `position: fixed`
+  against the viewport the way Big Picture's `.bp-backdrop` works - this page scrolls inside
+  `.content`, it isn't its own immersive full-screen surface, so anchoring to the viewport
+  would have been wrong here. Covers the top 66% of the page height, faded out via
+  `mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.05) 100%)` -
+  deliberately a mask, not `opacity`, since `opacity` fades a whole element uniformly and the
+  ask was specifically a top-to-bottom spatial fade of the image itself. `.game-detail`
+  explicitly `z-index: 1` over the backdrop's `z-index: 0` so foreground content and text
+  paint above it without needing every individual descendant to opt in.
+
+Not visually verified in a running app - same limitation as every other UI change this
+session, no browser/screenshot tooling available in this environment; flagged honestly rather
+than claimed as confirmed-good, particularly for text contrast over a bright cover image, which
+depends on the actual art and wasn't addressed with an extra scrim since it wasn't asked for.
+
+`bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

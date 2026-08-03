@@ -190,6 +190,15 @@ own definition.
   `.content` padding, a different element entirely. Fixed on the actual owning element
   instead: `.content` gets a conditional `no-bottom-inset` class (same pattern as its existing
   `scroll-locked` binding) zeroing its bottom padding while `GameDetail.vue` is active
+- [x] Fixed a real bug: `viewingGame` was a static ref, going stale after any `refresh()`
+  (metadata fetch, background art fetch, ...) since `refresh()` replaces `games` wholesale
+  with fresh objects from a new query - changed to a computed derived from `games` by id
+- [x] `GameDetail.vue` reshaped: edit mode now mirrors view mode's two-column layout (cover
+  art preview on the left, tracking the live form value; fields on the right) instead of a
+  flat single-column form. Moved "Fetch Metadata" into edit mode's action bar (was view mode's)
+- [x] Added the game's background art as a page backdrop - fades top-to-bottom via a gradient
+  mask (fully visible at top, nearly gone by two-thirds down), `position: absolute` against
+  the page itself rather than the viewport (unlike Big Picture's fixed backdrop)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

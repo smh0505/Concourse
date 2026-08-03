@@ -833,6 +833,32 @@ relationship with `.game-detail` unambiguous rather than relying on default pain
 
 `bun run build` clean.
 
+**Fixed a real bug, caught by the user testing again: the backdrop still scrolled with the
+page.** Taking `.hero` out of flow (previous fix) solved it occupying layout space, but
+`.game-detail-page` itself was still a normal-flow, `min-height: 100%` element scrolling
+*inside* `.content` - so `.hero` (positioned relative to `.game-detail-page`) moved right along
+with it as `.content` scrolled, same as everything else on the page. The user's own suggested
+fix was exactly right: make `.info` (the description column) the thing that scrolls, not the
+whole page.
+
+- `.game-detail-page`: `min-height: 100%` → `height: 100%` (locked to exactly fill `.content`'s
+  own visible height, not allowed to grow taller) plus `overflow: hidden` - `.content` now has
+  nothing to scroll for this view at all, since its one child never exceeds its own height.
+- `.game-detail`/`.view`: both gained `flex: 1; min-height: 0` so the column layout actually
+  distributes the fixed available height down to `.info`, rather than every flex level
+  defaulting to "grow to fit content" (a flex item's default `min-height` is `auto` - its own
+  content size - which silently defeats `overflow-y: auto` on a descendant unless every level
+  in between explicitly opts out via `min-height: 0`).
+  `.info` gained `overflow-y: auto` and `min-height: 0` of its own for the same reason - it's
+  the one column that actually needs to scroll now.
+- **`.sticky-side` and `.action-bar` both dropped their now-pointless `position: sticky`** -
+  sticky only does anything relative to a scrolling ancestor, and `.content` no longer scrolls
+  for this page at all; both are just normal flex items now (`.sticky-side` naturally static
+  since nothing around it scrolls, `.action-bar` pinned to the bottom of `.game-detail-page`'s
+  own fixed-height column by ordinary flex layout instead of scroll-tracking).
+
+`bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

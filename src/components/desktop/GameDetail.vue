@@ -311,12 +311,13 @@ async function onDelete() {
 
 <style scoped>
 .game-detail-page {
-  /* min-height ensures the sticky action bar has genuine room to stick within a short page -
-     without this, a game with little content would leave the bar floating mid-page instead of
-     pinned to the visible bottom. App.vue's `.content` cancels its own bottom padding while
-     this page is active (`.no-bottom-inset`) - a negative margin here can't reach into a
-     different element's own padding, so that has to happen on `.content` itself. */
-  min-height: 100%;
+  /* Locked to exactly fill .content's own visible height (not min-height, which would let this
+     grow taller than the viewport and hand scrolling back to .content) - only `.info` (below)
+     scrolls internally now. Without this, the backdrop/cover art/back button would all scroll
+     away with the page the way they used to, since they'd be moving as part of .content's own
+     scrolled content rather than staying fixed while just the description column moves. */
+  height: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   /* Positioning context for `.hero`, which is taken out of normal flow below - without this,
@@ -365,6 +366,9 @@ async function onDelete() {
   position: relative;
   z-index: 1;
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
@@ -385,17 +389,18 @@ async function onDelete() {
 }
 
 .view {
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: flex-start;
   gap: var(--space-5);
 }
 
-/* Sticky alongside `.info` (below) - stays pinned to the top of the scroll area (back button,
-   cover art, tags/collections) while the title/description column scrolls past it, instead of
-   scrolling away together the way it did before this pass. */
+/* Static, not scrolling - `.game-detail-page` no longer hands scrolling to `.content` at all
+   (see its own comment above), so this column (back button, cover art, tags/collections) just
+   stays put while `.info` (below) scrolls internally instead. No `position: sticky` needed
+   anymore - nothing around it scrolls for it to stick against. */
 .sticky-side {
-  position: sticky;
-  top: 0;
   padding-top: var(--space-5);
   flex-shrink: 0;
   width: 220px;
@@ -429,13 +434,17 @@ async function onDelete() {
 
 .info {
   flex: 1;
+  /* min-width/min-height: 0 - a flex item's default min-size is `auto` (its content's own
+     size), which would let this column grow to fit the full description text instead of
+     respecting `overflow-y: auto` below; both defaults need overriding for the scrollbar to
+     actually bound itself to the available height/width rather than just expanding past it. */
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
   /* Matches `.sticky-side`'s own top padding so both columns start at the same vertical
-     position - neither column's padding lives on a shared ancestor, since `.sticky-side`
-     specifically needs its own (an ancestor's padding wouldn't constrain how far it can stick
-     upward, but keeping the pattern consistent here anyway rather than splitting it oddly
-     between one column's own rule and a shared parent). */
+     position. */
   padding-top: var(--space-5);
+  padding-bottom: var(--space-4);
 }
 
 .info h1 {
@@ -544,9 +553,12 @@ async function onDelete() {
    `position: sticky` (not `fixed`) - stays anchored to the bottom of `.content` (App.vue's
    scroll container) while `.game-detail-page` is in view, rather than floating over every
    other view too. */
+/* No `position: sticky` needed anymore - `.game-detail-page` no longer hands scrolling to
+   `.content` (see its own comment above), so this is just a normal flex item pinned to the
+   bottom of the page's own fixed-height column, always visible without needing to "stick"
+   against anything. */
 .action-bar {
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
   z-index: 5;
   display: flex;
   flex-wrap: wrap;

@@ -209,6 +209,11 @@ own definition.
   its own 320px height instead of acting as a backdrop. Changed to `position: absolute` (out of
   flow entirely) so `.game-detail` overlaps it directly at the true page top instead of
   following after it
+- [x] Fixed a real bug: the backdrop/cover art/back button still scrolled away with the page,
+  since `.game-detail-page` itself scrolled inside `.content`. Locked `.game-detail-page` to
+  `height: 100%` (not `min-height`) with `overflow: hidden`, so `.content` never scrolls this
+  view at all; only `.info` (the description column) scrolls internally now
+  (`overflow-y: auto`), while the backdrop/`.sticky-side`/action bar all stay genuinely static
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

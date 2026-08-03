@@ -294,6 +294,13 @@ async function onDelete() {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+  /* Cancels App.vue's `.content` bottom padding - that padding sits inside `.content`'s own
+     scrollport, so a `position: sticky; bottom: 0` element only ever reaches that padding's
+     inner edge, not `.content`'s true bottom, leaving the action bar floating above it with a
+     visible gap. Same fix already applied to `.settings-panel` consumers' top padding, mirrored
+     here for the bottom. `.action-bar`'s own padding-bottom (below) supplies the visual gap
+     back, so it's still present, just persisted through scroll instead of only before it. */
+  margin-bottom: calc(var(--space-5) * -1);
 }
 
 .game-detail {
@@ -301,6 +308,7 @@ async function onDelete() {
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
+  padding: var(--space-5) var(--space-6) 0;
 }
 
 .back-button {
@@ -468,10 +476,8 @@ async function onDelete() {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
-  margin-top: var(--space-5);
   padding: var(--space-3) var(--space-5);
   background: var(--color-base);
-  border-top: var(--button-border-width) solid var(--color-surface0);
 }
 
 .action-bar button {

@@ -688,6 +688,29 @@ path to the same function rather than the button's only path.
 
 `bun run build` clean.
 
+**Three more follow-ups, on direct feedback: drop `.action-bar`'s border/margin, fix it
+floating above the true bottom edge, and give the page itself proper insets.**
+
+- **Border/margin removed** - `.action-bar` no longer has `border-top`/`margin-top`, just its
+  own padding for spacing from the content above and from the viewport edges.
+- **The floating-above-the-edge bug**: `App.vue`'s `.content` (the scroll container) has its
+  own `padding: 0 0 var(--space-5)` bottom padding. That padding sits *inside* `.content`'s
+  scrollport, so a `position: sticky; bottom: 0` descendant only ever reaches the padding's
+  inner edge, not `.content`'s real bottom - the exact same class of bug `.settings-panel`
+  consumers already hit with *top* padding (`TagsPanel.vue`/`CollectionsPanel.vue`'s
+  `.panel.settings-panel { padding-top: 0 }` override), just the bottom-edge mirror of it here.
+  Fixed the same way: `.game-detail-page` gets `margin-bottom: calc(var(--space-5) * -1)` to
+  cancel `.content`'s bottom padding entirely, and `.action-bar`'s own `padding` restores the
+  visual gap - now present at every scroll position, including fully scrolled to the bottom,
+  instead of leaving a dead gap between the bar and `.content`'s true edge.
+- **`GameDetail.vue` had no top/left/right inset at all** - `.content` itself supplies none for
+  this view (unlike Stats/Tags/Settings/etc., which get it via `.settings-panel`), and nothing
+  in `GameDetail.vue` had filled that gap in, so the page sat flush against the sidebar edge
+  and the titlebar. Added `padding: var(--space-5) var(--space-6) 0` directly to `.game-detail`
+  (top/sides only - bottom stays 0, `.action-bar` already owns the spacing below the content).
+
+`bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

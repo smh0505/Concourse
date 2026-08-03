@@ -217,6 +217,12 @@ own definition.
   page-scroll model: `.hero` is `position: sticky; top: 0` with `margin-bottom` equal to its
   own height (reclaims the space it would otherwise reserve, so `.game-detail` still overlaps
   it) instead of `.content` giving up scrolling to keep it in place
+- [x] Fixed a real bug: `useImageBrightness` never actually worked - a browser `<canvas>`/
+  `getImageData` approach can't read cross-origin image pixels unless the server sends
+  matching CORS headers, which cover/background art CDNs generally don't; the canvas silently
+  taints and the whole feature quietly no-ops. Moved the sampling to a new Rust command,
+  `check_image_brightness` (`image_utils.rs`, new `image` crate dependency) - not subject to
+  browser CORS at all since it's a host-side `reqwest` fetch, not a browser request
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

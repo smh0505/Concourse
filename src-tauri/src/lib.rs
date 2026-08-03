@@ -1,5 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod db;
+mod image_utils;
 mod launcher;
 mod plugin_installer;
 mod plugin_registry;
@@ -26,6 +27,7 @@ pub fn run() {
         )
         .invoke_handler(tauri::generate_handler![
             greet,
+            image_utils::check_image_brightness,
             launcher::launch_game,
             launcher::track_folder_playtime,
             plugin_installer::fetch_plugin_preview,

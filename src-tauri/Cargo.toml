@@ -33,6 +33,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 bytes = "1"
 sha2 = "0.10"
+image = "0.25"
 sigstore-verify = "0.1"
 sigstore-trust-root = "0.1"
 sigstore-bundle = "0.1"

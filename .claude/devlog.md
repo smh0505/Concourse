@@ -887,6 +887,41 @@ instead of disabling `.content`'s scroll.
 Verified via compiled CSS: `.hero[data-v-*]{position:sticky;top:0;height:320px;margin-bottom:
 -320px;overflow:hidden;z-index:0;pointer-events:none}` matches. `bun run build` clean.
 
+**Fixed a real bug, on user report ("I don't see useImageBrightness working well").** Traced
+the whole feature never actually doing anything, in any real usage, to a structural browser
+limitation rather than a logic bug in the sampling code itself: reading pixel data out of a
+`<canvas>` after drawing a cross-origin image onto it (`getImageData`) is only allowed when
+that image was fetched in CORS mode *and* the server responds with a matching
+`Access-Control-Allow-Origin` header. Cover/background art CDNs this app actually points at
+(SteamGridDB, IGDB, RAWG, TheGamesDB) generally don't send that header for anonymous
+requests - the canvas silently "taints," `getImageData` throws a `SecurityError`, and the
+original implementation's own `catch` block swallowed it and left `isDark` at its default
+`false` every time, with no error surfaced anywhere to point at the real cause. Setting
+`img.crossOrigin = "anonymous"` (needed to even attempt the CORS-mode fetch) can also just
+fail the image load outright for hosts that don't cooperate, meaning `onload` might never fire
+at all - a second, related failure mode with the identical symptom.
+
+Real fix: moved the sampling out of the browser entirely, into a new Rust command,
+`check_image_brightness` (`src-tauri/src/image_utils.rs`, new module - none of the existing
+ones map to "general-purpose image helper," so didn't force this into an unrelated one).
+Downloads the image via `reqwest::get` (a plain server-side HTTP request, never subject to
+browser CORS in the first place), decodes it with the new `image` crate dependency
+(`Cargo.toml`), downsamples to a 16x16 thumbnail (only a coarse brightness estimate is needed,
+not per-pixel precision at full resolution), and averages the same ITU-R BT.601 perceived-
+luminance weighting the original browser-side attempt used
+(`0.299r + 0.587g + 0.114b`), returning `true` below the same 110/255 threshold.
+
+`useImageBrightness.ts`'s public shape is unchanged (still returns an `isDark` ref reactive to
+a `url` ref) - `GameDetail.vue` needed zero changes, only the composable's own internals swapped
+from `<canvas>`/`getImageData` to `invoke("check_image_brightness", { url })`. Kept a
+`console.error` on failure this time (download/decode errors - bad URL, unsupported format,
+network failure) rather than silently swallowing it the way the CORS-taint catch block
+effectively did before, so a *future* real failure is at least visible in devtools instead of
+looking identical to "working as intended, just never dark."
+
+`cargo check` took ~4.5 minutes (`image`'s own dependency tree, compiled fresh) but finished
+clean; `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

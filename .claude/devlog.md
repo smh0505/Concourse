@@ -922,6 +922,36 @@ looking identical to "working as intended, just never dark."
 `cargo check` took ~4.5 minutes (`image`'s own dependency tree, compiled fresh) but finished
 clean; `bun run build` clean.
 
+**Fixed a real bug in the brightness-detection *logic* itself, found once the underlying CORS
+bug above was actually fixed and real results started coming back.** The trigger only ever
+flipped text to a hardcoded `#fff` when the backdrop sampled as dark - correct for light
+themes (Catppuccin Latte, Brick Block), whose own default `--color-text` is already dark, but
+wrong for dark themes (Catppuccin Macchiato, Midnight Neon): their default text is already
+*light*, so it's a *bright* backdrop that clashes there, and the old logic never reversed
+anything in that case at all.
+
+- **New `--color-text-reverse` token** (`styles.css`'s `:root`), defaulting to
+  `var(--color-base)` - the same reasoning `--color-on-accent` already established: a theme's
+  own base color is always the opposite brightness of its text color by construction (light
+  theme = light base + dark text; dark theme = dark base + light text), confirmed by checking
+  real values (Catppuccin Macchiato: base `#24273a` dark, text `#cad3f5` light; Midnight Neon:
+  base `#0d1117` dark, text `#c9d1d9` light) rather than just assuming it held. This means the
+  new token needs zero per-theme overrides to already work correctly on every existing theme.
+- **Theme-aware trigger direction**: added `isLightTheme()` in `GameDetail.vue`, parsing
+  `--color-text`'s own computed hex value (`getComputedStyle(document.documentElement)`) and
+  reusing the identical ITU-R BT.601 luminance weighting the backdrop brightness check already
+  uses, rather than inventing a new per-theme "is this dark mode" token that every theme file
+  would need to remember to set. Read once at setup, not reactively - nothing in this app's
+  navigation lets the active theme change while a `GameDetail` page is already mounted
+  (switching themes requires leaving this view for Settings first, which unmounts it).
+- New `reverseText` computed: `themeIsLight ? backdropIsDark : !backdropIsDark` - reverse on a
+  dark image under a light theme, or a bright image under a dark theme. Renamed the class from
+  `dark-backdrop` to `reverse-text` (it no longer means "the backdrop is dark," just "text
+  should flip") and the CSS rule from a hardcoded `color: #fff` to `color:
+  var(--color-text-reverse)`.
+
+`bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

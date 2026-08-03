@@ -223,6 +223,13 @@ own definition.
   taints and the whole feature quietly no-ops. Moved the sampling to a new Rust command,
   `check_image_brightness` (`image_utils.rs`, new `image` crate dependency) - not subject to
   browser CORS at all since it's a host-side `reqwest` fetch, not a browser request
+- [x] Fixed a real bug: the backdrop text-reversal logic only ever flipped to white, correct
+  for light themes but making text on a bright image unreadable under dark themes (Catppuccin
+  Macchiato, Midnight Neon), whose own default text is already light. New `--color-text-reverse`
+  token (defaults to `var(--color-base)` - already the opposite brightness of `--color-text`
+  for every existing theme, no per-theme override needed) and a theme-aware trigger: reverse on
+  a dark backdrop for a light theme, or a bright backdrop for a dark theme, derived from
+  `--color-text`'s own computed luminance rather than a new "is this theme dark" token
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

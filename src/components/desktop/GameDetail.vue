@@ -89,6 +89,29 @@ const displayCoverUrl = computed(() => (editing.value ? form.value.cover_art_url
 const backgroundArtUrl = computed(() => game.value.background_art_url);
 const backdropIsDark = useImageBrightness(backgroundArtUrl);
 
+/** Whether the *active theme itself* is light or dark - a dark backdrop image only needs
+ *  --color-text-reverse on a light theme (where the default text is already dark); a dark
+ *  theme's default text is already light, so it's a *bright* backdrop that needs reversing
+ *  there instead. Derived from --color-text's own computed luminance rather than a new
+ *  per-theme "is this dark mode" token, since every existing theme's text color already
+ *  implies it (dark text -> light theme, light text -> dark theme) with no extra theme-file
+ *  changes needed. Read once - nothing in this app's navigation lets the active theme change
+ *  while a GameDetail page is already mounted (switching themes requires leaving this view for
+ *  Settings first). */
+function isLightTheme(): boolean {
+  const hex = getComputedStyle(document.documentElement).getPropertyValue("--color-text").trim();
+  const match = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return true;
+  const r = parseInt(match[1].slice(0, 2), 16);
+  const g = parseInt(match[1].slice(2, 4), 16);
+  const b = parseInt(match[1].slice(4, 6), 16);
+  // Same ITU-R BT.601 perceived-luminance weighting as the backdrop's own brightness check.
+  return 0.299 * r + 0.587 * g + 0.114 * b < 128;
+}
+
+const themeIsLight = isLightTheme();
+const reverseText = computed(() => (themeIsLight ? backdropIsDark.value : !backdropIsDark.value));
+
 const gameTags = computed(() => tags.gameTags[game.value.id] ?? []);
 const gameCollections = computed(() => collections.gameCollections[game.value.id] ?? []);
 const playtimeMinutes = computed(() => Math.round(game.value.total_playtime / 60));
@@ -162,7 +185,7 @@ async function onDelete() {
       />
     </div>
 
-    <div class="game-detail" :class="{ 'dark-backdrop': backdropIsDark }">
+    <div class="game-detail" :class="{ 'reverse-text': reverseText }">
       <div class="view">
         <div class="sticky-side">
           <button class="back-button" @click="library.closeDetail()">
@@ -353,11 +376,13 @@ async function onDelete() {
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
 }
 
-/* Flips to light text when useImageBrightness.ts samples the background art as dark - cascades
-   to every descendant that doesn't set its own color (h1/meta/description), same as the
-   default (unset) case already inheriting from --color-text. */
-.game-detail.dark-backdrop {
-  color: #fff;
+/* Flips to --color-text-reverse when the backdrop's brightness clashes with the active
+   theme's own default text color (a dark image under a light theme's dark text, or a bright
+   image under a dark theme's light text) - cascades to every descendant that doesn't set its
+   own color (h1/meta/description), same as the default (unset) case already inheriting from
+   --color-text. */
+.game-detail.reverse-text {
+  color: var(--color-text-reverse);
 }
 
 .game-detail {

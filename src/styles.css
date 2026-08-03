@@ -7,6 +7,14 @@
   --color-mantle: #e6e9ef;
   --color-crust: #dce0e8;
   --color-text: #4c4f69;
+  /* The opposite-brightness endpoint of --color-text - readable text color for placement over
+     an unpredictably-bright image (GameDetail.vue's backdrop) instead of the theme's own
+     normal body-text color, which assumes a light/dark neutral background it can't guarantee
+     there. Defaults to --color-base, same reasoning as --color-on-accent just below: a
+     theme's own base color is always the opposite brightness of its text color by
+     construction (light theme = light base + dark text; dark theme = dark base + light
+     text), so this needs no per-theme override to already work correctly everywhere. */
+  --color-text-reverse: var(--color-base);
   --color-subtext: #5c5f77;
   --color-surface0: #ccd0da;
   --color-surface1: #bcc0cc;

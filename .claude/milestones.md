@@ -230,6 +230,11 @@ own definition.
   for every existing theme, no per-theme override needed) and a theme-aware trigger: reverse on
   a dark backdrop for a light theme, or a bright backdrop for a dark theme, derived from
   `--color-text`'s own computed luminance rather than a new "is this theme dark" token
+- [x] Fixed a real bug: games with no background art still got text reversed under dark
+  themes - `backdropIsDark` defaults to `false` with no backdrop, and the dark-theme branch
+  inverts that to `true`, flipping text to `--color-text-reverse` (`--color-base`) even with
+  no image behind it, making the text exactly the same color as the actual page background.
+  No backdrop now always means no reversal, regardless of theme
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

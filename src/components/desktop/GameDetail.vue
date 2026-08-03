@@ -110,7 +110,15 @@ function isLightTheme(): boolean {
 }
 
 const themeIsLight = isLightTheme();
-const reverseText = computed(() => (themeIsLight ? backdropIsDark.value : !backdropIsDark.value));
+// Without a backdrop at all, `backdropIsDark` defaults to `false` ("not dark"/unset) - a dark
+// theme's branch below inverts that to `true`, which would flip text to
+// --color-text-reverse (--color-base) even though there's no image behind it, making the
+// text exactly the same color as the actual page background it's sitting on. No backdrop
+// must never trigger a reversal, regardless of theme.
+const reverseText = computed(() => {
+  if (!backgroundArtUrl.value) return false;
+  return themeIsLight ? backdropIsDark.value : !backdropIsDark.value;
+});
 
 const gameTags = computed(() => tags.gameTags[game.value.id] ?? []);
 const gameCollections = computed(() => collections.gameCollections[game.value.id] ?? []);

@@ -952,6 +952,14 @@ anything in that case at all.
 
 `bun run build` clean.
 
+- **Bug: no-backdrop games got reversed text on dark themes.** `backdropIsDark` defaults `false`
+  when there's no `background_art_url` (nothing to sample). Under a dark theme, `reverseText`'s
+  `!backdropIsDark` branch inverted that unset `false` to `true`, flipping text color to
+  `--color-text-reverse` (= `--color-base`) even with no image behind it at all - making text
+  color identical to the actual page background (`--color-base`), rendering it invisible. Fixed
+  by an explicit early guard in `reverseText`: `if (!backgroundArtUrl.value) return false;` -
+  no backdrop now always means no reversal, regardless of theme. `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

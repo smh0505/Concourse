@@ -859,6 +859,34 @@ whole page.
 
 `bun run build` clean.
 
+**Reverted the previous fix - it overcorrected, on user report: "I cannot scroll when I need
+to."** Locking `.game-detail-page` to a fixed height with `overflow: hidden` (previous entry)
+did stop the backdrop scrolling away, but it also disabled scrolling the *page as a whole* -
+only `.info`'s own internal scroll worked, and neither `.sticky-side` (back button/cover
+art/tags) nor a narrow-window `.view` row that wraps awkwardly had any way to reach content
+past the visible height. The user's own suggested fix was exactly right: make `.hero` sticky
+instead of disabling `.content`'s scroll.
+
+- `.game-detail-page`: back to `min-height: 100%` (a normal-flow page `.content` scrolls as a
+  whole again), no `overflow: hidden`.
+- `.hero`: `position: absolute` → `position: sticky; top: 0`, plus `margin-bottom: -320px`
+  (equal to its own `height`). This is the standard "sticky background overlapped by content"
+  technique: a sticky element still participates in normal flow (unlike `absolute`, which is
+  why it can genuinely track the scroll position the way `absolute` never could relative to a
+  scrolling ancestor), and the matching negative bottom margin reclaims the vertical space it
+  would otherwise reserve, so `.game-detail` still starts right at the page's top and visually
+  overlaps it - net the same visual result as the earlier `absolute` attempt, but this time the
+  page can actually scroll normally past it instead of needing `.content`'s scroll disabled to
+  keep it in place.
+- `.game-detail`/`.view`/`.info`/`.sticky-side`/`.action-bar` all reverted to their pre-previous-
+  entry state (`flex: 1`/`min-height: 0`/`overflow-y: auto` removed from `.game-detail`/`.view`/
+  `.info`; `position: sticky` restored on `.sticky-side` and `.action-bar`) - the whole point of
+  those additions was supporting the fixed-height/overflow:hidden model that's now reverted, so
+  they were dead weight (or actively wrong) once that model was gone.
+
+Verified via compiled CSS: `.hero[data-v-*]{position:sticky;top:0;height:320px;margin-bottom:
+-320px;overflow:hidden;z-index:0;pointer-events:none}` matches. `bun run build` clean.
+
 ## Milestone 10 — LR/LE Managed Install + WASM Migration
 Two LR/LE-focused workstreams combined into one milestone rather than spread across a later separate pass, since both touch the same two wrappers.
 

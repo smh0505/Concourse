@@ -210,10 +210,13 @@ own definition.
   flow entirely) so `.game-detail` overlaps it directly at the true page top instead of
   following after it
 - [x] Fixed a real bug: the backdrop/cover art/back button still scrolled away with the page,
-  since `.game-detail-page` itself scrolled inside `.content`. Locked `.game-detail-page` to
-  `height: 100%` (not `min-height`) with `overflow: hidden`, so `.content` never scrolls this
-  view at all; only `.info` (the description column) scrolls internally now
-  (`overflow-y: auto`), while the backdrop/`.sticky-side`/action bar all stay genuinely static
+  since `.game-detail-page` itself scrolled inside `.content`. First fix locked
+  `.game-detail-page` to a fixed height with `overflow: hidden` so only `.info` scrolled
+  internally - too aggressive, it also disabled scrolling the *page* itself, breaking a narrow
+  window where the sticky side ends up taller than the viewport. Reverted to a normal
+  page-scroll model: `.hero` is `position: sticky; top: 0` with `margin-bottom` equal to its
+  own height (reclaims the space it would otherwise reserve, so `.game-detail` still overlaps
+  it) instead of `.content` giving up scrolling to keep it in place
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

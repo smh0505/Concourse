@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import BaseModal from "../BaseModal.vue";
 import { RUN_PROGRAMS_CAPABILITY, type PathScope, type PluginPreview } from "../../../plugins/manifest";
 
@@ -15,6 +16,7 @@ const props = defineProps<{
   onConfirm: () => Promise<void>;
 }>();
 const emit = defineEmits<{ close: [] }>();
+const { t } = useI18n();
 
 // Milestone 13 capability gating - a plugin that declares it runs other programs needs an
 // explicit, visible grant before spawn-process/run-and-wait will do anything (see
@@ -36,8 +38,8 @@ watch(
 // a malicious author can declare whatever they want here, this just stops it being invisible.
 function formatPathScope(scope: PathScope): string {
   return scope.type === "registry"
-    ? `Registry: ${scope.hive}\\${scope.prefix}`
-    : `Files under: ${scope.prefix}`;
+    ? t("confirmInstall.registryScope", { hive: scope.hive, prefix: scope.prefix })
+    : t("confirmInstall.filesScope", { prefix: scope.prefix });
 }
 
 async function onSubmit() {
@@ -55,53 +57,51 @@ async function onSubmit() {
 <template>
   <BaseModal
     :open="open"
-    :title="manifest ? `Install ${manifest.name}?` : undefined"
+    :title="manifest ? t('confirmInstall.title', { name: manifest.name }) : undefined"
     max-width="380px"
     @close="emit('close')"
   >
     <template v-if="manifest" #body>
       <dl class="plugin-info">
-        <dt>ID</dt>
+        <dt>{{ t("confirmInstall.id") }}</dt>
         <dd>{{ manifest.id }}</dd>
-        <dt>Version</dt>
+        <dt>{{ t("confirmInstall.version") }}</dt>
         <dd>{{ manifest.version }}</dd>
-        <dt>Kind</dt>
+        <dt>{{ t("confirmInstall.kind") }}</dt>
         <dd>{{ manifest.kind }}</dd>
       </dl>
       <small v-if="manifest.kind === 'theme'">
-        This installs a data-only theme (colors/CSS variables only, no code).
+        {{ t("confirmInstall.themeNotice") }}
       </small>
       <template v-else>
         <small>
-          This downloads and runs code from the URL you provided. File/registry/network access
-          is scoped to what it declares below (host-enforced) - but that scope is self-declared
-          by the plugin's own author, not verified against what the code actually does. Only
-          install plugins from sources you fully trust.
+          {{ t("confirmInstall.codeWarning") }}
         </small>
         <div v-if="manifest.pathScopes.length || manifest.httpScopes.length" class="scope-list">
-          <p class="scope-list-title">Declares access to:</p>
+          <p class="scope-list-title">{{ t("confirmInstall.declaresAccessTo") }}</p>
           <ul>
             <li v-for="(scope, i) in manifest.pathScopes" :key="`path-${i}`">
               {{ formatPathScope(scope) }}
             </li>
-            <li v-for="host in manifest.httpScopes" :key="`http-${host}`">Network: {{ host }}</li>
+            <li v-for="host in manifest.httpScopes" :key="`http-${host}`">
+              {{ t("confirmInstall.networkScope", { host }) }}
+            </li>
           </ul>
         </div>
       </template>
       <label v-if="needsRunProgramsGrant" class="permission-grant">
         <input type="checkbox" v-model="runProgramsGranted" />
-        This plugin runs other programs on your system (e.g. launching a game). I understand
-        and allow this.
+        {{ t("confirmInstall.runProgramsGrant") }}
       </label>
     </template>
     <template v-if="manifest" #footer>
-      <button type="button" @click="emit('close')">Cancel</button>
+      <button type="button" @click="emit('close')">{{ t("common.cancel") }}</button>
       <button
         type="button"
         :disabled="installing || (needsRunProgramsGrant && !runProgramsGranted)"
         @click="onSubmit"
       >
-        {{ installing ? "Installing..." : "Install" }}
+        {{ installing ? t("confirmInstall.installing") : t("confirmInstall.install") }}
       </button>
     </template>
   </BaseModal>

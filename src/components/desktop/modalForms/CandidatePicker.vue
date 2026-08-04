@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import BaseModal from "../BaseModal.vue";
 import type { PendingCandidateSection } from "../../../stores/metadataProviders";
 
@@ -18,6 +19,7 @@ const props = defineProps<{
   onSubmit: (selections: Record<string, string | null>) => void;
 }>();
 
+const { t } = useI18n();
 const selected = reactive<Record<string, string | null>>({});
 
 watch(
@@ -39,11 +41,10 @@ function submit() {
 </script>
 
 <template>
-  <BaseModal :open="open" title="Multiple matches found" max-width="480px" @close="submit">
+  <BaseModal :open="open" :title="t('candidatePicker.title')" max-width="480px" @close="submit">
     <template #body>
       <small>
-        Some providers found more than one match. Pick the right one per provider, or leave a
-        section unselected to skip it.
+        {{ t("candidatePicker.description") }}
       </small>
       <div v-for="section in sections" :key="section.pluginId" class="section">
         <h3 class="section-title">{{ section.pluginName }}</h3>
@@ -68,7 +69,7 @@ function submit() {
       </div>
     </template>
     <template #footer>
-      <button type="button" @click="submit">Continue</button>
+      <button type="button" @click="submit">{{ t("common.continue") }}</button>
     </template>
   </BaseModal>
 </template>

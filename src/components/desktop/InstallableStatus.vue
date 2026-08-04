@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useToastStore } from "../../stores/toasts";
 import type { Installable, PluginBase } from "../../plugins/types";
+
+const { t } = useI18n();
 
 /** Generic Found/Not-found status + Install/Uninstall toggle button for any plugin
  *  implementing `Installable`, regardless of kind - not wrapper-specific. `onInstallChanged`
@@ -38,8 +41,11 @@ async function onToggle() {
     await refreshFound();
     await props.onInstallChanged?.();
   } catch (e) {
-    const verb = wasInstalled ? "uninstall" : "install";
-    toasts.push(`Failed to ${verb} ${props.plugin.name}: ${String(e)}`, "error");
+    const verb = wasInstalled ? t("installableStatus.uninstall") : t("installableStatus.install");
+    toasts.push(
+      t("installableStatus.actionFailed", { verb, name: props.plugin.name, error: String(e) }),
+      "error",
+    );
   } finally {
     action.value = null;
   }
@@ -50,10 +56,18 @@ onMounted(refreshFound);
 
 <template>
   <div class="settings-form installable-status">
-    <span v-if="found === true" class="status-ok">Installed</span>
-    <span v-else-if="found === false" class="status-bad">Not installed</span>
+    <span v-if="found === true" class="status-ok">{{ t("installableStatus.installed") }}</span>
+    <span v-else-if="found === false" class="status-bad">{{ t("installableStatus.notInstalled") }}</span>
     <button type="button" :disabled="action !== null" @click="onToggle">
-      {{ action === "installing" ? "Installing..." : action === "uninstalling" ? "Uninstalling..." : found ? "Uninstall" : "Install" }}
+      {{
+        action === "installing"
+          ? t("installableStatus.installing")
+          : action === "uninstalling"
+            ? t("installableStatus.uninstalling")
+            : found
+              ? t("installableStatus.uninstall")
+              : t("installableStatus.install")
+      }}
     </button>
   </div>
 </template>

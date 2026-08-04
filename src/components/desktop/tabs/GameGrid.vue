@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { IconInboxOff } from "@tabler/icons-vue";
 import GameCard from "../GameCard.vue";
 import SkeletonCard from "../SkeletonCard.vue";
@@ -7,6 +8,7 @@ import { useLibraryStore } from "../../../stores/library";
 import { usePluginStore } from "../../../stores/plugins";
 import { useSkeletonCount } from "../../../composables/useSkeletonCount";
 
+const { t } = useI18n();
 const library = useLibraryStore();
 const plugins = usePluginStore();
 
@@ -28,10 +30,10 @@ const SKELETON_COUNT = useSkeletonCount(gridEl, { itemWidth: 140, itemHeight: 18
       <div v-if="library.filteredGames.length === 0" class="empty empty-state">
         <template v-if="library.games.length === 0">
           <IconInboxOff :size="32" :stroke-width="1.5" />
-          <p>Your library is empty. Add a game or scan a source plugin to get started.</p>
+          <p>{{ t("library.emptyMessage") }}</p>
         </template>
         <template v-else>
-          <p>No games match your search/filters.</p>
+          <p>{{ t("library.noMatchMessage") }}</p>
         </template>
       </div>
     </template>

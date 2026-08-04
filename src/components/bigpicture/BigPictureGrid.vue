@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from "vue";
 import { IconInboxOff } from "@tabler/icons-vue";
+import { useI18n } from "vue-i18n";
 import { useLibraryStore } from "../../stores/library";
 import { useGamepadNav } from "../../composables/useGamepadNav";
 import { suppressMouseActivity, useMouseActivity } from "../../composables/useMouseActivity";
@@ -8,6 +9,7 @@ import BigPictureTile from "./BigPictureTile.vue";
 
 const emit = defineEmits<{ close: [] }>();
 
+const { t } = useI18n();
 const library = useLibraryStore();
 
 const gridRef = ref<HTMLElement | null>(null);
@@ -124,7 +126,7 @@ watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smo
       />
       <div v-if="library.games.length === 0" class="empty bp-empty-state">
         <IconInboxOff :size="48" :stroke-width="1.5" />
-        <p>No games in library.</p>
+        <p>{{ t("bigPicture.emptyLibrary") }}</p>
       </div>
     </div>
   </div>

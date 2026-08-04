@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { computed, onMounted, ref, shallowRef } from "vue";
+import { useI18n } from "vue-i18n";
 import { usePluginStore } from "../../../stores/plugins";
 import { useThemeStore } from "../../../stores/theme";
 import { useMetadataProviderStore } from "../../../stores/metadataProviders";
@@ -22,6 +23,7 @@ import { RUN_PROGRAMS_CAPABILITY, type PluginManifest } from "../../../plugins/m
 
 type Tab = "source" | "theme" | "metadata" | "controller" | "wrapper";
 
+const { t } = useI18n();
 const plugins = usePluginStore();
 const theme = useThemeStore();
 const metadataProviders = useMetadataProviderStore();
@@ -125,43 +127,42 @@ onMounted(async () => {
 <template>
   <div class="plugin-settings settings-panel">
     <div class="plugin-settings-header">
-      <h2>Plugins</h2>
+      <h2>{{ t("pluginSettings.heading") }}</h2>
       <button type="button" @click="showAddPluginModal = true">
-        Add Plugin
+        {{ t("pluginSettings.addPlugin") }}
       </button>
     </div>
     <div class="tabs">
       <button :class="{ 'accent-active': activeTab === 'source' }" @click="activeTab = 'source'">
-        Source
+        {{ t("pluginSettings.tabs.source") }}
       </button>
       <button :class="{ 'accent-active': activeTab === 'theme' }" @click="activeTab = 'theme'">
-        Theme
+        {{ t("pluginSettings.tabs.theme") }}
       </button>
       <button
         :class="{ 'accent-active': activeTab === 'metadata' }"
         @click="activeTab = 'metadata'"
       >
-        Metadata Provider
+        {{ t("pluginSettings.tabs.metadata") }}
       </button>
       <button
         :class="{ 'accent-active': activeTab === 'controller' }"
         @click="activeTab = 'controller'"
       >
-        Controller
+        {{ t("pluginSettings.tabs.controller") }}
       </button>
       <button
         :class="{ 'accent-active': activeTab === 'wrapper' }"
         @click="activeTab = 'wrapper'"
       >
-        Wrapper
+        {{ t("pluginSettings.tabs.wrapper") }}
       </button>
     </div>
 
     <div v-if="activeTab === 'source'" class="tab-panel">
-      <p v-if="plugins.manifests.length === 0" class="empty">No plugins installed.</p>
+      <p v-if="plugins.manifests.length === 0" class="empty">{{ t("pluginSettings.noSourcePlugins") }}</p>
       <small v-else>
-        Scan order matters: on a same-titled game found by more than one source, the later
-        source's launch path/platform wins. Reorder with the arrows below.
+        {{ t("pluginSettings.scanOrderHint") }}
       </small>
       <ul v-if="plugins.manifests.length > 0" class="plugin-list">
         <li class="plugin-row" v-for="manifest in orderedSourceManifests" :key="manifest.id">
@@ -179,7 +180,7 @@ onMounted(async () => {
               class="update-badge compact-button"
               @click="pluginUpdates.applyUpdate(manifest)"
             >
-              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+              {{ t("pluginSettings.updateTo", { version: pluginUpdates.results[manifest.id]?.latestVersion }) }}
             </button>
           </label>
           <span class="row-controls">
@@ -207,8 +208,8 @@ onMounted(async () => {
             />
           </span>
           <p v-if="needsRunProgramsGrant(manifest)" class="permission-needed">
-            Permission needed: this plugin runs other programs on your system.
-            <button type="button" class="compact-button" @click="grantRunPrograms(manifest.id)">Grant</button>
+            {{ t("pluginSettings.permissionNeeded") }}
+            <button type="button" class="compact-button" @click="grantRunPrograms(manifest.id)">{{ t("pluginSettings.grant") }}</button>
           </p>
         </li>
       </ul>
@@ -218,7 +219,7 @@ onMounted(async () => {
         :disabled="plugins.scanning || plugins.loadedPlugins.length === 0"
         @click="plugins.scanAll"
       >
-        {{ plugins.scanning ? "Scanning..." : "Scan Now" }}
+        {{ plugins.scanning ? t("pluginSettings.scanning") : t("pluginSettings.scanNow") }}
       </button>
     </div>
 
@@ -240,7 +241,7 @@ onMounted(async () => {
               class="update-badge compact-button"
               @click="pluginUpdates.applyUpdate(manifest)"
             >
-              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+              {{ t("pluginSettings.updateTo", { version: pluginUpdates.results[manifest.id]?.latestVersion }) }}
             </button>
           </label>
           <button
@@ -249,7 +250,7 @@ onMounted(async () => {
             class="uninstall-theme"
             @click="theme.uninstallDataTheme(manifest.id)"
           >
-            Remove
+            {{ t("pluginSettings.removeTheme") }}
           </button>
           <component
             :is="allThemePlugins.get(manifest.id)?.settingsComponent"
@@ -260,10 +261,9 @@ onMounted(async () => {
     </div>
 
     <div v-else-if="activeTab === 'metadata'" class="tab-panel">
-      <p v-if="metadataProviders.manifests.length === 0" class="empty">No providers installed.</p>
+      <p v-if="metadataProviders.manifests.length === 0" class="empty">{{ t("pluginSettings.noMetadataProviders") }}</p>
       <small v-else>
-        Fetch order matters: for each field (description, release date, cover/background art),
-        the first enabled provider that has an answer wins. Reorder with the arrows below.
+        {{ t("pluginSettings.fetchOrderHint") }}
       </small>
       <ul v-if="metadataProviders.manifests.length > 0" class="plugin-list">
         <li class="plugin-row" v-for="manifest in orderedMetadataManifests" :key="manifest.id">
@@ -281,7 +281,7 @@ onMounted(async () => {
               class="update-badge compact-button"
               @click="pluginUpdates.applyUpdate(manifest)"
             >
-              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+              {{ t("pluginSettings.updateTo", { version: pluginUpdates.results[manifest.id]?.latestVersion }) }}
             </button>
           </label>
           <span class="row-controls">
@@ -314,7 +314,7 @@ onMounted(async () => {
     </div>
 
     <div v-else-if="activeTab === 'controller'" class="tab-panel">
-      <p v-if="controllerMapping.manifests.length === 0" class="empty">No mappings installed.</p>
+      <p v-if="controllerMapping.manifests.length === 0" class="empty">{{ t("pluginSettings.noControllerMappings") }}</p>
       <ul v-else class="plugin-list">
         <li class="plugin-row" v-for="manifest in controllerMapping.manifests" :key="manifest.id">
           <label>
@@ -332,7 +332,7 @@ onMounted(async () => {
               class="update-badge compact-button"
               @click="pluginUpdates.applyUpdate(manifest)"
             >
-              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+              {{ t("pluginSettings.updateTo", { version: pluginUpdates.results[manifest.id]?.latestVersion }) }}
             </button>
           </label>
           <component
@@ -344,7 +344,7 @@ onMounted(async () => {
     </div>
 
     <div v-else class="tab-panel">
-      <p v-if="wrapperPlugins.manifests.length === 0" class="empty">No wrapper plugins installed.</p>
+      <p v-if="wrapperPlugins.manifests.length === 0" class="empty">{{ t("pluginSettings.noWrapperPlugins") }}</p>
       <ul v-else class="plugin-list">
         <li class="plugin-row" v-for="manifest in wrapperPlugins.manifests" :key="manifest.id">
           <label>
@@ -361,7 +361,7 @@ onMounted(async () => {
               class="update-badge compact-button"
               @click="pluginUpdates.applyUpdate(manifest)"
             >
-              Update to v{{ pluginUpdates.results[manifest.id]?.latestVersion }}
+              {{ t("pluginSettings.updateTo", { version: pluginUpdates.results[manifest.id]?.latestVersion }) }}
             </button>
           </label>
           <component
@@ -369,8 +369,8 @@ onMounted(async () => {
             v-if="allWrapperPlugins.get(manifest.id)?.settingsComponent"
           />
           <p v-if="needsRunProgramsGrant(manifest)" class="permission-needed">
-            Permission needed: this plugin runs other programs on your system.
-            <button type="button" class="compact-button" @click="grantRunPrograms(manifest.id)">Grant</button>
+            {{ t("pluginSettings.permissionNeeded") }}
+            <button type="button" class="compact-button" @click="grantRunPrograms(manifest.id)">{{ t("pluginSettings.grant") }}</button>
           </p>
         </li>
       </ul>
@@ -378,8 +378,8 @@ onMounted(async () => {
 
     <AddPlugin
       :open="showAddPluginModal"
-      title="Add Plugin"
-      label="Plugin manifest URL"
+      :title="t('pluginSettings.addPlugin')"
+      :label="t('pluginSettings.manifestUrlLabel')"
       placeholder="https://.../plugin.json"
       :installing="pluginInstall.fetchingPreview"
       :on-install="pluginInstall.previewInstall"

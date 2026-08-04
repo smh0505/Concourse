@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   IconCopy,
@@ -20,6 +21,7 @@ const emit = defineEmits<{
   bigPicture: [];
 }>();
 
+const { t } = useI18n();
 const appWindow = getCurrentWindow();
 const maximized = ref(false);
 
@@ -51,30 +53,30 @@ onMounted(async () => {
     <div class="titlebar-left">
       <button
         class="titlebar-button sidebar-toggle"
-        :title="sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'"
+        :title="sidebarCollapsed ? t('titleBar.showSidebar') : t('titleBar.hideSidebar')"
         @click="emit('toggleSidebar')"
       >
         <IconLayoutSidebarLeftExpand v-if="sidebarCollapsed" :size="17" :stroke-width="1.75" />
         <IconLayoutSidebarLeftCollapse v-else :size="17" :stroke-width="1.75" />
       </button>
-      <button class="titlebar-button" title="Big Picture Mode" @click="emit('bigPicture')">
+      <button class="titlebar-button" :title="t('titleBar.bigPictureMode')" @click="emit('bigPicture')">
         <IconDeviceTv :size="17" :stroke-width="1.75" />
       </button>
-      <span class="titlebar-title" data-tauri-drag-region>Game Library</span>
+      <span class="titlebar-title" data-tauri-drag-region>{{ t("titleBar.appName") }}</span>
     </div>
     <div class="titlebar-controls">
-      <button class="titlebar-button" title="Minimize" @click="onMinimize">
+      <button class="titlebar-button" :title="t('titleBar.minimize')" @click="onMinimize">
         <IconMinus :size="16" :stroke-width="1.75" />
       </button>
       <button
         class="titlebar-button"
-        :title="maximized ? 'Restore' : 'Maximize'"
+        :title="maximized ? t('titleBar.restore') : t('titleBar.maximize')"
         @click="onToggleMaximize"
       >
         <IconCopy v-if="maximized" :size="15" :stroke-width="1.75" />
         <IconSquare v-else :size="14" :stroke-width="1.75" />
       </button>
-      <button class="titlebar-button close" title="Close" @click="onClose">
+      <button class="titlebar-button close" :title="t('titleBar.close')" @click="onClose">
         <IconX :size="16" :stroke-width="1.75" />
       </button>
     </div>

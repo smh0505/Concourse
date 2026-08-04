@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import { IconChartBar, IconClock, IconDeviceGamepad2 } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../../stores/library";
 import { useStatsStore } from "../../../stores/stats";
 import type { Game } from "../../../db";
 
+const { t } = useI18n();
 const library = useLibraryStore();
 const stats = useStatsStore();
 
@@ -50,20 +52,20 @@ function hoursPlayed(game: Game) {
         <IconDeviceGamepad2 :size="22" :stroke-width="1.75" />
         <div>
           <div class="summary-value">{{ totalGames }}</div>
-          <div class="summary-label">Games in library</div>
+          <div class="summary-label">{{ t("stats.gamesInLibrary") }}</div>
         </div>
       </div>
       <div class="summary-card">
         <IconClock :size="22" :stroke-width="1.75" />
         <div>
           <div class="summary-value">{{ totalHours }}</div>
-          <div class="summary-label">Hours played</div>
+          <div class="summary-label">{{ t("stats.hoursPlayed") }}</div>
         </div>
       </div>
     </div>
 
     <section v-if="mostPlayed.length > 0" class="section">
-      <h3><IconChartBar :size="16" :stroke-width="1.75" /> Most Played</h3>
+      <h3><IconChartBar :size="16" :stroke-width="1.75" /> {{ t("stats.mostPlayed") }}</h3>
       <div class="stat-list">
         <div
           v-for="game in mostPlayed"
@@ -74,13 +76,13 @@ function hoursPlayed(game: Game) {
         >
           <div class="scrim" />
           <div class="stat-row-title">{{ game.title }}</div>
-          <div class="stat-row-subtitle">{{ hoursPlayed(game) }} hrs</div>
+          <div class="stat-row-subtitle">{{ t("stats.hoursSuffix", { hours: hoursPlayed(game) }) }}</div>
         </div>
       </div>
     </section>
 
     <section v-if="recentlyPlayed.length > 0" class="section">
-      <h3><IconClock :size="16" :stroke-width="1.75" /> Recently Played</h3>
+      <h3><IconClock :size="16" :stroke-width="1.75" /> {{ t("stats.recentlyPlayed") }}</h3>
       <div class="stat-list">
         <div
           v-for="game in recentlyPlayed"
@@ -97,7 +99,7 @@ function hoursPlayed(game: Game) {
 
     <div v-if="mostPlayed.length === 0 && recentlyPlayed.length === 0" class="empty empty-state">
       <IconChartBar :size="32" :stroke-width="1.5" />
-      <p>Play a game to see stats here.</p>
+      <p>{{ t("stats.emptyState") }}</p>
     </div>
   </div>
 </template>

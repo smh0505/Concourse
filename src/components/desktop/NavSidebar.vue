@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { IconDeviceGamepad, IconPlus } from "@tabler/icons-vue";
+
+const { t } = useI18n();
 
 export type AppView = "library" | "stats" | "tags" | "collections" | "settings" | "uiTest";
 
@@ -24,12 +27,12 @@ const emit = defineEmits<{
   <nav class="sidebar">
     <span v-if="gamepadConnected" class="gamepad-badge" :title="gamepadName ?? ''">
       <IconDeviceGamepad :size="16" :stroke-width="1.75" />
-      Controller connected
+      {{ t("nav.controllerConnected") }}
     </span>
 
     <button class="add-game-button" @click="emit('addGame')">
       <IconPlus :size="16" :stroke-width="1.75" />
-      Add Game
+      {{ t("nav.addGame") }}
     </button>
 
     <div class="nav-items">
@@ -38,35 +41,35 @@ const emit = defineEmits<{
         :class="{ 'accent-active': activeView === 'library' }"
         @click="emit('update:activeView', 'library')"
       >
-        Library
+        {{ t("nav.library") }}
       </button>
       <button
         class="nav-item"
         :class="{ 'accent-active': activeView === 'stats' }"
         @click="emit('update:activeView', 'stats')"
       >
-        Stats
+        {{ t("nav.stats") }}
       </button>
       <button
         class="nav-item"
         :class="{ 'accent-active': activeView === 'tags' }"
         @click="emit('update:activeView', 'tags')"
       >
-        Tags
+        {{ t("nav.tags") }}
       </button>
       <button
         class="nav-item"
         :class="{ 'accent-active': activeView === 'collections' }"
         @click="emit('update:activeView', 'collections')"
       >
-        Collections
+        {{ t("nav.collections") }}
       </button>
       <button
         class="nav-item"
         :class="{ 'accent-active': activeView === 'settings' }"
         @click="emit('update:activeView', 'settings')"
       >
-        Settings
+        {{ t("nav.settings") }}
       </button>
       <button
         v-if="isDev"
@@ -74,7 +77,7 @@ const emit = defineEmits<{
         :class="{ 'accent-active': activeView === 'uiTest' }"
         @click="emit('update:activeView', 'uiTest')"
       >
-        UI Test
+        {{ t("nav.uiTest") }}
       </button>
     </div>
   </nav>

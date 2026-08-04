@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   IconEdit,
   IconInfoCircle,
@@ -15,6 +16,7 @@ import type { Game } from "../../db";
 
 const props = defineProps<{ game: Game }>();
 
+const { t } = useI18n();
 const library = useLibraryStore();
 const activeCardVisual = useActiveCardVisual();
 
@@ -39,21 +41,21 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
       </div>
 
       <div class="footer icon-action-row">
-        <button class="play" title="Play" @click="library.launchGame(game)">
+        <button class="play" :title="t('gameCard.play')" @click="library.launchGame(game)">
           <IconPlayerPlay :size="15" :stroke-width="1.75" />
         </button>
         <button
           class="fetch-metadata"
-          title="Fetch Metadata"
+          :title="t('gameCard.fetchMetadata')"
           :disabled="fetchingMetadata"
           @click="library.fetchMetadata(game)"
         >
           <IconInfoCircle :size="15" :stroke-width="1.75" />
         </button>
-        <button class="edit" title="Edit" @click="library.openDetail(game)">
+        <button class="edit" :title="t('gameCard.edit')" @click="library.openDetail(game)">
           <IconEdit :size="15" :stroke-width="1.75" />
         </button>
-        <button class="remove" title="Remove" @click="library.deleteGame(game.id)">
+        <button class="remove" :title="t('gameCard.remove')" @click="library.deleteGame(game.id)">
           <IconTrash :size="15" :stroke-width="1.75" />
         </button>
       </div>
@@ -70,7 +72,7 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
         :style="{ top: `${balloonAnchor.top}px`, left: `${balloonAnchor.left}px` }"
       >
         <div class="balloon-title">{{ game.title }}</div>
-        <div class="balloon-playtime">{{ playtimeMinutes }} min played</div>
+        <div class="balloon-playtime">{{ t("gameCard.minutesPlayed", { minutes: playtimeMinutes }) }}</div>
       </div>
     </Transition>
   </Teleport>

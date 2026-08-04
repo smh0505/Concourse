@@ -371,12 +371,15 @@ available to test against).
   removed the same watcher's now-redundant update-check calls (`PluginSettings.vue`'s own
   mount already covers it). Update checks now fire at three moments, not four
 
-## Milestone 21 — Internationalization & Offline Translation (scoped, not started)
-Design-only pass; no code yet. See devlog for the model/library comparison behind this scoping.
-- [ ] UI string localization via `vue-i18n`, locale JSON files, no external service
+## Milestone 21 — Internationalization & Offline Translation
+- [x] UI string localization via `vue-i18n`, locale JSON files, no external service - every
+  component converted, `en.json` is the only locale so far, language picker added to Settings
 - [ ] New `translation` plugin kind wrapping a local LLM (llama.cpp + a user-selected GGUF model)
   for translating game descriptions/metadata - keeps this optional/heavy dependency out of core
 - [ ] Settings UI: model picker (list of supported models with size/quality tradeoffs), download-
   on-first-use (no model bundled in the installer)
 - [ ] Research spike: confirm a Rust llama.cpp binding (e.g. `llama-cpp-2`) covers Windows target
   before committing to the sidecar approach
+
+See devlog for the model/library comparison behind translation's scoping, and the vue-i18n
+conversion's own implementation detail.

@@ -1,56 +1,55 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { useToastStore } from "../../../stores/toasts";
 
+const { t } = useI18n();
 const toasts = useToastStore();
 
 function testActionToast() {
   let id = -1;
-  id = toasts.pushAction("Test actionable toast - does this look right?", [
+  id = toasts.pushAction(t("uiTest.actionToastMessage"), [
     {
-      label: "Confirm",
+      label: t("uiTest.confirm"),
       onClick: () => {
         toasts.dismiss(id);
-        toasts.push("Confirmed!", "success");
+        toasts.push(t("uiTest.confirmedMessage"), "success");
       },
     },
-    { label: "Dismiss", onClick: () => toasts.dismiss(id) },
+    { label: t("uiTest.dismiss"), onClick: () => toasts.dismiss(id) },
   ]);
 }
 
 function testInfoToast() {
-  toasts.push("This is an info toast.", "info");
+  toasts.push(t("uiTest.infoToastMessage"), "info");
 }
 
 function testSuccessToast() {
-  toasts.push("This is a success toast.", "success");
+  toasts.push(t("uiTest.successToastMessage"), "success");
 }
 
 function testErrorToast() {
-  toasts.push("This is an error toast.", "error");
+  toasts.push(t("uiTest.errorToastMessage"), "error");
 }
 
 function testLongMessageToast() {
-  toasts.push(
-    "This is a much longer toast message, to check wrapping and sizing behavior when the " +
-      "text runs well past a single short line.",
-    "info",
-  );
+  toasts.push(t("uiTest.longToastMessage"), "info");
 }
 </script>
 
 <template>
   <div class="ui-test settings-panel">
-    <h2>UI Test</h2>
+    <h2>{{ t("uiTest.heading") }}</h2>
     <small>
-      Manual triggers for UI states that are hard to reach otherwise (rare toasts, edge-case
-      banners, etc.) - not user-facing functionality.
+      {{ t("uiTest.description") }}
     </small>
     <div class="test-buttons">
-      <button type="button" @click="testInfoToast">Info toast</button>
-      <button type="button" @click="testSuccessToast">Success toast</button>
-      <button type="button" @click="testErrorToast">Error toast</button>
-      <button type="button" @click="testLongMessageToast">Long-message toast</button>
-      <button type="button" @click="testActionToast">Action toast</button>
+      <button type="button" @click="testInfoToast">{{ t("uiTest.infoToastButton") }}</button>
+      <button type="button" @click="testSuccessToast">{{ t("uiTest.successToastButton") }}</button>
+      <button type="button" @click="testErrorToast">{{ t("uiTest.errorToastButton") }}</button>
+      <button type="button" @click="testLongMessageToast">
+        {{ t("uiTest.longToastButton") }}
+      </button>
+      <button type="button" @click="testActionToast">{{ t("uiTest.actionToastButton") }}</button>
     </div>
   </div>
 </template>

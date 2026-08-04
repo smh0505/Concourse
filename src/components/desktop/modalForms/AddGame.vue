@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useLibraryStore } from "../../../stores/library";
 import BaseModal from "../BaseModal.vue";
 
@@ -11,6 +12,7 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+const { t } = useI18n();
 const library = useLibraryStore();
 
 const title = ref("");
@@ -19,7 +21,7 @@ const error = ref("");
 
 async function onSubmit() {
   if (!title.value.trim() || !executablePath.value.trim()) {
-    error.value = "Title and executable path are required.";
+    error.value = t("addGame.validationError");
     return;
   }
   error.value = "";
@@ -31,23 +33,23 @@ async function onSubmit() {
 </script>
 
 <template>
-  <BaseModal :open="open" title="Add Game" max-width="380px" @close="emit('close')">
+  <BaseModal :open="open" :title="t('addGame.title')" max-width="380px" @close="emit('close')">
     <template #body>
       <form class="add-game-form" @submit.prevent="onSubmit">
         <label>
-          Title
-          <input v-model="title" placeholder="Title" />
+          {{ t("addGame.titleLabel") }}
+          <input v-model="title" :placeholder="t('addGame.titleLabel')" />
         </label>
         <label>
-          Executable path
-          <input v-model="executablePath" placeholder="Executable path" />
+          {{ t("addGame.executablePathLabel") }}
+          <input v-model="executablePath" :placeholder="t('addGame.executablePathLabel')" />
         </label>
       </form>
       <p v-if="error" class="error-text">{{ error }}</p>
     </template>
     <template #footer>
-      <button type="button" @click="emit('close')">Cancel</button>
-      <button type="button" @click="onSubmit">Add Game</button>
+      <button type="button" @click="emit('close')">{{ t("common.cancel") }}</button>
+      <button type="button" @click="onSubmit">{{ t("addGame.submit") }}</button>
     </template>
   </BaseModal>
 </template>

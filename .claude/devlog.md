@@ -3142,3 +3142,65 @@ rather than starting implementation this session - this is a multi-part feature 
 kind, a model-download manager, a native llama.cpp integration, plus the separate vue-i18n UI
 work) better suited to its own dedicated implementation pass.
 
+**Follow-up session: UI i18n implemented (translation-model half still not started).** User
+chose to start Milestone 21 with the smaller, self-contained half - vue-i18n for UI strings -
+and to fully convert every component in one pass rather than a partial slice, closing that
+checklist item outright. Went through `EnterPlanMode` first since the scope (touch nearly every
+`.vue` file) and one open architecture question (how the eventual translation feature should be
+built) both warranted user sign-off before writing code; `AskUserQuestion` resolved two things
+up front - start with UI i18n vs. the translation feature first, and (for later) confirmed the
+translation feature should be a built-in host-native Rust module (like `sgdb.rs`/`igdb.rs`
+originally were) rather than a new WASM-sandboxed plugin kind, since llama.cpp is a large native
+inference dependency that doesn't fit the wasmtime Component Model sandbox cleanly.
+
+Added `vue-i18n@9` (Vue 3/Composition API line). `src/i18n/index.ts` exports a `createI18n`
+instance (`legacy: false`, `fallbackLocale: "en"`) and a `messages` map, wired into `main.ts` via
+`.use(i18n)` alongside the existing `.use(createPinia())`. `src/i18n/locales/en.json` holds every
+string, namespaced by feature area (`common`, `gameDetail`, `nav`, `stats`, `pluginSettings`,
+etc.) rather than one flat list, so keys stay traceable back to their component. `i18n.global.t`
+(not the `useI18n()` composable, which only works inside a component's own `setup()`) is the
+form used anywhere outside a component - store actions building toast messages, for instance.
+
+**Persisted locale setting** follows `stores/appSettings.ts`'s existing
+`autoLaunchBigPicture`/`AUTO_LAUNCH_BIG_PICTURE_SETTING` pattern exactly: a new `locale` ref +
+`LOCALE_SETTING = "locale"` key through the same `settingsRepo.get`/`set`, defaulting to `"en"`.
+`setLocale()` also assigns `i18n.global.locale.value` directly so a language switch takes effect
+immediately, no reload needed. `AppSettings.vue` gained a `<select>` language picker built from
+`Object.keys(messages)` in `src/i18n/index.ts` (currently just `"en"`/"English") so adding a
+second locale file later is a one-file change, not a `AppSettings.vue` edit.
+
+**Full conversion, ~26 components.** Given the mechanical, pattern-following nature of the work
+once the infra and one reference conversion (`AppSettings.vue`, done first by hand) existed,
+split the remaining components across 4 parallel background agents (~6 files each) rather than
+converting serially - each agent converted its own files' `<script setup>`/template strings to
+`t(...)`/`{{ t(...) }}` calls but was told *not* to touch `en.json` directly (concurrent edits to
+one shared JSON file across 4 agents would conflict); instead each reported its new key→English-
+string mappings in its final response, merged into `en.json` by hand afterward in one pass. This
+avoided the merge-conflict problem entirely while still parallelizing the actual file-editing
+work. `GameDetail.vue` (the most heavily-modified file from the prior UI-polish session) and
+`CandidatePicker.vue` were converted by hand directly instead of delegating, given their existing
+complexity/context already in hand.
+
+Two real gaps caught in a post-conversion sanity pass (`grep`-ing for capitalized words outside
+`t(...)`/`$t(...)` calls, per the plan's own verification step): `GameDetail.vue`'s edit-form
+Title and Executable path inputs still had literal `placeholder="Title"`/`placeholder="Executable
+path"` - the earlier UI-polish session had dropped their `<label>` wrappers in favor of
+placeholder-only fields, and the initial conversion pass covered every remaining `<label>` text
+but missed these two now-bare placeholders since they read like ordinary attribute values, not
+label text. Fixed by routing them through new `gameDetail.titleLabel`/`executablePathLabel` keys.
+
+Deliberately left untranslated (matches the plan's explicit exclusions): game/tag/collection
+names and other data values, file paths, the `release_date` field's `YYYY-MM-DD` placeholder
+(a date-format pattern, not language content, same precedent as `addPlugin`'s literal
+`https://.../plugin.json` example placeholder), `console.error`/`console.log` text, and code
+comments. `bun run build` (`vue-tsc --noEmit` + `vite build`) stayed clean through both the
+initial full-conversion pass and the two-key gap fix. No `bunx tauri dev` GUI verification
+available in this environment, same limitation as every UI change in prior sessions - only
+English renders today regardless (one locale, `en`), so a visual check wouldn't have caught a
+translation-content bug anyway, only a broken `t()` call, which `vue-tsc`/build already guard
+against structurally (an unset key just falls back to rendering the key path itself, visibly
+wrong rather than silently wrong).
+
+Translation-model half (new `translation`/host-native Rust module, llama.cpp, model
+picker/download-on-first-use) remains unstarted - a separate, later implementation pass.
+

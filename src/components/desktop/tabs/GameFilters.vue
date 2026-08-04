@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { IconLayoutGrid, IconList } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../../stores/library";
 import { useTagsStore } from "../../../stores/tags";
 import { useCollectionsStore } from "../../../stores/collections";
 
+const { t } = useI18n();
 const library = useLibraryStore();
 const tags = useTagsStore();
 const collections = useCollectionsStore();
@@ -20,10 +22,10 @@ function toggleViewMode() {
        starts, since it can be scrolled to sit right behind this bar. -->
   <div class="filters" data-scroll-header>
     <div class="search-row">
-      <input v-model="library.search" class="search" placeholder="Search by title..." />
+      <input v-model="library.search" class="search" :placeholder="t('filters.searchPlaceholder')" />
       <button
         class="view-toggle-button"
-        :title="library.viewMode === 'grid' ? 'Switch to list view' : 'Switch to grid view'"
+        :title="library.viewMode === 'grid' ? t('filters.switchToListView') : t('filters.switchToGridView')"
         @click="toggleViewMode"
       >
         <IconList v-if="library.viewMode === 'grid'" :size="18" :stroke-width="1.75" />

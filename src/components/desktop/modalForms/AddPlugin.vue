@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import BaseModal from "../BaseModal.vue";
 import { usePluginInstallStore } from "../../../stores/pluginInstall";
 
@@ -24,6 +25,7 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ close: [] }>();
 
+const { t } = useI18n();
 const pluginInstall = usePluginInstallStore();
 const url = ref("");
 
@@ -68,7 +70,7 @@ async function installFromRegistry(manifestUrl: string, wasmSha256: string) {
     <template #body>
       <div v-if="pluginInstall.registryEntries.length > 0" class="registry-section">
         <p class="registry-title">
-          Curated plugins (reviewed, hash-pinned - see
+          {{ t("addPlugin.curatedIntro") }}
           <a href="https://github.com/smh0505/concourse-plugin-registry" target="_blank" rel="noopener">
             concourse-plugin-registry</a>)
         </p>
@@ -82,14 +84,14 @@ async function installFromRegistry(manifestUrl: string, wasmSha256: string) {
               :disabled="installing"
               @click="installFromRegistry(entry.manifestUrl, entry.wasmSha256)"
             >
-              Install
+              {{ t("addPlugin.install") }}
             </button>
           </li>
         </ul>
-        <p class="registry-divider">or paste a manifest URL directly:</p>
+        <p class="registry-divider">{{ t("addPlugin.pasteManifestUrl") }}</p>
       </div>
       <p v-else-if="pluginInstall.loadingRegistry" class="registry-loading">
-        Loading curated plugins...
+        {{ t("addPlugin.loadingCurated") }}
       </p>
 
       <!-- No submit button inside - Enter still submits natively via this form's own submit
@@ -103,9 +105,9 @@ async function installFromRegistry(manifestUrl: string, wasmSha256: string) {
       </form>
     </template>
     <template #footer>
-      <button type="button" @click="emit('close')">Cancel</button>
+      <button type="button" @click="emit('close')">{{ t("common.cancel") }}</button>
       <button type="button" :disabled="installing || !url.trim()" @click="onSubmit">
-        {{ installing ? "Installing..." : "Install" }}
+        {{ installing ? t("addPlugin.installing") : t("addPlugin.install") }}
       </button>
     </template>
   </BaseModal>

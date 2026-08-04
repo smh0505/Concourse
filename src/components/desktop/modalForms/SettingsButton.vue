@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { settings as settingsRepo } from "../../../db";
 import type { SettingsSchemaField } from "../../../plugins/manifest";
 import BaseModal from "../BaseModal.vue";
+
+const { t } = useI18n();
 
 // Generic settings button for any WASM plugin that declares a settingsSchema in its
 // plugin.json (e.g. an API key) - WASM plugins have no other way to collect user-typed config,
@@ -45,7 +48,9 @@ onMounted(loadValues);
 </script>
 
 <template>
-  <button type="button" class="settings-trigger" @click="open = true">Settings</button>
+  <button type="button" class="settings-trigger" @click="open = true">
+    {{ t("common.settings") }}
+  </button>
   <BaseModal :open="open" :title="title" max-width="380px" @close="open = false">
     <template #body>
       <div class="settings-fields">
@@ -56,8 +61,8 @@ onMounted(loadValues);
       </div>
     </template>
     <template #footer>
-      <button type="button" @click="open = false">Cancel</button>
-      <button type="button" @click="onSubmit">Save</button>
+      <button type="button" @click="open = false">{{ t("common.cancel") }}</button>
+      <button type="button" @click="onSubmit">{{ t("common.save") }}</button>
     </template>
   </BaseModal>
 </template>

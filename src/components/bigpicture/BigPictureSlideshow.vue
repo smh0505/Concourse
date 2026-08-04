@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { IconInboxOff } from "@tabler/icons-vue";
 import { useLibraryStore } from "../../stores/library";
 import { useGamepadNav } from "../../composables/useGamepadNav";
 import { CardVisualRenderer } from "../../theme/cardVisualAst";
 import { useActiveCardVisual } from "../../theme/cardVisualRegistry";
 
+const { t } = useI18n();
 const emit = defineEmits<{ close: [] }>();
 
 const library = useLibraryStore();
@@ -89,11 +91,11 @@ function coverStyle(offset: number) {
 
     <div v-if="focusedGame" class="info">
       <div class="info-title">{{ focusedGame.title }}</div>
-      <div class="info-playtime">{{ playtimeMinutes }} min played</div>
+      <div class="info-playtime">{{ t("slideshow.minPlayed", { minutes: playtimeMinutes }) }}</div>
     </div>
     <div v-else class="empty bp-empty-state">
       <IconInboxOff :size="48" :stroke-width="1.5" />
-      <p>No games in library.</p>
+      <p>{{ t("slideshow.noGames") }}</p>
     </div>
 
     <div class="cover-strip">

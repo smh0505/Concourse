@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   IconEdit,
   IconInfoCircle,
@@ -12,6 +13,7 @@ import type { Game } from "../../db";
 
 const props = defineProps<{ game: Game }>();
 
+const { t } = useI18n();
 const library = useLibraryStore();
 
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
@@ -35,27 +37,27 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
         <p v-if="game.description" class="description">{{ game.description }}</p>
         <div class="meta">
           <span v-if="game.release_date">{{ game.release_date }}</span>
-          <span>{{ Math.round(game.total_playtime / 60) }} min played</span>
+          <span>{{ t("gameCard.minutesPlayed", { minutes: Math.round(game.total_playtime / 60) }) }}</span>
         </div>
       </div>
     </div>
 
     <div class="actions icon-action-row">
-      <button class="play" title="Play" @click="library.launchGame(game)">
+      <button class="play" :title="t('gameCard.play')" @click="library.launchGame(game)">
         <IconPlayerPlay :size="15" :stroke-width="1.75" />
       </button>
       <button
         class="fetch-metadata"
-        title="Fetch Metadata"
+        :title="t('gameCard.fetchMetadata')"
         :disabled="fetchingMetadata"
         @click="library.fetchMetadata(game)"
       >
         <IconInfoCircle :size="15" :stroke-width="1.75" />
       </button>
-      <button class="edit" title="Edit" @click="library.openDetail(game)">
+      <button class="edit" :title="t('gameCard.edit')" @click="library.openDetail(game)">
         <IconEdit :size="15" :stroke-width="1.75" />
       </button>
-      <button class="remove" title="Remove" @click="library.deleteGame(game.id)">
+      <button class="remove" :title="t('gameCard.remove')" @click="library.deleteGame(game.id)">
         <IconTrash :size="15" :stroke-width="1.75" />
       </button>
     </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { IconArrowLeft, IconDeviceGamepad2, IconInfoCircle, IconPlayerPlay } from "@tabler/icons-vue";
 import { siSteam, siGogdotcom, siEpicgames } from "simple-icons";
 import { marked } from "marked";
@@ -11,6 +12,7 @@ import { useWrapperPluginStore, type WrapperProfile } from "../../stores/wrapper
 import { useImageBrightness } from "../../composables/useImageBrightness";
 import type { Game, GameEditFields } from "../../db";
 
+const { t } = useI18n();
 const library = useLibraryStore();
 const tags = useTagsStore();
 const collections = useCollectionsStore();
@@ -132,7 +134,7 @@ function iconForPlatform(platform: string | null | undefined): PlatformIcon {
     case "epic":
       return { kind: "brand", path: siEpicgames.path, title: siEpicgames.title };
     default:
-      return { kind: "generic", title: "Unknown platform" };
+      return { kind: "generic", title: t("gameDetail.unknownPlatform") };
   }
 }
 
@@ -189,7 +191,7 @@ function cancelEdit() {
 
 async function onSave() {
   if (!form.value.title.trim() || !form.value.executable_path.trim()) {
-    error.value = "Title and executable path are required.";
+    error.value = t("gameDetail.titleAndPathRequired");
     return;
   }
   await library.saveEdit({
@@ -229,7 +231,7 @@ async function onDelete() {
         <div class="sticky-side" :class="{ 'reverse-band': wantsReverse }">
           <button class="back-button" @click="library.closeDetail()">
             <IconArrowLeft :size="16" :stroke-width="1.75" />
-            Back to Library
+            {{ t("gameDetail.backToLibrary") }}
           </button>
 
           <div class="cover-wrap">
@@ -245,7 +247,7 @@ async function onDelete() {
           </template>
           <template v-else>
             <div class="tags-section">
-              <span>Tags</span>
+              <span>{{ t("gameDetail.tags") }}</span>
               <div class="tags" v-if="gameTags.length">
                 <span class="tag-pill tag" v-for="tag in gameTags" :key="tag">
                   {{ tag }}
@@ -253,12 +255,12 @@ async function onDelete() {
                 </span>
               </div>
               <form class="add-tag-form" @submit.prevent="onAddTag">
-                <input v-model="newTag" placeholder="Add tag" />
+                <input v-model="newTag" :placeholder="t('gameDetail.addTag')" />
                 <button type="submit">+</button>
               </form>
             </div>
             <div class="tags-section">
-              <span>Collections</span>
+              <span>{{ t("gameDetail.collections") }}</span>
               <div class="tags" v-if="gameCollections.length">
                 <span class="tag-pill tag" v-for="name in gameCollections" :key="name">
                   {{ name }}
@@ -266,7 +268,7 @@ async function onDelete() {
                 </span>
               </div>
               <form class="add-tag-form" @submit.prevent="onAddCollection">
-                <input v-model="newCollection" placeholder="Add collection" />
+                <input v-model="newCollection" :placeholder="t('gameDetail.addCollection')" />
                 <button type="submit">+</button>
               </form>
             </div>
@@ -280,7 +282,7 @@ async function onDelete() {
               <span
                 class="platform-tag"
                 :class="{ 'text-reverse': wantsReverse }"
-                :title="game.platform || 'Unknown platform'"
+                :title="game.platform || t('gameDetail.unknownPlatform')"
               >
                 <svg
                   v-if="platformIcon.kind === 'brand'"
@@ -295,18 +297,18 @@ async function onDelete() {
                 <IconDeviceGamepad2 v-else class="platform-icon" :title="platformIcon.title" :stroke-width="1.75" />
               </span>
               <span v-if="game.release_date">{{ game.release_date }}</span>
-              <span>{{ playtimeMinutes }} min played</span>
+              <span>{{ t("gameDetail.minPlayed", { minutes: playtimeMinutes }) }}</span>
             </div>
             <div v-if="game.description" class="description" v-html="descriptionHtml"></div>
           </template>
 
           <form v-else class="edit-form" @submit.prevent="onSave">
-            <input v-model="form.title" placeholder="Title" class="title-input" />
+            <input v-model="form.title" :placeholder="t('gameDetail.titleLabel')" class="title-input" />
             <div class="field-row">
               <span
                 class="platform-field"
                 :class="{ 'text-reverse': wantsReverse }"
-                :title="form.platform || 'Unknown platform'"
+                :title="form.platform || t('gameDetail.unknownPlatform')"
               >
                 <svg
                   v-if="platformIcon.kind === 'brand'"
@@ -320,27 +322,27 @@ async function onDelete() {
                 </svg>
                 <IconDeviceGamepad2 v-else class="platform-icon" :title="platformIcon.title" :stroke-width="1.75" />
               </span>
-              <input v-model="form.executable_path" placeholder="Executable path" readonly />
+              <input v-model="form.executable_path" :placeholder="t('gameDetail.executablePathLabel')" readonly />
             </div>
             <label>
-              Cover art URL
+              {{ t("gameDetail.coverArtUrl") }}
               <input v-model="form.cover_art_url" />
             </label>
             <label>
-              Background art URL
+              {{ t("gameDetail.backgroundArtUrl") }}
               <div class="input-with-button">
                 <input v-model="form.background_art_url" />
                 <button type="button" :disabled="fetchingBackground" @click="onFetchBackgroundArt">
-                  {{ fetchingBackground ? "..." : "Fetch" }}
+                  {{ fetchingBackground ? "..." : t("gameDetail.fetch") }}
                 </button>
               </div>
             </label>
             <label>
-              Release date
+              {{ t("gameDetail.releaseDate") }}
               <input v-model="form.release_date" placeholder="YYYY-MM-DD" readonly />
             </label>
             <label>
-              Description (Markdown supported)
+              {{ t("gameDetail.descriptionLabel") }}
               <textarea v-model="form.description" rows="4"></textarea>
             </label>
             <label class="checkbox-label">
@@ -349,12 +351,12 @@ async function onDelete() {
                 :checked="form.skip_dedup === 1"
                 @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
               />
-              Keep separate from plugin scans (don't merge/dedup this entry)
+              {{ t("gameDetail.skipDedup") }}
             </label>
             <label>
-              Compatibility wrapper profile
+              {{ t("gameDetail.wrapperProfile") }}
               <select v-model="wrapperSelection">
-                <option value="">None</option>
+                <option value="">{{ t("gameDetail.wrapperNone") }}</option>
                 <optgroup
                   v-for="[pluginId, profiles] in profilesByPlugin"
                   :key="pluginId"
@@ -366,7 +368,7 @@ async function onDelete() {
                 </optgroup>
               </select>
               <small v-if="wrapperPlugins.profiles.length === 0">
-                No profiles found - install and enable a compatibility wrapper plugin in Settings first.
+                {{ t("gameDetail.noWrapperProfiles") }}
               </small>
             </label>
             <p v-if="error" class="error-text">{{ error }}</p>
@@ -379,18 +381,18 @@ async function onDelete() {
       <template v-if="!editing">
         <button class="play" @click="library.launchGame(game)">
           <IconPlayerPlay :size="16" :stroke-width="1.75" />
-          Play
+          {{ t("gameDetail.play") }}
         </button>
-        <button @click="startEdit">Edit</button>
-        <button class="remove" @click="onDelete">Remove</button>
+        <button @click="startEdit">{{ t("gameDetail.edit") }}</button>
+        <button class="remove" @click="onDelete">{{ t("gameDetail.remove") }}</button>
       </template>
       <template v-else>
-        <button type="button" @click="cancelEdit">Cancel</button>
+        <button type="button" @click="cancelEdit">{{ t("common.cancel") }}</button>
         <button type="button" :disabled="fetchingMetadata" @click="library.fetchMetadata(game)">
           <IconInfoCircle :size="16" :stroke-width="1.75" />
-          {{ fetchingMetadata ? "Fetching..." : "Fetch Metadata" }}
+          {{ fetchingMetadata ? t("gameDetail.fetching") : t("gameDetail.fetchMetadata") }}
         </button>
-        <button type="button" @click="onSave">Save</button>
+        <button type="button" @click="onSave">{{ t("common.save") }}</button>
       </template>
     </div>
   </div>

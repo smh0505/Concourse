@@ -1,0 +1,200 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "back": "Back",
+    "loading": "Loading...",
+    "unknown": "Unknown",
+    "continue": "Continue",
+    "settings": "Settings",
+    "delete": "Delete"
+  },
+  "settings": {
+    "autoLaunchBigPicture": "Launch into Big Picture Mode on startup",
+    "language": "Language"
+  },
+  "app": {
+    "switchToSlideshow": "Switch to slideshow view",
+    "switchToGrid": "Switch to grid view",
+    "exit": "Exit"
+  },
+  "gameDetail": {
+    "unknownPlatform": "Unknown platform",
+    "titleAndPathRequired": "Title and executable path are required.",
+    "backToLibrary": "Back to Library",
+    "tags": "Tags",
+    "addTag": "Add tag",
+    "collections": "Collections",
+    "addCollection": "Add collection",
+    "minPlayed": "{minutes} min played",
+    "coverArtUrl": "Cover art URL",
+    "backgroundArtUrl": "Background art URL",
+    "fetch": "Fetch",
+    "releaseDate": "Release date",
+    "descriptionLabel": "Description (Markdown supported)",
+    "skipDedup": "Keep separate from plugin scans (don't merge/dedup this entry)",
+    "wrapperProfile": "Compatibility wrapper profile",
+    "wrapperNone": "None",
+    "noWrapperProfiles": "No profiles found - install and enable a compatibility wrapper plugin in Settings first.",
+    "play": "Play",
+    "edit": "Edit",
+    "remove": "Remove",
+    "fetching": "Fetching...",
+    "fetchMetadata": "Fetch Metadata",
+    "titleLabel": "Title",
+    "executablePathLabel": "Executable path"
+  },
+  "candidatePicker": {
+    "title": "Multiple matches found",
+    "description": "Some providers found more than one match. Pick the right one per provider, or leave a section unselected to skip it."
+  },
+  "installableStatus": {
+    "installed": "Installed",
+    "notInstalled": "Not installed",
+    "installing": "Installing...",
+    "uninstalling": "Uninstalling...",
+    "install": "Install",
+    "uninstall": "Uninstall",
+    "actionFailed": "Failed to {verb} {name}: {error}"
+  },
+  "titleBar": {
+    "showSidebar": "Show sidebar",
+    "hideSidebar": "Hide sidebar",
+    "bigPictureMode": "Big Picture Mode",
+    "appName": "Game Library",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "confirmInstall": {
+    "title": "Install {name}?",
+    "id": "ID",
+    "version": "Version",
+    "kind": "Kind",
+    "themeNotice": "This installs a data-only theme (colors/CSS variables only, no code).",
+    "codeWarning": "This downloads and runs code from the URL you provided. File/registry/network access is scoped to what it declares below (host-enforced) - but that scope is self-declared by the plugin's own author, not verified against what the code actually does. Only install plugins from sources you fully trust.",
+    "declaresAccessTo": "Declares access to:",
+    "registryScope": "Registry: {hive}\\{prefix}",
+    "filesScope": "Files under: {prefix}",
+    "networkScope": "Network: {host}",
+    "runProgramsGrant": "This plugin runs other programs on your system (e.g. launching a game). I understand and allow this.",
+    "installing": "Installing...",
+    "install": "Install"
+  },
+  "addGame": {
+    "title": "Add Game",
+    "titleLabel": "Title",
+    "executablePathLabel": "Executable path",
+    "validationError": "Title and executable path are required.",
+    "submit": "Add Game"
+  },
+  "bigPicture": {
+    "emptyLibrary": "No games in library."
+  },
+  "addPlugin": {
+    "curatedIntro": "Curated plugins (reviewed, hash-pinned - see",
+    "install": "Install",
+    "installing": "Installing...",
+    "pasteManifestUrl": "or paste a manifest URL directly:",
+    "loadingCurated": "Loading curated plugins..."
+  },
+  "nav": {
+    "controllerConnected": "Controller connected",
+    "addGame": "Add Game",
+    "library": "Library",
+    "stats": "Stats",
+    "tags": "Tags",
+    "collections": "Collections",
+    "settings": "Settings",
+    "uiTest": "UI Test"
+  },
+  "slideshow": {
+    "minPlayed": "{minutes} min played",
+    "noGames": "No games in library."
+  },
+  "collections": {
+    "title": "Collections",
+    "description": "Groups a series/franchise (\"Final Fantasy\") - a separate concept from tags, not another kind of tag.",
+    "newNamePlaceholder": "New collection name",
+    "addCollection": "Add Collection",
+    "rename": "Rename",
+    "gamesCount": "{count} games",
+    "empty": "No collections yet."
+  },
+  "tags": {
+    "title": "Tags",
+    "description": "Free-form labels for organizing your library (\"Co-op\", \"Backlog\").",
+    "newNamePlaceholder": "New tag name",
+    "addTag": "Add Tag",
+    "rename": "Rename",
+    "gamesCount": "{count} games",
+    "empty": "No tags yet."
+  },
+  "filters": {
+    "searchPlaceholder": "Search by title...",
+    "switchToListView": "Switch to list view",
+    "switchToGridView": "Switch to grid view"
+  },
+  "stats": {
+    "gamesInLibrary": "Games in library",
+    "hoursPlayed": "Hours played",
+    "mostPlayed": "Most Played",
+    "recentlyPlayed": "Recently Played",
+    "hoursSuffix": "{hours} hrs",
+    "emptyState": "Play a game to see stats here."
+  },
+  "uiTest": {
+    "heading": "UI Test",
+    "description": "Manual triggers for UI states that are hard to reach otherwise (rare toasts, edge-case banners, etc.) - not user-facing functionality.",
+    "infoToastButton": "Info toast",
+    "successToastButton": "Success toast",
+    "errorToastButton": "Error toast",
+    "longToastButton": "Long-message toast",
+    "actionToastButton": "Action toast",
+    "infoToastMessage": "This is an info toast.",
+    "successToastMessage": "This is a success toast.",
+    "errorToastMessage": "This is an error toast.",
+    "longToastMessage": "This is a much longer toast message, to check wrapping and sizing behavior when the text runs well past a single short line.",
+    "actionToastMessage": "Test actionable toast - does this look right?",
+    "confirm": "Confirm",
+    "dismiss": "Dismiss",
+    "confirmedMessage": "Confirmed!"
+  },
+  "pluginSettings": {
+    "heading": "Plugins",
+    "addPlugin": "Add Plugin",
+    "tabs": {
+      "source": "Source",
+      "theme": "Theme",
+      "metadata": "Metadata Provider",
+      "controller": "Controller",
+      "wrapper": "Wrapper"
+    },
+    "noSourcePlugins": "No plugins installed.",
+    "scanOrderHint": "Scan order matters: on a same-titled game found by more than one source, the later source's launch path/platform wins. Reorder with the arrows below.",
+    "noMetadataProviders": "No providers installed.",
+    "fetchOrderHint": "Fetch order matters: for each field (description, release date, cover/background art), the first enabled provider that has an answer wins. Reorder with the arrows below.",
+    "noControllerMappings": "No mappings installed.",
+    "noWrapperPlugins": "No wrapper plugins installed.",
+    "updateTo": "Update to v{version}",
+    "permissionNeeded": "Permission needed: this plugin runs other programs on your system.",
+    "grant": "Grant",
+    "scanning": "Scanning...",
+    "scanNow": "Scan Now",
+    "removeTheme": "Remove",
+    "manifestUrlLabel": "Plugin manifest URL"
+  },
+  "library": {
+    "emptyMessage": "Your library is empty. Add a game or scan a source plugin to get started.",
+    "noMatchMessage": "No games match your search/filters."
+  },
+  "gameCard": {
+    "play": "Play",
+    "fetchMetadata": "Fetch Metadata",
+    "edit": "Edit",
+    "remove": "Remove",
+    "minutesPlayed": "{minutes} min played"
+  }
+}

@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { IconCheck, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
 import { useCollectionsStore } from "../../../stores/collections";
 import { useNamedItemManager } from "../../../composables/useNamedItemManager";
 
+const { t } = useI18n();
 const collections = useCollectionsStore();
 const manager = useNamedItemManager({
   create: collections.create,
@@ -15,14 +17,13 @@ const manager = useNamedItemManager({
 <template>
   <div class="panel settings-panel">
     <div class="sticky-header">
-      <h2>Collections</h2>
+      <h2>{{ t("collections.title") }}</h2>
       <small>
-        Groups a series/franchise ("Final Fantasy") - a separate concept from tags, not
-        another kind of tag.
+        {{ t("collections.description") }}
       </small>
       <form class="add-form" @submit.prevent="manager.onCreate">
-        <input v-model="manager.newName" placeholder="New collection name" />
-        <button type="submit">Add Collection</button>
+        <input v-model="manager.newName" :placeholder="t('collections.newNamePlaceholder')" />
+        <button type="submit">{{ t("collections.addCollection") }}</button>
       </form>
     </div>
 
@@ -36,28 +37,28 @@ const manager = useNamedItemManager({
             @keyup.esc="manager.cancelEdit"
           />
           <div class="row-controls">
-            <button class="icon-button" title="Save" @click="manager.confirmEdit">
+            <button class="icon-button" :title="t('common.save')" @click="manager.confirmEdit">
               <IconCheck :size="15" :stroke-width="1.75" />
             </button>
-            <button class="icon-button" title="Cancel" @click="manager.cancelEdit">
+            <button class="icon-button" :title="t('common.cancel')" @click="manager.cancelEdit">
               <IconX :size="15" :stroke-width="1.75" />
             </button>
           </div>
         </template>
         <template v-else>
           <span class="item-name">{{ name }}</span>
-          <span class="item-count">{{ manager.counts[name] ?? 0 }} games</span>
+          <span class="item-count">{{ t("collections.gamesCount", { count: manager.counts[name] ?? 0 }) }}</span>
           <div class="row-controls">
-            <button class="icon-button" title="Rename" @click="manager.startEdit(name)">
+            <button class="icon-button" :title="t('collections.rename')" @click="manager.startEdit(name)">
               <IconPencil :size="15" :stroke-width="1.75" />
             </button>
-            <button class="icon-button" title="Delete" @click="manager.onDelete(name)">
+            <button class="icon-button" :title="t('common.delete')" @click="manager.onDelete(name)">
               <IconTrash :size="15" :stroke-width="1.75" />
             </button>
           </div>
         </template>
       </li>
     </ul>
-    <p v-else class="empty">No collections yet.</p>
+    <p v-else class="empty">{{ t("collections.empty") }}</p>
   </div>
 </template>

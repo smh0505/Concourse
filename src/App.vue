@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { IconLayoutGrid, IconSlideshow } from "@tabler/icons-vue";
 import { useLibraryStore } from "./stores/library";
@@ -29,6 +30,7 @@ import PluginSettings from "./components/desktop/tabs/PluginSettings.vue";
 import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
 import BigPictureSlideshow from "./components/bigpicture/BigPictureSlideshow.vue";
 
+const { t } = useI18n();
 const library = useLibraryStore();
 const plugins = usePluginStore();
 const theme = useThemeStore();
@@ -172,13 +174,13 @@ onUnmounted(() => {
     <div class="big-picture-controls">
       <button
         class="view-toggle-button"
-        :title="bigPictureViewMode === 'grid' ? 'Switch to slideshow view' : 'Switch to grid view'"
+        :title="bigPictureViewMode === 'grid' ? t('app.switchToSlideshow') : t('app.switchToGrid')"
         @click="bigPictureViewMode = bigPictureViewMode === 'grid' ? 'slideshow' : 'grid'"
       >
         <IconSlideshow v-if="bigPictureViewMode === 'grid'" :size="18" :stroke-width="1.75" />
         <IconLayoutGrid v-else :size="18" :stroke-width="1.75" />
       </button>
-      <button class="exit-big-picture" @click="bigPicture = false">Exit</button>
+      <button class="exit-big-picture" @click="bigPicture = false">{{ t("app.exit") }}</button>
     </div>
     <BigPictureGrid v-if="bigPictureViewMode === 'grid'" @close="bigPicture = false" />
     <BigPictureSlideshow v-else @close="bigPicture = false" />

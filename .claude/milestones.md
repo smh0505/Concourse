@@ -283,6 +283,12 @@ a constrained declarative template tier instead, measured against Brick Block's 
   field, bad node type, depth/count overflow) - all pass
 - [x] Sign the AST manifest itself for provenance, reusing the existing WASM-plugin signing path
 
+- [x] Post-close: themes can now re-skin the whole UI's typeface, not just colors - `styles.css`'s
+  base `font-family` reads from a new `--font-family` CSS variable (defaulting to the existing
+  system stack) instead of a hardcoded value, so a theme's `cssVariables` can override it and
+  every element inherits the change (paired with the existing `fontFaces` mechanism to load a
+  real `@font-face` first, if needed)
+
 `concourse-plugin-registry` extended to `kind: "theme"`
 (`brick-block-data-theme` as first entry, hash-pinned and enforced same as WASM plugins - a gap
 caught and fixed here, not shipped silently unenforced). Post-ship fidelity pass (from real use,

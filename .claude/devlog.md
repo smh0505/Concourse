@@ -1936,6 +1936,31 @@ the converted theme against the original, surfacing several real gaps the accept
   "two open bump PRs for one id, close the older" guidance from earlier in this session, now
   actually exercised for real rather than just documented as a rule
 
+**Post-close follow-up: themes can now re-skin the whole UI's font, not just individual
+elements.** User asked directly for this - "the font affects the whole ui from now on." Traced
+the actual gap first rather than assuming new plumbing was needed: `stores/theme.ts`'s
+`applyCssVariables` already applies *any* CSS custom property a theme's `cssVariables` map
+declares straight onto `documentElement.style` via `setProperty` (no key allowlist - themes have
+always been able to set an arbitrary variable name), and virtually every component already reads
+`font-family: inherit` rather than hardcoding a typeface (verified via a repo-wide grep - the
+only two literal `font-family` values left are intentional `monospace` overrides for code/ID
+text in `GameDetail.vue`/`ConfirmInstall.vue`, plus two pre-existing opt-in per-element hooks -
+`--balloon-font-family` on `GameCard.vue`, `--tile-title-font-family` on `BigPictureTile.vue` -
+both already defaulting to `inherit`). The actual gap was one line: `styles.css`'s `:root` block
+set `font-family: Inter, Avenir, Helvetica, Arial, sans-serif` as a literal value, never reading
+from a variable, so no theme's `cssVariables` override could ever reach it regardless of how
+permissive the underlying mechanism already was.
+
+Fixed by promoting that literal into a proper `--font-family` design token (default value
+unchanged) and pointing the `:root` rule's own `font-family` at `var(--font-family)`. Since
+inheritance already does the rest of the work app-wide, this one token is now the single hook a
+theme needs - paired with the existing `fontFaces` mechanism (`theme/fontFaceRegistry.ts`,
+already built and already used for real by `data-theme-plugins`' Fusion Pixel bitmap font, so
+far only wired into that theme's `cardVisual` glyph, not the whole UI) to load a real
+`@font-face` first if the chosen family isn't a system font already present. No plugin
+manifest/type changes needed anywhere - `ThemePlugin.cssVariables` was already `Record<string,
+string>`, unconstrained. `bun run build` clean.
+
 ## Milestone 18 — Shared Styles Convention (scoped, not started)
 User proposed a style-convention change directly: less `<style scoped>` per component, more
 shared CSS (colors, borders, radii, other repeated patterns) collected into a `styles.css`.

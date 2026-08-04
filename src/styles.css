@@ -57,7 +57,14 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.18);
 
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  /* A theme's cssVariables can override this to re-skin the whole UI's typeface, not just
+     colors - every other element already inherits font-family (buttons/inputs explicitly,
+     everything else via normal CSS inheritance from here), so this one variable is the only
+     hook needed. Pair with fontFaces (fontFaceRegistry.ts) to load a real @font-face first if
+     the chosen family isn't a system font. */
+  --font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+
+  font-family: var(--font-family);
   color: var(--color-text);
   background-color: var(--color-base);
 }

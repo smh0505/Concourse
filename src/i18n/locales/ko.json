@@ -1,0 +1,200 @@
+{
+  "common": {
+    "cancel": "취소",
+    "save": "저장",
+    "close": "닫기",
+    "back": "뒤로",
+    "loading": "로딩 중...",
+    "unknown": "알 수 없음",
+    "continue": "계속",
+    "settings": "설정",
+    "delete": "삭제"
+  },
+  "settings": {
+    "autoLaunchBigPicture": "시작 시 빅픽처 모드로 실행",
+    "language": "언어"
+  },
+  "app": {
+    "switchToSlideshow": "슬라이드쇼 보기로 전환",
+    "switchToGrid": "그리드 보기로 전환",
+    "exit": "나가기"
+  },
+  "gameDetail": {
+    "unknownPlatform": "알 수 없는 플랫폼",
+    "titleAndPathRequired": "제목과 실행 파일 경로는 필수입니다.",
+    "backToLibrary": "라이브러리로 돌아가기",
+    "tags": "태그",
+    "addTag": "태그 추가",
+    "collections": "컬렉션",
+    "addCollection": "컬렉션 추가",
+    "minPlayed": "{minutes}분 플레이함",
+    "coverArtUrl": "커버 이미지 URL",
+    "backgroundArtUrl": "배경 이미지 URL",
+    "fetch": "가져오기",
+    "releaseDate": "출시일",
+    "descriptionLabel": "설명 (마크다운 지원)",
+    "skipDedup": "플러그인 스캔에서 제외 (이 항목을 병합/중복 제거하지 않음)",
+    "wrapperProfile": "호환성 래퍼 프로필",
+    "wrapperNone": "없음",
+    "noWrapperProfiles": "프로필을 찾을 수 없습니다 - 먼저 설정에서 호환성 래퍼 플러그인을 설치하고 활성화하세요.",
+    "play": "실행",
+    "edit": "편집",
+    "remove": "삭제",
+    "fetching": "가져오는 중...",
+    "fetchMetadata": "메타데이터 가져오기",
+    "titleLabel": "제목",
+    "executablePathLabel": "실행 파일 경로"
+  },
+  "candidatePicker": {
+    "title": "여러 개의 일치 항목을 찾았습니다",
+    "description": "일부 제공자가 두 개 이상의 일치 항목을 찾았습니다. 제공자별로 올바른 항목을 선택하거나, 건너뛰려면 섹션을 선택하지 않은 상태로 두세요."
+  },
+  "installableStatus": {
+    "installed": "설치됨",
+    "notInstalled": "설치되지 않음",
+    "installing": "설치 중...",
+    "uninstalling": "제거 중...",
+    "install": "설치",
+    "uninstall": "제거",
+    "actionFailed": "{name} {verb} 실패: {error}"
+  },
+  "titleBar": {
+    "showSidebar": "사이드바 표시",
+    "hideSidebar": "사이드바 숨기기",
+    "bigPictureMode": "빅픽처 모드",
+    "appName": "게임 라이브러리",
+    "minimize": "최소화",
+    "maximize": "최대화",
+    "restore": "이전 크기로 복원",
+    "close": "닫기"
+  },
+  "confirmInstall": {
+    "title": "{name}을(를) 설치하시겠습니까?",
+    "id": "ID",
+    "version": "버전",
+    "kind": "종류",
+    "themeNotice": "이 항목은 데이터 전용 테마를 설치합니다 (색상/CSS 변수만 포함, 코드 없음).",
+    "codeWarning": "입력한 URL에서 코드를 다운로드하여 실행합니다. 파일/레지스트리/네트워크 접근은 아래에 명시된 범위로 제한됩니다(호스트에서 강제) - 단, 이 범위는 플러그인 제작자가 직접 선언한 것으로, 실제 동작과 일치하는지 검증되지 않았습니다. 완전히 신뢰할 수 있는 출처의 플러그인만 설치하세요.",
+    "declaresAccessTo": "다음에 대한 접근을 선언함:",
+    "registryScope": "레지스트리: {hive}\\{prefix}",
+    "filesScope": "다음 경로 하위 파일: {prefix}",
+    "networkScope": "네트워크: {host}",
+    "runProgramsGrant": "이 플러그인은 시스템에서 다른 프로그램을 실행합니다 (예: 게임 실행). 이를 이해하고 허용합니다.",
+    "installing": "설치 중...",
+    "install": "설치"
+  },
+  "addGame": {
+    "title": "게임 추가",
+    "titleLabel": "제목",
+    "executablePathLabel": "실행 파일 경로",
+    "validationError": "제목과 실행 파일 경로는 필수입니다.",
+    "submit": "게임 추가"
+  },
+  "bigPicture": {
+    "emptyLibrary": "라이브러리에 게임이 없습니다."
+  },
+  "addPlugin": {
+    "curatedIntro": "선별된 플러그인 (검토 완료, 해시 고정 - 참고:",
+    "install": "설치",
+    "installing": "설치 중...",
+    "pasteManifestUrl": "또는 매니페스트 URL을 직접 입력하세요:",
+    "loadingCurated": "선별된 플러그인 불러오는 중..."
+  },
+  "nav": {
+    "controllerConnected": "컨트롤러 연결됨",
+    "addGame": "게임 추가",
+    "library": "라이브러리",
+    "stats": "통계",
+    "tags": "태그",
+    "collections": "컬렉션",
+    "settings": "설정",
+    "uiTest": "UI 테스트"
+  },
+  "slideshow": {
+    "minPlayed": "{minutes}분 플레이함",
+    "noGames": "라이브러리에 게임이 없습니다."
+  },
+  "collections": {
+    "title": "컬렉션",
+    "description": "시리즈/프랜차이즈를 묶습니다 (\"파이널 판타지\") - 태그와는 별개의 개념이며, 태그의 한 종류가 아닙니다.",
+    "newNamePlaceholder": "새 컬렉션 이름",
+    "addCollection": "컬렉션 추가",
+    "rename": "이름 변경",
+    "gamesCount": "게임 {count}개",
+    "empty": "아직 컬렉션이 없습니다."
+  },
+  "tags": {
+    "title": "태그",
+    "description": "라이브러리를 정리하기 위한 자유 형식 라벨입니다 (\"협동\", \"백로그\").",
+    "newNamePlaceholder": "새 태그 이름",
+    "addTag": "태그 추가",
+    "rename": "이름 변경",
+    "gamesCount": "게임 {count}개",
+    "empty": "아직 태그가 없습니다."
+  },
+  "filters": {
+    "searchPlaceholder": "제목으로 검색...",
+    "switchToListView": "목록 보기로 전환",
+    "switchToGridView": "그리드 보기로 전환"
+  },
+  "stats": {
+    "gamesInLibrary": "라이브러리의 게임 수",
+    "hoursPlayed": "플레이 시간",
+    "mostPlayed": "가장 많이 플레이함",
+    "recentlyPlayed": "최근 플레이함",
+    "hoursSuffix": "{hours}시간",
+    "emptyState": "게임을 플레이하면 여기에 통계가 표시됩니다."
+  },
+  "uiTest": {
+    "heading": "UI 테스트",
+    "description": "일반적으로는 접근하기 어려운 UI 상태(드문 토스트, 예외적인 배너 등)를 수동으로 실행하기 위한 도구입니다 - 사용자용 기능이 아닙니다.",
+    "infoToastButton": "정보 토스트",
+    "successToastButton": "성공 토스트",
+    "errorToastButton": "오류 토스트",
+    "longToastButton": "긴 메시지 토스트",
+    "actionToastButton": "액션 토스트",
+    "infoToastMessage": "이것은 정보 토스트입니다.",
+    "successToastMessage": "이것은 성공 토스트입니다.",
+    "errorToastMessage": "이것은 오류 토스트입니다.",
+    "longToastMessage": "한 줄을 훨씬 넘는 텍스트일 때 줄바꿈과 크기 조정이 어떻게 동작하는지 확인하기 위한, 훨씬 더 긴 토스트 메시지입니다.",
+    "actionToastMessage": "액션 토스트 테스트 - 이렇게 보이는 게 맞나요?",
+    "confirm": "확인",
+    "dismiss": "닫기",
+    "confirmedMessage": "확인되었습니다!"
+  },
+  "pluginSettings": {
+    "heading": "플러그인",
+    "addPlugin": "플러그인 추가",
+    "tabs": {
+      "source": "소스",
+      "theme": "테마",
+      "metadata": "메타데이터 제공자",
+      "controller": "컨트롤러",
+      "wrapper": "래퍼"
+    },
+    "noSourcePlugins": "설치된 플러그인이 없습니다.",
+    "scanOrderHint": "스캔 순서가 중요합니다: 동일한 제목의 게임을 둘 이상의 소스가 찾은 경우, 나중 소스의 실행 경로/플랫폼이 우선합니다. 아래 화살표로 순서를 변경하세요.",
+    "noMetadataProviders": "설치된 제공자가 없습니다.",
+    "fetchOrderHint": "가져오기 순서가 중요합니다: 각 필드(설명, 출시일, 커버/배경 이미지)마다 값을 가진 첫 번째 활성화된 제공자가 우선합니다. 아래 화살표로 순서를 변경하세요.",
+    "noControllerMappings": "설치된 매핑이 없습니다.",
+    "noWrapperPlugins": "설치된 래퍼 플러그인이 없습니다.",
+    "updateTo": "v{version}(으)로 업데이트",
+    "permissionNeeded": "권한이 필요합니다: 이 플러그인은 시스템에서 다른 프로그램을 실행합니다.",
+    "grant": "허용",
+    "scanning": "스캔 중...",
+    "scanNow": "지금 스캔",
+    "removeTheme": "삭제",
+    "manifestUrlLabel": "플러그인 매니페스트 URL"
+  },
+  "library": {
+    "emptyMessage": "라이브러리가 비어 있습니다. 게임을 추가하거나 소스 플러그인을 스캔해 보세요.",
+    "noMatchMessage": "검색어/필터와 일치하는 게임이 없습니다."
+  },
+  "gameCard": {
+    "play": "실행",
+    "fetchMetadata": "메타데이터 가져오기",
+    "edit": "편집",
+    "remove": "삭제",
+    "minutesPlayed": "{minutes}분 플레이함"
+  }
+}

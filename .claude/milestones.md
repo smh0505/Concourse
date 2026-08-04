@@ -373,7 +373,10 @@ available to test against).
 
 ## Milestone 21 — Internationalization & Offline Translation
 - [x] UI string localization via `vue-i18n`, locale JSON files, no external service - every
-  component converted, `en.json` is the only locale so far, language picker added to Settings
+  component converted, language picker added to Settings
+- [x] 9 additional locales added (machine-translated by Claude, not yet native-reviewed):
+  Korean, Japanese, Simplified Chinese, Spanish, French, German, Brazilian Portuguese, Russian,
+  Italian - 10 languages total, all verified to have exact key parity with `en.json`
 - [ ] New `translation` plugin kind wrapping a local LLM (llama.cpp + a user-selected GGUF model)
   for translating game descriptions/metadata - keeps this optional/heavy dependency out of core
 - [ ] Settings UI: model picker (list of supported models with size/quality tradeoffs), download-

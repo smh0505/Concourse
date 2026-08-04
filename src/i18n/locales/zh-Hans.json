@@ -1,0 +1,200 @@
+{
+  "common": {
+    "cancel": "取消",
+    "save": "保存",
+    "close": "关闭",
+    "back": "返回",
+    "loading": "加载中...",
+    "unknown": "未知",
+    "continue": "继续",
+    "settings": "设置",
+    "delete": "删除"
+  },
+  "settings": {
+    "autoLaunchBigPicture": "启动时进入大屏幕模式",
+    "language": "语言"
+  },
+  "app": {
+    "switchToSlideshow": "切换到幻灯片视图",
+    "switchToGrid": "切换到网格视图",
+    "exit": "退出"
+  },
+  "gameDetail": {
+    "unknownPlatform": "未知平台",
+    "titleAndPathRequired": "标题和可执行文件路径为必填项。",
+    "backToLibrary": "返回库",
+    "tags": "标签",
+    "addTag": "添加标签",
+    "collections": "合集",
+    "addCollection": "添加合集",
+    "minPlayed": "已玩 {minutes} 分钟",
+    "coverArtUrl": "封面图片URL",
+    "backgroundArtUrl": "背景图片URL",
+    "fetch": "获取",
+    "releaseDate": "发行日期",
+    "descriptionLabel": "简介(支持Markdown)",
+    "skipDedup": "从插件扫描中排除(不合并/去重此项)",
+    "wrapperProfile": "兼容性包装器配置",
+    "wrapperNone": "无",
+    "noWrapperProfiles": "未找到配置 - 请先在设置中安装并启用兼容性包装器插件。",
+    "play": "运行",
+    "edit": "编辑",
+    "remove": "移除",
+    "fetching": "获取中...",
+    "fetchMetadata": "获取元数据",
+    "titleLabel": "标题",
+    "executablePathLabel": "可执行文件路径"
+  },
+  "candidatePicker": {
+    "title": "找到多个匹配项",
+    "description": "部分提供方找到了不止一个匹配项。请为每个提供方选择正确的一项,若要跳过某项,可保持该分组不选。"
+  },
+  "installableStatus": {
+    "installed": "已安装",
+    "notInstalled": "未安装",
+    "installing": "安装中...",
+    "uninstalling": "卸载中...",
+    "install": "安装",
+    "uninstall": "卸载",
+    "actionFailed": "{verb} {name} 失败: {error}"
+  },
+  "titleBar": {
+    "showSidebar": "显示侧边栏",
+    "hideSidebar": "隐藏侧边栏",
+    "bigPictureMode": "大屏幕模式",
+    "appName": "游戏库",
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "还原",
+    "close": "关闭"
+  },
+  "confirmInstall": {
+    "title": "安装 {name}?",
+    "id": "ID",
+    "version": "版本",
+    "kind": "类型",
+    "themeNotice": "这将安装一个仅数据主题(仅颜色/CSS变量,不含代码)。",
+    "codeWarning": "这将从您提供的URL下载并运行代码。文件/注册表/网络访问权限将限制在下方声明的范围内(由主机强制执行)——但该范围是插件作者自行声明的,并未验证是否与代码实际行为一致。请仅安装您完全信任来源的插件。",
+    "declaresAccessTo": "声明访问以下内容:",
+    "registryScope": "注册表: {hive}\\{prefix}",
+    "filesScope": "以下路径下的文件: {prefix}",
+    "networkScope": "网络: {host}",
+    "runProgramsGrant": "此插件会在您的系统上运行其他程序(例如启动游戏)。我理解并允许此操作。",
+    "installing": "安装中...",
+    "install": "安装"
+  },
+  "addGame": {
+    "title": "添加游戏",
+    "titleLabel": "标题",
+    "executablePathLabel": "可执行文件路径",
+    "validationError": "标题和可执行文件路径为必填项。",
+    "submit": "添加游戏"
+  },
+  "bigPicture": {
+    "emptyLibrary": "库中没有游戏。"
+  },
+  "addPlugin": {
+    "curatedIntro": "精选插件(已审核,哈希锁定 - 参见",
+    "install": "安装",
+    "installing": "安装中...",
+    "pasteManifestUrl": "或直接粘贴清单URL:",
+    "loadingCurated": "正在加载精选插件..."
+  },
+  "nav": {
+    "controllerConnected": "手柄已连接",
+    "addGame": "添加游戏",
+    "library": "库",
+    "stats": "统计",
+    "tags": "标签",
+    "collections": "合集",
+    "settings": "设置",
+    "uiTest": "UI测试"
+  },
+  "slideshow": {
+    "minPlayed": "已玩 {minutes} 分钟",
+    "noGames": "库中没有游戏。"
+  },
+  "collections": {
+    "title": "合集",
+    "description": "将系列/系列作品归为一组(如“最终幻想”)——与标签是不同的概念,而非标签的一种。",
+    "newNamePlaceholder": "新合集名称",
+    "addCollection": "添加合集",
+    "rename": "重命名",
+    "gamesCount": "{count} 款游戏",
+    "empty": "暂无合集。"
+  },
+  "tags": {
+    "title": "标签",
+    "description": "用于整理您库的自由格式标签(如“合作”“待玩”)。",
+    "newNamePlaceholder": "新标签名称",
+    "addTag": "添加标签",
+    "rename": "重命名",
+    "gamesCount": "{count} 款游戏",
+    "empty": "暂无标签。"
+  },
+  "filters": {
+    "searchPlaceholder": "按标题搜索...",
+    "switchToListView": "切换到列表视图",
+    "switchToGridView": "切换到网格视图"
+  },
+  "stats": {
+    "gamesInLibrary": "库中游戏数",
+    "hoursPlayed": "游玩时长",
+    "mostPlayed": "最多游玩",
+    "recentlyPlayed": "最近游玩",
+    "hoursSuffix": "{hours} 小时",
+    "emptyState": "开始游玩游戏后,这里将显示统计信息。"
+  },
+  "uiTest": {
+    "heading": "UI测试",
+    "description": "用于手动触发平时难以复现的界面状态(罕见提示、边缘情况横幅等)——非面向用户的功能。",
+    "infoToastButton": "信息提示",
+    "successToastButton": "成功提示",
+    "errorToastButton": "错误提示",
+    "longToastButton": "长消息提示",
+    "actionToastButton": "操作提示",
+    "infoToastMessage": "这是一条信息提示。",
+    "successToastMessage": "这是一条成功提示。",
+    "errorToastMessage": "这是一条错误提示。",
+    "longToastMessage": "这是一条更长的提示消息,用于检查文本远超单行时的换行与尺寸调整行为。",
+    "actionToastMessage": "测试可操作提示 - 效果看起来对吗?",
+    "confirm": "确认",
+    "dismiss": "关闭",
+    "confirmedMessage": "已确认!"
+  },
+  "pluginSettings": {
+    "heading": "插件",
+    "addPlugin": "添加插件",
+    "tabs": {
+      "source": "来源",
+      "theme": "主题",
+      "metadata": "元数据提供方",
+      "controller": "手柄映射",
+      "wrapper": "包装器"
+    },
+    "noSourcePlugins": "未安装任何插件。",
+    "scanOrderHint": "扫描顺序很重要:若同名游戏被多个来源找到,后面来源的启动路径/平台将生效。可用下方箭头调整顺序。",
+    "noMetadataProviders": "未安装任何提供方。",
+    "fetchOrderHint": "获取顺序很重要:对于每个字段(简介、发行日期、封面/背景图),第一个有结果的已启用提供方将生效。可用下方箭头调整顺序。",
+    "noControllerMappings": "未安装任何映射方案。",
+    "noWrapperPlugins": "未安装任何包装器插件。",
+    "updateTo": "更新到 v{version}",
+    "permissionNeeded": "需要授权:此插件会在您的系统上运行其他程序。",
+    "grant": "授权",
+    "scanning": "扫描中...",
+    "scanNow": "立即扫描",
+    "removeTheme": "移除",
+    "manifestUrlLabel": "插件清单URL"
+  },
+  "library": {
+    "emptyMessage": "您的库是空的。添加一个游戏,或扫描一个来源插件以开始使用。",
+    "noMatchMessage": "没有游戏匹配您的搜索/筛选条件。"
+  },
+  "gameCard": {
+    "play": "运行",
+    "fetchMetadata": "获取元数据",
+    "edit": "编辑",
+    "remove": "移除",
+    "minutesPlayed": "已玩 {minutes} 分钟"
+  }
+}

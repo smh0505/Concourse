@@ -1,0 +1,200 @@
+{
+  "common": {
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "close": "Schließen",
+    "back": "Zurück",
+    "loading": "Wird geladen...",
+    "unknown": "Unbekannt",
+    "continue": "Weiter",
+    "settings": "Einstellungen",
+    "delete": "Löschen"
+  },
+  "settings": {
+    "autoLaunchBigPicture": "Beim Start in den Big-Picture-Modus starten",
+    "language": "Sprache"
+  },
+  "app": {
+    "switchToSlideshow": "Zur Diashow-Ansicht wechseln",
+    "switchToGrid": "Zur Rasteransicht wechseln",
+    "exit": "Beenden"
+  },
+  "gameDetail": {
+    "unknownPlatform": "Unbekannte Plattform",
+    "titleAndPathRequired": "Titel und Pfad zur ausführbaren Datei sind erforderlich.",
+    "backToLibrary": "Zurück zur Bibliothek",
+    "tags": "Tags",
+    "addTag": "Tag hinzufügen",
+    "collections": "Sammlungen",
+    "addCollection": "Sammlung hinzufügen",
+    "minPlayed": "{minutes} Min. gespielt",
+    "coverArtUrl": "Cover-Bild-URL",
+    "backgroundArtUrl": "Hintergrundbild-URL",
+    "fetch": "Abrufen",
+    "releaseDate": "Erscheinungsdatum",
+    "descriptionLabel": "Beschreibung (Markdown unterstützt)",
+    "skipDedup": "Von Plugin-Scans ausschließen (diesen Eintrag nicht zusammenführen/deduplizieren)",
+    "wrapperProfile": "Kompatibilitäts-Wrapper-Profil",
+    "wrapperNone": "Keins",
+    "noWrapperProfiles": "Keine Profile gefunden - installiere und aktiviere zuerst ein Kompatibilitäts-Wrapper-Plugin in den Einstellungen.",
+    "play": "Spielen",
+    "edit": "Bearbeiten",
+    "remove": "Entfernen",
+    "fetching": "Wird abgerufen...",
+    "fetchMetadata": "Metadaten abrufen",
+    "titleLabel": "Titel",
+    "executablePathLabel": "Pfad zur ausführbaren Datei"
+  },
+  "candidatePicker": {
+    "title": "Mehrere Treffer gefunden",
+    "description": "Einige Anbieter haben mehr als einen Treffer gefunden. Wähle für jeden Anbieter den richtigen aus, oder lasse einen Abschnitt unausgewählt, um ihn zu überspringen."
+  },
+  "installableStatus": {
+    "installed": "Installiert",
+    "notInstalled": "Nicht installiert",
+    "installing": "Wird installiert...",
+    "uninstalling": "Wird deinstalliert...",
+    "install": "Installieren",
+    "uninstall": "Deinstallieren",
+    "actionFailed": "{name} {verb} fehlgeschlagen: {error}"
+  },
+  "titleBar": {
+    "showSidebar": "Seitenleiste anzeigen",
+    "hideSidebar": "Seitenleiste ausblenden",
+    "bigPictureMode": "Big-Picture-Modus",
+    "appName": "Spielebibliothek",
+    "minimize": "Minimieren",
+    "maximize": "Maximieren",
+    "restore": "Wiederherstellen",
+    "close": "Schließen"
+  },
+  "confirmInstall": {
+    "title": "{name} installieren?",
+    "id": "ID",
+    "version": "Version",
+    "kind": "Art",
+    "themeNotice": "Dies installiert ein reines Daten-Theme (nur Farben/CSS-Variablen, kein Code).",
+    "codeWarning": "Dies lädt Code von der angegebenen URL herunter und führt ihn aus. Der Zugriff auf Dateien/Registry/Netzwerk ist auf das unten Angegebene beschränkt (vom Host durchgesetzt) - dieser Umfang wird jedoch vom Plugin-Autor selbst deklariert und nicht dagegen geprüft, was der Code tatsächlich tut. Installiere nur Plugins aus Quellen, denen du voll vertraust.",
+    "declaresAccessTo": "Deklarierter Zugriff auf:",
+    "registryScope": "Registry: {hive}\\{prefix}",
+    "filesScope": "Dateien unter: {prefix}",
+    "networkScope": "Netzwerk: {host}",
+    "runProgramsGrant": "Dieses Plugin führt andere Programme auf deinem System aus (z. B. das Starten eines Spiels). Ich verstehe das und erlaube es.",
+    "installing": "Wird installiert...",
+    "install": "Installieren"
+  },
+  "addGame": {
+    "title": "Spiel hinzufügen",
+    "titleLabel": "Titel",
+    "executablePathLabel": "Pfad zur ausführbaren Datei",
+    "validationError": "Titel und Pfad zur ausführbaren Datei sind erforderlich.",
+    "submit": "Spiel hinzufügen"
+  },
+  "bigPicture": {
+    "emptyLibrary": "Keine Spiele in der Bibliothek."
+  },
+  "addPlugin": {
+    "curatedIntro": "Kuratierte Plugins (geprüft, Hash-gepinnt - siehe",
+    "install": "Installieren",
+    "installing": "Wird installiert...",
+    "pasteManifestUrl": "oder Manifest-URL direkt einfügen:",
+    "loadingCurated": "Kuratierte Plugins werden geladen..."
+  },
+  "nav": {
+    "controllerConnected": "Controller verbunden",
+    "addGame": "Spiel hinzufügen",
+    "library": "Bibliothek",
+    "stats": "Statistiken",
+    "tags": "Tags",
+    "collections": "Sammlungen",
+    "settings": "Einstellungen",
+    "uiTest": "UI-Test"
+  },
+  "slideshow": {
+    "minPlayed": "{minutes} Min. gespielt",
+    "noGames": "Keine Spiele in der Bibliothek."
+  },
+  "collections": {
+    "title": "Sammlungen",
+    "description": "Fasst eine Serie/Reihe zusammen („Final Fantasy“) - ein eigenständiges Konzept, kein Tag-Typ.",
+    "newNamePlaceholder": "Name der neuen Sammlung",
+    "addCollection": "Sammlung hinzufügen",
+    "rename": "Umbenennen",
+    "gamesCount": "{count} Spiele",
+    "empty": "Noch keine Sammlungen."
+  },
+  "tags": {
+    "title": "Tags",
+    "description": "Frei definierbare Labels zur Organisation deiner Bibliothek („Koop“, „Backlog“).",
+    "newNamePlaceholder": "Name des neuen Tags",
+    "addTag": "Tag hinzufügen",
+    "rename": "Umbenennen",
+    "gamesCount": "{count} Spiele",
+    "empty": "Noch keine Tags."
+  },
+  "filters": {
+    "searchPlaceholder": "Nach Titel suchen...",
+    "switchToListView": "Zur Listenansicht wechseln",
+    "switchToGridView": "Zur Rasteransicht wechseln"
+  },
+  "stats": {
+    "gamesInLibrary": "Spiele in der Bibliothek",
+    "hoursPlayed": "Gespielte Stunden",
+    "mostPlayed": "Meistgespielt",
+    "recentlyPlayed": "Zuletzt gespielt",
+    "hoursSuffix": "{hours} Std.",
+    "emptyState": "Spiele ein Spiel, um hier Statistiken zu sehen."
+  },
+  "uiTest": {
+    "heading": "UI-Test",
+    "description": "Manuelle Auslöser für UI-Zustände, die sonst schwer zu erreichen sind (seltene Toasts, Randfall-Banner usw.) - keine nutzerseitige Funktion.",
+    "infoToastButton": "Info-Toast",
+    "successToastButton": "Erfolgs-Toast",
+    "errorToastButton": "Fehler-Toast",
+    "longToastButton": "Toast mit langer Nachricht",
+    "actionToastButton": "Aktions-Toast",
+    "infoToastMessage": "Dies ist ein Info-Toast.",
+    "successToastMessage": "Dies ist ein Erfolgs-Toast.",
+    "errorToastMessage": "Dies ist ein Fehler-Toast.",
+    "longToastMessage": "Dies ist eine deutlich längere Toast-Nachricht, um Zeilenumbruch und Größenverhalten zu prüfen, wenn der Text weit über eine einzelne kurze Zeile hinausgeht.",
+    "actionToastMessage": "Test des Aktions-Toasts - sieht das richtig aus?",
+    "confirm": "Bestätigen",
+    "dismiss": "Verwerfen",
+    "confirmedMessage": "Bestätigt!"
+  },
+  "pluginSettings": {
+    "heading": "Plugins",
+    "addPlugin": "Plugin hinzufügen",
+    "tabs": {
+      "source": "Quelle",
+      "theme": "Theme",
+      "metadata": "Metadaten-Anbieter",
+      "controller": "Controller",
+      "wrapper": "Wrapper"
+    },
+    "noSourcePlugins": "Keine Plugins installiert.",
+    "scanOrderHint": "Die Scan-Reihenfolge ist wichtig: Wird ein gleichnamiges Spiel von mehr als einer Quelle gefunden, gewinnt der Startpfad/die Plattform der später aufgeführten Quelle. Mit den Pfeilen unten neu anordnen.",
+    "noMetadataProviders": "Keine Anbieter installiert.",
+    "fetchOrderHint": "Die Abrufreihenfolge ist wichtig: Für jedes Feld (Beschreibung, Erscheinungsdatum, Cover-/Hintergrundbild) gewinnt der erste aktivierte Anbieter mit einer Antwort. Mit den Pfeilen unten neu anordnen.",
+    "noControllerMappings": "Keine Zuordnungen installiert.",
+    "noWrapperPlugins": "Keine Wrapper-Plugins installiert.",
+    "updateTo": "Auf v{version} aktualisieren",
+    "permissionNeeded": "Berechtigung erforderlich: Dieses Plugin führt andere Programme auf deinem System aus.",
+    "grant": "Erteilen",
+    "scanning": "Wird gescannt...",
+    "scanNow": "Jetzt scannen",
+    "removeTheme": "Entfernen",
+    "manifestUrlLabel": "Plugin-Manifest-URL"
+  },
+  "library": {
+    "emptyMessage": "Deine Bibliothek ist leer. Füge ein Spiel hinzu oder scanne ein Quell-Plugin, um loszulegen.",
+    "noMatchMessage": "Keine Spiele entsprechen deiner Suche/deinen Filtern."
+  },
+  "gameCard": {
+    "play": "Spielen",
+    "fetchMetadata": "Metadaten abrufen",
+    "edit": "Bearbeiten",
+    "remove": "Entfernen",
+    "minutesPlayed": "{minutes} Min. gespielt"
+  }
+}

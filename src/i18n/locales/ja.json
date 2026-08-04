@@ -1,0 +1,200 @@
+{
+  "common": {
+    "cancel": "キャンセル",
+    "save": "保存",
+    "close": "閉じる",
+    "back": "戻る",
+    "loading": "読み込み中...",
+    "unknown": "不明",
+    "continue": "続ける",
+    "settings": "設定",
+    "delete": "削除"
+  },
+  "settings": {
+    "autoLaunchBigPicture": "起動時にビッグピクチャーモードで起動",
+    "language": "言語"
+  },
+  "app": {
+    "switchToSlideshow": "スライドショー表示に切り替え",
+    "switchToGrid": "グリッド表示に切り替え",
+    "exit": "終了"
+  },
+  "gameDetail": {
+    "unknownPlatform": "不明なプラットフォーム",
+    "titleAndPathRequired": "タイトルと実行ファイルのパスは必須です。",
+    "backToLibrary": "ライブラリに戻る",
+    "tags": "タグ",
+    "addTag": "タグを追加",
+    "collections": "コレクション",
+    "addCollection": "コレクションを追加",
+    "minPlayed": "{minutes}分プレイ",
+    "coverArtUrl": "カバー画像URL",
+    "backgroundArtUrl": "背景画像URL",
+    "fetch": "取得",
+    "releaseDate": "発売日",
+    "descriptionLabel": "説明 (Markdown対応)",
+    "skipDedup": "プラグインスキャンから除外する(このエントリを統合/重複除去しない)",
+    "wrapperProfile": "互換性ラッパープロファイル",
+    "wrapperNone": "なし",
+    "noWrapperProfiles": "プロファイルが見つかりません - 先に設定で互換性ラッパープラグインをインストールして有効化してください。",
+    "play": "プレイ",
+    "edit": "編集",
+    "remove": "削除",
+    "fetching": "取得中...",
+    "fetchMetadata": "メタデータを取得",
+    "titleLabel": "タイトル",
+    "executablePathLabel": "実行ファイルのパス"
+  },
+  "candidatePicker": {
+    "title": "複数の一致が見つかりました",
+    "description": "一部のプロバイダーで複数の一致が見つかりました。プロバイダーごとに正しいものを選択するか、スキップする場合は選択せずにそのままにしてください。"
+  },
+  "installableStatus": {
+    "installed": "インストール済み",
+    "notInstalled": "未インストール",
+    "installing": "インストール中...",
+    "uninstalling": "アンインストール中...",
+    "install": "インストール",
+    "uninstall": "アンインストール",
+    "actionFailed": "{name}の{verb}に失敗しました: {error}"
+  },
+  "titleBar": {
+    "showSidebar": "サイドバーを表示",
+    "hideSidebar": "サイドバーを非表示",
+    "bigPictureMode": "ビッグピクチャーモード",
+    "appName": "ゲームライブラリ",
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "元のサイズに戻す",
+    "close": "閉じる"
+  },
+  "confirmInstall": {
+    "title": "{name}をインストールしますか?",
+    "id": "ID",
+    "version": "バージョン",
+    "kind": "種類",
+    "themeNotice": "これはデータのみのテーマをインストールします(色/CSS変数のみ、コードなし)。",
+    "codeWarning": "指定したURLからコードをダウンロードして実行します。ファイル/レジストリ/ネットワークへのアクセスは以下に示す範囲に制限されます(ホスト側で強制)が、この範囲はプラグイン作者自身が申告したものであり、実際の動作を検証したものではありません。完全に信頼できる提供元のプラグインのみインストールしてください。",
+    "declaresAccessTo": "アクセスを申告している対象:",
+    "registryScope": "レジストリ: {hive}\\{prefix}",
+    "filesScope": "対象パス以下のファイル: {prefix}",
+    "networkScope": "ネットワーク: {host}",
+    "runProgramsGrant": "このプラグインはシステム上で他のプログラムを実行します(例: ゲームの起動)。これを理解し、許可します。",
+    "installing": "インストール中...",
+    "install": "インストール"
+  },
+  "addGame": {
+    "title": "ゲームを追加",
+    "titleLabel": "タイトル",
+    "executablePathLabel": "実行ファイルのパス",
+    "validationError": "タイトルと実行ファイルのパスは必須です。",
+    "submit": "ゲームを追加"
+  },
+  "bigPicture": {
+    "emptyLibrary": "ライブラリにゲームがありません。"
+  },
+  "addPlugin": {
+    "curatedIntro": "厳選プラグイン(レビュー済み、ハッシュ固定 - 参照:",
+    "install": "インストール",
+    "installing": "インストール中...",
+    "pasteManifestUrl": "またはマニフェストURLを直接貼り付け:",
+    "loadingCurated": "厳選プラグインを読み込み中..."
+  },
+  "nav": {
+    "controllerConnected": "コントローラー接続済み",
+    "addGame": "ゲームを追加",
+    "library": "ライブラリ",
+    "stats": "統計",
+    "tags": "タグ",
+    "collections": "コレクション",
+    "settings": "設定",
+    "uiTest": "UIテスト"
+  },
+  "slideshow": {
+    "minPlayed": "{minutes}分プレイ",
+    "noGames": "ライブラリにゲームがありません。"
+  },
+  "collections": {
+    "title": "コレクション",
+    "description": "シリーズ/フランチャイズをまとめます(「ファイナルファンタジー」など) - タグとは別の概念で、タグの一種ではありません。",
+    "newNamePlaceholder": "新しいコレクション名",
+    "addCollection": "コレクションを追加",
+    "rename": "名前を変更",
+    "gamesCount": "{count}件のゲーム",
+    "empty": "コレクションはまだありません。"
+  },
+  "tags": {
+    "title": "タグ",
+    "description": "ライブラリを整理するための自由形式のラベルです(「協力プレイ」「積みゲー」など)。",
+    "newNamePlaceholder": "新しいタグ名",
+    "addTag": "タグを追加",
+    "rename": "名前を変更",
+    "gamesCount": "{count}件のゲーム",
+    "empty": "タグはまだありません。"
+  },
+  "filters": {
+    "searchPlaceholder": "タイトルで検索...",
+    "switchToListView": "リスト表示に切り替え",
+    "switchToGridView": "グリッド表示に切り替え"
+  },
+  "stats": {
+    "gamesInLibrary": "ライブラリのゲーム数",
+    "hoursPlayed": "プレイ時間",
+    "mostPlayed": "最もプレイされたゲーム",
+    "recentlyPlayed": "最近プレイしたゲーム",
+    "hoursSuffix": "{hours}時間",
+    "emptyState": "ゲームをプレイすると、ここに統計が表示されます。"
+  },
+  "uiTest": {
+    "heading": "UIテスト",
+    "description": "通常は到達しにくいUI状態(まれなトースト、エッジケースのバナーなど)を手動でトリガーするためのものです - ユーザー向け機能ではありません。",
+    "infoToastButton": "情報トースト",
+    "successToastButton": "成功トースト",
+    "errorToastButton": "エラートースト",
+    "longToastButton": "長文トースト",
+    "actionToastButton": "アクショントースト",
+    "infoToastMessage": "これは情報トーストです。",
+    "successToastMessage": "これは成功トーストです。",
+    "errorToastMessage": "これはエラートーストです。",
+    "longToastMessage": "1行を大きく超えるテキストの場合の折り返しとサイズ調整の挙動を確認するための、より長いトーストメッセージです。",
+    "actionToastMessage": "アクショントーストのテスト - これで正しく見えますか?",
+    "confirm": "確認",
+    "dismiss": "閉じる",
+    "confirmedMessage": "確認しました!"
+  },
+  "pluginSettings": {
+    "heading": "プラグイン",
+    "addPlugin": "プラグインを追加",
+    "tabs": {
+      "source": "ソース",
+      "theme": "テーマ",
+      "metadata": "メタデータプロバイダー",
+      "controller": "コントローラー",
+      "wrapper": "ラッパー"
+    },
+    "noSourcePlugins": "インストールされたプラグインはありません。",
+    "scanOrderHint": "スキャン順序が重要です: 同じタイトルのゲームが複数のソースで見つかった場合、後のソースの起動パス/プラットフォームが優先されます。以下の矢印で順序を変更してください。",
+    "noMetadataProviders": "インストールされたプロバイダーはありません。",
+    "fetchOrderHint": "取得順序が重要です: 各項目(説明、発売日、カバー/背景画像)ごとに、値を持つ最初の有効なプロバイダーが優先されます。以下の矢印で順序を変更してください。",
+    "noControllerMappings": "インストールされたマッピングはありません。",
+    "noWrapperPlugins": "インストールされたラッパープラグインはありません。",
+    "updateTo": "v{version}に更新",
+    "permissionNeeded": "権限が必要です: このプラグインはシステム上で他のプログラムを実行します。",
+    "grant": "許可",
+    "scanning": "スキャン中...",
+    "scanNow": "今すぐスキャン",
+    "removeTheme": "削除",
+    "manifestUrlLabel": "プラグインマニフェストURL"
+  },
+  "library": {
+    "emptyMessage": "ライブラリが空です。ゲームを追加するか、ソースプラグインをスキャンしてください。",
+    "noMatchMessage": "検索/フィルターに一致するゲームがありません。"
+  },
+  "gameCard": {
+    "play": "プレイ",
+    "fetchMetadata": "メタデータを取得",
+    "edit": "編集",
+    "remove": "削除",
+    "minutesPlayed": "{minutes}分プレイ"
+  }
+}

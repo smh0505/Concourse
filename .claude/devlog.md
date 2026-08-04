@@ -3204,3 +3204,34 @@ wrong rather than silently wrong).
 Translation-model half (new `translation`/host-native Rust module, llama.cpp, model
 picker/download-on-first-use) remains unstarted - a separate, later implementation pass.
 
+**Follow-up: 9 additional UI locales added.** User asked for Korean, Japanese, Simplified
+Chinese plus "others you think major," landing on 10 languages total (English plus Korean,
+Japanese, Simplified Chinese, Spanish, French, German, Brazilian Portuguese, Russian, Italian) -
+a reasonable spread of major world languages by speaker count and desktop-software localization
+convention, not an exhaustive list. Each locale (`src/i18n/locales/{ko,ja,zh-Hans,es,fr,de,
+pt-BR,ru,it}.json`) mirrors `en.json`'s exact key structure - verified programmatically (a
+one-off Node script flattened every locale's keys and diffed against `en.json`'s; all 9 came
+back with zero missing/extra keys) rather than trusting manual transcription. Translated
+directly (not delegated to a subagent - translation quality isn't improved by delegation, since
+any agent uses the same underlying model) preserving every interpolation placeholder exactly
+(`{minutes}`, `{count}`, `{name}`, `{version}`, `{hive}`, `{prefix}`, `{host}`, `{hours}`,
+`{error}`, `{verb}`) and leaving punctuation-sensitive fragments (e.g. `addPlugin.curatedIntro`,
+which is followed by a literal link in the template) grammatically compatible with their
+surrounding markup.
+
+`src/i18n/index.ts`'s `messages` map now imports and registers all 10 locale JSON files (`en`,
+`ko`, `ja`, `"zh-Hans"`, `es`, `fr`, `de`, `"pt-BR"`, `ru`, `it`); `AppSettings.vue`'s language
+`<select>` needed no structural change (it already derives its option list from
+`Object.keys(messages)`), only its `localeNames` display-name map extended with each language's
+own native-script name (e.g. "한국어", "日本語", "简体中文") rather than English glosses, so the
+picker reads correctly to someone who doesn't yet read English. `stores/appSettings.ts`'s
+`setLocale`/`init` had a leftover `as "en"` type cast from when only one locale existed - tightened
+to a proper `LocaleCode = keyof typeof messages` union instead of leaving it silently permissive.
+
+Flagged directly to the user (not silently glossed over): these are machine translations
+(produced by Claude itself, not a licensed MT engine, not native-speaker-reviewed) - fine for
+getting real translated UI in front of users quickly, but worth an eventual native-speaker pass
+before treating them as final, particularly for longer sentences (`codeWarning`,
+`scanOrderHint`, `fetchOrderHint`) where nuance is easiest to lose. `bun run build` clean after
+both the initial 9-locale add and the follow-up type-cast cleanup.
+

@@ -6,7 +6,18 @@ import { messages } from "../../../i18n";
 const { t } = useI18n();
 const appSettings = useAppSettingsStore();
 const localeOptions = Object.keys(messages) as (keyof typeof messages)[];
-const localeNames: Record<string, string> = { en: "English" };
+const localeNames: Record<string, string> = {
+  en: "English",
+  ko: "한국어",
+  ja: "日本語",
+  "zh-Hans": "简体中文",
+  es: "Español",
+  fr: "Français",
+  de: "Deutsch",
+  "pt-BR": "Português (Brasil)",
+  ru: "Русский",
+  it: "Italiano",
+};
 </script>
 
 <template>

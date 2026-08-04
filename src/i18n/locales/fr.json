@@ -1,0 +1,200 @@
+{
+  "common": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "close": "Fermer",
+    "back": "Retour",
+    "loading": "Chargement...",
+    "unknown": "Inconnu",
+    "continue": "Continuer",
+    "settings": "Paramètres",
+    "delete": "Supprimer"
+  },
+  "settings": {
+    "autoLaunchBigPicture": "Lancer en mode Big Picture au démarrage",
+    "language": "Langue"
+  },
+  "app": {
+    "switchToSlideshow": "Passer à l'affichage diaporama",
+    "switchToGrid": "Passer à l'affichage grille",
+    "exit": "Quitter"
+  },
+  "gameDetail": {
+    "unknownPlatform": "Plateforme inconnue",
+    "titleAndPathRequired": "Le titre et le chemin de l'exécutable sont obligatoires.",
+    "backToLibrary": "Retour à la bibliothèque",
+    "tags": "Tags",
+    "addTag": "Ajouter un tag",
+    "collections": "Collections",
+    "addCollection": "Ajouter une collection",
+    "minPlayed": "{minutes} min jouées",
+    "coverArtUrl": "URL de la jaquette",
+    "backgroundArtUrl": "URL de l'image de fond",
+    "fetch": "Récupérer",
+    "releaseDate": "Date de sortie",
+    "descriptionLabel": "Description (Markdown pris en charge)",
+    "skipDedup": "Exclure des scans de plugins (ne pas fusionner/dédupliquer cette entrée)",
+    "wrapperProfile": "Profil de wrapper de compatibilité",
+    "wrapperNone": "Aucun",
+    "noWrapperProfiles": "Aucun profil trouvé - installez et activez d'abord un plugin de wrapper de compatibilité dans les paramètres.",
+    "play": "Jouer",
+    "edit": "Modifier",
+    "remove": "Supprimer",
+    "fetching": "Récupération...",
+    "fetchMetadata": "Récupérer les métadonnées",
+    "titleLabel": "Titre",
+    "executablePathLabel": "Chemin de l'exécutable"
+  },
+  "candidatePicker": {
+    "title": "Plusieurs correspondances trouvées",
+    "description": "Certains fournisseurs ont trouvé plusieurs correspondances. Choisissez la bonne pour chaque fournisseur, ou laissez une section non sélectionnée pour l'ignorer."
+  },
+  "installableStatus": {
+    "installed": "Installé",
+    "notInstalled": "Non installé",
+    "installing": "Installation...",
+    "uninstalling": "Désinstallation...",
+    "install": "Installer",
+    "uninstall": "Désinstaller",
+    "actionFailed": "Échec de {verb} {name} : {error}"
+  },
+  "titleBar": {
+    "showSidebar": "Afficher la barre latérale",
+    "hideSidebar": "Masquer la barre latérale",
+    "bigPictureMode": "Mode Big Picture",
+    "appName": "Bibliothèque de jeux",
+    "minimize": "Réduire",
+    "maximize": "Agrandir",
+    "restore": "Restaurer",
+    "close": "Fermer"
+  },
+  "confirmInstall": {
+    "title": "Installer {name} ?",
+    "id": "ID",
+    "version": "Version",
+    "kind": "Type",
+    "themeNotice": "Ceci installe un thème constitué uniquement de données (couleurs/variables CSS, aucun code).",
+    "codeWarning": "Ceci télécharge et exécute du code depuis l'URL fournie. L'accès aux fichiers/au registre/au réseau est limité à ce qui est déclaré ci-dessous (appliqué par l'hôte) - mais cette portée est déclarée par l'auteur du plugin lui-même, sans vérification par rapport au comportement réel du code. N'installez que des plugins provenant de sources en qui vous avez entièrement confiance.",
+    "declaresAccessTo": "Déclare un accès à :",
+    "registryScope": "Registre : {hive}\\{prefix}",
+    "filesScope": "Fichiers sous : {prefix}",
+    "networkScope": "Réseau : {host}",
+    "runProgramsGrant": "Ce plugin exécute d'autres programmes sur votre système (par ex. lancer un jeu). Je comprends et j'autorise cela.",
+    "installing": "Installation...",
+    "install": "Installer"
+  },
+  "addGame": {
+    "title": "Ajouter un jeu",
+    "titleLabel": "Titre",
+    "executablePathLabel": "Chemin de l'exécutable",
+    "validationError": "Le titre et le chemin de l'exécutable sont obligatoires.",
+    "submit": "Ajouter le jeu"
+  },
+  "bigPicture": {
+    "emptyLibrary": "Aucun jeu dans la bibliothèque."
+  },
+  "addPlugin": {
+    "curatedIntro": "Plugins sélectionnés (revus, hash figé - voir",
+    "install": "Installer",
+    "installing": "Installation...",
+    "pasteManifestUrl": "ou collez directement une URL de manifeste :",
+    "loadingCurated": "Chargement des plugins sélectionnés..."
+  },
+  "nav": {
+    "controllerConnected": "Manette connectée",
+    "addGame": "Ajouter un jeu",
+    "library": "Bibliothèque",
+    "stats": "Statistiques",
+    "tags": "Tags",
+    "collections": "Collections",
+    "settings": "Paramètres",
+    "uiTest": "Test de l'interface"
+  },
+  "slideshow": {
+    "minPlayed": "{minutes} min jouées",
+    "noGames": "Aucun jeu dans la bibliothèque."
+  },
+  "collections": {
+    "title": "Collections",
+    "description": "Regroupe une série/franchise (« Final Fantasy ») - un concept distinct des tags, pas un type de tag.",
+    "newNamePlaceholder": "Nom de la nouvelle collection",
+    "addCollection": "Ajouter une collection",
+    "rename": "Renommer",
+    "gamesCount": "{count} jeux",
+    "empty": "Aucune collection pour l'instant."
+  },
+  "tags": {
+    "title": "Tags",
+    "description": "Étiquettes libres pour organiser votre bibliothèque (« Coop », « À faire »).",
+    "newNamePlaceholder": "Nom du nouveau tag",
+    "addTag": "Ajouter un tag",
+    "rename": "Renommer",
+    "gamesCount": "{count} jeux",
+    "empty": "Aucun tag pour l'instant."
+  },
+  "filters": {
+    "searchPlaceholder": "Rechercher par titre...",
+    "switchToListView": "Passer à l'affichage liste",
+    "switchToGridView": "Passer à l'affichage grille"
+  },
+  "stats": {
+    "gamesInLibrary": "Jeux dans la bibliothèque",
+    "hoursPlayed": "Heures jouées",
+    "mostPlayed": "Les plus joués",
+    "recentlyPlayed": "Joués récemment",
+    "hoursSuffix": "{hours} h",
+    "emptyState": "Jouez à un jeu pour voir des statistiques ici."
+  },
+  "uiTest": {
+    "heading": "Test de l'interface",
+    "description": "Déclencheurs manuels pour des états d'interface difficiles à atteindre autrement (toasts rares, bannières de cas limites, etc.) - ce n'est pas une fonctionnalité destinée à l'utilisateur.",
+    "infoToastButton": "Toast d'info",
+    "successToastButton": "Toast de succès",
+    "errorToastButton": "Toast d'erreur",
+    "longToastButton": "Toast à message long",
+    "actionToastButton": "Toast avec action",
+    "infoToastMessage": "Ceci est un toast d'information.",
+    "successToastMessage": "Ceci est un toast de succès.",
+    "errorToastMessage": "Ceci est un toast d'erreur.",
+    "longToastMessage": "Ceci est un message de toast bien plus long, pour vérifier le comportement du retour à la ligne et de la taille lorsque le texte dépasse largement une seule ligne courte.",
+    "actionToastMessage": "Test de toast avec action - est-ce que ça a l'air correct ?",
+    "confirm": "Confirmer",
+    "dismiss": "Ignorer",
+    "confirmedMessage": "Confirmé !"
+  },
+  "pluginSettings": {
+    "heading": "Plugins",
+    "addPlugin": "Ajouter un plugin",
+    "tabs": {
+      "source": "Source",
+      "theme": "Thème",
+      "metadata": "Fournisseur de métadonnées",
+      "controller": "Manette",
+      "wrapper": "Wrapper"
+    },
+    "noSourcePlugins": "Aucun plugin installé.",
+    "scanOrderHint": "L'ordre de scan compte : si un jeu au même titre est trouvé par plusieurs sources, le chemin de lancement/plateforme de la source la plus récente l'emporte. Réordonnez avec les flèches ci-dessous.",
+    "noMetadataProviders": "Aucun fournisseur installé.",
+    "fetchOrderHint": "L'ordre de récupération compte : pour chaque champ (description, date de sortie, jaquette/fond), le premier fournisseur activé ayant une réponse l'emporte. Réordonnez avec les flèches ci-dessous.",
+    "noControllerMappings": "Aucun mappage installé.",
+    "noWrapperPlugins": "Aucun plugin de wrapper installé.",
+    "updateTo": "Mettre à jour vers v{version}",
+    "permissionNeeded": "Permission requise : ce plugin exécute d'autres programmes sur votre système.",
+    "grant": "Accorder",
+    "scanning": "Analyse en cours...",
+    "scanNow": "Analyser maintenant",
+    "removeTheme": "Supprimer",
+    "manifestUrlLabel": "URL du manifeste du plugin"
+  },
+  "library": {
+    "emptyMessage": "Votre bibliothèque est vide. Ajoutez un jeu ou analysez un plugin source pour commencer.",
+    "noMatchMessage": "Aucun jeu ne correspond à votre recherche/vos filtres."
+  },
+  "gameCard": {
+    "play": "Jouer",
+    "fetchMetadata": "Récupérer les métadonnées",
+    "edit": "Modifier",
+    "remove": "Supprimer",
+    "minutesPlayed": "{minutes} min jouées"
+  }
+}

@@ -3090,3 +3090,55 @@ now fire at three moments, not four: app start, app focus (`App.vue`), and Setti
 (`PluginSettings.vue`) - `AddPlugin.vue`'s own bundle even shrank slightly as a result.
 `bun run build` clean at both steps.
 
+## Milestone 21 — Internationalization & Offline Translation (scoped, not started)
+
+Discussion-only session, prompted by the user wanting i18n but explicitly ruling out paid
+third-party translation APIs (cost aside, wanted the feature to stay fully portable/offline).
+Split into two genuinely separate problems rather than one feature: static UI string
+localization, and dynamic content translation (game descriptions/metadata, which can arrive
+from any metadata-provider plugin and can't be pre-translated ahead of time).
+
+**UI strings**: `vue-i18n` is the obvious, uncontroversial pick - locale JSON files, zero cost,
+fully offline, standard Vue 3 integration. No further scoping needed here.
+
+**Content translation** needed more research since "no paid API" still leaves a wide field of
+offline/local options, evaluated in order of consideration:
+- **Argos Translate** - OpenNMT/CTranslate2-based, Apache-licensed, simplest packaging
+  (self-contained `.argosmodel` bundles). Quality noticeably below Google Translate/DeepL,
+  especially outside major language pairs, and translates line-by-line with no cross-sentence
+  context - fine for "gist of a description," not polished prose.
+- **NLLB-200 (Meta) / MADLAD-400 (Google) via CTranslate2** - both free, Apache-2.0, meaningfully
+  better quality than Argos, distilled checkpoints small enough to bundle. Would need a native
+  sidecar process (CTranslate2 core is C++; Rust bindings exist), fitting the existing WASM/
+  sidecar-plugin pattern already used elsewhere in the app.
+- **Bergamot** (Firefox's offline translator) - very small per-language-pair models (~20-40MB),
+  WASM-native (built for exactly this: client-side, no server), tightest infra fit given
+  Concourse's WASM-plugin architecture already exists. Quality below NLLB, but far lighter.
+- **Local LLM (e.g. Gemma) via `llama.cpp`** - user reported genuinely good translation quality
+  from a local Gemma in prior personal use, prompting a broader look at LLM-based translation vs.
+  dedicated MT models. `llama.cpp` compiles to a native binary with Rust bindings (`llama-cpp-2`),
+  fits the same "Rust backend owns the integration" pattern as `sgdb.rs`/`igdb.rs`. Tradeoff
+  vs. dedicated MT: bigger download and higher RAM during inference, but noticeably better
+  fluency and one model handles every language pair (no per-pair model management).
+- Clarified two Gemma-family models are *not* interchangeable for this: **EmbeddingGemma**
+  produces vector embeddings (similarity/retrieval/RAG) and cannot generate translated text at
+  all - it would only be relevant to a future semantic game-search feature, unrelated to i18n.
+  **TranslateGemma** (Google, released 2026-01-15, per the technical report at
+  arxiv.org/pdf/2601.09012) is the actual right pick over generic Gemma-3-instruct: a dedicated
+  translation fine-tune of Gemma 3 (4B/12B/27B, 55 languages, two-stage SFT + RL-optimized
+  training), ~26% better translation accuracy than the untuned base model at the same size - the
+  12B checkpoint reportedly even beats their own 27B baseline. Same `llama.cpp`/GGUF integration
+  path as any other local LLM option, just a better-suited checkpoint for the specific job.
+
+**Scoping decision**: rather than pre-committing to one model, let the user choose at the UI
+level. Plan: new `translation` plugin kind (parallel to the existing `source`/`theme`/`metadata`/
+`controller` kinds) wraps a `llama.cpp` sidecar; Settings UI presents a picker listing the
+available Gemma/TranslateGemma size tiers (tradeoffs: download size, RAM during inference,
+translation quality) and triggers a download-on-first-use fetch of the chosen GGUF checkpoint
+only after the user picks it - nothing bundled into the installer, nothing fetched speculatively.
+
+Logged as a scoped Post-1.0 milestone at the user's explicit request ("log as milestone only")
+rather than starting implementation this session - this is a multi-part feature (new plugin
+kind, a model-download manager, a native llama.cpp integration, plus the separate vue-i18n UI
+work) better suited to its own dedicated implementation pass.
+

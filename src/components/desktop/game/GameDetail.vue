@@ -279,8 +279,15 @@ async function onDelete() {
           </template>
         </div>
 
-        <div class="info" :class="{ 'text-pending': textPending, 'reverse-band': wantsReverse }">
-          <template v-if="!editing">
+        <div class="info" :class="{ 'reverse-band': wantsReverse }">
+          <template v-if="textPending">
+            <div class="skeleton-bar skeleton-title"><div class="shimmer" /></div>
+            <div class="skeleton-bar skeleton-meta"><div class="shimmer" /></div>
+            <div class="skeleton-bar skeleton-desc"><div class="shimmer" /></div>
+            <div class="skeleton-bar skeleton-desc"><div class="shimmer" /></div>
+            <div class="skeleton-bar skeleton-desc short"><div class="shimmer" /></div>
+          </template>
+          <template v-else-if="!editing">
             <h1>{{ game.title }}</h1>
             <div class="meta">
               <span
@@ -482,10 +489,38 @@ async function onDelete() {
   color: var(--color-text);
 }
 
-/* Hides title/meta/description while brightness is unresolved, so it never flashes the
-   pre-flip color. Transparent, not visibility/display, so no layout reflow once resolved. */
-.info.text-pending {
-  color: transparent;
+/* Shown instead of title/meta/description while the backdrop's brightness is unresolved
+   (textPending) - real content would otherwise briefly flash the pre-flip color before
+   wantsReverse settles, or the page would need to hide it with no visual feedback at all.
+   Roughly sized/spaced to match the content they stand in for, so there's minimal reflow once
+   the real elements replace them. */
+.skeleton-bar {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface0);
+}
+
+.skeleton-title {
+  height: 2.2rem;
+  width: 60%;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-meta {
+  height: 1rem;
+  width: 40%;
+  margin-bottom: var(--space-3);
+}
+
+.skeleton-desc {
+  height: 0.9rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-desc.short {
+  width: 65%;
 }
 
 .game-detail {

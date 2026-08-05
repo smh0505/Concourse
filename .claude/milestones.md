@@ -281,6 +281,10 @@ own definition.
 - [x] `GameDetail.vue`'s cover thumbnail shows a skeleton shimmer (same look as `SkeletonCard.vue`/
   `SkeletonRow.vue`) while `fetchingMetadata` is in flight - `cover_art_url` is one of the fields
   a metadata fetch can overwrite
+- [x] Replaced `.info`'s invisible-text hack (`color: transparent`, no visual feedback at all)
+  during `textPending` (backdrop loaded, brightness not yet resolved) with real skeleton bars
+  standing in for the title/meta/description, sized to roughly match so there's minimal reflow
+  once the real content replaces them
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

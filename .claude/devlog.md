@@ -3535,3 +3535,19 @@ swapped in ahead of the real `<img>`/placeholder via a `v-if="fetchingMetadata"`
 the already-shared `.shimmer`/`@keyframes shimmer` from `styles.css` rather than duplicating the
 animation. `bun run build` clean.
 
+**Correction: the skeleton the user actually meant was `textPending`, not `fetchingMetadata`.**
+Clarified directly - they meant the window while the backdrop image has loaded but its
+brightness/`wantsReverse` hasn't resolved yet (`useImageBrightness`'s `isReady`), which
+previously had zero visual feedback at all: `.info.text-pending { color: transparent; }` simply
+made the title/meta/description invisible rather than showing anything resembling a loading
+state (chosen originally just to avoid a color-flash, not as a real skeleton). Replaced that rule
+with three real skeleton elements (`.skeleton-title`/`.skeleton-meta`/`.skeleton-desc` x3, one
+`.short`), shown via a new outermost `v-if="textPending"` branch ahead of the existing `v-else-
+if="!editing"`/`v-else` (edit-form) split - sized/spaced to roughly match the content they stand
+in for (title ~2.2rem tall/60% wide, meta ~1rem/40%, three description lines tapering to 65%),
+so swapping to the real elements once brightness resolves causes minimal layout jump. Reuses the
+same shared `.shimmer` class as the cover skeleton above, not a new animation. Also covers the
+`fetchingBackground`-triggered re-fetch case for free, since changing `background_art_url`
+re-triggers `useImageBrightness` and thus `textPending` the same way initial navigation does -
+no separate handling needed for that path. `bun run build` clean.
+

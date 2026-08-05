@@ -454,3 +454,7 @@ conversion's own implementation detail.
   https://smh0505.github.io/Concourse/, workflow run confirmed successful
 - [x] End-user documentation added under `docs/guide/` (Getting Started, Library & Games,
   Plugins & Themes, Big Picture Mode) - new "User Guide" nav entry alongside "Plugin Docs"
+- [ ] Reminder: add real app screenshots to the docs site (currently none). No screenshot
+  tooling in this dev environment, so the user needs to capture them manually - swap out
+  `%APPDATA%\com.bloppy.concourse\library.db*` for a throwaway/fake-data copy first (real
+  library has NSFW entries not meant for public docs), screenshot, then restore the originals

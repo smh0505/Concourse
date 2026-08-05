@@ -3453,3 +3453,51 @@ one pass. Verified zero `../`-style imports remained via a repo-wide grep afterw
 confirmed `bun run build` (`vue-tsc --noEmit` + `vite build`) stayed clean - the type-check
 passing confirms the alias resolves correctly for TypeScript, not just Vite's runtime bundler.
 
+**Follow-up: `tsconfig.json`'s `baseUrl` flagged deprecated by the editor.** Recent TypeScript
+resolves `paths` relative to the tsconfig file's own directory without needing `baseUrl` at all
+- but doing that requires each `paths` value to start with an explicit `./` (`TS5090: Non-
+relative paths are not allowed when 'baseUrl' is not set` otherwise). Removed `baseUrl: "."`,
+changed `"@/*": ["src/*"]` to `"@/*": ["./src/*"]`. `bun run build` clean.
+
+**Follow-up: a `noUnusedLocals`/`ts(6133)` false positive on `GameCard.vue`'s `balloonEl`.**
+`useBalloonAnchor` created its own `balloonEl` ref internally and returned it purely so the
+calling component could bind it via `ref="balloonEl"` in the template - inverted from `cardEl`'s
+pattern (created in `GameCard.vue`, passed into the composable), which apparently some tooling's
+unused-variable analysis can't see through (a plain string `ref="name"` template binding doesn't
+always get recognized as "reading" a destructured composable return, even though Vue's actual
+compiler handles it correctly at runtime - `bun run build` never flagged it, this was purely an
+editor/language-server-level diagnostic). Fixed at the root: `useBalloonAnchor`'s signature now
+takes both `cardEl` and `balloonEl` as parameters instead of creating/returning `balloonEl`
+itself; `GameCard.vue` creates both refs locally, matching `cardEl`'s existing, already-correct
+ownership model. `bun run build` clean.
+
+**Follow-up: grouped imports per file (external packages, blank line, then internal).** Another
+one-off Node script (`group-imports.mjs`), needed because a blind per-line regex can't correctly
+handle multi-line import statements (destructured type-only imports spanning several lines) or
+tell where one import statement ends and the next begins once wrapped. First pass had a real
+bug: each import's own trailing newline was being mis-attributed as a "blank line" belonging to
+the *next* statement's prefix rather than to itself, so inserting a separator blank line between
+groups produced a double blank line everywhere. Fixed by making the statement-splitter consume
+exactly one trailing line terminator into the statement it just closed, so each unit always owns
+its own newline and the group separator only ever adds exactly one more. Verified via a git diff
+scan for the expected count (40 added lines, one per touched file, no doubles) before committing.
+Reran on 40 files; `bun run build` clean, order within each group and every comment's attachment
+to its own import preserved.
+
+**Follow-up: App.vue's ~30-line import block, on request - barrel `index.ts` files instead of
+an auto-import plugin.** Presented both real options before touching anything: barrel files
+(explicit, no new dependency, matches this codebase's already-very-explicit style) vs.
+`unplugin-vue-components`/`unplugin-auto-import` (zero import lines at all, but two new build
+dependencies and convention-based magic that cuts against how deliberately explicit/documented
+everything else here already is). User picked barrels. Added `index.ts` to `stores/` (`export *
+from "./file"` per store - verified no export-name collisions across all 14 store files first)
+and to every `components/desktop/` subfolder plus `components/bigpicture/` (`export { default as
+Name } from "./File.vue"` per component, since `.vue` SFCs have a default export, not named
+ones - `shell/index.ts` also re-exports `NavSidebar.vue`'s named `AppView` type the same way).
+`App.vue`'s own store-only-and-component-only imports collapsed from ~24 individual lines to one
+import per directory (8 total). `tabs/index.ts`'s own comment calls out why `UiTest.vue` still
+isn't routed through it despite living in that folder: `App.vue`'s existing `import()` for it is
+a deliberate code-split point (gated by `import.meta.env.DEV`, dropped entirely from production
+builds) - a dynamic `import()` naming a barrel-exported binding pulls in the whole barrel's
+module graph statically, which would silently defeat that split. `bun run build` clean.
+

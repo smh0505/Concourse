@@ -270,6 +270,10 @@ own definition.
   `paths`) and rewrote every `../`-style import across the codebase (42 files, 119 specifiers)
   to use it - avoids `../../../` chains getting longer every time components move into a
   subfolder
+- [x] Grouped imports per file (external packages, blank line, then internal) across 40 files
+- [x] Added a barrel `index.ts` to `stores/` and every `components/desktop/` subfolder (plus
+  `components/bigpicture/`), re-exporting everything in that folder - `App.vue`'s ~24 individual
+  store/component import lines collapsed to one import per directory (8 total)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

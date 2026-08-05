@@ -22,20 +22,12 @@ time.
 
 ## Two ways to ship a plugin
 
-Every plugin kind can be authored one of three ways:
-
-1. **Built-in TypeScript plugin** — bundled into the app itself at build time (Vite's
-   `import.meta.glob`), written directly against the `SourcePlugin`/`ThemePlugin`/
-   `MetadataProviderPlugin`/`ControllerMappingPlugin`/`WrapperPlugin` TypeScript interfaces
-   (`src/plugins/types.ts`). This is how Concourse's own built-in Catppuccin themes and standard
-   gamepad mapping ship. **Not available to third parties** — it requires a PR into Concourse
-   itself and a new app release.
-2. **WASM plugin** — a separately-installed `.wasm` component, downloaded by URL (or via the
+1. **WASM plugin** — a separately-installed `.wasm` component, downloaded by URL (or via the
    curated registry) at runtime, running in a sandboxed [wasmtime](https://wasmtime.dev/)
    Component Model instance. This is the path for third-party `source`/`wrapper`/`metadata`
    plugins today — see [Getting Started](./getting-started) and the
    [WIT Interface](./wit-interface) reference.
-3. **Data-only theme manifest** — for `theme` plugins specifically, a manifest can be pure JSON
+2. **Data-only theme manifest** — for `theme` plugins specifically, a manifest can be pure JSON
    (`cssVariables`/`cardVisual`/`fontFaces`, no code at all) if it doesn't need the full WASM
    plugin machinery. See the [Manifest Reference](./manifest-reference)'s `cssVariables`/
    `cardVisual`/`fontFaces` fields.
@@ -43,7 +35,9 @@ Every plugin kind can be authored one of three ways:
 WASM plugins only exist for the three kinds a
 [WIT world](https://component-model.bytecodealliance.org/design/wit.html) has been defined for
 so far: `source`, `wrapper`, `metadata`. Building a third-party `theme` plugin today means the
-data-only manifest path; `controller` mapping plugins are TypeScript-only for now.
+data-only manifest path above. There's currently no third-party path for `controller` mapping
+plugins - Concourse's built-in gamepad mappings are compiled directly into the app, and adding a
+new one today means contributing to Concourse itself rather than shipping a separate plugin.
 
 ## Why WASM, not native code or scripting
 

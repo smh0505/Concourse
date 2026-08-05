@@ -6,7 +6,7 @@ import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
-import type { PluginManifest } from "../plugins/manifest";
+import type { PluginManifest } from "@/plugins/manifest";
 
 export interface UpdateCheckResult {
   id: string;

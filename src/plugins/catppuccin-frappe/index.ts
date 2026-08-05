@@ -1,4 +1,4 @@
-import type { ThemePlugin } from "../types";
+import type { ThemePlugin } from "@/plugins/types";
 
 const plugin: ThemePlugin = {
   id: "catppuccin-frappe",

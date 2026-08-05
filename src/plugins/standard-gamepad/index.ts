@@ -1,4 +1,4 @@
-import type { ControllerMappingPlugin } from "../types";
+import type { ControllerMappingPlugin } from "@/plugins/types";
 
 // Standard XInput/PS-layout mapping per the Gamepad API's "standard" gamepad mapping:
 // https://developer.mozilla.org/en-US/docs/Web/API/Gamepad/mapping

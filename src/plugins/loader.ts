@@ -13,9 +13,9 @@ import type {
   ThemePlugin,
   WrapperPlugin,
 } from "./types";
-import InstallableStatus from "../components/desktop/common/InstallableStatus.vue";
-import SettingsButton from "../components/desktop/modalForms/SettingsButton.vue";
-import { useWrapperPluginStore } from "../stores/wrapperPlugins";
+import InstallableStatus from "@/components/desktop/common/InstallableStatus.vue";
+import SettingsButton from "@/components/desktop/modalForms/SettingsButton.vue";
+import { useWrapperPluginStore } from "@/stores/wrapperPlugins";
 
 // Each plugin lives at src/plugins/<id>/plugin.json + an entry module (e.g. index.ts)
 // exporting a SourcePlugin or ThemePlugin (per manifest `kind`) as its default export.

@@ -2,8 +2,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import BaseModal from "../common/BaseModal.vue";
-import { RUN_PROGRAMS_CAPABILITY, type PathScope, type PluginPreview } from "../../../plugins/manifest";
+import BaseModal from "@/components/desktop/common/BaseModal.vue";
+import { RUN_PROGRAMS_CAPABILITY, type PathScope, type PluginPreview } from "@/plugins/manifest";
 
 // Second step of the "install by URL" flow (see AddPlugin.vue) for every installable plugin
 // kind - shows what was actually fetched (id/name/version/kind) before committing to the real

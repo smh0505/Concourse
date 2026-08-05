@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { settings as settingsRepo } from "../db";
-import { i18n, messages } from "../i18n";
+import { settings as settingsRepo } from "@/db";
+import { i18n, messages } from "@/i18n";
 
 type LocaleCode = keyof typeof messages;
 

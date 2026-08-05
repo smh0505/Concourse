@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { IconCheck, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
-import { useTagsStore } from "../../../stores/tags";
-import { useNamedItemManager } from "../../../composables/useNamedItemManager";
+import { useTagsStore } from "@/stores/tags";
+import { useNamedItemManager } from "@/composables/useNamedItemManager";
 
 const { t } = useI18n();
 const tags = useTagsStore();

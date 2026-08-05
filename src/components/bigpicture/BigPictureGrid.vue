@@ -2,9 +2,9 @@
 import { computed, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from "vue";
 import { IconInboxOff } from "@tabler/icons-vue";
 import { useI18n } from "vue-i18n";
-import { useLibraryStore } from "../../stores/library";
-import { useGamepadNav } from "../../composables/useGamepadNav";
-import { suppressMouseActivity, useMouseActivity } from "../../composables/useMouseActivity";
+import { useLibraryStore } from "@/stores/library";
+import { useGamepadNav } from "@/composables/useGamepadNav";
+import { suppressMouseActivity, useMouseActivity } from "@/composables/useMouseActivity";
 import BigPictureTile from "./BigPictureTile.vue";
 
 const emit = defineEmits<{ close: [] }>();

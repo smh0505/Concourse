@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { CardVisualRenderer } from "../../theme/cardVisualAst";
-import { useActiveCardVisual } from "../../theme/cardVisualRegistry";
-import type { Game } from "../../db";
+import { CardVisualRenderer } from "@/theme/cardVisualAst";
+import { useActiveCardVisual } from "@/theme/cardVisualRegistry";
+import type { Game } from "@/db";
 
 defineProps<{ game: Game; focused: boolean }>();
 

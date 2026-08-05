@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { settings as settingsRepo } from "../db";
-import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
-import type { PluginManifest } from "../plugins/manifest";
-import type { LocaleProfile, WrapperPlugin } from "../plugins/types";
+import { settings as settingsRepo } from "@/db";
+import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
+import type { PluginManifest } from "@/plugins/manifest";
+import type { LocaleProfile, WrapperPlugin } from "@/plugins/types";
 
 const ENABLED_WRAPPERS_SETTING = "enabled_wrapper_plugins";
 // Default both to enabled (unlike source/metadata plugins, which are opt-in) so existing

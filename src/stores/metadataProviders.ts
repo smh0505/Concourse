@@ -1,10 +1,10 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { settings as settingsRepo } from "../db";
-import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
+import { settings as settingsRepo } from "@/db";
+import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import { useToastStore } from "./toasts";
-import type { PluginManifest } from "../plugins/manifest";
-import type { MetadataCandidate, MetadataProviderPlugin, MetadataResult } from "../plugins/types";
+import type { PluginManifest } from "@/plugins/manifest";
+import type { MetadataCandidate, MetadataProviderPlugin, MetadataResult } from "@/plugins/types";
 
 export interface PendingCandidateSection {
   pluginId: string;

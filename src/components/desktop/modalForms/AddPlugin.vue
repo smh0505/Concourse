@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import BaseModal from "../common/BaseModal.vue";
-import { usePluginInstallStore } from "../../../stores/pluginInstall";
-import { usePluginUpdatesStore } from "../../../stores/pluginUpdates";
-import { usePluginStore } from "../../../stores/plugins";
-import { useThemeStore } from "../../../stores/theme";
-import { useMetadataProviderStore } from "../../../stores/metadataProviders";
-import { useControllerMappingStore } from "../../../stores/controllerMapping";
-import { useWrapperPluginStore } from "../../../stores/wrapperPlugins";
+import BaseModal from "@/components/desktop/common/BaseModal.vue";
+import { usePluginInstallStore } from "@/stores/pluginInstall";
+import { usePluginUpdatesStore } from "@/stores/pluginUpdates";
+import { usePluginStore } from "@/stores/plugins";
+import { useThemeStore } from "@/stores/theme";
+import { useMetadataProviderStore } from "@/stores/metadataProviders";
+import { useControllerMappingStore } from "@/stores/controllerMapping";
+import { useWrapperPluginStore } from "@/stores/wrapperPlugins";
 
 // Generic install-by-URL modal - not theme-specific. Any plugin kind that grows its own
 // install-by-URL capability (source, metadata, etc.) can reuse this by passing its own

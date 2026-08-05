@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { playtime as playtimeRepo } from "../db";
+import { playtime as playtimeRepo } from "@/db";
 
 const RECENTLY_PLAYED_LIMIT = 10;
 

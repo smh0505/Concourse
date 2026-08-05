@@ -9,8 +9,8 @@ import {
   settings as settingsRepo,
   type Game,
   type GameEditFields,
-} from "../db";
-import type { GameEntry } from "../plugins/types";
+} from "@/db";
+import type { GameEntry } from "@/plugins/types";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";

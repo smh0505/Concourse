@@ -1,11 +1,11 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { settings as settingsRepo } from "../db";
-import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
+import { settings as settingsRepo } from "@/db";
+import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import { useLibraryStore } from "./library";
 import { useToastStore } from "./toasts";
-import type { PluginManifest } from "../plugins/manifest";
-import type { SourcePlugin } from "../plugins/types";
+import type { PluginManifest } from "@/plugins/manifest";
+import type { SourcePlugin } from "@/plugins/types";
 
 const ENABLED_PLUGINS_SETTING = "enabled_plugins";
 

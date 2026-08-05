@@ -5,7 +5,7 @@ import { usePluginStore } from "./plugins";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";
 import { useToastStore } from "./toasts";
-import type { PluginPreview } from "../plugins/manifest";
+import type { PluginPreview } from "@/plugins/manifest";
 
 /** Mirrors the Rust `InstallResult` (`plugin_installer.rs`) - Milestone 14's provenance
  *  verification is advisory only, surfaced here rather than enforced (install always

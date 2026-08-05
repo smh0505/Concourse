@@ -2,24 +2,24 @@
 import { invoke } from "@tauri-apps/api/core";
 import { computed, onMounted, ref, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
-import { usePluginStore } from "../../../stores/plugins";
-import { useThemeStore } from "../../../stores/theme";
-import { useMetadataProviderStore } from "../../../stores/metadataProviders";
-import { useControllerMappingStore } from "../../../stores/controllerMapping";
-import { useWrapperPluginStore } from "../../../stores/wrapperPlugins";
-import { usePluginInstallStore } from "../../../stores/pluginInstall";
-import { usePluginUpdatesStore } from "../../../stores/pluginUpdates";
-import { loadAllPlugins } from "../../../plugins/loader";
-import AddPlugin from "../modalForms/AddPlugin.vue";
-import ConfirmInstall from "../modalForms/ConfirmInstall.vue";
+import { usePluginStore } from "@/stores/plugins";
+import { useThemeStore } from "@/stores/theme";
+import { useMetadataProviderStore } from "@/stores/metadataProviders";
+import { useControllerMappingStore } from "@/stores/controllerMapping";
+import { useWrapperPluginStore } from "@/stores/wrapperPlugins";
+import { usePluginInstallStore } from "@/stores/pluginInstall";
+import { usePluginUpdatesStore } from "@/stores/pluginUpdates";
+import { loadAllPlugins } from "@/plugins/loader";
+import AddPlugin from "@/components/desktop/modalForms/AddPlugin.vue";
+import ConfirmInstall from "@/components/desktop/modalForms/ConfirmInstall.vue";
 import type {
   SourcePlugin,
   ThemePlugin,
   MetadataProviderPlugin,
   ControllerMappingPlugin,
   WrapperPlugin,
-} from "../../../plugins/types";
-import { RUN_PROGRAMS_CAPABILITY, type PluginManifest } from "../../../plugins/manifest";
+} from "@/plugins/types";
+import { RUN_PROGRAMS_CAPABILITY, type PluginManifest } from "@/plugins/manifest";
 
 type Tab = "source" | "theme" | "metadata" | "controller" | "wrapper";
 

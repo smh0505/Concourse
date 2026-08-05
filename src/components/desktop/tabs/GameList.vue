@@ -2,11 +2,11 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconInboxOff } from "@tabler/icons-vue";
-import GameListRow from "../game/GameListRow.vue";
-import SkeletonRow from "../game/SkeletonRow.vue";
-import { useLibraryStore } from "../../../stores/library";
-import { usePluginStore } from "../../../stores/plugins";
-import { useSkeletonCount } from "../../../composables/useSkeletonCount";
+import GameListRow from "@/components/desktop/game/GameListRow.vue";
+import SkeletonRow from "@/components/desktop/game/SkeletonRow.vue";
+import { useLibraryStore } from "@/stores/library";
+import { usePluginStore } from "@/stores/plugins";
+import { useSkeletonCount } from "@/composables/useSkeletonCount";
 
 const { t } = useI18n();
 const library = useLibraryStore();

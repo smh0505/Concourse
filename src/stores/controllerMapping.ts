@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { settings as settingsRepo } from "../db";
-import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
-import type { PluginManifest } from "../plugins/manifest";
-import type { ControllerMappingPlugin, GamepadMapping } from "../plugins/types";
+import { settings as settingsRepo } from "@/db";
+import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
+import type { PluginManifest } from "@/plugins/manifest";
+import type { ControllerMappingPlugin, GamepadMapping } from "@/plugins/types";
 
 const ACTIVE_MAPPING_SETTING = "active_controller_mapping_id";
 const DEFAULT_MAPPING_ID = "standard-gamepad";

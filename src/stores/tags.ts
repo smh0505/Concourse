@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { tags as tagRepo, type Game } from "../db";
+import { tags as tagRepo, type Game } from "@/db";
 import { useLibraryStore } from "./library";
 
 /** Per-game tag assignment, the tag list, and the library's active tag filter - split out of

@@ -3434,3 +3434,22 @@ matches left) before rebuilding. `bigpicture/`'s 3 files (`BigPictureTile`/`BigP
 desktop/Big-Picture split, not loose the way the moved 10 were. `bun run build` clean, no
 behavior change - pure file reorganization.
 
+**Immediate follow-up: `@/` path alias, since the reorg above made `../../../` chains worse.**
+User asked directly for a way to shorten these as more subfolders get introduced. Standard Vite/
+TS fix: `vite.config.ts` gained `resolve.alias` mapping `"@"` to `fileURLToPath(new URL("./src",
+import.meta.url))`; `tsconfig.json` mirrors it via `baseUrl: "."` + `paths: { "@/*": ["src/*"] }`
+so `vue-tsc`/editor tooling resolves it too, not just Vite's own bundler.
+
+Rewrote every existing `../`-style import to the new alias with a small one-off Node script
+(`alias-imports.mjs`, scratch dir, not committed) rather than a blind `sed` - a regex swap can't
+correctly resolve what each `../` chain actually points at relative to its own file's directory,
+so the script: walks every `.ts`/`.vue` file under `src/`, regex-matches each quoted import
+specifier starting with `../`, resolves it to an absolute path via `path.resolve(fileDir, spec)`,
+computes its path relative to `src/` itself, and rewrites the specifier to `@/<that path>` - a
+correct per-file resolution, not a naive string substitution. Deliberately left plain `./sibling`
+imports untouched (already short, no benefit to aliasing them) and only targeted specifiers
+literally starting with `../` (one or more levels). 42 files, 119 import specifiers rewritten in
+one pass. Verified zero `../`-style imports remained via a repo-wide grep afterward, then
+confirmed `bun run build` (`vue-tsc --noEmit` + `vite build`) stayed clean - the type-check
+passing confirms the alias resolves correctly for TypeScript, not just Vite's runtime bundler.
+

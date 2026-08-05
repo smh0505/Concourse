@@ -1,13 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { settings as settingsRepo } from "../db";
-import { getAvailablePluginManifests, loadEnabledPlugins } from "../plugins/loader";
-import { setActiveCardVisual, clearActiveCardVisual } from "../theme/cardVisualRegistry";
-import { setActiveFontFaces, clearActiveFontFaces } from "../theme/fontFaceRegistry";
+import { settings as settingsRepo } from "@/db";
+import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
+import { setActiveCardVisual, clearActiveCardVisual } from "@/theme/cardVisualRegistry";
+import { setActiveFontFaces, clearActiveFontFaces } from "@/theme/fontFaceRegistry";
 import { useToastStore } from "./toasts";
-import type { PluginManifest } from "../plugins/manifest";
-import type { ThemePlugin } from "../plugins/types";
+import type { PluginManifest } from "@/plugins/manifest";
+import type { ThemePlugin } from "@/plugins/types";
 
 const ACTIVE_THEME_SETTING = "active_theme_id";
 const DEFAULT_THEME_ID = "catppuccin-latte";

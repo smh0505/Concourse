@@ -2,10 +2,10 @@
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconInboxOff } from "@tabler/icons-vue";
-import { useLibraryStore } from "../../stores/library";
-import { useGamepadNav } from "../../composables/useGamepadNav";
-import { CardVisualRenderer } from "../../theme/cardVisualAst";
-import { useActiveCardVisual } from "../../theme/cardVisualRegistry";
+import { useLibraryStore } from "@/stores/library";
+import { useGamepadNav } from "@/composables/useGamepadNav";
+import { CardVisualRenderer } from "@/theme/cardVisualAst";
+import { useActiveCardVisual } from "@/theme/cardVisualRegistry";
 
 const { t } = useI18n();
 const emit = defineEmits<{ close: [] }>();

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { reactive, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import BaseModal from "../common/BaseModal.vue";
-import type { PendingCandidateSection } from "../../../stores/metadataProviders";
+import BaseModal from "@/components/desktop/common/BaseModal.vue";
+import type { PendingCandidateSection } from "@/stores/metadataProviders";
 
 // Mounted once globally (App.vue, same pattern as ToastContainer) - metadataProviders.ts's
 // fetchMetadata pauses mid-flow and awaits a promise that this modal resolves via

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { useToastStore } from "../../../stores/toasts";
+import { useToastStore } from "@/stores/toasts";
 
 const { t } = useI18n();
 const toasts = useToastStore();

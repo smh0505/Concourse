@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { collections as collectionRepo, type Game } from "../db";
+import { collections as collectionRepo, type Game } from "@/db";
 import { useLibraryStore } from "./library";
 
 /** Mirrors tags.ts exactly, over collections instead - split out of library.ts at the same

@@ -1,5 +1,5 @@
 import { defineComponent, h, type PropType, type VNode, type VNodeChild } from "vue";
-import type { Game } from "../db";
+import type { Game } from "@/db";
 
 /** Closed allowlist - not "any Game property." A manifest referencing anything outside this
  *  set is rejected outright by validateCardVisualAst, not silently rendered empty. */

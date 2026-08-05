@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+
 import { settings as settingsRepo } from "@/db";
 import type { SettingsSchemaField } from "@/plugins/manifest";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";

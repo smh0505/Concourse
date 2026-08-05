@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, ref } from "vue";
+
 import { useControllerMappingStore } from "@/stores/controllerMapping";
 import { suppressMouseActivity } from "./useMouseActivity";
 

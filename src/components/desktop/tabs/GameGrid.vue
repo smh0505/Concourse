@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconInboxOff } from "@tabler/icons-vue";
+
 import GameCard from "@/components/desktop/game/GameCard.vue";
 import SkeletonCard from "@/components/desktop/game/SkeletonCard.vue";
 import { useLibraryStore } from "@/stores/library";

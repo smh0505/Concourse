@@ -8,6 +8,7 @@ import {
   IconPlayerPlay,
   IconTrash,
 } from "@tabler/icons-vue";
+
 import { useLibraryStore } from "@/stores/library";
 import type { Game } from "@/db";
 

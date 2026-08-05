@@ -5,6 +5,7 @@ import { IconArrowLeft, IconDeviceGamepad2, IconInfoCircle, IconPlayerPlay } fro
 import { siSteam, siGogdotcom, siEpicgames } from "simple-icons";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+
 import { useLibraryStore } from "@/stores/library";
 import { useTagsStore } from "@/stores/tags";
 import { useCollectionsStore } from "@/stores/collections";

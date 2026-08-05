@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { IconCheck, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
+
 import { useCollectionsStore } from "@/stores/collections";
 import { useNamedItemManager } from "@/composables/useNamedItemManager";
 

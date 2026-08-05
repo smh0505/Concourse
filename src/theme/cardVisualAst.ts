@@ -1,4 +1,5 @@
 import { defineComponent, h, type PropType, type VNode, type VNodeChild } from "vue";
+
 import type { Game } from "@/db";
 
 /** Closed allowlist - not "any Game property." A manifest referencing anything outside this

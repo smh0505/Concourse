@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, watch } from "vue";
 import { useI18n } from "vue-i18n";
+
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
 import type { PendingCandidateSection } from "@/stores/metadataProviders";
 

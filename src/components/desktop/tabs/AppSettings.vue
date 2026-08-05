@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+
 import { useAppSettingsStore } from "@/stores/appSettings";
 import { messages } from "@/i18n";
 

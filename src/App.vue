@@ -3,6 +3,7 @@ import { defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { IconLayoutGrid, IconSlideshow } from "@tabler/icons-vue";
+
 import { useLibraryStore } from "./stores/library";
 import { usePluginStore } from "./stores/plugins";
 import { useThemeStore } from "./stores/theme";

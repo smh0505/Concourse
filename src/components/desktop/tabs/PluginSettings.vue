@@ -2,6 +2,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { computed, onMounted, ref, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
+
 import { usePluginStore } from "@/stores/plugins";
 import { useThemeStore } from "@/stores/theme";
 import { useMetadataProviderStore } from "@/stores/metadataProviders";

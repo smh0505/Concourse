@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { IconLayoutGrid, IconList } from "@tabler/icons-vue";
+
 import { useLibraryStore } from "@/stores/library";
 import { useTagsStore } from "@/stores/tags";
 import { useCollectionsStore } from "@/stores/collections";

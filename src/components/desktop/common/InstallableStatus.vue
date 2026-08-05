@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+
 import { useToastStore } from "@/stores/toasts";
 import type { Installable, PluginBase } from "@/plugins/types";
 

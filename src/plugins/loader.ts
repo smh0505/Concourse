@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { defineComponent, h } from "vue";
+
 import { isPluginManifest, type PluginKind, type PluginManifest } from "./manifest";
 import type {
   GameEntry,

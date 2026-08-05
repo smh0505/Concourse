@@ -2,6 +2,7 @@
 import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconChartBar, IconClock, IconDeviceGamepad2 } from "@tabler/icons-vue";
+
 import { useLibraryStore } from "@/stores/library";
 import { useStatsStore } from "@/stores/stats";
 import type { Game } from "@/db";

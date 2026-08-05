@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+
 import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import { setActiveCardVisual, clearActiveCardVisual } from "@/theme/cardVisualRegistry";

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+
 import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import type { PluginManifest } from "@/plugins/manifest";

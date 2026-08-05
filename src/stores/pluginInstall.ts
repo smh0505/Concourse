@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+
 import { usePluginStore } from "./plugins";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";

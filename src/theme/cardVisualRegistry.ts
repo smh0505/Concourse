@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+
 import { validateCardVisualAst, type AstNode } from "./cardVisualAst";
 
 const activeCardVisual = ref<AstNode | null>(null);

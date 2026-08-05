@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+
 import { useToastStore } from "./toasts";
 
 export const useAppUpdateStore = defineStore("appUpdate", () => {

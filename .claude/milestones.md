@@ -278,6 +278,9 @@ own definition.
   a stray UTF-8 BOM in `wasm_plugin_runtime.rs` (stripped by the same `cargo fmt` run), and
   removed the dead `greet` scaffold command from `lib.rs` (leftover from `create-tauri-app`,
   never called by the frontend)
+- [x] `GameDetail.vue`'s cover thumbnail shows a skeleton shimmer (same look as `SkeletonCard.vue`/
+  `SkeletonRow.vue`) while `fetchingMetadata` is in flight - `cover_art_url` is one of the fields
+  a metadata fetch can overwrite
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

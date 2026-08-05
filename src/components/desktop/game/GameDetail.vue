@@ -236,7 +236,10 @@ async function onDelete() {
           </button>
 
           <div class="cover-wrap">
-            <img v-if="displayCoverUrl" class="cover" :src="displayCoverUrl" :alt="game.title" />
+            <div v-if="fetchingMetadata" class="cover cover-skeleton">
+              <div class="shimmer" />
+            </div>
+            <img v-else-if="displayCoverUrl" class="cover" :src="displayCoverUrl" :alt="game.title" />
             <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
           </div>
 
@@ -548,6 +551,18 @@ async function onDelete() {
   object-fit: cover;
   display: block;
 }
+
+/* Shown in place of the cover image while a metadata fetch is in flight - cover_art_url is one
+   of the fields fetchMetadata() can overwrite, same shimmer look as SkeletonCard.vue/
+   SkeletonRow.vue's own cover-art placeholders elsewhere in the app. */
+.cover-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface0);
+  border: var(--button-border-width) solid var(--color-surface1);
+}
+
+/* .shimmer (shared, styles.css) supplies the shimmer effect itself. */
 
 .cover-placeholder {
   background: var(--cover-placeholder-background, var(--color-surface0));

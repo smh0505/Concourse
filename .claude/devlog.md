@@ -3522,3 +3522,16 @@ instead:
 
 `cargo check` and `bun run build` both clean after all three fixes.
 
+**Follow-up: a skeleton placeholder for content updating in `GameDetail.vue`.** `fetchMetadata()`
+(`stores/library.ts`) can overwrite description, release date, cover art, background art, and
+tags, but its own trigger ("Fetch Metadata") only exists in the edit-mode action bar - meaning
+`fetchingMetadata` can never be true while the view-mode block (title/meta/description) is even
+rendered, only while the edit-form is showing. The one element that renders regardless of edit
+state is `.cover-wrap` (sits above the `v-if="!editing"`/`v-else` split), and it's also
+literally the one field every existing skeleton in this codebase (`SkeletonCard.vue`,
+`SkeletonRow.vue`) already skeletons - so gave it the same treatment here rather than inventing
+a new pattern: a `.cover-skeleton` div (same shimmer/background/border recipe as those two)
+swapped in ahead of the real `<img>`/placeholder via a `v-if="fetchingMetadata"` branch. Reuses
+the already-shared `.shimmer`/`@keyframes shimmer` from `styles.css` rather than duplicating the
+animation. `bun run build` clean.
+

@@ -4,6 +4,10 @@ export default defineConfig({
   title: "Concourse",
   description: "Documentation for Concourse, a plugin-based game library client",
   cleanUrls: true,
+  // This is a project site, served from https://smh0505.github.io/Concourse/, not a user/org
+  // site at the domain root - without this, every generated absolute link/asset path (nav,
+  // sidebar, internal page links) assumes root ("/") and 404s once actually deployed.
+  base: "/Concourse/",
 
   themeConfig: {
     nav: [

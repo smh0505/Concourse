@@ -104,8 +104,8 @@ pub async fn verify_plugin_provenance(
         .bundle;
     let bundle_json = serde_json::to_string(&bundle_value)
         .map_err(|e| format!("Failed to re-serialize attestation bundle: {}", e))?;
-    let bundle =
-        Bundle::from_json(&bundle_json).map_err(|e| format!("Invalid attestation bundle: {}", e))?;
+    let bundle = Bundle::from_json(&bundle_json)
+        .map_err(|e| format!("Invalid attestation bundle: {}", e))?;
 
     let trusted_root =
         TrustedRoot::production().map_err(|e| format!("Failed to load trust root: {}", e))?;

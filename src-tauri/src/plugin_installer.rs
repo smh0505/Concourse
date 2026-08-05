@@ -114,7 +114,11 @@ pub struct DataThemeManifest {
     /// data as far as the host is concerned; the frontend's `validateCardVisualAst` is the one
     /// and only real gate it goes through before ever being trusted. `Option` (not required)
     /// since every theme published before this field existed has no `cardVisual` at all.
-    #[serde(default, rename = "cardVisual", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "cardVisual",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub card_visual: Option<serde_json::Value>,
     /// Real font files to load via @font-face while this theme is active - same opaque
     /// pass-through as `card_visual` above. The frontend (`theme/fontFaceRegistry.ts`)
@@ -193,8 +197,8 @@ pub async fn fetch_plugin_preview(url: String) -> Result<PluginPreview, String> 
             http_scopes: manifest.http_scopes,
         })
     } else {
-        let manifest: DataThemeManifest = serde_json::from_slice(&bytes)
-            .map_err(|e| format!("Invalid theme manifest: {}", e))?;
+        let manifest: DataThemeManifest =
+            serde_json::from_slice(&bytes).map_err(|e| format!("Invalid theme manifest: {}", e))?;
         Ok(PluginPreview {
             id: manifest.id,
             name: manifest.name,
@@ -333,7 +337,11 @@ async fn install_wasm_plugin(
     let final_dir = kind_dir.join(&manifest.id);
     replace_dir(&staging_dir, &final_dir)?;
 
-    Ok(InstallResult { id: manifest.id, verified, verification_note })
+    Ok(InstallResult {
+        id: manifest.id,
+        verified,
+        verification_note,
+    })
 }
 
 /// Caches a theme manifest under `<app data>/data-themes/<id>/theme.json` - no separate
@@ -413,7 +421,11 @@ async fn install_data_theme(
     std::fs::write(theme_dir.join("theme.json"), manifest_json)
         .map_err(|e| format!("Failed to write theme.json: {}", e))?;
 
-    Ok(InstallResult { id: manifest.id, verified, verification_note })
+    Ok(InstallResult {
+        id: manifest.id,
+        verified,
+        verification_note,
+    })
 }
 
 /// Installs a plugin from a user-pasted manifest URL - re-fetches the manifest (cheap, a few
@@ -612,9 +624,17 @@ pub async fn check_plugin_update(
     let update_available = version_is_newer(&probe.version, &current_version);
     Ok(UpdateCheckResult {
         id,
-        latest_sha256: if update_available { latest_sha256 } else { None },
+        latest_sha256: if update_available {
+            latest_sha256
+        } else {
+            None
+        },
         latest_version: Some(probe.version),
-        latest_manifest_url: if update_available { Some(manifest_url) } else { None },
+        latest_manifest_url: if update_available {
+            Some(manifest_url)
+        } else {
+            None
+        },
         update_available,
     })
 }
@@ -683,29 +703,42 @@ mod tests {
             r##"{"id":"test-online-theme","name":"Test Online Theme","version":"1.0.0","kind":"theme","cssVariables":{"--color-base":"#123456","--color-accent":"#abcdef"}}"##,
         );
 
-        let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let bytes =
+            tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
         let result =
             tauri::async_runtime::block_on(install_data_theme(&temp.0, &url, &bytes, None))
                 .expect("install should succeed");
         assert_eq!(result.id, "test-online-theme");
-        assert!(!result.verified, "a localhost test server isn't hosted on github.com");
+        assert!(
+            !result.verified,
+            "a localhost test server isn't hosted on github.com"
+        );
 
         let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
         assert_eq!(manifests.len(), 1);
         assert_eq!(manifests[0].id, "test-online-theme");
         assert_eq!(manifests[0].name, "Test Online Theme");
         assert_eq!(
-            manifests[0].css_variables.get("--color-base").map(String::as_str),
+            manifests[0]
+                .css_variables
+                .get("--color-base")
+                .map(String::as_str),
             Some("#123456")
         );
         // Milestone 20 - install origin actually persists to disk and survives the list
         // round-trip, not just set in memory during install.
         assert_eq!(manifests[0].source_url.as_deref(), Some(url.as_str()));
-        assert!(!manifests[0].installed_via_registry, "installed with no pinned hash");
+        assert!(
+            !manifests[0].installed_via_registry,
+            "installed with no pinned hash"
+        );
 
         uninstall_data_theme_from(&temp.0, &result.id).expect("uninstall should succeed");
         let manifests_after = list_data_themes_from(&temp.0).expect("list should succeed");
-        assert!(manifests_after.is_empty(), "expected theme to be gone after uninstall");
+        assert!(
+            manifests_after.is_empty(),
+            "expected theme to be gone after uninstall"
+        );
     }
 
     // Milestone 17's registry extension - a theme entry's pinned wasmSha256 is a hard reject
@@ -718,7 +751,8 @@ mod tests {
             r##"{"id":"pinned-theme","name":"Pinned","version":"1.0.0","kind":"theme","cssVariables":{"--color-base":"#123456"}}"##,
         );
 
-        let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let bytes =
+            tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
         let wrong_hash = "0000000000000000000000000000000000000000000000000000000000000000";
         let result = tauri::async_runtime::block_on(install_data_theme(
             &temp.0,
@@ -733,7 +767,10 @@ mod tests {
         }
 
         let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
-        assert!(manifests.is_empty(), "rejected install should not write anything to disk");
+        assert!(
+            manifests.is_empty(),
+            "rejected install should not write anything to disk"
+        );
     }
 
     // Milestone 20 - a *correct* pinned-hash install is the one real path that should set
@@ -746,7 +783,8 @@ mod tests {
         let body = r##"{"id":"registry-theme","name":"Registry","version":"1.0.0","kind":"theme","cssVariables":{"--color-base":"#123456"}}"##;
         let url = serve_once(body);
 
-        let bytes = tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let bytes =
+            tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
         let correct_hash = {
             use sha2::{Digest, Sha256};
             format!("{:x}", Sha256::digest(&bytes))
@@ -762,7 +800,10 @@ mod tests {
 
         let manifests = list_data_themes_from(&temp.0).expect("list should succeed");
         assert_eq!(manifests.len(), 1);
-        assert!(manifests[0].installed_via_registry, "installed with a matching pinned hash");
+        assert!(
+            manifests[0].installed_via_registry,
+            "installed with a matching pinned hash"
+        );
         assert_eq!(manifests[0].source_url.as_deref(), Some(url.as_str()));
     }
 
@@ -774,15 +815,24 @@ mod tests {
         // up a second real server for a negative case isn't worth it when the positive path
         // already proves real HTTP + real filesystem round-tripping.
         let result = list_data_themes_from(&temp.0);
-        assert!(result.unwrap().is_empty(), "missing dir should list as empty, not error");
+        assert!(
+            result.unwrap().is_empty(),
+            "missing dir should list as empty, not error"
+        );
     }
 
     #[test]
     fn detects_source_theme_and_unsupported_kinds() {
-        let source = ManifestKindProbe { kind: Some("source".to_string()), css_variables: None };
+        let source = ManifestKindProbe {
+            kind: Some("source".to_string()),
+            css_variables: None,
+        };
         assert_eq!(detect_kind(&source).unwrap(), "source");
 
-        let theme = ManifestKindProbe { kind: Some("theme".to_string()), css_variables: None };
+        let theme = ManifestKindProbe {
+            kind: Some("theme".to_string()),
+            css_variables: None,
+        };
         assert_eq!(detect_kind(&theme).unwrap(), "theme");
 
         let legacy_theme = ManifestKindProbe {
@@ -791,13 +841,22 @@ mod tests {
         };
         assert_eq!(detect_kind(&legacy_theme).unwrap(), "theme");
 
-        let metadata = ManifestKindProbe { kind: Some("metadata".to_string()), css_variables: None };
+        let metadata = ManifestKindProbe {
+            kind: Some("metadata".to_string()),
+            css_variables: None,
+        };
         assert_eq!(detect_kind(&metadata).unwrap(), "metadata");
 
-        let controller = ManifestKindProbe { kind: Some("controller".to_string()), css_variables: None };
+        let controller = ManifestKindProbe {
+            kind: Some("controller".to_string()),
+            css_variables: None,
+        };
         assert!(detect_kind(&controller).is_err());
 
-        let unknown = ManifestKindProbe { kind: None, css_variables: None };
+        let unknown = ManifestKindProbe {
+            kind: None,
+            css_variables: None,
+        };
         assert!(detect_kind(&unknown).is_err());
     }
 
@@ -807,7 +866,10 @@ mod tests {
         // the real ordering.
         assert!(version_is_newer("1.10.0", "1.9.0"));
         assert!(!version_is_newer("1.9.0", "1.10.0"));
-        assert!(!version_is_newer("1.3.7", "1.3.7"), "identical versions aren't newer");
+        assert!(
+            !version_is_newer("1.3.7", "1.3.7"),
+            "identical versions aren't newer"
+        );
         assert!(version_is_newer("2.0.0", "1.99.99"));
         // Non-numeric segments (a stray pre-release tag, say) fall back to plain inequality
         // rather than panicking or silently treating them as equal.
@@ -852,7 +914,10 @@ mod tests {
 
         assert!(!result.update_available);
         assert_eq!(result.latest_version.as_deref(), Some("1.0.0"));
-        assert_eq!(result.latest_manifest_url, None, "no reinstall URL needed when up to date");
+        assert_eq!(
+            result.latest_manifest_url, None,
+            "no reinstall URL needed when up to date"
+        );
     }
 
     #[test]

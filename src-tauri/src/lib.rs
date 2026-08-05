@@ -9,11 +9,6 @@ mod wasm_plugin_runtime;
 mod wasm_plugins;
 mod zip_install;
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -26,7 +21,6 @@ pub fn run() {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
-            greet,
             image_utils::check_image_brightness,
             launcher::launch_game,
             launcher::track_folder_playtime,

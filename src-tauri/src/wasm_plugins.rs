@@ -188,9 +188,10 @@ impl PluginHostState {
 
     fn is_allowed_registry(&self, hive: &str, path: &str) -> bool {
         self.path_scopes.iter().any(|scope| match scope {
-            PathScope::Registry { hive: scoped_hive, prefix } => {
-                scoped_hive.eq_ignore_ascii_case(hive) && Self::path_has_prefix(path, prefix)
-            }
+            PathScope::Registry {
+                hive: scoped_hive,
+                prefix,
+            } => scoped_hive.eq_ignore_ascii_case(hive) && Self::path_has_prefix(path, prefix),
             PathScope::Path { .. } => false,
         })
     }
@@ -210,7 +211,9 @@ impl PluginHostState {
         };
         self.http_scopes.iter().any(|scope| {
             host.eq_ignore_ascii_case(scope)
-                || host.to_lowercase().ends_with(&format!(".{}", scope.to_lowercase()))
+                || host
+                    .to_lowercase()
+                    .ends_with(&format!(".{}", scope.to_lowercase()))
         })
     }
 
@@ -258,7 +261,12 @@ impl WasiView for PluginHostState {
 /// `wrapper-plugin-world`) - kept as inherent methods so the two structurally-identical traits
 /// (see `wrapper_world`'s doc comment) share one copy of the logic instead of two.
 impl PluginHostState {
-    fn do_read_registry_string(&mut self, hive: String, path: String, value: String) -> Option<String> {
+    fn do_read_registry_string(
+        &mut self,
+        hive: String,
+        path: String,
+        value: String,
+    ) -> Option<String> {
         if !self.is_allowed_registry(&hive, &path) {
             return None;
         }
@@ -396,7 +404,12 @@ impl PluginHostState {
     /// LR/LE's installer windows aren't real wizards with a meaningful success/failure exit
     /// status, they're just closed by the user whenever, so treating a nonzero exit as failure
     /// would reject a perfectly normal close.
-    fn do_run_and_wait(&mut self, path: String, args: Vec<String>, cwd: String) -> Result<(), String> {
+    fn do_run_and_wait(
+        &mut self,
+        path: String,
+        args: Vec<String>,
+        cwd: String,
+    ) -> Result<(), String> {
         if !self.has_capability("run-programs") {
             return Err(
                 "This plugin has not been granted permission to run other programs. Grant it in Settings.".to_string(),
@@ -490,8 +503,7 @@ impl PluginHostState {
     }
 
     fn do_unwrap_single_subdir(&mut self, dir: String) -> Result<String, String> {
-        zip_install::unwrap_single_subdir(Path::new(&dir))
-            .map(|p| p.to_string_lossy().to_string())
+        zip_install::unwrap_single_subdir(Path::new(&dir)).map(|p| p.to_string_lossy().to_string())
     }
 
     fn do_replace_dir(&mut self, src: String, dest: String) -> Result<(), String> {
@@ -542,7 +554,12 @@ impl PluginHostState {
 }
 
 impl gamelib::plugin::host::Host for PluginHostState {
-    fn read_registry_string(&mut self, hive: String, path: String, value: String) -> Option<String> {
+    fn read_registry_string(
+        &mut self,
+        hive: String,
+        path: String,
+        value: String,
+    ) -> Option<String> {
         self.do_read_registry_string(hive, path, value)
     }
 
@@ -634,7 +651,12 @@ impl gamelib::plugin::host::Host for PluginHostState {
 }
 
 impl wrapper_world::gamelib::plugin::host::Host for PluginHostState {
-    fn read_registry_string(&mut self, hive: String, path: String, value: String) -> Option<String> {
+    fn read_registry_string(
+        &mut self,
+        hive: String,
+        path: String,
+        value: String,
+    ) -> Option<String> {
         self.do_read_registry_string(hive, path, value)
     }
 
@@ -726,7 +748,12 @@ impl wrapper_world::gamelib::plugin::host::Host for PluginHostState {
 }
 
 impl metadata_world::gamelib::plugin::host::Host for PluginHostState {
-    fn read_registry_string(&mut self, hive: String, path: String, value: String) -> Option<String> {
+    fn read_registry_string(
+        &mut self,
+        hive: String,
+        path: String,
+        value: String,
+    ) -> Option<String> {
         self.do_read_registry_string(hive, path, value)
     }
 

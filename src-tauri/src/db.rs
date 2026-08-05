@@ -17,10 +17,11 @@ pub const DB_URL: &str = "sqlite:library.db";
 // previously-applied migration doesn't match anymore ("migration 1 was previously applied but
 // has been modified").
 pub fn migrations() -> Vec<Migration> {
-    vec![Migration {
-        version: 1,
-        description: "create_baseline_schema",
-        sql: r#"
+    vec![
+        Migration {
+            version: 1,
+            description: "create_baseline_schema",
+            sql: r#"
             CREATE TABLE games (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
@@ -73,11 +74,12 @@ pub fn migrations() -> Vec<Migration> {
                 PRIMARY KEY (plugin_id, game_id, key)
             );
         "#,
-        kind: MigrationKind::Up,
-    }, Migration {
-        version: 2,
-        description: "add_plugin_capability_grants",
-        sql: r#"
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
+            description: "add_plugin_capability_grants",
+            sql: r#"
             -- Explicit, host-enforced capability grants (Milestone 13) - deliberately its
             -- own table rather than reusing `settings`'s `plugin:<id>:<key>` convention,
             -- since a WASM guest's own settings-get/settings-set host functions can freely
@@ -93,11 +95,12 @@ pub fn migrations() -> Vec<Migration> {
                 PRIMARY KEY (plugin_id, capability)
             );
         "#,
-        kind: MigrationKind::Up,
-    }, Migration {
-        version: 3,
-        description: "add_collections",
-        sql: r#"
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 3,
+            description: "add_collections",
+            sql: r#"
             -- Deliberately its own table, not a `tags` row under some "collection:" naming
             -- convention - a collection groups a series/franchise (e.g. "Final Fantasy"),
             -- a different organizing concept than a tag (e.g. "Co-op", "Backlog"), and
@@ -115,6 +118,7 @@ pub fn migrations() -> Vec<Migration> {
                 PRIMARY KEY (game_id, collection_id)
             );
         "#,
-        kind: MigrationKind::Up,
-    }]
+            kind: MigrationKind::Up,
+        },
+    ]
 }

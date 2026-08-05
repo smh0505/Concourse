@@ -3501,3 +3501,24 @@ a deliberate code-split point (gated by `import.meta.env.DEV`, dropped entirely 
 builds) - a dynamic `import()` naming a barrel-exported binding pulls in the whole barrel's
 module graph statically, which would silently defeat that split. `bun run build` clean.
 
+**Follow-up: asked whether `src-tauri/` needed the same kind of cleanup.** Investigated rather
+than assuming symmetry with the frontend - Rust's `use`-statement grouping/alphabetization is
+already `rustfmt`-enforced (unlike TS/Vue, which has no built-in equivalent), so nothing to do
+there; `wasm_plugins.rs`/`plugin_installer.rs` are the two largest files (818/873 lines) but each
+stays on one coherent, already-documented concern rather than being a genuinely mixed grab-bag
+the way the frontend's loose `.vue` files were, so left unsplit. Three real, low-risk findings
+instead:
+- `cargo fmt --check` failed on 7 of 9 files (`db.rs`, `launcher.rs`, `plugin_installer.rs`,
+  `plugin_verification.rs`, `wasm_plugin_runtime.rs`, `wasm_plugins.rs`) - drifted from canonical
+  `rustfmt` style (mostly `vec![Migration { ... }, Migration { ... }]`-shaped layout). Fixed with
+  a plain `cargo fmt` run, zero logic risk.
+- `wasm_plugin_runtime.rs` had a stray UTF-8 BOM at the very start of the file - harmless to the
+  compiler but inconsistent with every other file. Turned out `cargo fmt` itself stripped it as
+  a side effect of reformatting, so no separate fix was needed.
+- `lib.rs` still registered the `greet` command (`"Hello, {name}! You've been greeted from
+  Rust!"`) - leftover `create-tauri-app` scaffold, confirmed via a frontend-wide grep for any
+  `invoke("greet")` call (zero hits) before deleting both the function and its
+  `generate_handler!` registration.
+
+`cargo check` and `bun run build` both clean after all three fixes.
+

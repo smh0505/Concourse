@@ -51,7 +51,9 @@ fn unix_timestamp(t: std::time::SystemTime) -> String {
 }
 
 fn normalize_path_for_comparison(path: &str) -> String {
-    path.replace('/', "\\").trim_end_matches('\\').to_lowercase()
+    path.replace('/', "\\")
+        .trim_end_matches('\\')
+        .to_lowercase()
 }
 
 fn any_process_under_folder(system: &mut System, install_dir: &str) -> bool {

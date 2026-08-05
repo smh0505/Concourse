@@ -274,6 +274,10 @@ own definition.
 - [x] Added a barrel `index.ts` to `stores/` and every `components/desktop/` subfolder (plus
   `components/bigpicture/`), re-exporting everything in that folder - `App.vue`'s ~24 individual
   store/component import lines collapsed to one import per directory (8 total)
+- [x] `src-tauri/` cleanup: ran `cargo fmt` (7 of 9 files had drifted from canonical style),
+  a stray UTF-8 BOM in `wasm_plugin_runtime.rs` (stripped by the same `cargo fmt` run), and
+  removed the dead `greet` scaffold command from `lib.rs` (leftover from `create-tauri-app`,
+  never called by the frontend)
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

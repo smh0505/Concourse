@@ -1,4 +1,4 @@
-﻿//! Loads/instantiates a WASM `SourcePlugin` and exposes its exports to the frontend via
+//! Loads/instantiates a WASM `SourcePlugin` and exposes its exports to the frontend via
 //! Tauri commands - the frontend never talks to plugin code directly (see wasm_plugins.rs
 //! for the host-function surface these plugins call back into).
 
@@ -96,8 +96,12 @@ pub struct WasmMetadataResult {
     pub background_art_url: Option<String>,
 }
 
-impl From<metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataResult> for WasmMetadataResult {
-    fn from(result: metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataResult) -> Self {
+impl From<metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataResult>
+    for WasmMetadataResult
+{
+    fn from(
+        result: metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataResult,
+    ) -> Self {
         Self {
             description: result.description,
             release_date: result.release_date,
@@ -118,9 +122,17 @@ pub struct WasmMetadataCandidate {
     pub image_url: Option<String>,
 }
 
-impl From<metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataCandidate> for WasmMetadataCandidate {
-    fn from(candidate: metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataCandidate) -> Self {
-        Self { id: candidate.id, label: candidate.label, image_url: candidate.image_url }
+impl From<metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataCandidate>
+    for WasmMetadataCandidate
+{
+    fn from(
+        candidate: metadata_world::exports::gamelib::plugin::metadata_plugin::MetadataCandidate,
+    ) -> Self {
+        Self {
+            id: candidate.id,
+            label: candidate.label,
+            image_url: candidate.image_url,
+        }
     }
 }
 
@@ -171,8 +183,14 @@ fn instantiate_from_paths(
     // even for a capability-less component - see PluginHostState's doc comment.
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes, manifest.http_scopes)
-        .map_err(|e| format!("Failed to open database: {}", e))?;
+    let state = PluginHostState::new(
+        plugin_id.to_string(),
+        plugin_dir.to_path_buf(),
+        db_path,
+        manifest.path_scopes,
+        manifest.http_scopes,
+    )
+    .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
     let instance = SourcePluginWorld::instantiate(&mut store, &component, &linker)
@@ -181,8 +199,15 @@ fn instantiate_from_paths(
     Ok((store, instance))
 }
 
-fn instantiate(app: &AppHandle, plugin_id: &str) -> Result<(Store<PluginHostState>, SourcePluginWorld), String> {
-    instantiate_from_paths(&plugin_dir(app, "source", plugin_id)?, plugin_id, &db_path(app)?)
+fn instantiate(
+    app: &AppHandle,
+    plugin_id: &str,
+) -> Result<(Store<PluginHostState>, SourcePluginWorld), String> {
+    instantiate_from_paths(
+        &plugin_dir(app, "source", plugin_id)?,
+        plugin_id,
+        &db_path(app)?,
+    )
 }
 
 /// Same shape as `instantiate_from_paths` above, just against `wrapper-plugin-world` instead
@@ -205,12 +230,21 @@ fn instantiate_wrapper_from_paths(
         .map_err(|e| format!("Failed to load {}: {}", manifest.entry, e))?;
 
     let mut linker = Linker::new(&engine);
-    crate::wasm_plugins::wrapper_world::gamelib::plugin::host::add_to_linker(&mut linker, |state| state)
-        .map_err(|e| e.to_string())?;
+    crate::wasm_plugins::wrapper_world::gamelib::plugin::host::add_to_linker(
+        &mut linker,
+        |state| state,
+    )
+    .map_err(|e| e.to_string())?;
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes, manifest.http_scopes)
-        .map_err(|e| format!("Failed to open database: {}", e))?;
+    let state = PluginHostState::new(
+        plugin_id.to_string(),
+        plugin_dir.to_path_buf(),
+        db_path,
+        manifest.path_scopes,
+        manifest.http_scopes,
+    )
+    .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
     let instance = WrapperPluginWorld::instantiate(&mut store, &component, &linker)
@@ -250,12 +284,21 @@ fn instantiate_metadata_from_paths(
         .map_err(|e| format!("Failed to load {}: {}", manifest.entry, e))?;
 
     let mut linker = Linker::new(&engine);
-    crate::wasm_plugins::metadata_world::gamelib::plugin::host::add_to_linker(&mut linker, |state| state)
-        .map_err(|e| e.to_string())?;
+    crate::wasm_plugins::metadata_world::gamelib::plugin::host::add_to_linker(
+        &mut linker,
+        |state| state,
+    )
+    .map_err(|e| e.to_string())?;
     wasmtime_wasi::add_to_linker_sync(&mut linker).map_err(|e| e.to_string())?;
 
-    let state = PluginHostState::new(plugin_id.to_string(), plugin_dir.to_path_buf(), db_path, manifest.path_scopes, manifest.http_scopes)
-        .map_err(|e| format!("Failed to open database: {}", e))?;
+    let state = PluginHostState::new(
+        plugin_id.to_string(),
+        plugin_dir.to_path_buf(),
+        db_path,
+        manifest.path_scopes,
+        manifest.http_scopes,
+    )
+    .map_err(|e| format!("Failed to open database: {}", e))?;
     let mut store = Store::new(&engine, state);
 
     let instance = MetadataPluginWorld::instantiate(&mut store, &component, &linker)
@@ -276,7 +319,10 @@ fn instantiate_metadata(
 }
 
 #[tauri::command]
-pub async fn wasm_plugin_scan(app: AppHandle, plugin_id: String) -> Result<Vec<WasmGameEntry>, String> {
+pub async fn wasm_plugin_scan(
+    app: AppHandle,
+    plugin_id: String,
+) -> Result<Vec<WasmGameEntry>, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let (mut store, instance) = instantiate(&app, &plugin_id)?;
         instance
@@ -379,7 +425,10 @@ pub async fn wasm_wrapper_list_profiles(
             .map(|profiles| {
                 profiles
                     .into_iter()
-                    .map(|p| WasmLocaleProfile { name: p.name, guid: p.guid })
+                    .map(|p| WasmLocaleProfile {
+                        name: p.name,
+                        guid: p.guid,
+                    })
                     .collect()
             })
     })
@@ -417,7 +466,12 @@ pub async fn wasm_plugin_search_candidates(
             .gamelib_plugin_metadata_plugin()
             .call_search_candidates(&mut store, &title)
             .map_err(|e| format!("Plugin trapped during searchCandidates: {}", e))?
-            .map(|candidates| candidates.into_iter().map(WasmMetadataCandidate::from).collect())
+            .map(|candidates| {
+                candidates
+                    .into_iter()
+                    .map(WasmMetadataCandidate::from)
+                    .collect()
+            })
     })
     .await
     .map_err(|e| format!("Plugin task panicked: {}", e))?
@@ -573,7 +627,11 @@ mod tests {
             ),
         )
         .unwrap();
-        std::fs::write(games_dir.join("game1.exe"), b"not a real PE, just test bytes").unwrap();
+        std::fs::write(
+            games_dir.join("game1.exe"),
+            b"not a real PE, just test bytes",
+        )
+        .unwrap();
         std::fs::write(games_dir.join("readme.txt"), b"should be filtered out").unwrap();
 
         let db_path = temp.0.join("test.db");
@@ -583,9 +641,10 @@ mod tests {
             instantiate_from_paths(&plugin_dir, "test-exe-scanner", &db_path)
                 .expect("instantiate should succeed");
 
-        store
-            .data_mut()
-            .settings_set("scan_dir".to_string(), games_dir.to_string_lossy().to_string());
+        store.data_mut().settings_set(
+            "scan_dir".to_string(),
+            games_dir.to_string_lossy().to_string(),
+        );
 
         let entries = instance
             .gamelib_plugin_source_plugin()
@@ -593,7 +652,12 @@ mod tests {
             .expect("call should not trap")
             .expect("scan should succeed");
 
-        assert_eq!(entries.len(), 1, "readme.txt must be filtered out: {:?}", entries);
+        assert_eq!(
+            entries.len(),
+            1,
+            "readme.txt must be filtered out: {:?}",
+            entries
+        );
         assert_eq!(entries[0].title, "game1");
         assert!(entries[0].executable_path.ends_with("game1.exe"));
         assert_eq!(entries[0].platform, "exe-scanner");

@@ -102,7 +102,9 @@ in the app's own stylesheet will read it.
 ### Base tokens (always have a value)
 
 These are set on `:root` with a real default - override any subset; unset ones keep the default
-below.
+below. The defaults are [Catppuccin Latte](https://github.com/catppuccin/catppuccin)'s color
+scheme, which is also the app's shipped default theme - if you're building a light theme, these
+color values are a reasonable starting palette to compare your own against.
 
 | Token | Default | Notes |
 |---|---|---|

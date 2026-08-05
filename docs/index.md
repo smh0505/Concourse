@@ -20,7 +20,7 @@ features:
   - title: Source Plugins
     details: Scan and launch games from a platform (Steam, GOG, Epic, an emulator front-end, ...).
   - title: Theme Plugins
-    details: Re-skin colors, fonts, and card visuals - as a data-only manifest or a full WASM plugin.
+    details: Re-skin colors, fonts, and card visuals - a pure-data manifest, no code required.
   - title: Metadata Provider Plugins
     details: Fetch descriptions, release dates, and art from an external database.
   - title: Wrapper Plugins

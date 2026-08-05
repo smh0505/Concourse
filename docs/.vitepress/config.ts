@@ -24,6 +24,7 @@ export default defineConfig({
             { text: "Getting Started", link: "/guide/" },
             { text: "Library & Games", link: "/guide/library" },
             { text: "Plugins & Themes", link: "/guide/plugins-and-themes" },
+            { text: "Official Plugins", link: "/guide/official-plugins" },
             { text: "Big Picture Mode", link: "/guide/big-picture" },
           ],
         },

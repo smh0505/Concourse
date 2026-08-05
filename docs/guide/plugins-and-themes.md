@@ -2,7 +2,8 @@
 
 Settings has one tabbed panel covering every kind of plugin: **Source**, **Theme**, **Metadata
 Provider**, **Controller**, and **Wrapper**. If you're building a plugin rather than installing
-one, see the [Plugin Docs](/plugins/) instead - this page is the user-facing side.
+one, see the [Plugin Docs](/plugins/) instead - this page is the user-facing side. See
+[Official Plugins](./official-plugins) for the current list of maintained plugins/themes.
 
 ## Installing a plugin
 

@@ -12,8 +12,8 @@ Every plugin — built-in TypeScript, WASM, or a data-only theme — is describe
 | `name` | `string` | yes | Display name shown in Settings. |
 | `version` | `string` | yes | Plain SemVer, independent of the app's own version. See [versioning](#versioning) below. |
 | `kind` | `"source" \| "theme" \| "metadata" \| "controller" \| "wrapper"` | yes | Which capability this plugin provides - determines what its entry module/component must export. |
-| `entry` | `string` | yes | Path to the entry module (built-in TS plugins) or the compiled `.wasm` file (WASM plugins), relative to the plugin's own folder. |
-| `runtime` | `"ts" \| "wasm" \| "data"` | no | Absent or `"ts"` = a build-time TypeScript module (only possible for plugins bundled into the app itself). `"wasm"` = a runtime-installed WASM component. `"data"` = a runtime-installed, code-free theme manifest - no `entry` to load at all, `cssVariables` *is* the whole plugin. Third-party plugins are always `"wasm"` (or `"data"` for a code-free theme). |
+| `entry` | `string` | yes | Path to the compiled `.wasm` file, relative to the plugin's own folder. |
+| `runtime` | `"wasm" \| "data"` | no | Set `"wasm"` for a WASM plugin, or `"data"` for a code-free theme manifest (no `entry` to load at all - `cssVariables` *is* the whole plugin). A third-party manifest should always set one of these two. (`"ts"`/absent is a third value the loader also recognizes, but it means a build-time TypeScript module bundled into the app itself - internal-only, never something you'd set in a manifest you're distributing.) |
 | `installable` | `boolean` | no | True if this plugin implements the install/uninstall lifecycle (`install()`/`uninstall()`/`isInstalled()`) - drives whether the generic "Install" button UI is shown automatically. |
 
 ## Theme-specific fields

@@ -450,7 +450,7 @@ conversion's own implementation detail.
   reference, security model, and publishing pages for third-party plugin authors
 - [x] `.github/workflows/docs.yml` - builds and deploys to GitHub Pages via
   `upload-pages-artifact`/`deploy-pages` on every push to `docs/**`, no `gh-pages` branch needed
-- [ ] One-time manual step still needed: repo Settings → Pages → Source → "GitHub Actions" (not
-  yet enabled - `gh api repos/smh0505/Concourse/pages` returns 404)
-- [ ] End-user documentation (install/usage guide) - deliberately scoped out of this pass,
-  plugin developers prioritized first per the user's own stated reasoning (see devlog)
+- [x] One-time manual step done: repo Settings → Pages → Source → "GitHub Actions" - live at
+  https://smh0505.github.io/Concourse/, workflow run confirmed successful
+- [x] End-user documentation added under `docs/guide/` (Getting Started, Library & Games,
+  Plugins & Themes, Big Picture Mode) - new "User Guide" nav entry alongside "Plugin Docs"

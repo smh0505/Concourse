@@ -2,16 +2,28 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   title: "Concourse",
-  description: "Documentation for Concourse's plugin system",
+  description: "Documentation for Concourse, a plugin-based game library client",
   cleanUrls: true,
 
   themeConfig: {
     nav: [
       { text: "Home", link: "/" },
+      { text: "User Guide", link: "/guide/" },
       { text: "Plugin Docs", link: "/plugins/" },
     ],
 
     sidebar: {
+      "/guide/": [
+        {
+          text: "User Guide",
+          items: [
+            { text: "Getting Started", link: "/guide/" },
+            { text: "Library & Games", link: "/guide/library" },
+            { text: "Plugins & Themes", link: "/guide/plugins-and-themes" },
+            { text: "Big Picture Mode", link: "/guide/big-picture" },
+          ],
+        },
+      ],
       "/plugins/": [
         {
           text: "Plugin Development",

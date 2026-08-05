@@ -7,6 +7,9 @@ hero:
   tagline: A desktop game library client with a console-like "Big Picture" mode, built on a WASM plugin system.
   actions:
     - theme: brand
+      text: User Guide
+      link: /guide/
+    - theme: alt
       text: Plugin Developer Docs
       link: /plugins/
     - theme: alt

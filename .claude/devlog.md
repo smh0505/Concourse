@@ -3605,6 +3605,45 @@ reachable.
 End-user documentation (install/usage guide) deliberately not started this pass - developer
 docs were the explicitly agreed priority; user docs are a distinct, separate follow-up.
 
+**Follow-up: GitHub Pages enabled, action versions bumped, end-user guide added.** User flipped
+the one manual setting (Settings → Pages → Source → "GitHub Actions") and confirmed the
+workflow ran successfully - `gh api repos/smh0505/Concourse/pages` now returns a live
+`html_url` (`https://smh0505.github.io/Concourse/`).
+
+Also asked to bump `upload-artifact`/`deploy-pages` versions - checked actual current tags via
+`gh api repos/actions/upload-pages-artifact/tags`/`.../deploy-pages/tags` rather than guessing;
+both had a `v5` major tag available even though the request named `v4` specifically. Bumped to
+the literally-requested `v4` first (`upload-pages-artifact` was still on `v3`;`deploy-pages` was
+already `v4`), then bumped both to `v5` on a follow-up request once the `v5` availability was
+flagged.
+
+**Then continued to the last open Milestone 22 item**: end-user docs, under a new `docs/guide/`
+section (separate VitePress sidebar/nav entry, "User Guide", alongside "Plugin Docs" - the
+landing page's hero actions now link to both). Four pages, each grounded in the actual current
+app behavior rather than generic filler:
+- `guide/index.md` - install instructions (release page, auto-update - no manual re-download
+  needed), first-run overview (manual add vs. source-plugin scan), a map of where things live
+  in the sidebar (Library/Stats/Tags/Collections/Settings)
+- `guide/library.md` - adding games both ways, editing/Fetch Metadata, tags vs. collections as
+  genuinely separate concepts (not "collections are just another tag"), how cross-source
+  deduplication actually works (title-matched, source-plugin priority order decides the winner,
+  `skip_dedup` opts a specific entry out), and the URI-launch vs. direct-executable playtime-
+  tracking distinction from `CLAUDE.md`'s own "Process Launching & Playtime Tracking" section
+- `guide/plugins-and-themes.md` - the user-facing half of the Settings panel: installing via
+  the curated registry vs. a pasted manifest URL (and what hash-verification actually buys you
+  in the registry case), multi-enable-and-order vs. exclusive-select semantics per kind, the
+  four automatic update-check moments, uninstalling
+- `guide/big-picture.md` - entering/exiting, controller-mapping-plugin-driven navigation
+  (a different controller is a different plugin selection, not a settings screen to hand-tune),
+  auto-launch-on-boot, the slideshow view
+
+Verified every internal cross-link (`grep`-collected every markdown link across all `.md`
+files, checked each resolves to a real file, and manually confirmed every `#anchor` fragment
+matches its target heading's actual generated slug) before considering this done - VitePress
+doesn't validate links/anchors at build time by default, so a broken one would otherwise ship
+silently. `bun run docs:build` clean (same cosmetic `wit`-language Shiki warning as before, no
+new errors).
+
 **Follow-up: a skeleton placeholder for content updating in `GameDetail.vue`.** `fetchMetadata()`
 (`stores/library.ts`) can overwrite description, release date, cover art, background art, and
 tags, but its own trigger ("Fetch Metadata") only exists in the edit-mode action bar - meaning

@@ -3,6 +3,12 @@ import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import BaseModal from "../BaseModal.vue";
 import { usePluginInstallStore } from "../../../stores/pluginInstall";
+import { usePluginUpdatesStore } from "../../../stores/pluginUpdates";
+import { usePluginStore } from "../../../stores/plugins";
+import { useThemeStore } from "../../../stores/theme";
+import { useMetadataProviderStore } from "../../../stores/metadataProviders";
+import { useControllerMappingStore } from "../../../stores/controllerMapping";
+import { useWrapperPluginStore } from "../../../stores/wrapperPlugins";
 
 // Generic install-by-URL modal - not theme-specific. Any plugin kind that grows its own
 // install-by-URL capability (source, metadata, etc.) can reuse this by passing its own
@@ -27,7 +33,23 @@ const emit = defineEmits<{ close: [] }>();
 
 const { t } = useI18n();
 const pluginInstall = usePluginInstallStore();
+const pluginUpdates = usePluginUpdatesStore();
+const plugins = usePluginStore();
+const theme = useThemeStore();
+const metadataProviders = useMetadataProviderStore();
+const controllerMapping = useControllerMappingStore();
+const wrapperPlugins = useWrapperPluginStore();
 const url = ref("");
+
+function checkAllPluginUpdates() {
+  pluginUpdates.checkAll([
+    ...plugins.manifests,
+    ...theme.manifests,
+    ...metadataProviders.manifests,
+    ...controllerMapping.manifests,
+    ...wrapperPlugins.manifests,
+  ]);
+}
 
 onMounted(() => {
   pluginInstall.loadRegistry();
@@ -41,11 +63,14 @@ watch(
       // Re-fetch every open, not just onMounted - this component stays mounted the whole
       // time PluginSettings.vue is (see its own `:open` prop), so onMounted's loadRegistry
       // only ever ran once; a new registry entry or version bump never showed up without a
-      // full app restart until this re-fetch was added. (Update checks used to live here too,
-      // as a "third moment" alongside app start/focus - dropped as genuinely redundant, since
-      // this modal only opens from inside PluginSettings.vue, whose own onMounted already
-      // covers the same check every time Settings is (re)entered.)
+      // full app restart until this re-fetch was added.
       pluginInstall.loadRegistry();
+      // Fourth update-check trigger moment, re-added on request: opening this modal specifically
+      // (not just Settings staying open) - PluginSettings.vue's own mount already covers the
+      // "just entered Settings" case, but a long Settings session can reopen this modal many
+      // times without PluginSettings.vue ever remounting, so this is a genuinely distinct
+      // moment, not a duplicate of that check.
+      checkAllPluginUpdates();
     }
   },
 );

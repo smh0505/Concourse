@@ -401,6 +401,10 @@ available to test against).
   going stale on repeat opens - added the same re-fetch to its `open`-prop watcher, and
   removed the same watcher's now-redundant update-check calls (`PluginSettings.vue`'s own
   mount already covers it). Update checks now fire at three moments, not four
+- [x] Post-close, on request: re-added the update-check call to `AddPlugin.vue`'s `open`-prop
+  watcher as a genuine fourth trigger moment (not a duplicate this time) - a long Settings
+  session can reopen this modal many times without `PluginSettings.vue` ever remounting, so
+  its own mount-time check doesn't cover repeat opens the way it first seemed to
 
 ## Milestone 21 — Internationalization & Offline Translation
 - [x] UI string localization via `vue-i18n`, locale JSON files, no external service - every

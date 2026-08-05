@@ -3248,6 +3248,22 @@ now fire at three moments, not four: app start, app focus (`App.vue`), and Setti
 (`PluginSettings.vue`) - `AddPlugin.vue`'s own bundle even shrank slightly as a result.
 `bun run build` clean at both steps.
 
+**Much later, post-Milestone-21 follow-up: user asked to re-add the fourth trigger moment
+removed above.** The earlier removal's reasoning ("this modal only opens from inside
+`PluginSettings.vue`, whose own mount already just ran the check") holds for the *first* open in
+a Settings visit, but not for every subsequent one - a long Settings session can open/close this
+modal repeatedly without `PluginSettings.vue` ever remounting (its `onMounted` only fires once
+per Settings visit, same lifetime quirk that motivated the registry re-fetch fix right above).
+So this wasn't undoing a mistake, it was recognizing the original fix only covered part of the
+actual repeat-open problem. Restored `usePluginUpdatesStore`/`usePluginStore`/`useThemeStore`/`useMetadataProviderStore`/
+`useControllerMappingStore`/`useWrapperPluginStore` imports (not `useAppUpdateStore` - the app-
+self-update check was never part of this trigger, only `pluginUpdates.checkAll`) and a
+`checkAllPluginUpdates()` helper (same manifest-gathering
+shape as `App.vue`'s/`PluginSettings.vue`'s own copies) to `AddPlugin.vue`, called from the same
+`open`-prop watcher right after `loadRegistry()`. Four real trigger moments now: app start, app
+focus, Settings-view mount, and this modal's own open - not duplicative, since each fires at a
+genuinely distinct point in the session. `bun run build` clean.
+
 ## Milestone 21 — Internationalization & Offline Translation (scoped, not started)
 
 Discussion-only session, prompted by the user wanting i18n but explicitly ruling out paid

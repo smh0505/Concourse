@@ -3522,6 +3522,89 @@ instead:
 
 `cargo check` and `bun run build` both clean after all three fixes.
 
+## Milestone 22 — Plugin-Developer Documentation Site
+
+User wants real documentation (wiki-style), and was asked which audience first - plugin
+developers or end users. Recommended developer docs: the WASM plugin system (Component Model,
+WIT interfaces, capability gating, manifest schema, signing/registry) is genuinely complex and
+currently only exists in scattered form across `.claude/CLAUDE.md`/`devlog.md`, neither of which
+a third-party plugin author would ever read, whereas the app's own UI is comparatively
+self-explanatory. User agreed.
+
+Also asked directly about *method* - GitHub Wiki vs GitHub Pages vs something else. Recommended
+against the Wiki: it's a separate, unreviewed git repo that can silently drift out of sync with
+the actual interface the moment someone changes `wit/plugin.wit` without also remembering to
+edit a wiki page living somewhere else entirely. Recommended docs-as-code instead: a normal
+`docs/` folder on `main`, reviewed via the same PR flow as everything else, built with VitePress
+(fits the existing Vue/bun stack, no new tooling paradigm to learn) and deployed to GitHub Pages
+via GitHub Actions - explained the actual mechanics when asked ("do you create a new branch") -
+source lives in a normal directory on `main`; only the *built* static output needs Pages, via
+the modern `upload-pages-artifact`/`deploy-pages` action pair rather than an old-style
+`gh-pages` branch.
+
+Went through `EnterPlanMode` given the scope (new directory structure, new dependency, a new
+CI workflow, real content across 7 pages) before touching anything.
+
+**Structure**: `docs/` is its own bun project - separate `package.json`/`bun.lock` from the
+root app's, so VitePress's own dependencies never touch Tauri's frontend build or its dev-server
+port. `docs/.vitepress/config.ts` defines nav/sidebar/local search; content:
+- `index.md` - VitePress's home-layout landing page
+- `plugins/index.md` - architecture overview: the five plugin kinds (source/theme/metadata/
+  controller/wrapper), the three authoring tiers (built-in TS / WASM / data-only theme), and
+  *why* WASM specifically (capability-scoped sandboxing a native binary or unsandboxed script
+  can't offer - both were considered and rejected for exactly that reason per this repo's own
+  history)
+- `plugins/getting-started.md` - a full walkthrough building a minimal WASM source plugin,
+  built directly from the real, working reference plugin already in this repo
+  (`examples/exe-scanner-plugin`) rather than an invented toy example - same Rust code, same
+  `cargo-component` toolchain steps, same "drop the `.wasm` + `plugin.json` into `<app data
+  dir>/wasm-plugins/source/<id>/`" manual-test instructions its own README already documents
+- `plugins/manifest-reference.md` - every `PluginManifest` field (`src/plugins/manifest.ts`),
+  grouped by core/theme-specific/WASM-specific/host-added, with the versioning convention from
+  `CLAUDE.md`'s own "Plugin Versioning" section
+- `plugins/wit-interface.md` - the actual `src-tauri/wit/plugin.wit` contract, host functions
+  grouped by category (registry/filesystem/process/network/zip/scoped-storage) plus all three
+  plugin worlds (`source-plugin-world`/`wrapper-plugin-world`/`metadata-plugin-world`) - written
+  from that file directly, called out as authoritative if the two ever disagree
+- `plugins/security-model.md` - wasmtime sandboxing, path scoping (static + runtime-requested),
+  the `run-programs` capability gate, network scoping, then honestly separating what sandboxing
+  solves (what a plugin can *reach*) from what it doesn't (whether the code *itself* is
+  malicious within that reach) - code signing (advisory) and the curated registry (hard-gated,
+  hash-pinned) as the two answers to that second problem
+- `plugins/publishing.md` - freeform install-by-URL (always available, no gatekeeping) vs. the
+  curated registry, sourced directly from `concourse-plugin-registry`'s own README rather than
+  overstating it as an open community-submission process - that README explicitly says review
+  today means one person (the maintainer) reading pinned versions, not a moderated PR queue,
+  and this page says the same honestly rather than promising more than currently exists
+
+Verified locally before writing the deploy workflow: `cd docs && bun add -d vitepress` (pinned
+1.6.4, matching what was hand-written into `package.json` first), then `bun run docs:build` -
+succeeded with only a cosmetic warning (Shiki, the syntax highlighter, has no bundled grammar
+for `wit`, so those code fences fall back to plain-text highlighting - functional, just not
+colorized).
+
+**Deploy workflow** (`.github/workflows/docs.yml`) mirrors `release.yml`'s existing conventions
+(`actions/checkout@v6`, `oven-sh/setup-bun@v2`) - triggered on push to `main` touching `docs/**`
+or the workflow file itself, plus `workflow_dispatch`. Two jobs: `build` (installs docs'
+dependencies, runs `docs:build`, uploads `docs/.vitepress/dist` via `upload-pages-artifact@v3`)
+and `deploy` (`deploy-pages@v4`, gated on `build` via `needs`) - the modern GitHub-recommended
+pattern needing `pages: write`/`id-token: write` permissions, no `gh-pages` branch anywhere.
+
+Added `.vitepress/cache` to the root `.gitignore` (VitePress's own build cache dir - `dist`,
+`node_modules`, and `bun.lock` were already covered by existing repo-root patterns, so those
+needed no change). Verified via `git add -n docs/` before actually staging anything that exactly
+the 9 real source files would be staged - no accidental `node_modules`/`dist`/lockfile.
+
+**One thing left outside my own reach**: GitHub Pages isn't enabled for this repo yet (checked
+via `gh api repos/smh0505/Concourse/pages` - 404, confirmed before writing the workflow rather
+than assuming). Flagging this directly rather than attempting to toggle a public-facing repo
+setting myself - someone with repo admin access needs to set Settings → Pages → Source to
+"GitHub Actions" once, after which this workflow's future runs will actually publish somewhere
+reachable.
+
+End-user documentation (install/usage guide) deliberately not started this pass - developer
+docs were the explicitly agreed priority; user docs are a distinct, separate follow-up.
+
 **Follow-up: a skeleton placeholder for content updating in `GameDetail.vue`.** `fetchMetadata()`
 (`stores/library.ts`) can overwrite description, release date, cover art, background art, and
 tags, but its own trigger ("Fetch Metadata") only exists in the edit-mode action bar - meaning

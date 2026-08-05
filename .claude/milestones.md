@@ -443,3 +443,14 @@ available to test against).
 
 See devlog for the model/library comparison behind translation's scoping, and the vue-i18n
 conversion's own implementation detail.
+
+## Milestone 22 — Plugin-Developer Documentation Site
+- [x] New `docs/` VitePress project (own `package.json`, decoupled from the app's own frontend
+  build) - architecture overview, getting-started walkthrough, manifest reference, WIT interface
+  reference, security model, and publishing pages for third-party plugin authors
+- [x] `.github/workflows/docs.yml` - builds and deploys to GitHub Pages via
+  `upload-pages-artifact`/`deploy-pages` on every push to `docs/**`, no `gh-pages` branch needed
+- [ ] One-time manual step still needed: repo Settings → Pages → Source → "GitHub Actions" (not
+  yet enabled - `gh api repos/smh0505/Concourse/pages` returns 404)
+- [ ] End-user documentation (install/usage guide) - deliberately scoped out of this pass,
+  plugin developers prioritized first per the user's own stated reasoning (see devlog)

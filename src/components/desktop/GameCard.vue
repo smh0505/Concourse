@@ -126,7 +126,10 @@ const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBall
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
-  color: var(--color-on-accent);
+  /* Fixed white, not a theme token - same fix as GameListRow.vue's identical overlay: this
+     background is a hardcoded black regardless of theme, so --color-on-accent (which tracks
+     --color-base, dark for dark themes) gave dark-on-dark text for dark themes. */
+  color: #fff;
 }
 
 .spin {

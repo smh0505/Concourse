@@ -240,6 +240,11 @@ own definition.
   the view page; the edit textarea still holds the raw Markdown source
 - [x] `PluginSettings.vue` shows "Built-in" instead of a fake `v1.0.0` for build-time TS plugins
   (absent/`"ts"` runtime) - their version never actually changes, unlike installed WASM/data ones
+- [x] Fixed a real bug: `GameListRow.vue`'s title/details text and both list/card rows'
+  `.fetch-overlay` used `--color-on-accent` (tracks `--color-base`, dark for dark themes) as
+  text color over a hardcoded black scrim - unreadable dark-on-dark on Catppuccin Frappe/
+  Macchiato/Mocha and Midnight Neon. Fixed to a hardcoded white, matching the scrim's own
+  hardcoded black
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

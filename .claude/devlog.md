@@ -1975,6 +1975,26 @@ i18n key ("Built-in") for the build-time case, the real `v{version}` otherwise. 
 new key into all 9 other locales and re-verified key-parity (same flatten-and-diff check as the
 original locale rollout) before building. `bun run build` clean.
 
+**Post-close follow-up: fixed dark-on-dark text in GameList rows on dark themes.** User reported
+Catppuccin Frappe/Macchiato/Mocha and Midnight Neon making list-row text hard to read. Traced to
+`GameListRow.vue`'s `.info` rule: `color: var(--color-on-accent)`, where `--color-on-accent`
+defaults to `var(--color-base)` (the theme's own background color - dark for a dark theme).
+That sat over `.scrim`, a hardcoded `rgba(0,0,0,0.8→0.25)` black gradient regardless of theme -
+so dark themes got dark text directly over a black background. The variable was simply the
+wrong one for the job: `--color-on-accent`'s actual contract (per its own doc comment in
+`styles.css`) is "text/icon color for anything on top of `--color-accent`," not "text over this
+specific hardcoded-black scrim." Since the scrim's own color is fixed (not theme-derived) the
+correct fix is a fixed text color to match, not a different theme token - swapped to a literal
+`#fff` (matching the existing `text-shadow: rgba(0,0,0,0.6)` on `.title`, which only ever made
+sense assuming light text in the first place, suggesting this was the original intent that
+`--color-on-accent` accidentally broke).
+
+Found the identical defect in two more spots while fixing this one: `GameListRow.vue`'s own
+`.fetch-overlay` (same hardcoded black background, same wrong variable) and `GameCard.vue`'s
+`.fetch-overlay` (byte-identical pattern, copy-pasted between the two components) - fixed both
+the same way rather than leaving a known-identical bug sitting right next to the one just fixed.
+`bun run build` clean.
+
 ## Milestone 18 — Shared Styles Convention (scoped, not started)
 User proposed a style-convention change directly: less `<style scoped>` per component, more
 shared CSS (colors, borders, radii, other repeated patterns) collected into a `styles.css`.

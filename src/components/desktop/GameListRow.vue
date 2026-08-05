@@ -107,7 +107,11 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
-  color: var(--color-on-accent);
+  /* Fixed white, not a theme token - this overlay's background is a hardcoded black regardless
+     of theme, so the readable text color is fixed too. --color-on-accent was wrong here: it
+     tracks --color-base (the theme's own background color), which is dark for dark themes -
+     dark text on this black overlay was unreadable. */
+  color: #fff;
 }
 
 .spin {
@@ -129,9 +133,12 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   flex-direction: column;
   justify-content: center;
   gap: 0.15rem;
-  /* Text always sits over the scrim's dark side, regardless of the underlying cover art's
-     own colors - same reasoning GameCard's footer gradient already relies on. */
-  color: var(--color-on-accent);
+  /* Fixed white, not a theme token - .scrim below is a hardcoded black gradient regardless of
+     theme, so the readable text color is fixed too. --color-on-accent was the wrong token here:
+     it tracks --color-base (the theme's own background color), which is dark for dark themes -
+     dark text over this same-hardcoded-dark scrim was unreadable (Catppuccin Frappe/Macchiato/
+     Mocha, Midnight Neon). */
+  color: #fff;
 }
 
 .title {

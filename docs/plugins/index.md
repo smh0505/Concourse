@@ -29,8 +29,7 @@ time.
    [WIT Interface](./wit-interface) reference.
 2. **Data-only theme manifest** — for `theme` plugins specifically, a manifest can be pure JSON
    (`cssVariables`/`cardVisual`/`fontFaces`, no code at all) if it doesn't need the full WASM
-   plugin machinery. See the [Manifest Reference](./manifest-reference)'s `cssVariables`/
-   `cardVisual`/`fontFaces` fields.
+   plugin machinery. See [Theme Manifests](./theme-manifests).
 
 WASM plugins only exist for the three kinds a
 [WIT world](https://component-model.bytecodealliance.org/design/wit.html) has been defined for
@@ -54,6 +53,7 @@ per-plugin (see [Security Model](./security-model)).
 
 - [Getting Started](./getting-started) — build a minimal WASM source plugin end-to-end
 - [Manifest Reference](./manifest-reference) — every `plugin.json` field
+- [Theme Manifests](./theme-manifests) — `cssVariables`/`cardVisual`/`fontFaces` for theme plugins
 - [WIT Interface](./wit-interface) — the actual host capability surface and plugin worlds
 - [Security Model](./security-model) — path scopes, capability gating, signing
 - [Publishing](./publishing) — submitting to the curated plugin registry

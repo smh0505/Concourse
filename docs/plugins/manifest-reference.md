@@ -16,16 +16,8 @@ Every plugin — built-in TypeScript, WASM, or a data-only theme — is describe
 | `runtime` | `"wasm" \| "data"` | no | Set `"wasm"` for a WASM plugin, or `"data"` for a code-free theme manifest (no `entry` to load at all - `cssVariables` *is* the whole plugin). A third-party manifest should always set one of these two. (`"ts"`/absent is a third value the loader also recognizes, but it means a build-time TypeScript module bundled into the app itself - internal-only, never something you'd set in a manifest you're distributing.) |
 | `installable` | `boolean` | no | True if this plugin implements the install/uninstall lifecycle (`install()`/`uninstall()`/`isInstalled()`) - drives whether the generic "Install" button UI is shown automatically. |
 
-## Theme-specific fields
-
-Only meaningful for `kind: "theme"`, and only for the data-only (`runtime: "data"`) tier - a
-manifest with no compiled code at all:
-
-| Field | Type | Notes |
-|---|---|---|
-| `cssVariables` | `Record<string, string>` | CSS custom properties (e.g. `"--color-base": "#1e1e2e"`) applied to `:root` while this theme is active. This is the entire content of a data-only theme. |
-| `cardVisual` | closed-vocabulary JSON AST | Overrides the game-card's cover-visual region (image-or-placeholder) without needing real code. Validated strictly before use - see `theme/cardVisualAst.ts` in the main repo for the exact node types. |
-| `fontFaces` | array of `{ family, url, weight?, style? }` | Real font files to load via `@font-face`. Every field is validated against a strict allowlist (`family`/`weight` against a safe-character pattern, `url` must be `https:`) before any CSS text is constructed, since this is untrusted content going into a real `<style>` block. |
+Theme manifests have their own dedicated set of fields (`cssVariables`/`cardVisual`/
+`fontFaces`) - see [Theme Manifests](./theme-manifests) rather than this page for those.
 
 ## WASM-plugin fields
 
@@ -58,21 +50,7 @@ computed by the host from your plugin's actual WIT-level requests, not declared 
 }
 ```
 
-## Example: a data-only theme manifest
-
-```json
-{
-  "id": "my-theme",
-  "name": "My Theme",
-  "version": "1.0.0",
-  "kind": "theme",
-  "cssVariables": {
-    "--color-base": "#1e1e2e",
-    "--color-text": "#cdd6f4",
-    "--color-accent": "#89b4fa"
-  }
-}
-```
+See [Theme Manifests](./theme-manifests) for a theme manifest example.
 
 ## Versioning
 

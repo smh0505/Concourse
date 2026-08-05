@@ -36,6 +36,7 @@ export default defineConfig({
             { text: "Architecture Overview", link: "/plugins/" },
             { text: "Getting Started", link: "/plugins/getting-started" },
             { text: "Manifest Reference", link: "/plugins/manifest-reference" },
+            { text: "Theme Manifests", link: "/plugins/theme-manifests" },
             { text: "WIT Interface", link: "/plugins/wit-interface" },
             { text: "Security Model", link: "/plugins/security-model" },
             { text: "Publishing", link: "/plugins/publishing" },

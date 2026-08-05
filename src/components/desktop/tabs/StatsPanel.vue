@@ -166,8 +166,10 @@ function hoursPlayed(game: Game) {
   gap: var(--space-3);
   min-height: 2.75rem;
   padding: var(--space-2) var(--space-3);
-  border: var(--button-border-width) solid var(--color-surface1);
-  border-radius: var(--radius-lg);
+  /* --card-border-width/--card-radius (GameCard.vue's `.card-visual` opt-in hooks), not
+     --button-border-width/--radius-lg - same reasoning as .list-row-shell in styles.css. */
+  border: var(--card-border-width, 1px) solid var(--color-surface1);
+  border-radius: var(--card-radius, var(--radius-lg));
   background-size: cover;
   background-position: center;
 }
@@ -180,16 +182,21 @@ function hoursPlayed(game: Game) {
 .scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.75) 40%, rgba(0, 0, 0, 0.25));
+  /* Tinted toward --color-tint (styles.css) - see GameListRow.vue's identical .scrim comment
+     for why. */
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-tint) 75%, transparent) 40%,
+    color-mix(in srgb, var(--color-tint) 25%, transparent)
+  );
 }
 
 .stat-row-title {
   position: relative;
   z-index: 1;
   font-weight: 600;
-  /* --color-scrim-text (styles.css) - .scrim above is a hardcoded black gradient regardless of
-     theme; --color-on-accent tracked --color-base instead, which goes dark on dark themes. */
-  color: var(--color-scrim-text);
+  /* --color-text, not --color-on-accent - see GameListRow.vue's .info comment for why. */
+  color: var(--color-text);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -201,9 +208,8 @@ function hoursPlayed(game: Game) {
   z-index: 1;
   flex-shrink: 0;
   font-size: 0.75rem;
-  /* --color-scrim-text (styles.css) - .scrim above is a hardcoded black gradient regardless of
-     theme; --color-on-accent tracked --color-base instead, which goes dark on dark themes. */
-  color: var(--color-scrim-text);
+  /* --color-text, not --color-on-accent - see GameListRow.vue's .info comment for why. */
+  color: var(--color-text);
   opacity: 0.85;
 }
 

@@ -95,8 +95,15 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   inset: 0;
   /* Strong on the text side (left), fading out toward the cover art peeking through on the
      right - keeps title/details readable regardless of how bright the cover art itself is,
-     without fully hiding the art. */
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.8) 40%, rgba(0, 0, 0, 0.25));
+     without fully hiding the art. Tinted toward --color-tint (styles.css, defaults to
+     --color-crust), not --color-base directly - gives more punch than base while staying
+     theme-overridable per-theme if crust itself doesn't pair with --color-text (see
+     --color-tint's own doc comment - Brick Block overrides it for exactly this reason). */
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-tint) 80%, transparent) 40%,
+    color-mix(in srgb, var(--color-tint) 25%, transparent)
+  );
 }
 
 .fetch-overlay {
@@ -133,12 +140,11 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   flex-direction: column;
   justify-content: center;
   gap: 0.15rem;
-  /* --color-scrim-text (styles.css), not --color-on-accent - .scrim below is a hardcoded black
-     gradient regardless of theme, so the readable text color needs its own token too rather
-     than one that tracks --color-base (the theme's own background color, dark for dark themes -
-     the bug this replaces: dark text over the same-hardcoded-dark scrim on Catppuccin Frappe/
-     Macchiato/Mocha, Midnight Neon). */
-  color: var(--color-scrim-text);
+  /* --color-text, not --color-on-accent - .scrim above now tints toward --color-base itself
+     (not a fixed black), so the theme's own text/base contrast pair holds here same as anywhere
+     else in the app. --color-on-accent tracked --color-base directly instead, which was dark
+     for dark themes against the (then-fixed-black) scrim - the bug this replaces. */
+  color: var(--color-text);
 }
 
 .title {

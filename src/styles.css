@@ -31,13 +31,15 @@
      as a saturated sky-blue background color, not a "text on accent" color). Defaults to
      --color-base, matching every existing theme's actual light base color exactly. */
   --color-on-accent: var(--color-base);
-  /* Text/icon color for content placed over a dark image scrim (GameListRow.vue/GameCard.vue's
-     cover-art overlays, StatsPanel.vue's stat rows) - these scrims are a fixed hardcoded black
-     gradient regardless of theme, so the text needs a fixed value too, not one derived from a
-     theme color like --color-base (which --color-on-accent tracks, and goes dark on a dark
-     theme - the bug this token replaces). Still a real token, not a hardcoded literal in each
-     component, so a theme could override it if it ever wanted a differently-colored scrim. */
-  --color-scrim-text: #ffffff;
+  /* Background tint for a cover-art scrim (GameListRow.vue/StatsPanel.vue's stat rows) - needs
+     to be darker/more saturated than --color-base for real contrast against --color-text once
+     mixed with transparent (see color-mix() call sites), so it defaults to --color-crust rather
+     than --color-base. Separate token (not just "use --color-crust directly") since a theme can
+     override just this one if --color-crust itself isn't the right pairing for --color-text -
+     Brick Block does exactly that below, since its crust (#0058f8, same as its own accent) is
+     too saturated to pair with its dark-navy --color-text (~3:1 contrast, fails normal-text AA;
+     its own --color-button-text: #ffffff exists for the same underlying reason). */
+  --color-tint: var(--color-crust);
 
   /* Spacing scale */
   --space-1: 0.25rem;
@@ -238,9 +240,34 @@ small {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  border: var(--button-border-width) solid var(--color-surface1);
-  border-radius: var(--radius-lg);
+  /* --card-border-width/--card-radius (GameCard.vue's `.card-visual` opt-in hooks) instead of
+     --button-border-width/--radius-lg - these rows are cards-as-rows, so they should pick up a
+     theme's card frame (e.g. Brick Block's chunkier 3px/square-corner look), not the button
+     frame. Same fallbacks as `.card-visual` for themes that don't set either. */
+  border: var(--card-border-width, 1px) solid var(--color-surface1);
+  border-radius: var(--card-radius, var(--radius-lg));
   padding: var(--space-2) var(--space-3);
+}
+
+/* Tags/Collections rows (TagsPanel.vue/CollectionsPanel.vue's `.item-row.list-row-shell`) -
+   subtle --color-tint wash for visual consistency with GameListRow/StatsPanel's cover-art rows,
+   which use the same token. No cover art here to scrim, so this is a light background tint
+   over the panel's own background rather than a gradient - --color-text (untouched, default)
+   already reads fine against --color-tint on every theme, same guarantee the scrim fix relies
+   on. */
+.item-row {
+  /* Same gradient tint StatsPanel.vue's .scrim uses, layered over --cover-placeholder-background
+     (GameCard.vue's no-cover fallback token - e.g. Brick Block's brick/stripe pattern) instead
+     of a plain color, so a theme's dedicated placeholder art shows through here too. Falls back
+     to --color-surface0 for themes that don't set the pattern, same as every other placeholder
+     consumer. The tint gradient is a real <image> layer (last-layer color rule only applies
+     when a var() fallback resolves to a plain color at the very end of the list). */
+  background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-tint) 75%, transparent) 40%,
+      color-mix(in srgb, var(--color-tint) 25%, transparent)
+    ),
+    var(--cover-placeholder-background, var(--color-surface0));
 }
 
 /* Tag pill - GameFilters.vue's .tag, GameDetail.vue's .tag */

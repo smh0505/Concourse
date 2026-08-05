@@ -246,6 +246,23 @@ own definition.
   Macchiato/Mocha and Midnight Neon. `.fetch-overlay` fixed to a hardcoded white; `.info` (and
   `StatsPanel.vue`'s identical stat-row bug, found the same way) instead given a proper new
   design token, `--color-scrim-text`, rather than another hardcoded literal
+- [x] Reworked that same fix again after further review: `.scrim`'s hardcoded black gradient
+  replaced with a `color-mix()` tint toward a new `--color-tint` token (defaults to
+  `--color-crust`, the darkest/most-saturated of the base/mantle/crust trio), letting `.info`/
+  `.stat-row-title`/`.stat-row-subtitle` go back to plain `--color-text` instead of the
+  `--color-scrim-text` token - the theme's own text/base contrast pair holds again since the
+  scrim now darkens *relative to the theme*, not a fixed literal. Brick Block's own crust
+  (`#0058f8`, same as its accent) measured ~3:1 contrast against its `--color-text` (fails
+  normal-text AA) - overrides `--color-tint` to `--color-mantle` instead (same value/reasoning
+  its balloon tooltip already uses via `--balloon-background`)
+- [x] Tags/Collections rows (`TagsPanel.vue`/`CollectionsPanel.vue`'s `.item-row`) given the
+  same `--color-tint` gradient background (layered over `--cover-placeholder-background` so a
+  theme's dedicated placeholder pattern, e.g. Brick Block's stripes, shows through here too) for
+  visual consistency with GameListRow/StatsPanel's cover-art rows
+- [x] `.list-row-shell`/`.stat-row`'s border/radius switched from `--button-border-width`/
+  `--radius-lg` to `--card-border-width`/`--card-radius` (`GameCard.vue`'s existing opt-in card-
+  frame hooks) - these rows are cards-as-rows, so they pick up a theme's card frame (e.g. Brick
+  Block's chunkier square-cornered look) instead of the button frame
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

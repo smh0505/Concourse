@@ -2010,6 +2010,90 @@ page") - found `StatsPanel.vue`'s `.stat-row-title`/`.stat-row-subtitle`, an ide
 fixed the same way. `.fetch-overlay` in both `GameListRow.vue`/`GameCard.vue` deliberately left
 as the hardcoded `#fff` from the prior fix, per direct instruction. `bun run build` clean.
 
+**Second follow-up: user proposed a genuinely different approach - tint the scrim's own
+background toward the theme instead of fixing the text color.** Rather than a fixed
+`--color-scrim-text`, tint `.scrim` toward `--color-base` via `color-mix(in srgb, var(--color-
+base) 80%/25%, transparent)`, then let `.info`/`.stat-row-title`/`.stat-row-subtitle` go back to
+plain `--color-text` - since that pairing is already guaranteed-contrast by every theme's own
+design, no new fixed-color token needed at all. Flagged the tradeoff before implementing: this
+changes the actual visual look (light themes get a paler wash instead of the existing black
+vignette), not just the contrast bug, and needs `color-mix()` (CSS custom properties can't do
+alpha-blending arithmetic directly) - confirmed fine on Tauri's WebView2/Chromium target. Tried
+it at the user's request, left uncommitted so it could be reverted freely.
+
+User's own verdict: "looks not bad but not good either" - asked whether any token was "stronger"
+than `--color-base` for more punch. Checked the existing base/mantle/crust trio every theme
+defines: `--color-crust` is consistently the darkest/most-saturated of the three (Mocha
+`#1e1e2e`→`#11111b`, Midnight Neon `#0d1117`→`#010409`, Brick Block `#5c94fc`→`#0058f8`) -
+already used once elsewhere (`GameCard.vue`'s hover balloon, `var(--balloon-background,
+var(--color-crust))`, paired successfully with plain `--color-text` there). Swapped the
+`color-mix()` target to `--color-crust` and tried it.
+
+Before committing, computed the actual WCAG contrast for the one theme most likely to break:
+Brick Block, whose crust (`#0058f8`) equals its own accent color. Relative-luminance contrast
+between `#0058f8` and Brick Block's `--color-text` (`#1a1a2e`) came out to **~3.08:1** - fails
+the 4.5:1 AA threshold for normal-size text (these rows' titles are ~0.85-0.9rem, not "large
+text" by the 3:1 large-text exemption). This lines up with a signal already sitting in Brick
+Block's own manifest: it defines a separate `--color-button-text: #ffffff` specifically because
+its own `--color-text` doesn't hold up against its saturated accent/crust blue - the same failure
+mode, already worked around once for buttons, about to recur here.
+
+**Solution: a new `--color-tint` token, defaulting to `--color-crust`, letting Brick Block
+override just this one value instead of every theme losing crust's punch.** Asked the user to
+confirm the exact override value before touching a separate repo's manifest (genuine ambiguity -
+"same as its button color" could have meant several different existing tokens) - confirmed via
+`AskUserQuestion` as `--color-mantle`, the same value/reasoning Brick Block's own
+`--balloon-background` override already uses for the identical underlying problem. Added
+`--color-tint: var(--color-crust)` to `styles.css`'s `:root` (removing the now-unused
+`--color-scrim-text` token entirely rather than leaving dead code behind), pointed both
+`.scrim`'s `color-mix()` calls at it, and updated `data-theme-plugins`' `brick-block-data-theme`
+manifest to `"--color-tint": "var(--color-mantle)"` (bumped 1.5.0 → 1.6.0, `bun run validate`
+clean). Copied the edited manifest straight into `%APPDATA%\com.bloppy.concourse\data-
+themes\brick-block-data-theme\theme.json` (the cache path `plugin_installer.rs`'s
+`install_data_theme` writes to - found via `data_themes_dir()`/`list_data_themes_from()`) to
+test live without a real publish/install round-trip. User confirmed it looked right.
+
+**Extended to Tags/Collections rows on request, but the request needed scoping first.**
+`TagsPanel.vue`/`CollectionsPanel.vue`'s `.item-row.list-row-shell` rows have no cover art, no
+`.scrim`, and no `--color-on-accent` usage at all - nothing broken there to port a fix to, so
+asked via `AskUserQuestion` what "apply this change" actually meant before guessing; confirmed
+as "give the rows a `--color-tint` background" for visual consistency, not a bug fix. Took two
+more rounds to land on the right implementation, both directly corrected by the user rather than
+guessed correctly the first time:
+- First attempt: a flat `color-mix(in srgb, var(--color-tint) 15%, transparent)` background on
+  `.item-row` - invisible in practice (`--color-tint`/`--color-base` are very close in hue/
+  lightness for several themes, especially Catppuccin Latte, at only 15% mix), user reported "I
+  don't see any change." Bumped to 35% and wrapped it in a (same-color, both-stops) `linear-
+  gradient()` on a hunch it might be a raw-`color-mix()`-as-`background`-value rendering quirk -
+  still "still bad."
+- User found the actual root cause: `.item-row`'s background needs to be the same construction
+  `.stat-row`'s `.scrim` already uses, not a fresh flat value - copied `.scrim`'s exact gradient
+  (`75%`/`25%` stops, not 35% flat) directly onto `.item-row` as its own background (no cover art
+  here to layer a separate child scrim over, so it becomes the row's own background outright).
+  This time it worked ("much better").
+- Final touch, still user-directed: `.item-row`'s background layered again, this time over
+  `var(--cover-placeholder-background, var(--color-surface0))` (the same fallback token
+  `GameCard.vue`'s no-cover placeholder already uses) as a second background layer, so a theme's
+  dedicated placeholder pattern (Brick Block's brick/stripe `repeating-linear-gradient`) shows
+  through Tags/Collections rows too, not just cover-art rows.
+
+**Final touch before committing: card-frame tokens instead of button-frame tokens on every row
+touched this session.** `.list-row-shell` (styles.css, shared by GameListRow/SkeletonRow/the new
+`.item-row` rows) and `StatsPanel.vue`'s `.stat-row` both had `border: var(--button-border-
+width) solid var(--color-surface1); border-radius: var(--radius-lg)` - the button frame, not the
+card frame `GameCard.vue`'s `.card-visual` already exposes as opt-in hooks (`--card-border-width`/
+`--card-radius`). Since these are literally cards rendered as rows, switched both to `var(--card-
+border-width, 1px)`/`var(--card-radius, var(--radius-lg))` instead, so Brick Block's chunkier
+3px/square-corner card look now applies uniformly across GameCard, GameListRow, StatsPanel, and
+Tags/Collections rows, not just the grid card.
+
+Bumped `1.4.1` → `1.4.2` (patch, UI-polish fixes within the still-open Milestone 14, not a new
+Post-1.0 milestone closing) across `package.json`/`src-tauri/Cargo.toml`/`src-tauri/
+tauri.conf.json`; `cargo check` clean, `bun run build` clean. Tagged/pushed `v1.4.2` per the
+established convention. `data-theme-plugins`' Brick Block bump (1.6.0) committed/pushed
+separately in its own repo, no tag (plugin versioning is independent SemVer, not app-milestone-
+tracked - see `CLAUDE.md`).
+
 ## Milestone 18 — Shared Styles Convention (scoped, not started)
 User proposed a style-convention change directly: less `<style scoped>` per component, more
 shared CSS (colors, borders, radii, other repeated patterns) collected into a `styles.css`.

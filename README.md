@@ -23,6 +23,12 @@ metadata providers, controller mappings, compatibility wrappers) is a plugin.
 - **Plugin system** - five plugin kinds (source, theme, metadata provider, controller
   mapping, compatibility wrapper), loaded either at build time (bundled TypeScript plugins
   under `src/plugins/`) or at runtime (downloadable WebAssembly plugins - see below)
+- **Localization** - UI available in 10 languages (English plus 9 machine-translated locales),
+  a theme-settable `--font-family` for full-app re-skinning, and a data-only theme tier
+  (`cssVariables` + an optional `cardVisual` JSON-AST override for the cover art region, no code
+  required)
+- **Auto-update** - both the app itself and every installed plugin/theme check for and apply
+  updates automatically
 
 ## Tech stack
 
@@ -51,8 +57,11 @@ implements one of five interfaces depending on `kind`:
 
 - `source` - `scan()` / `launch()` / `getInstallStatus()`, for game source integrations
   (multi-enable)
-- `theme` - component-slot overrides (e.g. swap `GameCard`) plus CSS variables (single
-  active); a `cssVariables`-only theme needs no code at all
+- `theme` - CSS variables (colors, fonts, borders/radii) plus an optional JSON-AST `cardVisual`
+  override for the cover-art region (single active); a `cssVariables`-only manifest needs no
+  code at all. Component-slot overrides (swapping in a whole custom Vue component) were
+  supported early on but retired in favor of this closed-vocabulary AST tier - no eval/executable
+  code path exists for a theme to inject
 - `metadata` - `fetchMetadata(title)`, for cover art / description / genre providers
   (multi-enable)
 - `controller` - a `GamepadMapping` (button/axis indices) for a specific physical controller
@@ -89,7 +98,7 @@ into Settings → the matching tab → Add Plugin; themes install the same way f
 manifest URL. See each repo's own README for manual-copy install paths if you'd rather build
 locally or skip the URL flow.
 
-**Security note (Milestone 13, closed):** wasmtime's Component Model sandbox guarantees memory
+**Security note (Milestone 12, closed):** wasmtime's Component Model sandbox guarantees memory
 safety (a plugin can't corrupt host memory or escape its own execution), and every host
 function exposed to plugins that could do real-world damage is now gated:
 - `spawn-process`/`run-and-wait` need an explicit, visible per-plugin grant - a plugin must
@@ -110,7 +119,7 @@ function exposed to plugins that could do real-world damage is now gated:
 Only install plugins from sources you fully trust regardless - this closes "a plugin can
 silently reach anywhere on your system or network," not a full app-store-grade trust model.
 
-**Trust model (Milestone 14, closed):** two complementary, independent layers.
+**Trust model (Milestone 13, closed):** two complementary, independent layers.
 - **Signing** - every official plugin release is signed with a
   [Sigstore](https://www.sigstore.dev/) build-provenance attestation, binding the published
   `.wasm` to the exact commit and CI run that built it. Concourse checks this on install and
@@ -129,6 +138,15 @@ silently reach anywhere on your system or network," not a full app-store-grade t
   Freeform install-by-URL still works exactly as before either way - the registry is an
   additional, more-trusted path, not a required gate.
 
+## Documentation
+
+Full plugin-developer and user docs are published at
+**[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)** (source in
+[`docs/`](docs/), built with VitePress) - a user guide (installing, library management, Big
+Picture mode) and a plugin-developer reference (architecture overview, a getting-started
+walkthrough, the full manifest/WIT interface reference, the security model, and how to publish
+a plugin).
+
 ## Status
 
 Actively developed, milestone by milestone. See [`.claude/proposal.md`](.claude/proposal.md)
@@ -138,10 +156,14 @@ implementation history/rationale behind each milestone item.
 
 As of now: core library, metadata/playtime tracking, Big Picture mode, the plugin system
 (including the WebAssembly runtime-plugin pipeline and managed install for the compatibility
-wrappers), a desktop UI polish pass, WASM plugin capability sandboxing (Milestone 13), and a
-plugin trust/signing model (Milestone 14) are all done. All official plugins listed above are
-live. Open work includes an emulator/ROM scanner plugin and additional source plugins
-(Xbox/EA/Ubisoft, Milestone 12).
+wrappers), WASM plugin capability sandboxing (Milestone 12), a plugin trust/signing model
+(Milestone 13), an ongoing desktop UI polish pass (Milestone 14), the JSON-AST theme tier
+replacing component-swap theming (Milestones 17/19), a shared-styles convention pass
+(Milestone 18), app + plugin/theme auto-update (Milestone 20), 10-language localization
+(Milestone 21, UI strings only so far), and this documentation site (Milestone 22) are all
+done. All official plugins listed above are live. Open work includes an emulator/ROM scanner
+plugin and additional source plugins (Xbox/EA/Ubisoft, Milestone 16), and an offline
+LLM-based translation feature for game descriptions (Milestone 21's remaining half).
 
 ## License
 

@@ -434,12 +434,17 @@ available to test against).
 - [x] 9 additional locales added (machine-translated by Claude, not yet native-reviewed):
   Korean, Japanese, Simplified Chinese, Spanish, French, German, Brazilian Portuguese, Russian,
   Italian - 10 languages total, all verified to have exact key parity with `en.json`
-- [ ] New `translation` plugin kind wrapping a local LLM (llama.cpp + a user-selected GGUF model)
-  for translating game descriptions/metadata - keeps this optional/heavy dependency out of core
+- [ ] New `translation` host-native Rust module wrapping a local LLM (a user-selected GGUF
+  model) for translating game descriptions/metadata - keeps this optional/heavy dependency out
+  of core
 - [ ] Settings UI: model picker (list of supported models with size/quality tradeoffs), download-
   on-first-use (no model bundled in the installer)
-- [ ] Research spike: confirm a Rust llama.cpp binding (e.g. `llama-cpp-2`) covers Windows target
-  before committing to the sidecar approach
+- [x] Research spike, redone: `llama-cpp-2`/`llama-cpp-sys-2` (llama.cpp bindings) have two live
+  Windows-specific bugs (a CMake build failure in a recent patch version, a >4GB-GGUF MSVC
+  correctness bug) - switched candidate engine to `mistralrs` (built on Candle, pure Rust, no
+  CMake/native-C++ build step, confirmed Gemma 3 support). Verified hands-on: a scratch project
+  depending on `mistralrs` v0.8.1 (default CPU-only features) compiled clean on this Windows
+  machine in ~4.5 min, no native toolchain errors anywhere in the chain
 
 See devlog for the model/library comparison behind translation's scoping, and the vue-i18n
 conversion's own implementation detail.

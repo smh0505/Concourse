@@ -3409,6 +3409,43 @@ before treating them as final, particularly for longer sentences (`codeWarning`,
 `scanOrderHint`, `fetchOrderHint`) where nuance is easiest to lose. `bun run build` clean after
 both the initial 9-locale add and the follow-up type-cast cleanup.
 
+**Much later: resumed the translation half, redid the research spike, and switched candidate
+engine.** Picked back up where Milestone 21 left off - the local-LLM translation feature, still
+unstarted. First step per its own scoping was the research spike: confirm a Rust llama.cpp
+binding actually works on the Windows target before committing to it.
+
+Researched `llama-cpp-2`/`llama-cpp-sys-2` (`utilityai/llama-cpp-rs`) specifically rather than
+assuming the earlier scoping's pick was still sound - found two real, currently-open Windows-
+specific issues: `llama-cpp-sys-2` v0.1.140 fails to build on Windows at all (`cmake` exits with
+code 1, downgrading to v0.1.139 works around it), and v0.1.138 on MSVC has a correctness bug
+where GGUF models over 4GB fail to load ("failed to read magic," a 32-bit integer truncation in
+the build). Both are real bugs on the exact platform this app ships for (Windows-primary per
+`CLAUDE.md`), not hypothetical - reported directly rather than treating the crate as a rubber
+stamp just because it was the original pick.
+
+Asked what else exists in this space; researched and identified `mistralrs` (built on Hugging
+Face's Candle) as the strongest alternative specifically because it sidesteps the exact failure
+mode found above - pure Rust, no CMake/native-C++ build step anywhere in the chain, confirmed
+Gemma 3 support (the TranslateGemma family is Gemma-3-based), and ships a `mistralrs` crate
+meant for direct embedding in a Rust application (not just its server/CLI mode).
+
+Redid the research spike hands-on against `mistralrs` rather than trusting docs claims alone:
+built a throwaway scratch Cargo project (`$CLAUDE_JOB_DIR/tmp/mistralrs-spike`, not part of the
+real repo), `cargo add mistralrs` (resolved to v0.8.1, default features - no `cuda`/`metal`/
+`mkl`), `cargo build`. Compiled clean in ~4m27s on this actual Windows machine - `candle-core`
+(the pure-Rust tensor backend) and every `mistralrs-*` crate (`core`/`macros`/`vision`/`audio`/
+`mcp`) built as plain Rust, no CMake invocation, no MSVC/native-linker errors anywhere in the
+627-package dependency tree. This is a real, verified result, not a "should work in theory" -
+the whole point of a research spike is not skipping this step just because the first candidate
+looked reasonable on paper.
+
+Updated Milestone 21's scoping to reflect the outcome: the planned `translation` module's engine
+switches from llama.cpp to `mistralrs`; the research-spike checklist item is now closed (marked
+done, but redone against the actual engine that'll be used, not the one originally guessed at).
+The `translation` module itself, the model picker/download-on-first-use Settings UI, and actual
+integration work all remain unstarted - this pass was scoping/de-risking only, same "research
+spike first" discipline the milestone was already scoped to require.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

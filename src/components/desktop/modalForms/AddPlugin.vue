@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import BaseModal from "../BaseModal.vue";
+import BaseModal from "../common/BaseModal.vue";
 import { usePluginInstallStore } from "../../../stores/pluginInstall";
 import { usePluginUpdatesStore } from "../../../stores/pluginUpdates";
 import { usePluginStore } from "../../../stores/plugins";

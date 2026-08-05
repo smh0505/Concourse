@@ -13,7 +13,7 @@ import type {
   ThemePlugin,
   WrapperPlugin,
 } from "./types";
-import InstallableStatus from "../components/desktop/InstallableStatus.vue";
+import InstallableStatus from "../components/desktop/common/InstallableStatus.vue";
 import SettingsButton from "../components/desktop/modalForms/SettingsButton.vue";
 import { useWrapperPluginStore } from "../stores/wrapperPlugins";
 

@@ -2,8 +2,8 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconInboxOff } from "@tabler/icons-vue";
-import GameListRow from "../GameListRow.vue";
-import SkeletonRow from "../SkeletonRow.vue";
+import GameListRow from "../game/GameListRow.vue";
+import SkeletonRow from "../game/SkeletonRow.vue";
 import { useLibraryStore } from "../../../stores/library";
 import { usePluginStore } from "../../../stores/plugins";
 import { useSkeletonCount } from "../../../composables/useSkeletonCount";

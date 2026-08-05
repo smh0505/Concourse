@@ -8,11 +8,11 @@ import {
   IconPlayerPlay,
   IconTrash,
 } from "@tabler/icons-vue";
-import { useLibraryStore } from "../../stores/library";
-import { useBalloonAnchor } from "../../composables/useBalloonAnchor";
-import { CardVisualRenderer } from "../../theme/cardVisualAst";
-import { useActiveCardVisual } from "../../theme/cardVisualRegistry";
-import type { Game } from "../../db";
+import { useLibraryStore } from "../../../stores/library";
+import { useBalloonAnchor } from "../../../composables/useBalloonAnchor";
+import { CardVisualRenderer } from "../../../theme/cardVisualAst";
+import { useActiveCardVisual } from "../../../theme/cardVisualRegistry";
+import type { Game } from "../../../db";
 
 const props = defineProps<{ game: Game }>();
 

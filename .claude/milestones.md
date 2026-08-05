@@ -263,6 +263,9 @@ own definition.
   `--radius-lg` to `--card-border-width`/`--card-radius` (`GameCard.vue`'s existing opt-in card-
   frame hooks) - these rows are cards-as-rows, so they pick up a theme's card frame (e.g. Brick
   Block's chunkier square-cornered look) instead of the button frame
+- [x] `src/components/desktop/`'s 10 loose `.vue` files sorted into three new subfolders
+  (`game/`, `shell/`, `common/`), same convention as the existing `modalForms/`/`tabs/` split -
+  no behavior change, import paths updated everywhere
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

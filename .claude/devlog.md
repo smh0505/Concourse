@@ -3409,3 +3409,28 @@ before treating them as final, particularly for longer sentences (`codeWarning`,
 `scanOrderHint`, `fetchOrderHint`) where nuance is easiest to lose. `bun run build` clean after
 both the initial 9-locale add and the follow-up type-cast cleanup.
 
+## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
+
+**`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`
+subfolders, matching the existing `modalForms/`/`tabs/` convention.** User asked directly for
+this cleanup. 10 files had no subfolder at all, sitting flat alongside `modalForms/`/`tabs/`:
+- `game/` - `GameCard.vue`, `GameListRow.vue`, `GameDetail.vue`, `SkeletonCard.vue`,
+  `SkeletonRow.vue` (grouped since all five render "a game" in some form - grid card, list row,
+  full detail page, and the two's loading skeletons)
+- `shell/` - `TitleBar.vue`, `NavSidebar.vue` (app chrome, not tied to any one view)
+- `common/` - `BaseModal.vue`, `ToastContainer.vue`, `InstallableStatus.vue` (generic reusable
+  primitives with no game/settings-specific content of their own)
+
+Used `git mv` (not delete+recreate) to preserve file history through the move. Every relative
+import inside the 5 moved files that reached up to `stores/`/`composables/`/`theme/`/`plugins/`/
+`db` needed its `../../` bumped to `../../../` (one extra folder level) - `TitleBar.vue`/
+`NavSidebar.vue`/`BaseModal.vue`/`SkeletonCard.vue`/`SkeletonRow.vue` had no such imports to fix.
+Then updated every external reference: `App.vue` (`TitleBar`/`NavSidebar`/`ToastContainer`/
+`GameDetail`), `plugins/loader.ts` (`InstallableStatus`), all 5 `modalForms/*.vue` files
+(`BaseModal`), and `tabs/GameGrid.vue`/`tabs/GameList.vue` (`GameCard`/`SkeletonCard`/
+`GameListRow`/`SkeletonRow`). Verified with a repo-wide grep for the old bare paths (zero
+matches left) before rebuilding. `bigpicture/`'s 3 files (`BigPictureTile`/`BigPictureGrid`/
+`BigPictureSlideshow`) left as-is - already their own dedicated top-level folder per `CLAUDE.md`'s
+desktop/Big-Picture split, not loose the way the moved 10 were. `bun run build` clean, no
+behavior change - pure file reorganization.
+

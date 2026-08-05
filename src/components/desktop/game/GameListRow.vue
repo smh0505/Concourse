@@ -8,8 +8,8 @@ import {
   IconPlayerPlay,
   IconTrash,
 } from "@tabler/icons-vue";
-import { useLibraryStore } from "../../stores/library";
-import type { Game } from "../../db";
+import { useLibraryStore } from "../../../stores/library";
+import type { Game } from "../../../db";
 
 const props = defineProps<{ game: Game }>();
 

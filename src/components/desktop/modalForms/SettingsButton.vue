@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { settings as settingsRepo } from "../../../db";
 import type { SettingsSchemaField } from "../../../plugins/manifest";
-import BaseModal from "../BaseModal.vue";
+import BaseModal from "../common/BaseModal.vue";
 
 const { t } = useI18n();
 

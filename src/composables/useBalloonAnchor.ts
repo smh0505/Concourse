@@ -23,9 +23,12 @@ const SCROLL_HEADER_SELECTOR = "[data-scroll-header]";
  *  flipping above/below based on scroll position, and clamping horizontally so it never gets
  *  clipped off the left/right edge of the window (title length varies, so the balloon's own
  *  width isn't known until it's actually rendered - this measures it after mount via
- *  `nextTick` and shifts the anchor if needed, rather than guessing beforehand). */
-export function useBalloonAnchor(cardEl: Ref<HTMLElement | null>) {
-  const balloonEl = ref<HTMLElement | null>(null);
+ *  `nextTick` and shifts the anchor if needed, rather than guessing beforehand).
+ *  Both element refs are owned and created by the calling component (bound via its own
+ *  `ref="..."` template attributes), not by this composable - a ref created here and merely
+ *  destructured back out for template binding is invisible to some tooling's unused-variable
+ *  analysis (it can't always tell the string-based `ref="name"` binding counts as a read). */
+export function useBalloonAnchor(cardEl: Ref<HTMLElement | null>, balloonEl: Ref<HTMLElement | null>) {
   const anchor = ref<BalloonAnchor | null>(null);
 
   async function onMouseEnter() {
@@ -57,5 +60,5 @@ export function useBalloonAnchor(cardEl: Ref<HTMLElement | null>) {
     anchor.value = null;
   }
 
-  return { balloonEl, anchor, onMouseEnter, onMouseLeave };
+  return { anchor, onMouseEnter, onMouseLeave };
 }

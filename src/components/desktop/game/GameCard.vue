@@ -24,7 +24,8 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 const playtimeMinutes = computed(() => Math.round(props.game.total_playtime / 60));
 
 const cardEl = ref<HTMLElement | null>(null);
-const { balloonEl, anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(cardEl);
+const balloonEl = ref<HTMLElement | null>(null);
+const { anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(cardEl, balloonEl);
 </script>
 
 <template>

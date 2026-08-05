@@ -14,10 +14,10 @@
     "noEmit": true,
     "jsx": "preserve",
 
-    /* Path alias - mirrors vite.config.ts's resolve.alias */
-    "baseUrl": ".",
+    /* Path alias - mirrors vite.config.ts's resolve.alias. No baseUrl - TS resolves `paths`
+       relative to this file's own directory on its own now, baseUrl is deprecated alongside it. */
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
 
     /* Linting */

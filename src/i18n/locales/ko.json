@@ -184,7 +184,8 @@
     "scanning": "스캔 중...",
     "scanNow": "지금 스캔",
     "removeTheme": "삭제",
-    "manifestUrlLabel": "플러그인 매니페스트 URL"
+    "manifestUrlLabel": "플러그인 매니페스트 URL",
+    "builtIn": "내장"
   },
   "library": {
     "emptyMessage": "라이브러리가 비어 있습니다. 게임을 추가하거나 소스 플러그인을 스캔해 보세요.",

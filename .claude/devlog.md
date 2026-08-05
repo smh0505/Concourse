@@ -1961,6 +1961,20 @@ far only wired into that theme's `cardVisual` glyph, not the whole UI) to load a
 manifest/type changes needed anywhere - `ThemePlugin.cssVariables` was already `Record<string,
 string>`, unconstrained. `bun run build` clean.
 
+**Post-close follow-up: "Built-in" label replaces the fake version number on build-time TS
+plugins.** User noticed built-in themes stay at `1.0.0` forever (verified: the catppuccin-*
+plugins' `plugin.json` files were never bumped despite real `cssVariables` edits across this
+session and prior ones - `CLAUDE.md`'s per-plugin SemVer convention was never actually being
+followed for these) and asked why not just label them differently instead of showing a version
+number that structurally can never change. `PluginManifest.runtime` (absent or `"ts"` = build-
+time, bundled with the app itself) is the exact signal already available to tell these apart
+from installed WASM/data plugins, which *do* get real version bumps and update-checks. Added one
+`versionLabel(manifest)` helper in `PluginSettings.vue` (checked once, used at all 5 tab-render
+sites that used to inline `v{{ manifest.version }}`), returning a new `pluginSettings.builtIn`
+i18n key ("Built-in") for the build-time case, the real `v{version}` otherwise. Translated the
+new key into all 9 other locales and re-verified key-parity (same flatten-and-diff check as the
+original locale rollout) before building. `bun run build` clean.
+
 ## Milestone 18 — Shared Styles Convention (scoped, not started)
 User proposed a style-convention change directly: less `<style scoped>` per component, more
 shared CSS (colors, borders, radii, other repeated patterns) collected into a `styles.css`.

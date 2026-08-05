@@ -184,7 +184,8 @@
     "scanning": "Scanning...",
     "scanNow": "Scan Now",
     "removeTheme": "Remove",
-    "manifestUrlLabel": "Plugin manifest URL"
+    "manifestUrlLabel": "Plugin manifest URL",
+    "builtIn": "Built-in"
   },
   "library": {
     "emptyMessage": "Your library is empty. Add a game or scan a source plugin to get started.",

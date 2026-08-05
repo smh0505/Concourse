@@ -184,7 +184,8 @@
     "scanning": "Wird gescannt...",
     "scanNow": "Jetzt scannen",
     "removeTheme": "Entfernen",
-    "manifestUrlLabel": "Plugin-Manifest-URL"
+    "manifestUrlLabel": "Plugin-Manifest-URL",
+    "builtIn": "Integriert"
   },
   "library": {
     "emptyMessage": "Deine Bibliothek ist leer. Füge ein Spiel hinzu oder scanne ein Quell-Plugin, um loszulegen.",

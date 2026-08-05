@@ -56,6 +56,16 @@ function orderByPriority(manifests: PluginManifest[], enabledIds: string[]): Plu
   return [...enabled, ...rest];
 }
 
+/** Build-time TS plugins (absent/"ts" runtime) ship bundled with the app itself and are never
+ *  independently versioned in practice - their `version` field has stayed frozen at whatever it
+ *  started at since nothing ever updates them out-of-band the way an installed WASM/data plugin
+ *  does. Showing a real-looking "v1.0.0" that can never change is misleading; label these
+ *  "Built-in" instead of a version number. */
+function versionLabel(manifest: PluginManifest): string {
+  if (!manifest.runtime || manifest.runtime === "ts") return t("pluginSettings.builtIn");
+  return `v${manifest.version}`;
+}
+
 const orderedSourceManifests = computed(() =>
   orderByPriority(plugins.manifests, plugins.enabledIds),
 );
@@ -173,7 +183,7 @@ onMounted(async () => {
               @change="plugins.togglePlugin(manifest.id)"
             />
             {{ manifest.name }}
-            <span class="version">v{{ manifest.version }}</span>
+            <span class="version">{{ versionLabel(manifest) }}</span>
             <button
               v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
               type="button"
@@ -234,7 +244,7 @@ onMounted(async () => {
               @change="theme.setActiveTheme(manifest.id)"
             />
             {{ manifest.name }}
-            <span class="version">v{{ manifest.version }}</span>
+            <span class="version">{{ versionLabel(manifest) }}</span>
             <button
               v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
               type="button"
@@ -274,7 +284,7 @@ onMounted(async () => {
               @change="metadataProviders.toggleProvider(manifest.id)"
             />
             {{ manifest.name }}
-            <span class="version">v{{ manifest.version }}</span>
+            <span class="version">{{ versionLabel(manifest) }}</span>
             <button
               v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
               type="button"
@@ -325,7 +335,7 @@ onMounted(async () => {
               @change="controllerMapping.setActiveMapping(manifest.id)"
             />
             {{ manifest.name }}
-            <span class="version">v{{ manifest.version }}</span>
+            <span class="version">{{ versionLabel(manifest) }}</span>
             <button
               v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
               type="button"
@@ -354,7 +364,7 @@ onMounted(async () => {
               @change="wrapperPlugins.toggleWrapper(manifest.id)"
             />
             {{ manifest.name }}
-            <span class="version">v{{ manifest.version }}</span>
+            <span class="version">{{ versionLabel(manifest) }}</span>
             <button
               v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
               type="button"

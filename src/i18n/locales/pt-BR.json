@@ -184,7 +184,8 @@
     "scanning": "Escaneando...",
     "scanNow": "Escanear agora",
     "removeTheme": "Remover",
-    "manifestUrlLabel": "URL do manifesto do plugin"
+    "manifestUrlLabel": "URL do manifesto do plugin",
+    "builtIn": "Integrado"
   },
   "library": {
     "emptyMessage": "Sua biblioteca está vazia. Adicione um jogo ou escaneie um plugin de fonte para começar.",

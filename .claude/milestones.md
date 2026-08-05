@@ -238,6 +238,8 @@ own definition.
 - [x] Description now renders as sanitized Markdown (`marked` + `DOMPurify.sanitize` - this
   text can come from metadata provider plugins, not just the user, so it's untrusted input) on
   the view page; the edit textarea still holds the raw Markdown source
+- [x] `PluginSettings.vue` shows "Built-in" instead of a fake `v1.0.0` for build-time TS plugins
+  (absent/`"ts"` runtime) - their version never actually changes, unlike installed WASM/data ones
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

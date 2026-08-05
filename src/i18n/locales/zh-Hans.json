@@ -184,7 +184,8 @@
     "scanning": "扫描中...",
     "scanNow": "立即扫描",
     "removeTheme": "移除",
-    "manifestUrlLabel": "插件清单URL"
+    "manifestUrlLabel": "插件清单URL",
+    "builtIn": "内置"
   },
   "library": {
     "emptyMessage": "您的库是空的。添加一个游戏,或扫描一个来源插件以开始使用。",

@@ -184,7 +184,8 @@
     "scanning": "Analyse en cours...",
     "scanNow": "Analyser maintenant",
     "removeTheme": "Supprimer",
-    "manifestUrlLabel": "URL du manifeste du plugin"
+    "manifestUrlLabel": "URL du manifeste du plugin",
+    "builtIn": "Intégré"
   },
   "library": {
     "emptyMessage": "Votre bibliothèque est vide. Ajoutez un jeu ou analysez un plugin source pour commencer.",

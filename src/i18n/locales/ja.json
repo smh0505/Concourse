@@ -184,7 +184,8 @@
     "scanning": "スキャン中...",
     "scanNow": "今すぐスキャン",
     "removeTheme": "削除",
-    "manifestUrlLabel": "プラグインマニフェストURL"
+    "manifestUrlLabel": "プラグインマニフェストURL",
+    "builtIn": "内蔵"
   },
   "library": {
     "emptyMessage": "ライブラリが空です。ゲームを追加するか、ソースプラグインをスキャンしてください。",

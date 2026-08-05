@@ -184,7 +184,8 @@
     "scanning": "Scansione in corso...",
     "scanNow": "Esegui scansione ora",
     "removeTheme": "Rimuovi",
-    "manifestUrlLabel": "URL manifest del plugin"
+    "manifestUrlLabel": "URL manifest del plugin",
+    "builtIn": "Integrato"
   },
   "library": {
     "emptyMessage": "La tua libreria è vuota. Aggiungi un gioco o esegui la scansione di un plugin sorgente per iniziare.",

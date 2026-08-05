@@ -4,32 +4,33 @@ import { useI18n } from "vue-i18n";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { IconLayoutGrid, IconSlideshow } from "@tabler/icons-vue";
 
-import { useLibraryStore } from "./stores/library";
-import { usePluginStore } from "./stores/plugins";
-import { useThemeStore } from "./stores/theme";
-import { useMetadataProviderStore } from "./stores/metadataProviders";
-import { useControllerMappingStore } from "./stores/controllerMapping";
-import { useAppSettingsStore } from "./stores/appSettings";
-import { useWrapperPluginStore } from "./stores/wrapperPlugins";
-import { useAppUpdateStore } from "./stores/appUpdate";
-import { usePluginUpdatesStore } from "./stores/pluginUpdates";
 import { useGamepadStatus } from "./composables/useGamepadStatus";
-import TitleBar from "./components/desktop/shell/TitleBar.vue";
-import NavSidebar, { type AppView } from "./components/desktop/shell/NavSidebar.vue";
-import AppSettings from "./components/desktop/tabs/AppSettings.vue";
-import StatsPanel from "./components/desktop/tabs/StatsPanel.vue";
-import TagsPanel from "./components/desktop/tabs/TagsPanel.vue";
-import CollectionsPanel from "./components/desktop/tabs/CollectionsPanel.vue";
-import AddGame from "./components/desktop/modalForms/AddGame.vue";
-import CandidatePicker from "./components/desktop/modalForms/CandidatePicker.vue";
-import ToastContainer from "./components/desktop/common/ToastContainer.vue";
-import GameFilters from "./components/desktop/tabs/GameFilters.vue";
-import GameGrid from "./components/desktop/tabs/GameGrid.vue";
-import GameList from "./components/desktop/tabs/GameList.vue";
-import GameDetail from "./components/desktop/game/GameDetail.vue";
-import PluginSettings from "./components/desktop/tabs/PluginSettings.vue";
-import BigPictureGrid from "./components/bigpicture/BigPictureGrid.vue";
-import BigPictureSlideshow from "./components/bigpicture/BigPictureSlideshow.vue";
+import {
+  useLibraryStore,
+  usePluginStore,
+  useThemeStore,
+  useMetadataProviderStore,
+  useControllerMappingStore,
+  useAppSettingsStore,
+  useWrapperPluginStore,
+  useAppUpdateStore,
+  usePluginUpdatesStore,
+} from "./stores";
+import { TitleBar, NavSidebar, type AppView } from "./components/desktop/shell";
+import {
+  AppSettings,
+  StatsPanel,
+  TagsPanel,
+  CollectionsPanel,
+  GameFilters,
+  GameGrid,
+  GameList,
+  PluginSettings,
+} from "./components/desktop/tabs";
+import { AddGame, CandidatePicker } from "./components/desktop/modalForms";
+import { ToastContainer } from "./components/desktop/common";
+import { GameDetail } from "./components/desktop/game";
+import { BigPictureGrid, BigPictureSlideshow } from "./components/bigpicture";
 
 const { t } = useI18n();
 const library = useLibraryStore();

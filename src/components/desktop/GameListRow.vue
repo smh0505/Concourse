@@ -133,12 +133,12 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
   flex-direction: column;
   justify-content: center;
   gap: 0.15rem;
-  /* Fixed white, not a theme token - .scrim below is a hardcoded black gradient regardless of
-     theme, so the readable text color is fixed too. --color-on-accent was the wrong token here:
-     it tracks --color-base (the theme's own background color), which is dark for dark themes -
-     dark text over this same-hardcoded-dark scrim was unreadable (Catppuccin Frappe/Macchiato/
-     Mocha, Midnight Neon). */
-  color: #fff;
+  /* --color-scrim-text (styles.css), not --color-on-accent - .scrim below is a hardcoded black
+     gradient regardless of theme, so the readable text color needs its own token too rather
+     than one that tracks --color-base (the theme's own background color, dark for dark themes -
+     the bug this replaces: dark text over the same-hardcoded-dark scrim on Catppuccin Frappe/
+     Macchiato/Mocha, Midnight Neon). */
+  color: var(--color-scrim-text);
 }
 
 .title {

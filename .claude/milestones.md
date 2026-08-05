@@ -243,8 +243,9 @@ own definition.
 - [x] Fixed a real bug: `GameListRow.vue`'s title/details text and both list/card rows'
   `.fetch-overlay` used `--color-on-accent` (tracks `--color-base`, dark for dark themes) as
   text color over a hardcoded black scrim - unreadable dark-on-dark on Catppuccin Frappe/
-  Macchiato/Mocha and Midnight Neon. Fixed to a hardcoded white, matching the scrim's own
-  hardcoded black
+  Macchiato/Mocha and Midnight Neon. `.fetch-overlay` fixed to a hardcoded white; `.info` (and
+  `StatsPanel.vue`'s identical stat-row bug, found the same way) instead given a proper new
+  design token, `--color-scrim-text`, rather than another hardcoded literal
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

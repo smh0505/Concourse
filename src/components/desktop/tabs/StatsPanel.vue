@@ -187,7 +187,9 @@ function hoursPlayed(game: Game) {
   position: relative;
   z-index: 1;
   font-weight: 600;
-  color: var(--color-on-accent);
+  /* --color-scrim-text (styles.css) - .scrim above is a hardcoded black gradient regardless of
+     theme; --color-on-accent tracked --color-base instead, which goes dark on dark themes. */
+  color: var(--color-scrim-text);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -199,7 +201,9 @@ function hoursPlayed(game: Game) {
   z-index: 1;
   flex-shrink: 0;
   font-size: 0.75rem;
-  color: var(--color-on-accent);
+  /* --color-scrim-text (styles.css) - .scrim above is a hardcoded black gradient regardless of
+     theme; --color-on-accent tracked --color-base instead, which goes dark on dark themes. */
+  color: var(--color-scrim-text);
   opacity: 0.85;
 }
 

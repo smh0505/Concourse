@@ -31,6 +31,13 @@
      as a saturated sky-blue background color, not a "text on accent" color). Defaults to
      --color-base, matching every existing theme's actual light base color exactly. */
   --color-on-accent: var(--color-base);
+  /* Text/icon color for content placed over a dark image scrim (GameListRow.vue/GameCard.vue's
+     cover-art overlays, StatsPanel.vue's stat rows) - these scrims are a fixed hardcoded black
+     gradient regardless of theme, so the text needs a fixed value too, not one derived from a
+     theme color like --color-base (which --color-on-accent tracks, and goes dark on a dark
+     theme - the bug this token replaces). Still a real token, not a hardcoded literal in each
+     component, so a theme could override it if it ever wanted a differently-colored scrim. */
+  --color-scrim-text: #ffffff;
 
   /* Spacing scale */
   --space-1: 0.25rem;

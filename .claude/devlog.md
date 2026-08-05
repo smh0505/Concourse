@@ -1995,6 +1995,21 @@ Found the identical defect in two more spots while fixing this one: `GameListRow
 the same way rather than leaving a known-identical bug sitting right next to the one just fixed.
 `bun run build` clean.
 
+**Follow-up, on user request: `.info`'s fix redone as a proper token instead of a hardcoded
+literal, plus the same bug found in `StatsPanel.vue`.** User was fine with `.fetch-overlay`'s
+hardcoded `#fff` but wanted `.info` to go through a design token instead - consistent with
+Milestone 18's own shared-styles-convention push against magic values living in component CSS.
+Added `--color-scrim-text` to `styles.css`'s `:root` token block (default `#ffffff`, next to
+`--color-on-accent` with a comment explaining why it's a separate token rather than reusing that
+one: `--color-on-accent` tracks `--color-base`, which is exactly the wrong thing to track for
+content sitting over a scrim whose color is fixed independent of the theme). `GameListRow.vue`'s
+`.info` now reads `var(--color-scrim-text)` instead of the hardcoded `#fff` from the previous
+fix. Also checked for the same pattern elsewhere per the user's tip ("same bug ... in the stats
+page") - found `StatsPanel.vue`'s `.stat-row-title`/`.stat-row-subtitle`, an identical
+`--color-on-accent`-over-hardcoded-black-`.scrim` case in the Most Played/Recently Played rows,
+fixed the same way. `.fetch-overlay` in both `GameListRow.vue`/`GameCard.vue` deliberately left
+as the hardcoded `#fff` from the prior fix, per direct instruction. `bun run build` clean.
+
 ## Milestone 18 — Shared Styles Convention (scoped, not started)
 User proposed a style-convention change directly: less `<style scoped>` per component, more
 shared CSS (colors, borders, radii, other repeated patterns) collected into a `styles.css`.

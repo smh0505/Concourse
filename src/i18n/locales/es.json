@@ -12,7 +12,12 @@
   },
   "settings": {
     "autoLaunchBigPicture": "Iniciar en modo Big Picture al arrancar",
-    "language": "Idioma"
+    "language": "Idioma",
+    "translation": "Traducción sin conexión",
+    "translationHint": "Traduce las descripciones de los juegos localmente, sin servicios externos. Elige un modelo y descárgalo una vez para usarlo.",
+    "downloaded": "Descargado",
+    "downloading": "{percent}%",
+    "download": "Descargar"
   },
   "app": {
     "switchToSlideshow": "Cambiar a vista de presentación",
@@ -43,7 +48,10 @@
     "fetching": "Obteniendo...",
     "fetchMetadata": "Obtener metadatos",
     "titleLabel": "Título",
-    "executablePathLabel": "Ruta del ejecutable"
+    "executablePathLabel": "Ruta del ejecutable",
+    "translate": "Traducir",
+    "translating": "Traduciendo...",
+    "showOriginal": "Mostrar original"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

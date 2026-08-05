@@ -12,7 +12,12 @@
   },
   "settings": {
     "autoLaunchBigPicture": "Launch into Big Picture Mode on startup",
-    "language": "Language"
+    "language": "Language",
+    "translation": "Offline Translation",
+    "translationHint": "Translate game descriptions locally, no external service. Pick a model and download it once to use it.",
+    "downloaded": "Downloaded",
+    "downloading": "{percent}%",
+    "download": "Download"
   },
   "app": {
     "switchToSlideshow": "Switch to slideshow view",
@@ -43,7 +48,10 @@
     "fetching": "Fetching...",
     "fetchMetadata": "Fetch Metadata",
     "titleLabel": "Title",
-    "executablePathLabel": "Executable path"
+    "executablePathLabel": "Executable path",
+    "translate": "Translate",
+    "translating": "Translating...",
+    "showOriginal": "Show original"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

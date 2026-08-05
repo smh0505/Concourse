@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconArrowLeft, IconDeviceGamepad2, IconInfoCircle, IconPlayerPlay } from "@tabler/icons-vue";
+import {
+  IconArrowLeft,
+  IconDeviceGamepad2,
+  IconInfoCircle,
+  IconLanguage,
+  IconPlayerPlay,
+} from "@tabler/icons-vue";
 import { siSteam, siGogdotcom, siEpicgames } from "simple-icons";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
@@ -10,6 +16,9 @@ import { useLibraryStore } from "@/stores/library";
 import { useTagsStore } from "@/stores/tags";
 import { useCollectionsStore } from "@/stores/collections";
 import { useWrapperPluginStore, type WrapperProfile } from "@/stores/wrapperPlugins";
+import { useAppSettingsStore } from "@/stores/appSettings";
+import { useTranslationStore } from "@/stores/translation";
+import { useToastStore } from "@/stores/toasts";
 import { useImageBrightness } from "@/composables/useImageBrightness";
 import type { Game, GameEditFields } from "@/db";
 
@@ -18,6 +27,9 @@ const library = useLibraryStore();
 const tags = useTagsStore();
 const collections = useCollectionsStore();
 const wrapperPlugins = useWrapperPluginStore();
+const appSettings = useAppSettingsStore();
+const translation = useTranslationStore();
+const toasts = useToastStore();
 
 // Guaranteed non-null while this component is rendered - App.vue only mounts it when
 // library.viewingGame is set.
@@ -150,9 +162,39 @@ const epicIconFill = computed(() => (themeIsLight !== wantsReverse.value ? "#000
 
 // Description is stored as Markdown, rendered to HTML for the view page only; sanitized since
 // it can come from metadata provider plugins, not just the user.
-const descriptionHtml = computed(() =>
-  game.value.description ? DOMPurify.sanitize(marked.parse(game.value.description, { async: false })) : "",
+// Client-side only - a translated description is never written back to game.description in the
+// DB (Milestone 21's second half). Reset whenever the viewed game changes, so navigating to a
+// different game doesn't keep showing the previous one's translation.
+const translatedDescription = ref<string | null>(null);
+const translatingDescription = ref(false);
+watch(game, () => {
+  translatedDescription.value = null;
+});
+
+const canTranslate = computed(
+  () => !!translation.selectedModelId && translation.isDownloaded(translation.selectedModelId),
 );
+
+async function onToggleTranslateDescription() {
+  if (translatedDescription.value) {
+    translatedDescription.value = null;
+    return;
+  }
+  if (!game.value.description) return;
+  translatingDescription.value = true;
+  try {
+    translatedDescription.value = await translation.translate(game.value.description, appSettings.locale);
+  } catch (e) {
+    toasts.push(String(e), "error");
+  } finally {
+    translatingDescription.value = false;
+  }
+}
+
+const descriptionHtml = computed(() => {
+  const source = translatedDescription.value ?? game.value.description;
+  return source ? DOMPurify.sanitize(marked.parse(source, { async: false })) : "";
+});
 
 const gameTags = computed(() => tags.gameTags[game.value.id] ?? []);
 const gameCollections = computed(() => collections.gameCollections[game.value.id] ?? []);
@@ -310,7 +352,25 @@ async function onDelete() {
               <span v-if="game.release_date">{{ game.release_date }}</span>
               <span>{{ t("gameDetail.minPlayed", { minutes: playtimeMinutes }) }}</span>
             </div>
-            <div v-if="game.description" class="description" v-html="descriptionHtml"></div>
+            <div v-if="game.description" class="description-wrap">
+              <button
+                v-if="canTranslate"
+                type="button"
+                class="compact-button translate-button"
+                :disabled="translatingDescription"
+                @click="onToggleTranslateDescription"
+              >
+                <IconLanguage :size="14" :stroke-width="1.75" />
+                {{
+                  translatingDescription
+                    ? t("gameDetail.translating")
+                    : translatedDescription
+                      ? t("gameDetail.showOriginal")
+                      : t("gameDetail.translate")
+                }}
+              </button>
+              <div class="description" v-html="descriptionHtml"></div>
+            </div>
           </template>
 
           <form v-else class="edit-form" @submit.prevent="onSave">
@@ -668,6 +728,10 @@ async function onDelete() {
 
 .description {
   margin-bottom: var(--space-3);
+}
+
+.translate-button {
+  margin-bottom: var(--space-2);
 }
 
 /* Rendered markdown's child elements (marked's HTML output, injected via v-html) aren't

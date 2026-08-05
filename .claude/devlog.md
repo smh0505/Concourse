@@ -3446,6 +3446,86 @@ The `translation` module itself, the model picker/download-on-first-use Settings
 integration work all remain unstarted - this pass was scoping/de-risking only, same "research
 spike first" discipline the milestone was already scoped to require.
 
+**Immediate follow-up: user said "start now" - built the actual feature, Milestone 21 fully
+closed.** Before writing any code, researched real GGUF artifacts rather than inventing plausible
+ones: fetched `mradermacher`'s (a well-established community GGUF quantizer) `translategemma-4b/
+12b/27b-it-GGUF` Hugging Face repos directly and recorded real Q4_K_M file sizes (2.6GB/7.4GB/
+16.6GB) and the exact `resolve/main/...` download URL pattern - `mradermacher`'s own site also
+calls the 12B tier "fast, recommended," consistent with the earlier research note that 12B
+reportedly beats the 27B baseline. Also fetched `mistral.rs`'s real `getting_started/
+gguf_locally` example from its GitHub repo to confirm the actual builder API
+(`GgufModelBuilder::new(dir, vec![file]).with_logging().build().await?`, then
+`model.send_chat_request(...)`) and cross-checked the crate's own source (`gguf.rs`, `lib.rs`,
+`model.rs` via `gh api`) to confirm `Model`/`GgufModelBuilder` are both re-exported at the crate
+root and `build()` returns `anyhow::Result<Model>` - verified against real source rather than
+assumed from the earlier spike's more general research.
+
+Went through `EnterPlanMode` given the scope (new Rust module + dependency, new store, new
+Settings UI, `GameDetail.vue` integration). Accidentally called `EnterWorktree` first (no
+worktree was requested by the user or `CLAUDE.md`) - caught the mistake immediately and called
+`ExitWorktree` with `action: "remove"` before doing anything else, back in the main working
+directory with nothing touched.
+
+**`src-tauri/src/translation.rs`** (new module, registered in `lib.rs` alongside a `.manage
+(translation::TranslationState::new())` call):
+- `Cargo.toml` gained `mistralrs = "0.8"` (default/CPU-only features, matching the verified
+  spike) and `tokio` as a direct dependency (`fs`/`io-util`/`sync` features) - tokio was already
+  resolved transitively at 1.52.3 via `tauri`/`mistralrs`, so adding it directly for
+  `tokio::fs`/`AsyncWriteExt`/`sync::Mutex` introduced no version conflict.
+- `list_models()` - a plain `Vec<TranslationModel>` (id/name/repo/file/size_bytes) for the 3
+  tiers, built at call time rather than a true `const` array (avoids `&'static str` vs `String`
+  friction for what's returned to the frontend as JSON anyway).
+- `download_translation_model` - streams the GGUF via `reqwest::get(...).chunk().await` in a
+  loop (not a one-shot `.bytes()` read, unlike every other download in this codebase -
+  `plugin_installer.rs`'s `download_bytes` - since a multi-gigabyte file genuinely needs
+  incremental progress, and this codebase had no existing streaming-download-with-progress
+  pattern to reuse, contrary to what the plan assumed before implementation started).
+  Downloads to a `.part` temp file, renamed into place only on success, so a half-finished
+  download can never look "downloaded" to `is_translation_model_downloaded`'s plain file-exists
+  check on next launch. Emits `translation-download-progress`
+  (`model_id`/`downloaded_bytes`/`total_bytes`) per chunk via `app.emit(...)` - same
+  `Emitter`/payload-struct pattern `launcher.rs`'s `game-session-ended` event already
+  established, reused rather than inventing a new one.
+- `TranslationState` (`Mutex<Option<{model_id, model: Arc<Model>}>>`, Tauri-managed) - a loaded
+  GGUF model stays cached across `translate_text` calls, only reloading when the requested
+  model id actually differs from what's currently loaded (loading a multi-gigabyte model is far
+  too slow to redo per call).
+- `translate_text` builds a plain instruction prompt ("Translate the following text into
+  {target_language}. Only output the translation, nothing else.") and calls
+  `send_chat_request` - no system-prompt/chat-template customization attempted beyond what the
+  GGUF's own embedded template provides, since that's untestable without a real download in
+  this environment (flagged in the plan's own verification section as the one thing only the
+  user can confirm end-to-end).
+
+**Frontend**: `stores/translation.ts` mirrors `appSettings.ts`'s persistence pattern
+(`selectedModelId` through `settingsRepo`'s `translation_model` key) and `library.ts`'s
+`listen()`/`UnlistenFn`/`dispose()` pattern for the progress event, added to the `stores/`
+barrel. `AppSettings.vue` gained a model-picker section (radio per tier, size shown via a
+`formatBytes` helper, a Download button that becomes a live `{percent}%` button mid-download,
+reusing the shared `.compact-button` class rather than a new one). `GameDetail.vue` gained a
+"Translate"/"Show original" toggle button (reusing `.compact-button` again) next to the
+description in view mode only, gated on `canTranslate` (a model is both selected and actually
+downloaded) - translates into `appSettings.locale`, swaps only the *displayed* Markdown-rendered
+description (`descriptionHtml`'s computed now reads `translatedDescription.value ?? game.value.
+description`), never touches the stored `game.description` field or hits the DB. Resets
+`translatedDescription` back to `null` whenever the viewed game changes (piggybacking on the
+existing `watch(game, ...)`), so navigating to a different game never shows a stale translation.
+Errors surface via the existing `useToastStore`, matching every other async action on this page.
+
+All 8 new i18n keys (`settings.translation`/`translationHint`/`downloaded`/`downloading`/
+`download`, `gameDetail.translate`/`translating`/`showOriginal`) added to all 10 locales in one
+pass (a small Node script, not hand-editing 10 files) and re-verified for exact key parity with
+`en.json` via the same flatten-and-diff check used for every previous locale addition this
+session.
+
+`cargo check` (real `src-tauri` crate, not just the scratch spike) and `bun run build` both
+clean. Milestone 21 is now fully closed - both UI localization and offline translation done.
+Deliberately deferred, per the plan: persisting a translated description back to the DB,
+translating other fields (release date, tags), canceling an in-progress download, and any model
+beyond the 3 TranslateGemma tiers. Manual, real end-to-end verification (an actual download, an
+actual translation) is still only possible on the user's own machine - this environment has no
+way to run the full Tauri GUI or spend the time/bandwidth downloading a multi-gigabyte model.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

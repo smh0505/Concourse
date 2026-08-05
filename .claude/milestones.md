@@ -434,11 +434,17 @@ available to test against).
 - [x] 9 additional locales added (machine-translated by Claude, not yet native-reviewed):
   Korean, Japanese, Simplified Chinese, Spanish, French, German, Brazilian Portuguese, Russian,
   Italian - 10 languages total, all verified to have exact key parity with `en.json`
-- [ ] New `translation` host-native Rust module wrapping a local LLM (a user-selected GGUF
-  model) for translating game descriptions/metadata - keeps this optional/heavy dependency out
-  of core
-- [ ] Settings UI: model picker (list of supported models with size/quality tradeoffs), download-
-  on-first-use (no model bundled in the installer)
+- [x] New `translation` host-native Rust module (`src-tauri/src/translation.rs`) wrapping
+  `mistralrs` for local inference - 3 selectable TranslateGemma tiers (4B/12B/27B, all Q4_K_M
+  from `mradermacher`'s GGUF quantizations), `download_translation_model`/
+  `is_translation_model_downloaded`/`translate_text`/`list_translation_models` Tauri commands,
+  a loaded-model cache (reloads only when the selected model id changes, not per call)
+- [x] Settings UI: model picker in `AppSettings.vue` (name/size per tier, Download button with
+  live progress via a new `translation-download-progress` event, "Downloaded" status) - download-
+  on-first-use, nothing bundled in the installer
+- [x] `GameDetail.vue`: a "Translate"/"Show original" toggle next to the description (view mode),
+  translating to the current UI locale - client-side only, never overwrites the stored
+  `game.description`
 - [x] Research spike, redone: `llama-cpp-2`/`llama-cpp-sys-2` (llama.cpp bindings) have two live
   Windows-specific bugs (a CMake build failure in a recent patch version, a >4GB-GGUF MSVC
   correctness bug) - switched candidate engine to `mistralrs` (built on Candle, pure Rust, no
@@ -446,8 +452,11 @@ available to test against).
   depending on `mistralrs` v0.8.1 (default CPU-only features) compiled clean on this Windows
   machine in ~4.5 min, no native toolchain errors anywhere in the chain
 
-See devlog for the model/library comparison behind translation's scoping, and the vue-i18n
-conversion's own implementation detail.
+Milestone 21 fully closed. See devlog for the model/library comparison behind translation's
+scoping, the vue-i18n conversion's own implementation detail, and the translation feature's
+implementation (deliberately deferred for a later pass: persisting a translated description
+back to the DB, translating other fields, canceling an in-progress download, and any model
+beyond the 3 TranslateGemma tiers).
 
 ## Milestone 22 — Plugin-Developer Documentation Site
 - [x] New `docs/` VitePress project (own `package.json`, decoupled from the app's own frontend

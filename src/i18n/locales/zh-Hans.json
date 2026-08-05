@@ -12,7 +12,12 @@
   },
   "settings": {
     "autoLaunchBigPicture": "启动时进入大屏幕模式",
-    "language": "语言"
+    "language": "语言",
+    "translation": "离线翻译",
+    "translationHint": "在本地翻译游戏简介,无需外部服务。选择一个模型并下载一次即可使用。",
+    "downloaded": "已下载",
+    "downloading": "{percent}%",
+    "download": "下载"
   },
   "app": {
     "switchToSlideshow": "切换到幻灯片视图",
@@ -43,7 +48,10 @@
     "fetching": "获取中...",
     "fetchMetadata": "获取元数据",
     "titleLabel": "标题",
-    "executablePathLabel": "可执行文件路径"
+    "executablePathLabel": "可执行文件路径",
+    "translate": "翻译",
+    "translating": "翻译中...",
+    "showOriginal": "显示原文"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

@@ -12,7 +12,12 @@
   },
   "settings": {
     "autoLaunchBigPicture": "Beim Start in den Big-Picture-Modus starten",
-    "language": "Sprache"
+    "language": "Sprache",
+    "translation": "Offline-Übersetzung",
+    "translationHint": "Übersetzt Spielbeschreibungen lokal, ohne externen Dienst. Wähle ein Modell und lade es einmal herunter, um es zu nutzen.",
+    "downloaded": "Heruntergeladen",
+    "downloading": "{percent}%",
+    "download": "Herunterladen"
   },
   "app": {
     "switchToSlideshow": "Zur Diashow-Ansicht wechseln",
@@ -43,7 +48,10 @@
     "fetching": "Wird abgerufen...",
     "fetchMetadata": "Metadaten abrufen",
     "titleLabel": "Titel",
-    "executablePathLabel": "Pfad zur ausführbaren Datei"
+    "executablePathLabel": "Pfad zur ausführbaren Datei",
+    "translate": "Übersetzen",
+    "translating": "Übersetze...",
+    "showOriginal": "Original anzeigen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

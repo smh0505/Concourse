@@ -5,6 +5,7 @@ mod launcher;
 mod plugin_installer;
 mod plugin_registry;
 mod plugin_verification;
+mod translation;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
 mod zip_install;
@@ -20,6 +21,7 @@ pub fn run() {
                 .add_migrations(db::DB_URL, db::migrations())
                 .build(),
         )
+        .manage(translation::TranslationState::new())
         .invoke_handler(tauri::generate_handler![
             image_utils::check_image_brightness,
             launcher::launch_game,
@@ -42,7 +44,11 @@ pub fn run() {
             wasm_plugin_runtime::wasm_plugin_search_candidates,
             wasm_plugin_runtime::wasm_plugin_fetch_metadata_by_id,
             wasm_plugin_runtime::grant_plugin_capability,
-            wasm_plugin_runtime::is_plugin_capability_granted
+            wasm_plugin_runtime::is_plugin_capability_granted,
+            translation::list_translation_models,
+            translation::is_translation_model_downloaded,
+            translation::download_translation_model,
+            translation::translate_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

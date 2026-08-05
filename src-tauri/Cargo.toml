@@ -1,6 +1,6 @@
 [package]
 name = "concourse"
-version = "1.4.4"
+version = "1.5.0"
 description = "Concourse - unified game library client"
 authors = ["you"]
 edition = "2021"
@@ -38,6 +38,10 @@ sigstore-verify = "0.1"
 sigstore-trust-root = "0.1"
 sigstore-bundle = "0.1"
 sigstore-types = "0.1"
+# Default (CPU-only) features - matches the research spike verified against this Windows
+# target (pure Rust via Candle, no CMake/native-C++ build step, unlike llama.cpp bindings).
+mistralrs = "0.8"
+tokio = { version = "1", features = ["fs", "io-util", "sync"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

@@ -12,7 +12,12 @@
   },
   "settings": {
     "autoLaunchBigPicture": "Запускать в режиме Big Picture при старте",
-    "language": "Язык"
+    "language": "Язык",
+    "translation": "Офлайн-перевод",
+    "translationHint": "Переводит описания игр локально, без внешнего сервиса. Выберите модель и скачайте её один раз, чтобы использовать.",
+    "downloaded": "Загружено",
+    "downloading": "{percent}%",
+    "download": "Скачать"
   },
   "app": {
     "switchToSlideshow": "Переключить на слайд-шоу",
@@ -43,7 +48,10 @@
     "fetching": "Получение...",
     "fetchMetadata": "Получить метаданные",
     "titleLabel": "Название",
-    "executablePathLabel": "Путь к исполняемому файлу"
+    "executablePathLabel": "Путь к исполняемому файлу",
+    "translate": "Перевести",
+    "translating": "Перевод...",
+    "showOriginal": "Показать оригинал"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

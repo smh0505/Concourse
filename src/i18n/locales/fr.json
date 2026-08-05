@@ -12,7 +12,12 @@
   },
   "settings": {
     "autoLaunchBigPicture": "Lancer en mode Big Picture au démarrage",
-    "language": "Langue"
+    "language": "Langue",
+    "translation": "Traduction hors ligne",
+    "translationHint": "Traduit les descriptions de jeux localement, sans service externe. Choisissez un modèle et téléchargez-le une fois pour l'utiliser.",
+    "downloaded": "Téléchargé",
+    "downloading": "{percent}%",
+    "download": "Télécharger"
   },
   "app": {
     "switchToSlideshow": "Passer à l'affichage diaporama",
@@ -43,7 +48,10 @@
     "fetching": "Récupération...",
     "fetchMetadata": "Récupérer les métadonnées",
     "titleLabel": "Titre",
-    "executablePathLabel": "Chemin de l'exécutable"
+    "executablePathLabel": "Chemin de l'exécutable",
+    "translate": "Traduire",
+    "translating": "Traduction en cours...",
+    "showOriginal": "Afficher l'original"
   },
   "candidatePicker": {
     "title": "Plusieurs correspondances trouvées",

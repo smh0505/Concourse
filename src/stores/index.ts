@@ -16,4 +16,5 @@ export * from "./stats";
 export * from "./tags";
 export * from "./theme";
 export * from "./toasts";
+export * from "./translation";
 export * from "./wrapperPlugins";

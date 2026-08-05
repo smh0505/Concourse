@@ -12,7 +12,12 @@
   },
   "settings": {
     "autoLaunchBigPicture": "시작 시 빅픽처 모드로 실행",
-    "language": "언어"
+    "language": "언어",
+    "translation": "오프라인 번역",
+    "translationHint": "게임 설명을 외부 서비스 없이 로컬에서 번역합니다. 모델을 선택하고 한 번 다운로드하면 사용할 수 있습니다.",
+    "downloaded": "다운로드됨",
+    "downloading": "{percent}%",
+    "download": "다운로드"
   },
   "app": {
     "switchToSlideshow": "슬라이드쇼 보기로 전환",
@@ -43,7 +48,10 @@
     "fetching": "가져오는 중...",
     "fetchMetadata": "메타데이터 가져오기",
     "titleLabel": "제목",
-    "executablePathLabel": "실행 파일 경로"
+    "executablePathLabel": "실행 파일 경로",
+    "translate": "번역",
+    "translating": "번역 중...",
+    "showOriginal": "원문 보기"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

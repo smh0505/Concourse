@@ -15,6 +15,7 @@ import {
   useWrapperPluginStore,
   useAppUpdateStore,
   usePluginUpdatesStore,
+  useTranslationStore,
 } from "./stores";
 import { TitleBar, NavSidebar, type AppView } from "./components/desktop/shell";
 import {
@@ -42,6 +43,7 @@ const appSettings = useAppSettingsStore();
 const wrapperPlugins = useWrapperPluginStore();
 const appUpdate = useAppUpdateStore();
 const pluginUpdates = usePluginUpdatesStore();
+const translation = useTranslationStore();
 const bigPicture = ref(false);
 const bigPictureViewMode = ref<"grid" | "slideshow">("grid");
 const activeView = ref<AppView>("library");
@@ -91,6 +93,7 @@ onMounted(async () => {
   await controllerMapping.init();
   await appSettings.init();
   await wrapperPlugins.init();
+  await translation.init();
   if (appSettings.autoLaunchBigPicture) bigPicture.value = true;
 
   // Two of the three update-check moments (app start, app focus) - the third (install-plugin
@@ -107,6 +110,7 @@ onMounted(async () => {
 });
 onUnmounted(() => {
   library.dispose();
+  translation.dispose();
   unlistenFocus?.();
 });
 </script>

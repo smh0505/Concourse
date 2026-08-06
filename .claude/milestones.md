@@ -439,7 +439,7 @@ available to test against).
   `qwen3-4b-abliterated` (opt-in, uncensored, for NSFW game descriptions) - see devlog for the
   full model-research history and rejected candidates
 - [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
-  download-on-first-use
+  download-on-first-use, Remove buttons to delete a downloaded engine/model
 - [x] `GameDetail.vue`: "Translate"/"Show original" toggle, client-side only, never overwrites
   stored `game.description`
 - [x] App-exit hook and 5-minute idle-timeout both auto-kill the `llama-server.exe` subprocess

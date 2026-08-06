@@ -3772,6 +3772,34 @@ a blunter technique than full safety tuning so it isn't a default) so this doesn
 re-litigating later. `cargo fmt && cargo check` clean; no frontend changes needed, same as the
 prior tier swap.
 
+**Follow-up, same session: added Remove buttons for the downloaded engine/models, plus a
+code/milestones.md compaction pass.** First compacted `translation.rs`'s doc comments and
+`milestones.md`'s Milestone 21 section - both had accumulated the full multi-round research
+history verbatim (mistralrs pivot, tier swaps, abliterated addition), duplicating what this
+devlog file already records in detail. Trimmed both down to short pointers back to devlog,
+matching `CLAUDE.md`'s own stated split (milestones.md scannable/what's-done, devlog full
+why/how) - no behavior change.
+
+User then asked for a way to actually delete a downloaded engine/model from Settings, since
+previously `is_translation_engine_downloaded`/`is_translation_model_downloaded` only gated a
+plain "Downloaded" status label with no way back. Added `remove_translation_engine` and
+`remove_translation_model` Tauri commands - both stop the running `llama-server.exe` subprocess
+first if it's the one holding the engine binary or currently-selected-model's GGUF open, since
+Windows keeps a running executable's own file locked and the `tokio::fs::remove_dir_all` call
+would otherwise fail outright. `remove_translation_model` only kills the server if its
+`running.model_id` actually matches the model being removed - removing an unrelated tier while
+a different one is actively serving doesn't need to touch the running process at all.
+
+`AppSettings.vue`: the "Downloaded" status spans (engine row and per-tier model rows) became
+Remove buttons (`translation.removeEngine()`/`translation.removeModel(model.id)`), reusing the
+existing `.compact-button` class rather than a new style. The now-dead `.model-status` CSS rule
+and `settings.downloaded` i18n key were removed rather than left behind - the key was fully
+unreferenced after the swap (checked via a repo-wide grep before deleting), so keeping it around
+across all 10 locale files would've just been clutter. Added `settings.remove` in its place,
+propagated to all 9 non-English locales via the same flatten-and-diff Node script used for every
+prior i18n addition this session - parity re-verified clean. `cargo fmt && cargo check` and
+`bun run build` both clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

@@ -4214,6 +4214,41 @@ items (title/content/both) are wrapped in their own `v-if="canTranslate"`, follo
 divider between those two) stay available regardless, since viewing or clearing an already-
 cached translation never needs the engine to be ready. `bun run build` clean.
 
+**Follow-up, same session: redesigned the 9-item flat dropdown into a 3-group paged carousel.**
+User reported 9 items across 2 dividers was too much for one dropdown, and specified a concrete
+design instead: show one group (translate/show/remove) at a time, page between groups via mouse
+wheel or ArrowUp/ArrowDown while the menu is open, animated, with a 3-dot indicator below the
+items showing which group is active.
+
+Replaced both `.translate-menu-divider`s with actual paging state: a `TranslateMenuGroup` union
+type (`"translate" | "show" | "remove"`), a `translateMenuGroups` computed that's `["show",
+"remove"]` when `!canTranslate` (skips the translate group entirely rather than showing it with
+every item disabled - matches the previous pass's "translate actions hidden, not the whole menu"
+intent, just applied to a whole group now instead of 3 individual items) and `["translate",
+"show", "remove"]` otherwise, and a plain `translateMenuGroupIndex` ref clamped (not wrapped) at
+both ends by `nextTranslateMenuGroup`/`prevTranslateMenuGroup`.
+
+Wheel and keyboard both drive the same two functions: `onTranslateMenuWheel` (`deltaY > 0`
+advances, `< 0` goes back, `preventDefault()`s so the page itself doesn't scroll behind
+the open menu) and `onTranslateMenuKeydown` (`ArrowDown`/`ArrowUp`, also `preventDefault()`s).
+The menu div itself is the keydown target (`tabindex="-1"`, `menuEl.focus()` called right after
+opening via `nextTick` so the DOM has actually rendered first) rather than a global `window`
+keydown listener - same reasoning as the earlier backdrop-click-to-close choice: avoids adding
+mount/unmount lifecycle wiring for a control that's only ever open briefly.
+
+Animation: each group's 3 buttons live inside a single `<div class="translate-menu-group">`,
+keyed by the current group name and wrapped in `<Transition name="menu-group" mode="out-in">` -
+a small vertical slide+fade (6px, 0.15s) plays whichever direction was actually paged. Chose a
+single non-directional transition (always slides the same way) rather than reversing it for
+ArrowUp vs ArrowDown - the dot indicator is what actually communicates position/direction to the
+user; a second axis of "which way did the animation come from" would be complexity for its own
+sake here, not requested and not obviously clearer. The 3-dot row (`.translate-menu-dots`,
+below the item list, one `.translate-menu-dot` per entry in `translateMenuGroups` so it's 2 dots
+when the translate group is hidden) highlights the active index via a background-color/scale
+transition, not click-to-jump (only passive position feedback was asked for).
+
+`cargo`/Rust untouched this pass. `bun run build` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

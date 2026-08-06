@@ -48,30 +48,34 @@ pub struct TranslationModel {
     size_bytes: u64,
 }
 
-/// Two model families, deliberately mixed rather than only offering translation-specialized
-/// ones: `translategemma-4b` (fine-tuned from Gemma 3 specifically for translation, 55
-/// languages) translates better per byte than a same-size general-purpose model, but RAM is
-/// the harder constraint for a background app sharing a machine with a running game -
-/// `gemma3-1b` and `gemma4-e4b` are offered as meaningfully cheaper (RAM-wise) general-purpose
-/// alternatives, at a real quality cost since neither is translation-tuned.
+/// All three tiers kept deliberately under ~2.5GB - the "sweet spot" sizing established against
+/// real 16GB/32GB gaming-machine RAM budgets (see devlog): large enough to translate well,
+/// small enough that this engine's fully-resident-in-RAM footprint doesn't meaningfully compete
+/// with a game's own working set. `translategemma-4b` (fine-tuned from Gemma 3 specifically for
+/// translation, 55 languages, all directly benchmarked - no regional bias) is the recommended
+/// default; `qwen2.5-1.5b`/`qwen3-4b` are general-purpose alternatives at the cheap and mid
+/// price points respectively, offered because a general chat model's *style* of output can
+/// suit some users better even at a real translation-quality cost against the specialized tier.
 ///
-/// The 12B/27B TranslateGemma tiers this list used to offer were deliberately removed - their
-/// 7.3GB/16.6GB resident RAM footprints (this engine loads the full GGUF into RAM, not just
-/// disk) are a bad fit for a background service expected to coexist with a running game on a
-/// typical 16-32GB gaming machine (see devlog for the sizing analysis behind this cutoff). All
-/// remaining tiers stay under 5GB. Sizes below are real quantized Q4_K_M file sizes verified
-/// against each repo's actual GGUF listing (not derived from parameter count alone - Gemma 4's
-/// E2B/E4B naming reflects "effective" active params under its elastic sizing, not on-disk
-/// size, so e.g. its own E2B GGUF is actually larger than translategemma-4b's despite the
-/// smaller name, which is why E2B isn't offered here).
+/// Earlier candidates considered and rejected for this list, worth recording so they don't get
+/// re-added without re-checking the same problem: `gemma3-1b`/`gemma4-e4b` (superseded by the
+/// Qwen picks above - same or smaller size, better/newer multilingual benchmarks, and Gemma 4's
+/// E2B tier in particular is actually *larger* on disk than translategemma-4b despite its
+/// smaller "effective param" name, since that naming reflects elastic/MatFormer active params,
+/// not GGUF file size); `EuroLLM-1.7B-Instruct` (rejected specifically, not just for size - its
+/// own model card splits its 35 languages into 24 "official EU" languages it's actually trained
+/// hardest on vs. 11 "additional, strategically important" languages tacked on secondarily, and
+/// Korean/Japanese/Chinese/Russian - 4 of this app's 10 shipped locales - all fall in that
+/// weaker secondary tier, not the core one). Sizes below are real quantized Q4_K_M file sizes
+/// verified against each repo's actual GGUF listing, not derived from parameter count alone.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
-            id: "gemma3-1b".to_string(),
-            name: "Gemma 3 1B (cheapest, general-purpose)".to_string(),
-            repo: "unsloth/gemma-3-1b-it-GGUF".to_string(),
-            file: "gemma-3-1b-it-Q4_K_M.gguf".to_string(),
-            size_bytes: 845_000_000,
+            id: "qwen2.5-1.5b".to_string(),
+            name: "Qwen2.5 1.5B (cheapest, general-purpose)".to_string(),
+            repo: "Qwen/Qwen2.5-1.5B-Instruct-GGUF".to_string(),
+            file: "qwen2.5-1.5b-instruct-q4_k_m.gguf".to_string(),
+            size_bytes: 1_120_000_000,
         },
         TranslationModel {
             id: "translategemma-4b".to_string(),
@@ -81,11 +85,11 @@ pub fn list_models() -> Vec<TranslationModel> {
             size_bytes: 2_490_000_000,
         },
         TranslationModel {
-            id: "gemma4-e4b".to_string(),
-            name: "Gemma 4 E4B (balanced, general-purpose)".to_string(),
-            repo: "unsloth/gemma-4-E4B-it-GGUF".to_string(),
-            file: "gemma-4-E4B-it-Q4_K_M.gguf".to_string(),
-            size_bytes: 4_980_000_000,
+            id: "qwen3-4b".to_string(),
+            name: "Qwen3 4B (broader coverage, general-purpose)".to_string(),
+            repo: "unsloth/Qwen3-4B-GGUF".to_string(),
+            file: "Qwen3-4B-Q4_K_M.gguf".to_string(),
+            size_bytes: 2_500_000_000,
         },
     ]
 }

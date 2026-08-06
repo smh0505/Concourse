@@ -3706,6 +3706,45 @@ instead of staying a bare tuple-struct field (`state.0`) - `next_generation` liv
 made the tuple-struct shape confusing (`state.0` vs `state.1` reads as arbitrary), a plain named
 struct reads clearly at every call site. `cargo fmt && cargo check` clean.
 
+**Immediate follow-up, same session: swapped the model lineup again after user pushback caught
+a real gap in the previous research.** User first suggested ~3GB was the real sweet spot given
+the earlier 16GB/32GB sizing analysis, prompting a search for non-Gemma alternatives that fit
+under that ceiling. Found and initially proposed `EuroLLM-1.7B-Instruct` (~1.05GB,
+translation-tuned via the EuroBlocks dataset, whose language list at face value named all 10 of
+this app's locales) as a cheap replacement for `gemma3-1b`, and `Qwen3-4B` (~2.5GB, 119-language
+general model) as a lighter, newer replacement for `gemma4-e4b`.
+
+User then reported Gemini had flagged EuroLLM as Europe-specialized and weak on Korean
+specifically - checked this directly against EuroLLM's own model card rather than taking either
+claim at face value, and it held up: EuroLLM's 35 languages are explicitly split into 24
+"official EU" languages (its actual training priority) and 11 "additional, strategically
+important" languages tacked on secondarily - and Korean, Japanese, Chinese, and Russian (4 of
+this app's 10 shipped locales, 40% of them) all fall in that weaker secondary tier, not the core
+one. The earlier "10/10 coverage" check had only verified language *presence* on the list, not
+which training tier a language actually belonged to - a real miss, corrected here rather than
+glossed over, same category of gap as the earlier mistralrs "compiles ≠ actually works" miss
+this milestone already learned from once.
+
+Rejected EuroLLM on this basis and asked for another candidate; user proposed Qwen2.5 (1.5B or
+3B). Compared both: `Qwen2.5-1.5B-Instruct` (1.12GB) vs `Qwen2.5-3B-Instruct` (2.1GB) - picked
+1.5B, since 3B would have sat redundantly close in size to both `translategemma-4b` (2.49GB) and
+`qwen3-4b` (2.5GB) without filling any actual gap, while 1.5B fills the cheap-tier slot EuroLLM
+vacated. Qwen2.5's own announced language list directly names all 10 of this app's locales
+(English/Chinese/Japanese/Korean/Spanish/French/German/Italian/Portuguese/Russian) in a single
+flat 29+-language list with no EU-style tiering disclosed anywhere - the one specific caveat
+being that Qwen's own materials call out Chinese/English as the strongest-performing pair, which
+is an expected primary-training-focus skew common to every general multilingual model, not the
+same kind of secondary-tier gap EuroLLM had.
+
+Final lineup in `list_models()`: `qwen2.5-1.5b` (~1.12GB, cheapest, general-purpose, repo
+`Qwen/Qwen2.5-1.5B-Instruct-GGUF`), `translategemma-4b` (~2.49GB, recommended, translation-
+specialized, unchanged), `qwen3-4b` (~2.5GB, broader coverage, general-purpose, repo
+`unsloth/Qwen3-4B-GGUF`). All three now sit under ~2.5GB - `gemma3-1b`, `gemma4-e4b`, and
+EuroLLM's rejection are all recorded directly in `list_models()`'s own doc comment so a future
+pass doesn't re-propose them without re-checking the same problem. `cargo fmt && cargo check`
+clean; no frontend changes needed since `AppSettings.vue`/`GameDetail.vue` both read the tier
+list dynamically rather than hardcoding ids.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

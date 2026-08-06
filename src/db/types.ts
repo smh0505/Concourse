@@ -27,6 +27,11 @@ export interface Game {
   translated_title: string | null;
   translated_description: string | null;
   translated_locale: string | null;
+  /** SQLite booleans (0/1) - which of title/description GameDetail.vue's "show" toggle
+   *  currently displays for this specific game, persisted per-game rather than reset to "show
+   *  original" every time the detail page is reopened. */
+  show_translated_title: number;
+  show_translated_description: number;
 }
 
 export type GameEditFields = Pick<

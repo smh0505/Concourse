@@ -4249,6 +4249,39 @@ transition, not click-to-jump (only passive position feedback was asked for).
 
 `cargo`/Rust untouched this pass. `bun run build` clean.
 
+**Follow-up, same session: persisted the "show" toggle's state per game.** Previously
+`showTranslatedTitle`/`showTranslatedDescription` were pure component-local refs, always
+starting from the original on every reopen of a game's detail page - user asked for the last
+chosen "show" option to be remembered per game (e.g. "see translated title" stays chosen for
+that specific game next time, without affecting any other game's own toggle state).
+
+Added migration v5 - `show_translated_title`/`show_translated_description`, both `INTEGER NOT
+NULL DEFAULT 0` (SQLite booleans, same convention as `skip_dedup`) on `games`, additive-only per
+this project's post-1.0 migration rule. `games.ts` gained `updateShowTranslated(id, showTitle,
+showDescription)` - both flags written together in one call rather than two separate setters,
+since every toggle handler already knows both current values after any state change (a
+title-only toggle still knows the description's current show state unchanged, etc.) -
+`library.ts`'s `setShowTranslated` wraps it with the usual `refresh()`.
+
+`GameDetail.vue`'s `watch(game, ...)` changed from unconditionally resetting both refs to `false`
+into syncing them from the newly-viewed game's own persisted columns (`{ immediate: true }` so
+this also runs on first mount, not just on subsequent navigation) - this one watcher now
+correctly covers both "switched to a different game" (picks up that game's own saved choice) and
+"our own action just refreshed this same game" (re-syncs to what was just persisted,
+idempotent). A new `persistShowTranslated()` helper calls `library.setShowTranslated` with the
+current local ref values; called after every place either ref changes - all 3 translate actions
+(after setting the just-translated field's show flag to `true`), all 3 view-toggle handlers, and
+all 3 revoke actions (after resetting the revoked field's flag to `false`) - so the DB and the
+local view state never drift apart no matter which of the 9 dropdown actions triggered the
+change. `games.ts`'s `update()` (the edit-save path) also resets both flags to `0` alongside the
+`translated_*` columns it already nulls on every edit - there's nothing left to show translated
+once an edit clears the cache, so leaving a stale `show_translated_title = 1` behind would be
+pointless dangling state, not a correctness bug (display already falls back to the original
+regardless, gated by `hasValidTranslatedTitle`) but worth cleaning up for the same reason the
+`translated_*` columns get cleared unconditionally rather than conditionally.
+
+`cargo fmt && cargo check` and `bun run build` both clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

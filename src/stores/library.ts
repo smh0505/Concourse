@@ -227,6 +227,14 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
   }
 
+  /** Persists GameDetail.vue's "show translated/original" toggle state per game, so reopening
+   *  the same game's detail page later shows the same choice instead of always resetting to
+   *  the original. */
+  async function setShowTranslated(gameId: number, showTitle: boolean, showDescription: boolean) {
+    await gameRepo.updateShowTranslated(gameId, showTitle, showDescription);
+    await refresh();
+  }
+
   async function launchGame(game: Game) {
     const toasts = useToastStore();
     try {
@@ -312,6 +320,7 @@ export const useLibraryStore = defineStore("library", () => {
     revokeTranslatedTitle,
     revokeTranslatedDescription,
     revokeTranslation,
+    setShowTranslated,
     launchGame,
     init,
     dispose,

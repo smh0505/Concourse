@@ -450,6 +450,10 @@ available to test against).
   revert fully independently; viewing/revoking an already-cached translation never needs a
   usable model set up. Button reads "Translating..." mid-request; title/description each show
   their own skeleton only while that specific field is being translated
+- [x] The "show" toggle's state (translated vs. original, per field) is persisted per game
+  (`show_translated_title`/`show_translated_description` columns, migration v5) - reopening a
+  game's detail page later shows whatever was last chosen for that specific game, not always
+  reset to the original
 - [x] Translated title (when a valid cached translation exists for the current locale) now
   shows in place of the original on `GameCard`'s hover balloon, `GameListRow`, and both
   `StatsPanel` game lists - shared via a `displayTitle(game, locale)` helper (`src/db/types.ts`)

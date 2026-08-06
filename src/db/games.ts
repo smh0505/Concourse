@@ -75,7 +75,9 @@ export class GameRepository {
     const db = await getDb();
     // Edited title/description invalidates any cached translation unconditionally, rather than
     // checking which field actually changed - simplest way to guarantee a stale translation can
-    // never survive an edit that might have changed the very text it was translated from.
+    // never survive an edit that might have changed the very text it was translated from. Also
+    // resets the show_translated_* view-toggle flags back to "showing original" for the same
+    // reason - there's nothing left to show translated once the cache is cleared.
     await db.execute(
       `UPDATE games SET
          title = $1,
@@ -90,7 +92,9 @@ export class GameRepository {
          locale_wrapper = $10,
          translated_title = NULL,
          translated_description = NULL,
-         translated_locale = NULL
+         translated_locale = NULL,
+         show_translated_title = 0,
+         show_translated_description = 0
        WHERE id = $11`,
       [
         fields.title,
@@ -147,6 +151,18 @@ export class GameRepository {
     await db.execute(
       "UPDATE games SET translated_title = NULL, translated_description = NULL, translated_locale = NULL WHERE id = $1",
       [id],
+    );
+  }
+
+  /** Persists which of title/description GameDetail.vue's "show" toggle currently displays for
+   *  this game - both flags together, not one at a time, since every toggle handler already
+   *  knows both current values (title-only/content-only/both toggles all just flip one or both
+   *  local refs, then call this with the post-toggle state of both). */
+  async updateShowTranslated(id: number, showTitle: boolean, showDescription: boolean): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE games SET show_translated_title = $1, show_translated_description = $2 WHERE id = $3",
+      [showTitle ? 1 : 0, showDescription ? 1 : 0, id],
     );
   }
 }

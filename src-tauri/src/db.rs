@@ -136,5 +136,19 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "add_show_translated_flags",
+            sql: r#"
+            -- Which of title/description GameDetail.vue's "show" toggle currently displays for
+            -- this specific game, persisted per-game rather than reset to "show original" every
+            -- time the detail page is reopened. Independent of translated_locale validity -
+            -- these just record the user's last choice; GameDetail.vue's own hasValidTranslated*
+            -- checks still gate whether that choice actually has something to show.
+            ALTER TABLE games ADD COLUMN show_translated_title INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE games ADD COLUMN show_translated_description INTEGER NOT NULL DEFAULT 0;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

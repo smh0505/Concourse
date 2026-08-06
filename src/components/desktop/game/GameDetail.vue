@@ -164,8 +164,9 @@ const epicIconFill = computed(() => (themeIsLight !== wantsReverse.value ? "#000
 // follow-up - see stores/library.ts's saveTranslatedTitle/saveTranslatedDescription), not just
 // held client-side. Title and content are translated and shown independently of each other -
 // showTranslatedTitle/showTranslatedDescription are pure view toggles over already-cached data,
-// they don't themselves call the engine. Reset whenever the viewed game changes, so navigating
-// to a different game doesn't keep showing the previous one's toggle state.
+// they don't themselves call the engine. Synced from the game's own persisted show_translated_*
+// columns whenever the viewed game changes, so navigating to a different game (or reopening the
+// same one later) shows whatever choice was last made for *that* game, not always the original.
 const showTranslatedTitle = ref(false);
 const showTranslatedDescription = ref(false);
 // Split per field (not one shared flag) so only the field actually being translated shows a
@@ -176,10 +177,18 @@ const translatingTitle = ref(false);
 const translatingContent = ref(false);
 const translating = computed(() => translatingTitle.value || translatingContent.value);
 const translateMenuOpen = ref(false);
-watch(game, () => {
-  showTranslatedTitle.value = false;
-  showTranslatedDescription.value = false;
-});
+watch(
+  game,
+  (g) => {
+    showTranslatedTitle.value = !!g.show_translated_title;
+    showTranslatedDescription.value = !!g.show_translated_description;
+  },
+  { immediate: true },
+);
+
+function persistShowTranslated() {
+  return library.setShowTranslated(game.value.id, showTranslatedTitle.value, showTranslatedDescription.value);
+}
 
 const canTranslate = computed(
   () =>
@@ -260,6 +269,7 @@ async function onTranslateTitleOnly() {
     const translatedTitle = await translation.translate(game.value.title, appSettings.locale);
     await library.saveTranslatedTitle(game.value.id, translatedTitle, appSettings.locale);
     showTranslatedTitle.value = true;
+    await persistShowTranslated();
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
@@ -275,6 +285,7 @@ async function onTranslateContentOnly() {
     const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
     await library.saveTranslatedDescription(game.value.id, translatedDescription, appSettings.locale);
     showTranslatedDescription.value = true;
+    await persistShowTranslated();
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
@@ -289,6 +300,7 @@ async function onTranslateTitleAndContent() {
     const translatedTitle = await translation.translate(game.value.title, appSettings.locale);
     await library.saveTranslatedTitle(game.value.id, translatedTitle, appSettings.locale);
     showTranslatedTitle.value = true;
+    await persistShowTranslated();
   } catch (e) {
     toasts.push(String(e), "error");
     return;
@@ -301,6 +313,7 @@ async function onTranslateTitleAndContent() {
     const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
     await library.saveTranslatedDescription(game.value.id, translatedDescription, appSettings.locale);
     showTranslatedDescription.value = true;
+    await persistShowTranslated();
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
@@ -308,26 +321,30 @@ async function onTranslateTitleAndContent() {
   }
 }
 
-function onToggleTitleView() {
+async function onToggleTitleView() {
   showTranslatedTitle.value = !showTranslatedTitle.value;
   translateMenuOpen.value = false;
+  await persistShowTranslated();
 }
 
-function onToggleContentView() {
+async function onToggleContentView() {
   showTranslatedDescription.value = !showTranslatedDescription.value;
   translateMenuOpen.value = false;
+  await persistShowTranslated();
 }
 
 async function onRevokeTitleOnly() {
   translateMenuOpen.value = false;
   await library.revokeTranslatedTitle(game.value.id);
   showTranslatedTitle.value = false;
+  await persistShowTranslated();
 }
 
 async function onRevokeContentOnly() {
   translateMenuOpen.value = false;
   await library.revokeTranslatedDescription(game.value.id);
   showTranslatedDescription.value = false;
+  await persistShowTranslated();
 }
 
 async function onRevokeBoth() {
@@ -335,13 +352,15 @@ async function onRevokeBoth() {
   await library.revokeTranslation(game.value.id);
   showTranslatedTitle.value = false;
   showTranslatedDescription.value = false;
+  await persistShowTranslated();
 }
 
-function onToggleBothView() {
+async function onToggleBothView() {
   const next = !(showTranslatedTitle.value && showTranslatedDescription.value);
   showTranslatedTitle.value = next;
   showTranslatedDescription.value = next;
   translateMenuOpen.value = false;
+  await persistShowTranslated();
 }
 
 function toggleTranslateMenu() {

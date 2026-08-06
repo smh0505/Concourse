@@ -41,6 +41,32 @@ If you genuinely want two same-titled entries to stay separate (e.g. two differe
 the same game), a game's edit form has a "Keep separate from plugin scans" checkbox
 (`skip_dedup`) - check it to exclude that specific entry from the merge logic.
 
+## Offline translation
+
+A game's title and description can be translated into your current UI language entirely
+offline - no external translation service, nothing leaves your machine. From a game's detail
+page, the "Translate" button opens a menu with three groups (scroll or use the arrow keys to
+move between them):
+
+- **Translate** - translate the title only, the description only, or both. Re-running this with
+  a different selected model overwrites the previous translation for that field.
+- **Show** - toggle between the translated and original text, per field or both together. This
+  choice is remembered per game, so reopening a game later shows whichever you last picked for
+  it specifically.
+- **Remove** - clears a cached translation for a field (or both), reverting to the original with
+  nothing left cached.
+
+**One-time setup** (Settings): download the translation engine once (a small, one-time
+download), then pick a model from the dropdown and download it too. A few model tiers are
+offered, trading size/RAM against quality - all run entirely on CPU, so a smaller tier translates
+faster and uses less memory while a game is running alongside it. One tier is uncensored,
+intended for translating NSFW games' own descriptions without a safety-tuned model refusing to
+translate legitimate third-party text.
+
+A cached translation is tied to the UI language it was made for - switching your UI language, or
+editing a game's original title/description, invalidates it automatically (translate again to
+get a fresh one for the new language or edited text).
+
 ## URI launches vs. direct executables
 
 Some source plugins (Steam, Epic) launch a game via a platform URI (`steam://run/...`,

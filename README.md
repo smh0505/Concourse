@@ -27,6 +27,12 @@ metadata providers, controller mappings, compatibility wrappers) is a plugin.
   a theme-settable `--font-family` for full-app re-skinning, and a data-only theme tier
   (`cssVariables` + an optional `cardVisual` JSON-AST override for the cover art region, no code
   required)
+- **Offline translation** - a game's title/description can be translated into your current UI
+  language entirely on-device (no external service): download llama.cpp's own prebuilt server
+  binary once, pick a model (a few CPU-friendly tiers, one uncensored for NSFW game
+  descriptions), then translate/view-toggle/revoke title and content independently from a
+  game's detail page. Translations persist per game and per field, invalidated automatically by
+  a locale switch or an edited original
 - **Auto-update** - both the app itself and every installed plugin/theme check for and apply
   updates automatically
 
@@ -142,11 +148,10 @@ As of now: core library, metadata/playtime tracking, Big Picture mode, the plugi
 wrappers), WASM plugin capability sandboxing (Milestone 12), a plugin trust/signing model
 (Milestone 13), an ongoing desktop UI polish pass (Milestone 14), the JSON-AST theme tier
 replacing component-swap theming (Milestones 17/19), a shared-styles convention pass
-(Milestone 18), app + plugin/theme auto-update (Milestone 20), 10-language localization
-(Milestone 21, UI strings only so far), and this documentation site (Milestone 22) are all
-done. All official plugins listed above are live. Open work includes an emulator/ROM scanner
-plugin and additional source plugins (Xbox/EA/Ubisoft, Milestone 16), and an offline
-LLM-based translation feature for game descriptions (Milestone 21's remaining half).
+(Milestone 18), app + plugin/theme auto-update (Milestone 20), 10-language localization plus
+offline on-device translation of game titles/descriptions (Milestone 21), and this documentation
+site (Milestone 22) are all done. All official plugins listed above are live. Open work includes
+an emulator/ROM scanner plugin and additional source plugins (Xbox/EA/Ubisoft, Milestone 16).
 
 ## License
 

@@ -4432,6 +4432,32 @@ instead of just `margin-bottom`, and switched the container from `align-items: c
 `baseline` lines up the real text baselines instead, which is what "align the title with the
 button's text" actually means here. `bun run build` clean.
 
+**Follow-up: updated README.md and the docs site for the now-fully-closed Milestone 21.** Both
+had gone stale across this whole translation-feature session - README's Status section still
+said "10-language localization (Milestone 21, UI strings only so far)" and separately listed
+"an offline LLM-based translation feature for game descriptions (Milestone 21's remaining half)"
+under Open work, and the docs site (`docs/guide/`) had zero mentions of translation anywhere,
+despite the feature now being fully built (engine download, 4 model tiers, per-field translate/
+show/revoke, persisted per-game state).
+
+README: added a dedicated "Offline translation" bullet to the Features list (on-device, no
+external service, model tiers including the uncensored one, per-field independence, persistence/
+invalidation rules) and folded Milestone 21 into the Status paragraph's "done" list instead of
+its own "open work" callout, removing the now-stale "UI strings only so far"/"remaining half"
+qualifiers entirely.
+
+`docs/guide/library.md` gained a full "Offline translation" section (the natural home - a
+game-level feature, same file as Editing/Tags/Dedup) covering the 3-group dropdown (translate/
+show/remove), the Settings one-time setup (engine + model download), the model-tier tradeoff
+(size/RAM/speed, one uncensored tier), and the locale/edit invalidation rule - written for an end
+user, not a developer, matching this file's existing voice (no Rust/DB internals, no mention of
+`translated_locale` or migration numbers). `docs/guide/index.md`'s "Where things live" Settings
+bullet got a one-line pointer to that new section rather than duplicating any of its content.
+
+Verified with a real docs build (`cd docs && bun run docs:build`), not just a visual read of the
+markdown - completed clean (pre-existing unrelated "language 'wit' is not loaded" warnings only,
+same ones every previous docs build in this project has produced).
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

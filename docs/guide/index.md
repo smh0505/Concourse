@@ -33,4 +33,5 @@ using both:
   ("Co-op", "Backlog"); collections group a series/franchise ("Final Fantasy"). Manage both
   from their own sidebar tabs, or assign them per-game from a game's detail page.
 - **Settings** - everything plugin/theme/app-preference related, see
-  [Plugins & Themes](./plugins-and-themes).
+  [Plugins & Themes](./plugins-and-themes); also where you set up offline translation - see
+  [Library & Games](./library#offline-translation).

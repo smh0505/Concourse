@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { IconChevronDown } from "@tabler/icons-vue";
 
 import { useAppSettingsStore } from "@/stores/appSettings";
 import { useTranslationStore } from "@/stores/translation";
@@ -36,6 +37,13 @@ const downloadPercent = computed(() => {
 const selectedModel = computed(() =>
   translation.models.find((m) => m.id === translation.selectedModelId) ?? null,
 );
+
+const modelMenuOpen = ref(false);
+
+function selectModel(modelId: string) {
+  translation.setSelectedModel(modelId);
+  modelMenuOpen.value = false;
+}
 </script>
 
 <template>
@@ -91,15 +99,36 @@ const selectedModel = computed(() =>
       </div>
 
       <div class="model-row model-row-spaced">
-        <select
-          class="model-select"
-          :value="translation.selectedModelId ?? ''"
-          @change="translation.setSelectedModel(($event.target as HTMLSelectElement).value)"
-        >
-          <option v-for="model in translation.models" :key="model.id" :value="model.id">
-            {{ model.name }} — {{ model.subtitle }} ({{ formatBytes(model.size_bytes) }})
-          </option>
-        </select>
+        <div class="model-menu-wrap">
+          <button
+            type="button"
+            class="compact-button model-menu-trigger"
+            @click="modelMenuOpen = !modelMenuOpen"
+          >
+            <span class="model-menu-trigger-info">
+              <span class="model-name">{{ selectedModel?.name }}</span>
+              <span class="model-subtitle">{{ selectedModel?.subtitle }}</span>
+            </span>
+            <IconChevronDown :size="14" :stroke-width="1.75" />
+          </button>
+          <div v-if="modelMenuOpen" class="model-menu-backdrop" @click="modelMenuOpen = false" />
+          <div v-if="modelMenuOpen" class="model-menu">
+            <button
+              v-for="model in translation.models"
+              :key="model.id"
+              type="button"
+              class="model-menu-item"
+              :class="{ active: model.id === translation.selectedModelId }"
+              @click="selectModel(model.id)"
+            >
+              <span class="model-menu-item-info">
+                <span class="model-name">{{ model.name }}</span>
+                <span class="model-subtitle">{{ model.subtitle }}</span>
+              </span>
+              <span class="model-size">{{ formatBytes(model.size_bytes) }}</span>
+            </button>
+          </div>
+        </div>
         <button
           v-if="selectedModel && translation.isDownloaded(selectedModel.id)"
           type="button"
@@ -170,8 +199,80 @@ const selectedModel = computed(() =>
   flex: 1;
 }
 
-.model-select {
+.model-subtitle {
+  opacity: 0.7;
+  font-size: 0.75rem;
+}
+
+.model-size {
+  opacity: 0.7;
+  font-size: 0.75rem;
+}
+
+/* Shaped like GameDetail.vue's .translate-menu-wrap/.translate-menu (button trigger, absolute
+   panel, backdrop-to-close) - title/subtitle stacked on two left-aligned lines instead of a
+   native <select>'s single-line "Name — subtitle" text, which a <select> can't style per-line
+   anyway. */
+.model-menu-wrap {
+  position: relative;
   flex: 1;
   min-width: 0;
+}
+
+.model-menu-trigger {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.model-menu-trigger-info,
+.model-menu-item-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+}
+
+.model-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+}
+
+.model-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-base);
+  border: var(--button-border-width) solid var(--color-surface1);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.model-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.85rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.model-menu-item:hover {
+  background: var(--color-surface0);
+}
+
+.model-menu-item.active {
+  background: var(--color-surface1);
 }
 </style>

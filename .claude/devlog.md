@@ -4324,6 +4324,23 @@ the now-dead `.model-list`/`.model-info`/`.model-subtitle` CSS rules, added `.mo
 (previously supplied by `.model-list`'s own `margin-top`, lost when that wrapper was removed).
 `bun run build` clean.
 
+**Follow-up: replaced the native `<select>` with a custom dropdown shaped like `GameDetail.
+vue`'s translate-menu.** User wanted title/subtitle on two left-aligned lines, not coupled into
+one "Name — subtitle" string - a native `<select>`'s `<option>` elements can only render plain
+single-line text, no per-line styling, so the `<select>` had to go entirely rather than be
+tweaked. Rebuilt as a button trigger (`.model-menu-trigger`, showing the selected model's name/
+subtitle stacked, plus an `IconChevronDown`) + an absolutely-positioned panel
+(`.model-menu`) + a full-viewport invisible `.model-menu-backdrop` that closes it on outside
+click - the exact same 3-piece shape `GameDetail.vue`'s `.translate-menu-wrap`/`.translate-menu`/
+`.translate-menu-backdrop` already established, reused rather than inventing a different pattern
+for what's conceptually the same kind of control. Each `.model-menu-item` shows name/subtitle
+stacked on the left (`.model-menu-item-info`, `flex-direction: column`) and size on the right,
+with an `.active` highlight for the currently-selected tier. `selectModel(modelId)` calls the
+existing `translation.setSelectedModel` then closes the menu, mirroring `onToggleTitleView`
+etc.'s "act then close" shape in `GameDetail.vue`. `bun run build` clean; confirmed
+`IconChevronDown` resolves via the build itself rather than grepping the icon package's file
+list (Tabler's icon file naming under `@tabler/icons-vue` didn't match a simple `find` pattern).
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

@@ -4282,6 +4282,22 @@ regardless, gated by `hasValidTranslatedTitle`) but worth cleaning up for the sa
 
 `cargo fmt && cargo check` and `bun run build` both clean.
 
+## Milestone 21 — Internationalization & Offline Translation — post-close addition
+
+**Added `gemma4-e2b-abliterated` as a 5th tier.** User asked for an uncensored Gemma 4 variant
+alongside the existing `qwen3-4b-abliterated` one, for the same reason - translating an existing
+NSFW game's own store description without a safety-tuned model refusing. Found a real GGUF via
+`mradermacher` (the same quantizer already used elsewhere in this lineup) -
+`gemma-4-E2B-it-abliterated-GGUF`, Q4_K_M verified at 3,427,874,208 bytes via the HF tree API
+directly (not estimated) - somewhat heavier than the base `gemma4-e2b` (3.11GB) despite being
+the same underlying model, likely down to a different quantization/imatrix pass on the
+abliterated weights, not a discrepancy worth chasing further. No `--jinja`/template special-
+casing needed - abliteration only touches weights, not the tokenizer/chat template, so it
+behaves identically to `gemma4-e2b` in `translate_text` (plain string content, already the
+default now that `translategemma-4b` and its structured-content branch are gone). `cargo fmt &&
+cargo check` clean; no frontend changes needed since `AppSettings.vue`/`GameDetail.vue` both
+read the tier list dynamically.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

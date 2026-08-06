@@ -39,14 +39,14 @@ pub struct TranslationModel {
     size_bytes: u64,
 }
 
-/// 4 tiers, all under ~3.1GB resident RAM (sized against real 16GB/32GB gaming machines - see
+/// 5 tiers, all under ~3.5GB resident RAM (sized against real 16GB/32GB gaming machines - see
 /// devlog). `qwen3-4b` is the recommended default; `qwen2.5-1.5b` is cheaper; `gemma4-e2b` is a
 /// general-purpose alternative (works without `--jinja`, which is why that flag was removed
-/// from `ensure_server`'s launch args entirely); `qwen3-4b-abliterated` is opt-in/non-default,
-/// for translating NSFW games' own descriptions without false-positive refusals. Rejected
-/// candidates (`gemma3-1b`, `gemma4-e4b`, `translategemma-4b` - a confirmed llama.cpp `--jinja`
-/// parser crash, not a quantizer defect - EuroLLM-1.7B) and the full research are in devlog, not
-/// repeated here - check there before re-proposing something that might be a documented dead end.
+/// from `ensure_server`'s launch args entirely); `qwen3-4b-abliterated`/`gemma4-e2b-abliterated`
+/// are opt-in/non-default, for translating NSFW games' own descriptions without false-positive
+/// refusals. Rejected candidates (`gemma3-1b`, `gemma4-e4b`, `translategemma-4b` - a confirmed
+/// llama.cpp `--jinja` parser crash, not a quantizer defect - EuroLLM-1.7B) and the full research
+/// are in devlog, not repeated here - check there before re-proposing a documented dead end.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
@@ -80,6 +80,14 @@ pub fn list_models() -> Vec<TranslationModel> {
             repo: "bartowski/mlabonne_Qwen3-4B-abliterated-GGUF".to_string(),
             file: "mlabonne_Qwen3-4B-abliterated-Q4_K_M.gguf".to_string(),
             size_bytes: 2_500_000_000,
+        },
+        TranslationModel {
+            id: "gemma4-e2b-abliterated".to_string(),
+            name: "Gemma 4 E2B Abliterated".to_string(),
+            subtitle: "opt-in, uncensored - for NSFW game descriptions".to_string(),
+            repo: "mradermacher/gemma-4-E2B-it-abliterated-GGUF".to_string(),
+            file: "gemma-4-E2B-it-abliterated.Q4_K_M.gguf".to_string(),
+            size_bytes: 3_427_874_208,
         },
     ]
 }

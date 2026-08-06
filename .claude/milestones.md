@@ -432,9 +432,10 @@ available to test against).
 - [x] UI string localization via `vue-i18n`, 10 locales, exact key parity verified
 - [x] `translation` host-native Rust module - downloads llama.cpp's own prebuilt server binary,
   runs it as a subprocess over HTTP (not a Rust ML crate dependency)
-- [x] 4 model tiers, all under ~3.1GB RAM: `qwen2.5-1.5b`, `qwen3-4b` (recommended),
-  `gemma4-e2b`, `qwen3-4b-abliterated` (opt-in, uncensored) - see devlog for the full
-  model-research history, rejected candidates, and `translategemma-4b`'s removal (confirmed
+- [x] 5 model tiers, all under ~3.5GB RAM: `qwen2.5-1.5b`, `qwen3-4b` (recommended),
+  `gemma4-e2b`, `qwen3-4b-abliterated`/`gemma4-e2b-abliterated` (opt-in, uncensored) - see
+  devlog for the full model-research history, rejected candidates, and `translategemma-4b`'s
+  removal (confirmed
   llama.cpp `--jinja` parser bug)
 - [x] Settings UI: engine + per-tier download rows, live progress, Remove buttons
 - [x] `GameDetail.vue`: "Translate" button opens a 3-group paged dropdown (translate

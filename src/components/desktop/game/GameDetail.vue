@@ -467,7 +467,7 @@ async function onDelete() {
               <span v-if="game.release_date">{{ game.release_date }}</span>
               <span>{{ t("gameDetail.minPlayed", { minutes: playtimeMinutes }) }}</span>
             </div>
-            <div v-if="canTranslate" class="translate-menu-wrap">
+            <div class="translate-menu-wrap">
               <button
                 type="button"
                 class="compact-button translate-button"
@@ -479,15 +479,18 @@ async function onDelete() {
               </button>
               <div v-if="translateMenuOpen" class="translate-menu-backdrop" @click="translateMenuOpen = false" />
               <div v-if="translateMenuOpen" class="translate-menu">
-                <button type="button" @click="onTranslateTitleOnly">
-                  {{ t("gameDetail.translateTitleOnly") }}
-                </button>
-                <button type="button" :disabled="!game.description" @click="onTranslateContentOnly">
-                  {{ t("gameDetail.translateContentOnly") }}
-                </button>
-                <button type="button" @click="onTranslateTitleAndContent">
-                  {{ t("gameDetail.translateTitleAndContent") }}
-                </button>
+                <template v-if="canTranslate">
+                  <button type="button" @click="onTranslateTitleOnly">
+                    {{ t("gameDetail.translateTitleOnly") }}
+                  </button>
+                  <button type="button" :disabled="!game.description" @click="onTranslateContentOnly">
+                    {{ t("gameDetail.translateContentOnly") }}
+                  </button>
+                  <button type="button" @click="onTranslateTitleAndContent">
+                    {{ t("gameDetail.translateTitleAndContent") }}
+                  </button>
+                  <div class="translate-menu-divider" />
+                </template>
                 <button type="button" :disabled="!hasValidTranslatedTitle" @click="onToggleTitleView">
                   {{ showTranslatedTitle ? t("gameDetail.showOriginalTitle") : t("gameDetail.showTranslatedTitle") }}
                 </button>

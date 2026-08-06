@@ -442,10 +442,12 @@ available to test against).
   was removed entirely - confirmed via direct testing, not just documentation)
 - [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
   download-on-first-use, Remove buttons to delete a downloaded engine/model
-- [x] `GameDetail.vue`: "Translate" button opens a 9-item dropdown (translate title/content/both,
-  toggle each field's translated/original view independently or together, revoke a cached
-  translation per field or both) - title and content translate, display, and revert fully
-  independently. Button reads "Translating..." mid-request; title/description each show their
+- [x] `GameDetail.vue`: "Translate" button (always visible) opens a 9-item dropdown, split into
+  3 divider-separated groups: translate title/content/both (hidden if no usable model is set
+  up), toggle each field's translated/original view independently or together, revoke a cached
+  translation per field or both - title and content translate, display, and revert fully
+  independently. Viewing/revoking an already-cached translation never needs a usable model set
+  up. Button reads "Translating..." mid-request; title/description each show their
   own skeleton only while that specific field is being translated
 - [x] Translated title (when a valid cached translation exists for the current locale) now
   shows in place of the original on `GameCard`'s hover balloon, `GameListRow`, and both

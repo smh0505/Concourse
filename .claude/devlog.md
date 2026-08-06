@@ -4203,6 +4203,17 @@ matching exactly what was asked).
 same flatten-and-diff Node script used throughout this project, parity re-verified clean.
 `bun run build` clean.
 
+**Follow-up, same session: trigger button always visible; translate actions hidden (not the
+whole menu) when no usable model is set up; second divider added.** The dropdown wrapper's
+`v-if="canTranslate"` was gating the entire button - meaning a game with an already-cached
+translation (from before the user uninstalled the engine/model, or before switching to a
+different tier) had no way to view or revoke it once `canTranslate` went false. Moved that
+condition down: the trigger button and dropdown now always render; only the 3 translate-action
+items (title/content/both) are wrapped in their own `v-if="canTranslate"`, followed by a
+`.translate-menu-divider` that appears only alongside them - the show/revoke groups (and the
+divider between those two) stay available regardless, since viewing or clearing an already-
+cached translation never needs the engine to be ready. `bun run build` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

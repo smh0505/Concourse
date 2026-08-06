@@ -52,9 +52,14 @@
     "titleLabel": "タイトル",
     "executablePathLabel": "実行ファイルのパス",
     "translate": "翻訳",
-    "translating": "翻訳中...",
-    "showOriginal": "原文を表示",
-    "showTranslated": "翻訳を表示"
+    "translateTitleOnly": "タイトルのみ翻訳",
+    "translateContentOnly": "内容のみ翻訳",
+    "showOriginalTitle": "元のタイトルを表示",
+    "showTranslatedTitle": "翻訳されたタイトルを表示",
+    "showOriginalContent": "元の内容を表示",
+    "showTranslatedContent": "翻訳された内容を表示",
+    "showOriginalBoth": "元のタイトルと内容を表示",
+    "showTranslatedBoth": "翻訳されたタイトルと内容を表示"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

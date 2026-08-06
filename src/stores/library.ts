@@ -197,12 +197,18 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
   }
 
-  /** Persists offline-translated title/description alongside the originals (Milestone 21's
+  /** Persists an offline-translated title/description alongside the original (Milestone 21's
    *  deferred follow-up) - `locale` records which UI locale this translation is *for*, so a
-   *  later locale switch can tell the cached translation is stale without re-calling the
-   *  engine just to find out. */
-  async function saveTranslation(gameId: number, translatedTitle: string, translatedDescription: string, locale: string) {
-    await gameRepo.updateTranslation(gameId, translatedTitle, translatedDescription, locale);
+   *  later locale switch can tell the cached translation is stale without re-calling the engine
+   *  just to find out. Title and content translate independently (GameDetail.vue's dropdown),
+   *  so each gets its own action rather than one combined save. */
+  async function saveTranslatedTitle(gameId: number, translatedTitle: string, locale: string) {
+    await gameRepo.updateTranslatedTitle(gameId, translatedTitle, locale);
+    await refresh();
+  }
+
+  async function saveTranslatedDescription(gameId: number, translatedDescription: string, locale: string) {
+    await gameRepo.updateTranslatedDescription(gameId, translatedDescription, locale);
     await refresh();
   }
 
@@ -286,7 +292,8 @@ export const useLibraryStore = defineStore("library", () => {
     openDetail,
     closeDetail,
     saveEdit,
-    saveTranslation,
+    saveTranslatedTitle,
+    saveTranslatedDescription,
     launchGame,
     init,
     dispose,

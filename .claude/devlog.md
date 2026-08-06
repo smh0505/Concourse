@@ -4097,6 +4097,57 @@ pass has both halves of the story rather than just "Gemma is broken." `cargo fmt
 and `bun run build` both clean; test GGUF and logs cleaned up from the job's scratch directory
 afterward.
 
+**Follow-up, same session: redesigned the translate control as a dropdown, splitting title and
+content into fully independent translate/view actions.** User asked for the single "Translate"
+button to become a dropdown with 5 items - translate title only, translate content only, and 3
+independent view toggles (title, content, both) - with the trigger button always reading
+"Translate" regardless of state, since re-translating with a different selected model and
+overwriting the cached translation is now a deliberate, repeatable action rather than a one-shot
+toggle.
+
+This meant splitting what was previously one shared `showTranslated`/`hasValidTranslation` pair
+into two fully independent pairs (`showTranslatedTitle`/`hasValidTranslatedTitle` and
+`showTranslatedDescription`/`hasValidTranslatedDescription`) - translating title and content are
+now two separate actions (`onTranslateTitleOnly`/`onTranslateContentOnly`), each calling
+`translation.translate()` once and persisting through its own store action rather than the
+previous single combined `saveTranslation`. Both `games.ts`'s `updateTranslation` and
+`library.ts`'s `saveTranslation` split into `updateTranslatedTitle`/`updateTranslatedDescription`
+pairs, each writing only its own field (plus the shared `translated_locale` column) - translating
+one field never touches the other's already-cached value now, whereas the old combined method
+would have required threading the untouched field's existing value through by hand to avoid
+clobbering it.
+
+Known, accepted edge case carried over from a single shared `translated_locale` column: since
+both fields share one locale marker, translating title under one active UI locale and content
+under a different one (i.e. switching languages between the two actions) means the *older* of
+the two would incorrectly read as still-valid once the newer overwrites the shared column - not
+tracked separately, on the same "real edge case, rare in practice, not worth a second migration
+for" reasoning already used for `translategemma-4b`'s hardcoded English source-language
+assumption earlier this milestone.
+
+The dropdown itself: no prior dropdown/menu component existed anywhere in this codebase to
+reuse, so built minimally rather than reaching for a library or inventing a reusable composable
+for a single use site - a `translateMenuOpen` ref, an absolutely-positioned `.translate-menu`
+under the trigger button, and a full-viewport invisible `.translate-menu-backdrop` (lower
+z-index than the menu) that closes the menu on any outside click - avoids a `window`-level
+`mousedown` listener plus its own mount/unmount lifecycle wiring for what a plain backdrop div
+already handles declaratively. Each of the 5 items is its own `<button>`, disabled individually
+based on what's actually possible right now (content-related items disabled with no
+description; each view-toggle disabled with no valid cached translation for that field; the
+combined toggle disabled only if *neither* field has one).
+
+Also moved the translate control out from under the old `v-if="game.description"` gating
+entirely - title translation is now meaningful even for a game with no description at all, so
+the dropdown trigger is gated only on `canTranslate` (engine + selected model both downloaded),
+while the description text block keeps its own `v-if="game.description"` separately.
+
+8 old i18n keys removed (`translating`/`showOriginal`/`showTranslated` - confirmed unreferenced
+via grep before deleting) and 8 new ones added (`translateTitleOnly`/`translateContentOnly`/
+`showOriginalTitle`/`showTranslatedTitle`/`showOriginalContent`/`showTranslatedContent`/
+`showOriginalBoth`/`showTranslatedBoth`), propagated to all 9 non-English locales via the same
+flatten-and-diff Node script used throughout this project - parity re-verified clean.
+`bun run build` clean; no Rust changes this pass.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

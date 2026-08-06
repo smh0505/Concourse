@@ -52,9 +52,14 @@
     "titleLabel": "Titel",
     "executablePathLabel": "Pfad zur ausführbaren Datei",
     "translate": "Übersetzen",
-    "translating": "Übersetze...",
-    "showOriginal": "Original anzeigen",
-    "showTranslated": "Übersetzung anzeigen"
+    "translateTitleOnly": "Nur Titel übersetzen",
+    "translateContentOnly": "Nur Inhalt übersetzen",
+    "showOriginalTitle": "Originaltitel anzeigen",
+    "showTranslatedTitle": "Übersetzten Titel anzeigen",
+    "showOriginalContent": "Originalinhalt anzeigen",
+    "showTranslatedContent": "Übersetzten Inhalt anzeigen",
+    "showOriginalBoth": "Originaltitel und -inhalt anzeigen",
+    "showTranslatedBoth": "Übersetzten Titel und Inhalt anzeigen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

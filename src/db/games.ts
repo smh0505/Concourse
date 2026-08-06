@@ -108,16 +108,24 @@ export class GameRepository {
     );
   }
 
-  async updateTranslation(
-    id: number,
-    translatedTitle: string,
-    translatedDescription: string,
-    locale: string,
-  ): Promise<void> {
+  /** Title and content are translated independently (see GameDetail.vue's dropdown) - each gets
+   *  its own update rather than one combined method, so translating one never touches the
+   *  other's already-cached value. Both share the single translated_locale column, so
+   *  translating title and content under two different active UI locales is a known, accepted
+   *  edge case (the older of the two would incorrectly read as still valid). */
+  async updateTranslatedTitle(id: number, translatedTitle: string, locale: string): Promise<void> {
     const db = await getDb();
     await db.execute(
-      "UPDATE games SET translated_title = $1, translated_description = $2, translated_locale = $3 WHERE id = $4",
-      [translatedTitle, translatedDescription, locale, id],
+      "UPDATE games SET translated_title = $1, translated_locale = $2 WHERE id = $3",
+      [translatedTitle, locale, id],
+    );
+  }
+
+  async updateTranslatedDescription(id: number, translatedDescription: string, locale: string): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE games SET translated_description = $1, translated_locale = $2 WHERE id = $3",
+      [translatedDescription, locale, id],
     );
   }
 }

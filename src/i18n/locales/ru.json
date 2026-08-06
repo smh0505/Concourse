@@ -52,9 +52,14 @@
     "titleLabel": "Название",
     "executablePathLabel": "Путь к исполняемому файлу",
     "translate": "Перевести",
-    "translating": "Перевод...",
-    "showOriginal": "Показать оригинал",
-    "showTranslated": "Показать перевод"
+    "translateTitleOnly": "Перевести только название",
+    "translateContentOnly": "Перевести только описание",
+    "showOriginalTitle": "Показать оригинальное название",
+    "showTranslatedTitle": "Показать переведённое название",
+    "showOriginalContent": "Показать оригинальное описание",
+    "showTranslatedContent": "Показать переведённое описание",
+    "showOriginalBoth": "Показать оригинал (название и описание)",
+    "showTranslatedBoth": "Показать перевод (название и описание)"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

@@ -52,9 +52,14 @@
     "titleLabel": "제목",
     "executablePathLabel": "실행 파일 경로",
     "translate": "번역",
-    "translating": "번역 중...",
-    "showOriginal": "원문 보기",
-    "showTranslated": "번역본 보기"
+    "translateTitleOnly": "제목만 번역",
+    "translateContentOnly": "내용만 번역",
+    "showOriginalTitle": "원본 제목 보기",
+    "showTranslatedTitle": "번역된 제목 보기",
+    "showOriginalContent": "원본 내용 보기",
+    "showTranslatedContent": "번역된 내용 보기",
+    "showOriginalBoth": "원본 제목과 내용 보기",
+    "showTranslatedBoth": "번역된 제목과 내용 보기"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

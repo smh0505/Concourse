@@ -161,14 +161,18 @@ const isEpicIcon = computed(() => displayPlatform.value?.trim().toLowerCase() ==
 const epicIconFill = computed(() => (themeIsLight !== wantsReverse.value ? "#000000" : "#ffffff"));
 
 // Translated title/description are persisted alongside the originals (Milestone 21's deferred
-// follow-up - see stores/library.ts's saveTranslation), not just held client-side. showTranslated
-// is purely a view toggle over already-cached data - it doesn't itself call the engine. Reset
-// whenever the viewed game changes, so navigating to a different game doesn't keep showing the
-// previous one's toggle state.
-const showTranslated = ref(false);
+// follow-up - see stores/library.ts's saveTranslatedTitle/saveTranslatedDescription), not just
+// held client-side. Title and content are translated and shown independently of each other -
+// showTranslatedTitle/showTranslatedDescription are pure view toggles over already-cached data,
+// they don't themselves call the engine. Reset whenever the viewed game changes, so navigating
+// to a different game doesn't keep showing the previous one's toggle state.
+const showTranslatedTitle = ref(false);
+const showTranslatedDescription = ref(false);
 const translating = ref(false);
+const translateMenuOpen = ref(false);
 watch(game, () => {
-  showTranslated.value = false;
+  showTranslatedTitle.value = false;
+  showTranslatedDescription.value = false;
 });
 
 const canTranslate = computed(
@@ -179,24 +183,26 @@ const canTranslate = computed(
 );
 
 // A cached translation is only valid for the UI locale it was made for - switching languages,
-// or editing the original title/description (games.ts's update() clears these three columns
-// unconditionally), invalidates it without needing an explicit "stale" flag.
-const hasValidTranslation = computed(
+// or editing the original title/description (games.ts's update() clears all three translated_*
+// columns unconditionally), invalidates it without needing an explicit "stale" flag. Both
+// fields share one translated_locale column - translating title and content under two different
+// active UI locales (switching languages between the two actions) is a known, accepted edge
+// case where the older of the two would incorrectly read as "valid," not something this design
+// tracks separately.
+const hasValidTranslatedTitle = computed(
+  () => !!game.value.translated_title && game.value.translated_locale === appSettings.locale,
+);
+const hasValidTranslatedDescription = computed(
   () => !!game.value.translated_description && game.value.translated_locale === appSettings.locale,
 );
 
-async function onToggleTranslate() {
-  if (hasValidTranslation.value) {
-    showTranslated.value = !showTranslated.value;
-    return;
-  }
-  if (!game.value.description) return;
+async function onTranslateTitleOnly() {
+  translateMenuOpen.value = false;
   translating.value = true;
   try {
     const translatedTitle = await translation.translate(game.value.title, appSettings.locale);
-    const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
-    await library.saveTranslation(game.value.id, translatedTitle, translatedDescription, appSettings.locale);
-    showTranslated.value = true;
+    await library.saveTranslatedTitle(game.value.id, translatedTitle, appSettings.locale);
+    showTranslatedTitle.value = true;
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
@@ -204,13 +210,47 @@ async function onToggleTranslate() {
   }
 }
 
+async function onTranslateContentOnly() {
+  translateMenuOpen.value = false;
+  if (!game.value.description) return;
+  translating.value = true;
+  try {
+    const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
+    await library.saveTranslatedDescription(game.value.id, translatedDescription, appSettings.locale);
+    showTranslatedDescription.value = true;
+  } catch (e) {
+    toasts.push(String(e), "error");
+  } finally {
+    translating.value = false;
+  }
+}
+
+function onToggleTitleView() {
+  showTranslatedTitle.value = !showTranslatedTitle.value;
+  translateMenuOpen.value = false;
+}
+
+function onToggleContentView() {
+  showTranslatedDescription.value = !showTranslatedDescription.value;
+  translateMenuOpen.value = false;
+}
+
+function onToggleBothView() {
+  const next = !(showTranslatedTitle.value && showTranslatedDescription.value);
+  showTranslatedTitle.value = next;
+  showTranslatedDescription.value = next;
+  translateMenuOpen.value = false;
+}
+
 const displayTitle = computed(() =>
-  showTranslated.value && hasValidTranslation.value ? game.value.translated_title! : game.value.title,
+  showTranslatedTitle.value && hasValidTranslatedTitle.value ? game.value.translated_title! : game.value.title,
 );
 
 const descriptionHtml = computed(() => {
   const source =
-    showTranslated.value && hasValidTranslation.value ? game.value.translated_description : game.value.description;
+    showTranslatedDescription.value && hasValidTranslatedDescription.value
+      ? game.value.translated_description
+      : game.value.description;
   return source ? DOMPurify.sanitize(marked.parse(source, { async: false })) : "";
 });
 
@@ -370,25 +410,48 @@ async function onDelete() {
               <span v-if="game.release_date">{{ game.release_date }}</span>
               <span>{{ t("gameDetail.minPlayed", { minutes: playtimeMinutes }) }}</span>
             </div>
-            <div v-if="game.description" class="description-wrap">
+            <div v-if="canTranslate" class="translate-menu-wrap">
               <button
-                v-if="canTranslate"
                 type="button"
                 class="compact-button translate-button"
                 :disabled="translating"
-                @click="onToggleTranslate"
+                @click="translateMenuOpen = !translateMenuOpen"
               >
                 <IconLanguage :size="14" :stroke-width="1.75" />
-                {{
-                  translating
-                    ? t("gameDetail.translating")
-                    : hasValidTranslation
-                      ? showTranslated
-                        ? t("gameDetail.showOriginal")
-                        : t("gameDetail.showTranslated")
-                      : t("gameDetail.translate")
-                }}
+                {{ t("gameDetail.translate") }}
               </button>
+              <div v-if="translateMenuOpen" class="translate-menu-backdrop" @click="translateMenuOpen = false" />
+              <div v-if="translateMenuOpen" class="translate-menu">
+                <button type="button" @click="onTranslateTitleOnly">
+                  {{ t("gameDetail.translateTitleOnly") }}
+                </button>
+                <button type="button" :disabled="!game.description" @click="onTranslateContentOnly">
+                  {{ t("gameDetail.translateContentOnly") }}
+                </button>
+                <button type="button" :disabled="!hasValidTranslatedTitle" @click="onToggleTitleView">
+                  {{ showTranslatedTitle ? t("gameDetail.showOriginalTitle") : t("gameDetail.showTranslatedTitle") }}
+                </button>
+                <button type="button" :disabled="!hasValidTranslatedDescription" @click="onToggleContentView">
+                  {{
+                    showTranslatedDescription
+                      ? t("gameDetail.showOriginalContent")
+                      : t("gameDetail.showTranslatedContent")
+                  }}
+                </button>
+                <button
+                  type="button"
+                  :disabled="!hasValidTranslatedTitle && !hasValidTranslatedDescription"
+                  @click="onToggleBothView"
+                >
+                  {{
+                    showTranslatedTitle && showTranslatedDescription
+                      ? t("gameDetail.showOriginalBoth")
+                      : t("gameDetail.showTranslatedBoth")
+                  }}
+                </button>
+              </div>
+            </div>
+            <div v-if="game.description" class="description-wrap">
               <div class="description" v-html="descriptionHtml"></div>
             </div>
           </template>
@@ -750,8 +813,57 @@ async function onDelete() {
   margin-bottom: var(--space-3);
 }
 
-.translate-button {
+.translate-menu-wrap {
+  position: relative;
   margin-bottom: var(--space-2);
+}
+
+.translate-button {
+  margin-bottom: 0;
+}
+
+/* Full-viewport, invisible - exists only to catch a click outside the menu and close it,
+   avoiding a window-level event listener/lifecycle hook for a single dropdown. Sits below the
+   menu itself (lower z-index) so menu-item clicks reach their own buttons first. */
+.translate-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+}
+
+.translate-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.25rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  background: var(--color-base);
+  border: var(--button-border-width) solid var(--color-surface1);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.translate-menu button {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.85rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.translate-menu button:hover:not(:disabled) {
+  background: var(--color-surface0);
+}
+
+.translate-menu button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* Rendered markdown's child elements (marked's HTML output, injected via v-html) aren't

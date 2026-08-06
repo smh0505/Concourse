@@ -52,9 +52,14 @@
     "titleLabel": "Titolo",
     "executablePathLabel": "Percorso dell'eseguibile",
     "translate": "Traduci",
-    "translating": "Traduzione in corso...",
-    "showOriginal": "Mostra originale",
-    "showTranslated": "Mostra traduzione"
+    "translateTitleOnly": "Traduci solo il titolo",
+    "translateContentOnly": "Traduci solo il contenuto",
+    "showOriginalTitle": "Vedi titolo originale",
+    "showTranslatedTitle": "Vedi titolo tradotto",
+    "showOriginalContent": "Vedi contenuto originale",
+    "showTranslatedContent": "Vedi contenuto tradotto",
+    "showOriginalBoth": "Vedi titolo e contenuto originali",
+    "showTranslatedBoth": "Vedi titolo e contenuto tradotti"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

@@ -52,9 +52,14 @@
     "titleLabel": "标题",
     "executablePathLabel": "可执行文件路径",
     "translate": "翻译",
-    "translating": "翻译中...",
-    "showOriginal": "显示原文",
-    "showTranslated": "显示译文"
+    "translateTitleOnly": "仅翻译标题",
+    "translateContentOnly": "仅翻译内容",
+    "showOriginalTitle": "查看原标题",
+    "showTranslatedTitle": "查看译文标题",
+    "showOriginalContent": "查看原内容",
+    "showTranslatedContent": "查看译文内容",
+    "showOriginalBoth": "查看原标题和内容",
+    "showTranslatedBoth": "查看译文标题和内容"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

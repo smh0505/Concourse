@@ -52,9 +52,14 @@
     "titleLabel": "Title",
     "executablePathLabel": "Executable path",
     "translate": "Translate",
-    "translating": "Translating...",
-    "showOriginal": "Show original",
-    "showTranslated": "Show translated"
+    "translateTitleOnly": "Translate Title Only",
+    "translateContentOnly": "Translate Content Only",
+    "showOriginalTitle": "See Original Title",
+    "showTranslatedTitle": "See Translated Title",
+    "showOriginalContent": "See Original Content",
+    "showTranslatedContent": "See Translated Content",
+    "showOriginalBoth": "See Original Title and Content",
+    "showTranslatedBoth": "See Translated Title and Content"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

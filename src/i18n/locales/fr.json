@@ -52,9 +52,14 @@
     "titleLabel": "Titre",
     "executablePathLabel": "Chemin de l'exécutable",
     "translate": "Traduire",
-    "translating": "Traduction en cours...",
-    "showOriginal": "Afficher l'original",
-    "showTranslated": "Afficher la traduction"
+    "translateTitleOnly": "Traduire uniquement le titre",
+    "translateContentOnly": "Traduire uniquement le contenu",
+    "showOriginalTitle": "Voir le titre original",
+    "showTranslatedTitle": "Voir le titre traduit",
+    "showOriginalContent": "Voir le contenu original",
+    "showTranslatedContent": "Voir le contenu traduit",
+    "showOriginalBoth": "Voir le titre et le contenu originaux",
+    "showTranslatedBoth": "Voir le titre et le contenu traduits"
   },
   "candidatePicker": {
     "title": "Plusieurs correspondances trouvées",

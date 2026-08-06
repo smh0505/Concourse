@@ -6,6 +6,7 @@
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -409,6 +410,15 @@ async fn ensure_server(
         },
     );
 
+    // llama-server's own default thread count can leave most cores idle on a multi-core
+    // machine unless told explicitly - a real, measured cause of slow CPU-only translation,
+    // not specific to any one model tier. `-tb` (batch/prompt-processing threads) matters too:
+    // llama.cpp treats prefill and generation as separate thread-count settings.
+    let threads = thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .to_string();
+
     let child = Command::new(&server_exe)
         .arg("-m")
         .arg(&model_path)
@@ -416,6 +426,10 @@ async fn ensure_server(
         .arg(SERVER_PORT.to_string())
         .arg("-c")
         .arg("4096")
+        .arg("-t")
+        .arg(&threads)
+        .arg("-tb")
+        .arg(&threads)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .kill_on_drop(true)

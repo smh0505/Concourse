@@ -197,6 +197,15 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
   }
 
+  /** Persists offline-translated title/description alongside the originals (Milestone 21's
+   *  deferred follow-up) - `locale` records which UI locale this translation is *for*, so a
+   *  later locale switch can tell the cached translation is stale without re-calling the
+   *  engine just to find out. */
+  async function saveTranslation(gameId: number, translatedTitle: string, translatedDescription: string, locale: string) {
+    await gameRepo.updateTranslation(gameId, translatedTitle, translatedDescription, locale);
+    await refresh();
+  }
+
   async function launchGame(game: Game) {
     const toasts = useToastStore();
     try {
@@ -277,6 +286,7 @@ export const useLibraryStore = defineStore("library", () => {
     openDetail,
     closeDetail,
     saveEdit,
+    saveTranslation,
     launchGame,
     init,
     dispose,

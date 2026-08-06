@@ -53,7 +53,8 @@
     "executablePathLabel": "実行ファイルのパス",
     "translate": "翻訳",
     "translating": "翻訳中...",
-    "showOriginal": "原文を表示"
+    "showOriginal": "原文を表示",
+    "showTranslated": "翻訳を表示"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

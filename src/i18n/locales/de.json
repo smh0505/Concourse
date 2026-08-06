@@ -53,7 +53,8 @@
     "executablePathLabel": "Pfad zur ausführbaren Datei",
     "translate": "Übersetzen",
     "translating": "Übersetze...",
-    "showOriginal": "Original anzeigen"
+    "showOriginal": "Original anzeigen",
+    "showTranslated": "Übersetzung anzeigen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

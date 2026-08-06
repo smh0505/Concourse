@@ -120,5 +120,21 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "add_translated_title_description",
+            sql: r#"
+            -- Milestone 21's deferred "persist a translated description" follow-up, now
+            -- covering title too. Kept alongside the originals rather than overwriting
+            -- title/description in place - translated_locale records which UI locale the
+            -- cached translation was made for, so the frontend can tell a stale translation
+            -- (made for a since-changed UI language, or before an edited original) from a
+            -- current one without re-calling the engine just to find out.
+            ALTER TABLE games ADD COLUMN translated_title TEXT;
+            ALTER TABLE games ADD COLUMN translated_description TEXT;
+            ALTER TABLE games ADD COLUMN translated_locale TEXT;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

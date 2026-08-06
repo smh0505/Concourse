@@ -73,6 +73,9 @@ export class GameRepository {
 
   async update(id: number, fields: GameEditFields): Promise<void> {
     const db = await getDb();
+    // Edited title/description invalidates any cached translation unconditionally, rather than
+    // checking which field actually changed - simplest way to guarantee a stale translation can
+    // never survive an edit that might have changed the very text it was translated from.
     await db.execute(
       `UPDATE games SET
          title = $1,
@@ -84,7 +87,10 @@ export class GameRepository {
          release_date = $7,
          skip_dedup = $8,
          locale_profile_guid = $9,
-         locale_wrapper = $10
+         locale_wrapper = $10,
+         translated_title = NULL,
+         translated_description = NULL,
+         translated_locale = NULL
        WHERE id = $11`,
       [
         fields.title,
@@ -99,6 +105,19 @@ export class GameRepository {
         fields.locale_wrapper,
         id,
       ],
+    );
+  }
+
+  async updateTranslation(
+    id: number,
+    translatedTitle: string,
+    translatedDescription: string,
+    locale: string,
+  ): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE games SET translated_title = $1, translated_description = $2, translated_locale = $3 WHERE id = $4",
+      [translatedTitle, translatedDescription, locale, id],
     );
   }
 }

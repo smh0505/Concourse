@@ -53,7 +53,8 @@
     "executablePathLabel": "Executable path",
     "translate": "Translate",
     "translating": "Translating...",
-    "showOriginal": "Show original"
+    "showOriginal": "Show original",
+    "showTranslated": "Show translated"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

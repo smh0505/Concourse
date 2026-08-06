@@ -53,7 +53,8 @@
     "executablePathLabel": "실행 파일 경로",
     "translate": "번역",
     "translating": "번역 중...",
-    "showOriginal": "원문 보기"
+    "showOriginal": "원문 보기",
+    "showTranslated": "번역본 보기"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

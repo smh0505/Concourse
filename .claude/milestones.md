@@ -440,16 +440,22 @@ available to test against).
   full model-research history and rejected candidates
 - [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
   download-on-first-use, Remove buttons to delete a downloaded engine/model
-- [x] `GameDetail.vue`: "Translate"/"Show original" toggle, client-side only, never overwrites
-  stored `game.description`
+- [x] `GameDetail.vue`: "Translate"/"Show translated"/"Show original" toggle, covers both title
+  and description together
+- [x] Translated title/description persisted to the DB (new `translated_title`/
+  `translated_description`/`translated_locale` columns, migration v4) alongside the originals,
+  not overwriting them - a locale mismatch or an edited original invalidates the cached
+  translation automatically
 - [x] App-exit hook and 5-minute idle-timeout both auto-kill the `llama-server.exe` subprocess
+- [x] `enable_thinking: false` sent on every translation request - Qwen3's default "thinking"
+  reasoning block was adding real unnecessary latency for a task this simple
 - [x] Engine research: `llama-cpp-2` (Windows CMake bugs) → `mistralrs` (compiled clean but
   can't load `gemma3` GGUF, caught by real user testing) → llama.cpp prebuilt binary - see
   devlog for the full alternatives comparison
 
 Milestone 21 fully closed. See devlog for full rationale on every decision above. Deliberately
-deferred: persisting a translated description back to the DB, translating other fields,
-canceling an in-progress download, detecting already-installed Ollama/LM Studio.
+deferred: translating other fields (release date, tags), canceling an in-progress download,
+detecting already-installed Ollama/LM Studio.
 
 ## Milestone 22 — Plugin-Developer Documentation Site
 - [x] New `docs/` VitePress project (own `package.json`, decoupled from the app's own frontend

@@ -21,6 +21,12 @@ export interface Game {
    *  GUIDs aren't namespaced against each other across wrapper plugins, so this disambiguates
    *  which one to launch via. */
   locale_wrapper: string | null;
+  /** Cached offline-translation output, kept alongside title/description rather than
+   *  overwriting them. translated_locale is the UI locale this was translated *into* - a
+   *  mismatch against the current UI locale means the cached translation is stale. */
+  translated_title: string | null;
+  translated_description: string | null;
+  translated_locale: string | null;
 }
 
 export type GameEditFields = Pick<

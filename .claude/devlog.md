@@ -3830,6 +3830,45 @@ always sent regardless of which tier is selected. Safe to always include: `trans
 unused Jinja context key with no effect, same as passing an extra unused kwarg anywhere else.
 `cargo fmt && cargo check` clean.
 
+**Follow-up, same session: closed the "persist translated description" deferred item, extended
+to cover title too.** User asked for translated title/description to actually persist to the DB
+(previously explicitly deferred, client-side-only, never surviving a page navigation) and for
+the title to get the same treatment.
+
+Added migration v4 (`db.rs`) - `translated_title`/`translated_description`/`translated_locale`
+columns on `games`, all nullable, additive-only per this project's post-baseline migration
+convention. Kept alongside the originals rather than replacing them, same "never overwrite the
+source" principle the original client-side-only design already established - just backed by the
+DB now instead of a component-local ref. `translated_locale` records which UI locale a cached
+translation was actually made *for*; comparing it against the current UI locale is how a stale
+translation gets detected without needing a separate boolean flag or an engine round-trip just
+to find out.
+
+`games.ts`'s `update()` (the general edit-save path) now unconditionally clears all three
+translated_* columns on every save, rather than checking whether title/description specifically
+changed - simplest way to guarantee a stale translation (translated from wording that's since
+been edited) can never survive an edit. New `updateTranslation()` method writes the cached
+translation; `stores/library.ts` gained a thin `saveTranslation()` wrapping it plus the existing
+`refresh()` call, mirroring `saveEdit()`'s own shape exactly.
+
+`GameDetail.vue`'s translation state changed from a single ephemeral `translatedDescription` ref
+to `showTranslated` (a pure view toggle over already-persisted data, doesn't itself call the
+engine) plus a `hasValidTranslation` computed (`translated_description` present and
+`translated_locale` matches the current UI locale). `onToggleTranslate` now branches three ways:
+a valid cached translation just flips the view toggle instantly (no engine call); no valid
+translation calls `translation.translate()` **twice** (title, then description - the store's
+`translate()` API takes one string at a time, and each call already toasts its own "Translation
+complete." per the earlier toast work, so translating both fields does produce two success
+toasts per action - accepted as a minor, harmless redundancy rather than special-cased away).
+Button label gained a third state (`showTranslated` i18n key, propagated to all 10 locales,
+parity re-verified) for "valid translation exists but currently showing the original" -
+previously there were only two states since nothing persisted long enough to need one.
+
+`cargo fmt && cargo check` and `bun run build` both clean. `vue-tsc`'s pass confirms no other
+code constructs a `Game` object manually (a repo-wide grep for `Game` literals also came back
+empty) - the 3 new required-but-nullable fields only ever come from a real DB row via `SELECT
+*`, so no other call site needed touching.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

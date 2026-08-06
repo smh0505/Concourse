@@ -160,15 +160,15 @@ const isEpicIcon = computed(() => displayPlatform.value?.trim().toLowerCase() ==
 // --color-text-reverse's own direction is.
 const epicIconFill = computed(() => (themeIsLight !== wantsReverse.value ? "#000000" : "#ffffff"));
 
-// Description is stored as Markdown, rendered to HTML for the view page only; sanitized since
-// it can come from metadata provider plugins, not just the user.
-// Client-side only - a translated description is never written back to game.description in the
-// DB (Milestone 21's second half). Reset whenever the viewed game changes, so navigating to a
-// different game doesn't keep showing the previous one's translation.
-const translatedDescription = ref<string | null>(null);
-const translatingDescription = ref(false);
+// Translated title/description are persisted alongside the originals (Milestone 21's deferred
+// follow-up - see stores/library.ts's saveTranslation), not just held client-side. showTranslated
+// is purely a view toggle over already-cached data - it doesn't itself call the engine. Reset
+// whenever the viewed game changes, so navigating to a different game doesn't keep showing the
+// previous one's toggle state.
+const showTranslated = ref(false);
+const translating = ref(false);
 watch(game, () => {
-  translatedDescription.value = null;
+  showTranslated.value = false;
 });
 
 const canTranslate = computed(
@@ -178,24 +178,39 @@ const canTranslate = computed(
     translation.isDownloaded(translation.selectedModelId),
 );
 
-async function onToggleTranslateDescription() {
-  if (translatedDescription.value) {
-    translatedDescription.value = null;
+// A cached translation is only valid for the UI locale it was made for - switching languages,
+// or editing the original title/description (games.ts's update() clears these three columns
+// unconditionally), invalidates it without needing an explicit "stale" flag.
+const hasValidTranslation = computed(
+  () => !!game.value.translated_description && game.value.translated_locale === appSettings.locale,
+);
+
+async function onToggleTranslate() {
+  if (hasValidTranslation.value) {
+    showTranslated.value = !showTranslated.value;
     return;
   }
   if (!game.value.description) return;
-  translatingDescription.value = true;
+  translating.value = true;
   try {
-    translatedDescription.value = await translation.translate(game.value.description, appSettings.locale);
+    const translatedTitle = await translation.translate(game.value.title, appSettings.locale);
+    const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
+    await library.saveTranslation(game.value.id, translatedTitle, translatedDescription, appSettings.locale);
+    showTranslated.value = true;
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
-    translatingDescription.value = false;
+    translating.value = false;
   }
 }
 
+const displayTitle = computed(() =>
+  showTranslated.value && hasValidTranslation.value ? game.value.translated_title! : game.value.title,
+);
+
 const descriptionHtml = computed(() => {
-  const source = translatedDescription.value ?? game.value.description;
+  const source =
+    showTranslated.value && hasValidTranslation.value ? game.value.translated_description : game.value.description;
   return source ? DOMPurify.sanitize(marked.parse(source, { async: false })) : "";
 });
 
@@ -333,7 +348,7 @@ async function onDelete() {
             <div class="skeleton-bar skeleton-desc short"><div class="shimmer" /></div>
           </template>
           <template v-else-if="!editing">
-            <h1>{{ game.title }}</h1>
+            <h1>{{ displayTitle }}</h1>
             <div class="meta">
               <span
                 class="platform-tag"
@@ -360,15 +375,17 @@ async function onDelete() {
                 v-if="canTranslate"
                 type="button"
                 class="compact-button translate-button"
-                :disabled="translatingDescription"
-                @click="onToggleTranslateDescription"
+                :disabled="translating"
+                @click="onToggleTranslate"
               >
                 <IconLanguage :size="14" :stroke-width="1.75" />
                 {{
-                  translatingDescription
+                  translating
                     ? t("gameDetail.translating")
-                    : translatedDescription
-                      ? t("gameDetail.showOriginal")
+                    : hasValidTranslation
+                      ? showTranslated
+                        ? t("gameDetail.showOriginal")
+                        : t("gameDetail.showTranslated")
                       : t("gameDetail.translate")
                 }}
               </button>

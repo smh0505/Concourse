@@ -53,7 +53,8 @@
     "executablePathLabel": "可执行文件路径",
     "translate": "翻译",
     "translating": "翻译中...",
-    "showOriginal": "显示原文"
+    "showOriginal": "显示原文",
+    "showTranslated": "显示译文"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

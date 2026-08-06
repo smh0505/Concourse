@@ -53,7 +53,8 @@
     "executablePathLabel": "Путь к исполняемому файлу",
     "translate": "Перевести",
     "translating": "Перевод...",
-    "showOriginal": "Показать оригинал"
+    "showOriginal": "Показать оригинал",
+    "showTranslated": "Показать перевод"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

@@ -53,7 +53,8 @@
     "executablePathLabel": "Ruta del ejecutable",
     "translate": "Traducir",
     "translating": "Traduciendo...",
-    "showOriginal": "Mostrar original"
+    "showOriginal": "Mostrar original",
+    "showTranslated": "Mostrar traducción"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

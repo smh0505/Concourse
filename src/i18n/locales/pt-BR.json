@@ -53,7 +53,8 @@
     "executablePathLabel": "Caminho do executável",
     "translate": "Traduzir",
     "translating": "Traduzindo...",
-    "showOriginal": "Mostrar original"
+    "showOriginal": "Mostrar original",
+    "showTranslated": "Mostrar tradução"
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",

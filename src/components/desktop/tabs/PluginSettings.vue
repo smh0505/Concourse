@@ -413,7 +413,10 @@ onMounted(async () => {
 
 .plugin-settings-header {
   display: flex;
-  align-items: center;
+  /* baseline (not center) - centers the flex box, not the text itself, so a leftover browser-
+     default h2 margin/line-height mismatch against the button's own font-size still reads as
+     visually offset even with align-items:center. baseline lines up the actual text. */
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: 0.5rem;
@@ -421,7 +424,7 @@ onMounted(async () => {
 
 .plugin-settings-header h2 {
   font-size: 1rem;
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .tabs {

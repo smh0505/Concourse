@@ -4421,6 +4421,17 @@ cancel `.settings-panel`'s own `padding-top` once `.sticky-header` starts supply
 itself; without also adding `panel`, the page would have gotten double top padding (once from
 `.settings-panel` alone, once from `.sticky-header`). `bun run build` clean.
 
+**Follow-up: fixed vertical misalignment between "Plugins" and the "Add Plugin" button.**
+`.plugin-settings-header` already had `align-items: center` and the `h2` already had `margin-
+bottom: 0` zeroed, but a browser-default `margin-top` on `h2` was never reset - since flex
+alignment considers an item's full margin box, that leftover top margin nudged the heading's box
+down relative to the button, which has no such margin. Zeroed `margin` entirely on the `h2`
+instead of just `margin-bottom`, and switched the container from `align-items: center` to
+`align-items: baseline` - `center` aligns the two elements' boxes, not their actual text, so a
+1rem heading next to a smaller-font button can still look off-center even with zero margins;
+`baseline` lines up the real text baselines instead, which is what "align the title with the
+button's text" actually means here. `bun run build` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

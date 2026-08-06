@@ -198,6 +198,15 @@ struct TranslationDownloadProgress {
     total_bytes: u64,
 }
 
+/// Payload for `translation-model-loading`/`translation-model-unloaded` - fired around the
+/// actual `llama-server.exe` lifecycle (not just the download step above) so the frontend can
+/// toast real backend-driven events like the idle-timeout auto-shutdown, which happens with no
+/// frontend call in progress to hang a toast off of otherwise.
+#[derive(Clone, Serialize)]
+struct TranslationModelEvent {
+    model_id: String,
+}
+
 /// Streams the GGUF into `<app data>/models/<id>/<file>`, emitting `translation-download-
 /// progress` as it goes - the file itself is multi-gigabyte, so unlike the engine zip above
 /// (small, one-shot) or every other download in this app (small plugin manifests/`.wasm`
@@ -320,6 +329,12 @@ async fn watch_idle(app: AppHandle, generation: u64) {
 
         if let Some(mut running) = guard.take() {
             drop(guard);
+            let _ = app.emit(
+                "translation-model-unloaded",
+                TranslationModelEvent {
+                    model_id: running.model_id.clone(),
+                },
+            );
             let _ = running.child.kill().await;
         }
         return;
@@ -355,6 +370,12 @@ async fn ensure_server(
     // Switching models (or starting for the first time) - stop whatever's running first, since
     // only one server/port is managed at a time.
     if let Some(mut running) = guard.take() {
+        let _ = app.emit(
+            "translation-model-unloaded",
+            TranslationModelEvent {
+                model_id: running.model_id.clone(),
+            },
+        );
         let _ = running.child.kill().await;
     }
 
@@ -374,6 +395,13 @@ async fn ensure_server(
             "Translation engine isn't downloaded yet - download it in Settings first.".to_string(),
         );
     }
+
+    let _ = app.emit(
+        "translation-model-loading",
+        TranslationModelEvent {
+            model_id: model_id.to_string(),
+        },
+    );
 
     let child = Command::new(&server_exe)
         .arg("-m")

@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import { settings as settingsRepo } from "@/db";
+import { useToastStore } from "./toasts";
 
 const TRANSLATION_MODEL_SETTING = "translation_model";
 
@@ -19,6 +20,10 @@ interface TranslationDownloadProgress {
   model_id: string;
   downloaded_bytes: number;
   total_bytes: number;
+}
+
+interface TranslationModelEvent {
+  model_id: string;
 }
 
 /** Milestone 21's second half - offline translation via llama.cpp's own prebuilt server binary,
@@ -39,6 +44,12 @@ export const useTranslationStore = defineStore("translation", () => {
   const translating = ref(false);
 
   let unlistenProgress: UnlistenFn | undefined;
+  let unlistenLoading: UnlistenFn | undefined;
+  let unlistenUnloaded: UnlistenFn | undefined;
+
+  function modelName(modelId: string): string {
+    return models.value.find((m) => m.id === modelId)?.name ?? modelId;
+  }
 
   async function refreshDownloadedStatus() {
     const results = await Promise.all(
@@ -61,6 +72,7 @@ export const useTranslationStore = defineStore("translation", () => {
     try {
       await invoke("download_translation_model", { modelId });
       downloadedIds.value = new Set([...downloadedIds.value, modelId]);
+      useToastStore().push(`${modelName(modelId)} downloaded.`, "success");
     } finally {
       downloadingId.value = null;
       downloadProgress.value = null;
@@ -76,6 +88,7 @@ export const useTranslationStore = defineStore("translation", () => {
     try {
       await invoke("download_translation_engine");
       engineDownloaded.value = true;
+      useToastStore().push("Translation engine installed.", "success");
     } finally {
       downloadingEngine.value = false;
     }
@@ -84,11 +97,14 @@ export const useTranslationStore = defineStore("translation", () => {
   async function removeEngine() {
     await invoke("remove_translation_engine");
     engineDownloaded.value = false;
+    useToastStore().push("Translation engine removed.", "success");
   }
 
   async function removeModel(modelId: string) {
+    const name = modelName(modelId);
     await invoke("remove_translation_model", { modelId });
     downloadedIds.value = new Set([...downloadedIds.value].filter((id) => id !== modelId));
+    useToastStore().push(`${name} removed.`, "success");
   }
 
   /** Translates `text` into `targetLanguage` using the currently-selected model - throws if no
@@ -97,11 +113,13 @@ export const useTranslationStore = defineStore("translation", () => {
     if (!selectedModelId.value) throw new Error("No translation model selected.");
     translating.value = true;
     try {
-      return await invoke<string>("translate_text", {
+      const result = await invoke<string>("translate_text", {
         modelId: selectedModelId.value,
         text,
         targetLanguage,
       });
+      useToastStore().push("Translation complete.", "success");
+      return result;
     } finally {
       translating.value = false;
     }
@@ -120,10 +138,22 @@ export const useTranslationStore = defineStore("translation", () => {
         total: event.payload.total_bytes,
       };
     });
+
+    // Backend-driven, not triggered by a frontend call in progress - fired for the idle-timeout
+    // auto-shutdown as well as a manual model switch, so these can't just be toasted inline
+    // where translate()/setSelectedModel() are called.
+    unlistenLoading = await listen<TranslationModelEvent>("translation-model-loading", (event) => {
+      useToastStore().push(`Loading ${modelName(event.payload.model_id)}...`, "info");
+    });
+    unlistenUnloaded = await listen<TranslationModelEvent>("translation-model-unloaded", (event) => {
+      useToastStore().push(`${modelName(event.payload.model_id)} unloaded.`, "info");
+    });
   }
 
   function dispose() {
     unlistenProgress?.();
+    unlistenLoading?.();
+    unlistenUnloaded?.();
   }
 
   return {

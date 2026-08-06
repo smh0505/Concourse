@@ -15,11 +15,11 @@
     "language": "Sprache",
     "translation": "Offline-Übersetzung",
     "translationHint": "Übersetzt Spielbeschreibungen lokal, ohne externen Dienst. Lade die Engine einmal herunter, wähle dann ein Modell und lade es ebenfalls herunter.",
-    "downloaded": "Heruntergeladen",
     "downloading": "{percent}%",
     "download": "Herunterladen",
     "translationEngine": "Übersetzungs-Engine",
-    "downloadingEngine": "Wird heruntergeladen..."
+    "downloadingEngine": "Wird heruntergeladen...",
+    "remove": "Entfernen"
   },
   "app": {
     "switchToSlideshow": "Zur Diashow-Ansicht wechseln",

@@ -15,11 +15,11 @@
     "language": "Langue",
     "translation": "Traduction hors ligne",
     "translationHint": "Traduit les descriptions de jeux localement, sans service externe. Téléchargez le moteur une fois, puis choisissez un modèle et téléchargez-le aussi.",
-    "downloaded": "Téléchargé",
     "downloading": "{percent}%",
     "download": "Télécharger",
     "translationEngine": "Moteur de traduction",
-    "downloadingEngine": "Téléchargement..."
+    "downloadingEngine": "Téléchargement...",
+    "remove": "Supprimer"
   },
   "app": {
     "switchToSlideshow": "Passer à l'affichage diaporama",

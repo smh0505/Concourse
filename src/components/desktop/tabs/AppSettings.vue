@@ -65,9 +65,14 @@ const downloadPercent = computed(() => {
 
       <div class="model-row">
         <span class="model-name">{{ t("settings.translationEngine") }}</span>
-        <span v-if="translation.engineDownloaded" class="model-status">
-          {{ t("settings.downloaded") }}
-        </span>
+        <button
+          v-if="translation.engineDownloaded"
+          type="button"
+          class="compact-button"
+          @click="translation.removeEngine()"
+        >
+          {{ t("settings.remove") }}
+        </button>
         <button v-else-if="translation.downloadingEngine" type="button" class="compact-button" disabled>
           {{ t("settings.downloadingEngine") }}
         </button>
@@ -92,9 +97,14 @@ const downloadPercent = computed(() => {
           />
           <span class="model-name">{{ model.name }}</span>
           <span class="model-size">{{ formatBytes(model.size_bytes) }}</span>
-          <span v-if="translation.isDownloaded(model.id)" class="model-status">
-            {{ t("settings.downloaded") }}
-          </span>
+          <button
+            v-if="translation.isDownloaded(model.id)"
+            type="button"
+            class="compact-button"
+            @click="translation.removeModel(model.id)"
+          >
+            {{ t("settings.remove") }}
+          </button>
           <button
             v-else-if="translation.downloadingId === model.id"
             type="button"
@@ -164,10 +174,5 @@ const downloadPercent = computed(() => {
 .model-size {
   opacity: 0.7;
   font-size: 0.75rem;
-}
-
-.model-status {
-  font-size: 0.75rem;
-  opacity: 0.7;
 }
 </style>

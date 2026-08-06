@@ -81,6 +81,16 @@ export const useTranslationStore = defineStore("translation", () => {
     }
   }
 
+  async function removeEngine() {
+    await invoke("remove_translation_engine");
+    engineDownloaded.value = false;
+  }
+
+  async function removeModel(modelId: string) {
+    await invoke("remove_translation_model", { modelId });
+    downloadedIds.value = new Set([...downloadedIds.value].filter((id) => id !== modelId));
+  }
+
   /** Translates `text` into `targetLanguage` using the currently-selected model - throws if no
    *  model is selected/downloaded yet, since there's nothing sensible to fall back to. */
   async function translate(text: string, targetLanguage: string): Promise<string> {
@@ -126,7 +136,9 @@ export const useTranslationStore = defineStore("translation", () => {
     downloadingEngine,
     setSelectedModel,
     downloadModel,
+    removeModel,
     downloadEngine,
+    removeEngine,
     isDownloaded,
     translate,
     init,

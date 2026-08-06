@@ -15,11 +15,11 @@
     "language": "语言",
     "translation": "离线翻译",
     "translationHint": "在本地翻译游戏简介,无需外部服务。先下载一次引擎,然后选择一个模型并同样下载。",
-    "downloaded": "已下载",
     "downloading": "{percent}%",
     "download": "下载",
     "translationEngine": "翻译引擎",
-    "downloadingEngine": "下载中..."
+    "downloadingEngine": "下载中...",
+    "remove": "删除"
   },
   "app": {
     "switchToSlideshow": "切换到幻灯片视图",

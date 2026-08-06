@@ -15,11 +15,11 @@
     "language": "언어",
     "translation": "오프라인 번역",
     "translationHint": "게임 설명을 외부 서비스 없이 로컬에서 번역합니다. 엔진을 한 번 다운로드한 후, 모델을 선택하고 마찬가지로 다운로드하세요.",
-    "downloaded": "다운로드됨",
     "downloading": "{percent}%",
     "download": "다운로드",
     "translationEngine": "번역 엔진",
-    "downloadingEngine": "다운로드 중..."
+    "downloadingEngine": "다운로드 중...",
+    "remove": "삭제"
   },
   "app": {
     "switchToSlideshow": "슬라이드쇼 보기로 전환",

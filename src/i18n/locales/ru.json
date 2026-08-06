@@ -15,11 +15,11 @@
     "language": "Язык",
     "translation": "Офлайн-перевод",
     "translationHint": "Переводит описания игр локально, без внешнего сервиса. Скачайте движок один раз, затем выберите модель и скачайте её тоже.",
-    "downloaded": "Загружено",
     "downloading": "{percent}%",
     "download": "Скачать",
     "translationEngine": "Движок перевода",
-    "downloadingEngine": "Загрузка..."
+    "downloadingEngine": "Загрузка...",
+    "remove": "Удалить"
   },
   "app": {
     "switchToSlideshow": "Переключить на слайд-шоу",

@@ -146,6 +146,51 @@ pub async fn download_translation_engine(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Deletes the downloaded engine binary - stops the running server first if there is one, since
+/// deleting `llama-server.exe` while it's still running would otherwise fail on Windows (the OS
+/// keeps a running executable's file locked).
+#[tauri::command]
+pub async fn remove_translation_engine(
+    app: AppHandle,
+    state: tauri::State<'_, TranslationState>,
+) -> Result<(), String> {
+    if let Some(mut running) = state.running.lock().await.take() {
+        let _ = running.child.kill().await;
+    }
+    let dir = llama_cpp_dir(&app)?;
+    if dir.exists() {
+        tokio::fs::remove_dir_all(&dir)
+            .await
+            .map_err(|e| format!("Failed to remove {}: {}", dir.display(), e))?;
+    }
+    Ok(())
+}
+
+/// Deletes a downloaded model's GGUF - stops the running server first if it's currently serving
+/// this exact model, same locked-file reasoning as `remove_translation_engine`.
+#[tauri::command]
+pub async fn remove_translation_model(
+    app: AppHandle,
+    state: tauri::State<'_, TranslationState>,
+    model_id: String,
+) -> Result<(), String> {
+    {
+        let mut guard = state.running.lock().await;
+        if guard.as_ref().is_some_and(|r| r.model_id == model_id) {
+            if let Some(mut running) = guard.take() {
+                let _ = running.child.kill().await;
+            }
+        }
+    }
+    let dir = models_dir(&app, &model_id)?;
+    if dir.exists() {
+        tokio::fs::remove_dir_all(&dir)
+            .await
+            .map_err(|e| format!("Failed to remove {}: {}", dir.display(), e))?;
+    }
+    Ok(())
+}
+
 #[derive(Clone, Serialize)]
 struct TranslationDownloadProgress {
     model_id: String,

@@ -51,7 +51,9 @@ pub fn run() {
             translation::is_translation_model_downloaded,
             translation::is_translation_engine_downloaded,
             translation::download_translation_engine,
+            translation::remove_translation_engine,
             translation::download_translation_model,
+            translation::remove_translation_model,
             translation::translate_text
         ])
         .build(tauri::generate_context!())

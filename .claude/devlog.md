@@ -3800,6 +3800,23 @@ propagated to all 9 non-English locales via the same flatten-and-diff Node scrip
 prior i18n addition this session - parity re-verified clean. `cargo fmt && cargo check` and
 `bun run build` both clean.
 
+**Follow-up, same session: toasts for the translation feature's full lifecycle.** Engine
+install/removal, model install/removal, and translation completion all toast inline in
+`stores/translation.ts`'s existing actions (`useToastStore().push(...)`, same plain-English-
+string convention every other store's toasts already use - this app doesn't route toast copy
+through vue-i18n). Model loading/unloading needed real backend events instead, since both can
+happen with no frontend call in flight to hang a toast off of - specifically the idle-timeout
+auto-shutdown (`watch_idle`, purely a background task) and a model-switch's kill of the
+previous server (inside `ensure_server`, before the new one spawns). Added a
+`TranslationModelEvent { model_id }` payload and two new emits in `translation.rs`:
+`translation-model-loading` (right before `ensure_server` spawns a fresh `llama-server.exe`)
+and `translation-model-unloaded` (both from the switch-kill branch and from `watch_idle`'s idle
+kill - deliberately not from `shutdown()` on app exit, since there's no UI left to show a toast
+to by then, and not from the two `remove_translation_*` commands either, to avoid stacking an
+"unloaded" toast on top of the "removed" one for the same action). Frontend listens for both in
+`stores/translation.ts`'s `init()`, looking up the model's display name via a small `modelName()`
+helper before toasting. `cargo fmt && cargo check` and `bun run build` both clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

@@ -11,6 +11,7 @@ const TRANSLATION_MODEL_SETTING = "translation_model";
 export interface TranslationModel {
   id: string;
   name: string;
+  subtitle: string;
   repo: string;
   file: string;
   size_bytes: number;

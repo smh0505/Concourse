@@ -95,7 +95,10 @@ const downloadPercent = computed(() => {
             :checked="translation.selectedModelId === model.id"
             @change="translation.setSelectedModel(model.id)"
           />
-          <span class="model-name">{{ model.name }}</span>
+          <span class="model-info">
+            <span class="model-name">{{ model.name }}</span>
+            <span class="model-subtitle">{{ model.subtitle }}</span>
+          </span>
           <span class="model-size">{{ formatBytes(model.size_bytes) }}</span>
           <button
             v-if="translation.isDownloaded(model.id)"
@@ -169,6 +172,18 @@ const downloadPercent = computed(() => {
 
 .model-name {
   flex: 1;
+}
+
+.model-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.model-subtitle {
+  opacity: 0.7;
+  font-size: 0.75rem;
 }
 
 .model-size {

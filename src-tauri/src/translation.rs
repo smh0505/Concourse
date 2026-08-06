@@ -30,6 +30,9 @@ const IDLE_CHECK_INTERVAL: Duration = Duration::from_secs(30);
 pub struct TranslationModel {
     id: String,
     name: String,
+    /// The qualifier that used to live in `name` as "(...)" - a separate field so the frontend
+    /// can render it as a subtitle instead of parsing it back out of a parenthesized string.
+    subtitle: String,
     repo: String,
     file: String,
     size_bytes: u64,
@@ -47,29 +50,32 @@ pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
             id: "qwen2.5-1.5b".to_string(),
-            name: "Qwen2.5 1.5B (cheapest, general-purpose)".to_string(),
+            name: "Qwen2.5 1.5B".to_string(),
+            subtitle: "cheapest, general-purpose".to_string(),
             repo: "Qwen/Qwen2.5-1.5B-Instruct-GGUF".to_string(),
             file: "qwen2.5-1.5b-instruct-q4_k_m.gguf".to_string(),
             size_bytes: 1_120_000_000,
         },
         TranslationModel {
             id: "translategemma-4b".to_string(),
-            name: "TranslateGemma 4B (recommended, translation-specialized)".to_string(),
+            name: "TranslateGemma 4B".to_string(),
+            subtitle: "recommended, translation-specialized".to_string(),
             repo: "mradermacher/translategemma-4b-it-GGUF".to_string(),
             file: "translategemma-4b-it.Q4_K_M.gguf".to_string(),
             size_bytes: 2_490_000_000,
         },
         TranslationModel {
             id: "qwen3-4b".to_string(),
-            name: "Qwen3 4B (broader coverage, general-purpose)".to_string(),
+            name: "Qwen3 4B".to_string(),
+            subtitle: "broader coverage, general-purpose".to_string(),
             repo: "unsloth/Qwen3-4B-GGUF".to_string(),
             file: "Qwen3-4B-Q4_K_M.gguf".to_string(),
             size_bytes: 2_500_000_000,
         },
         TranslationModel {
             id: "qwen3-4b-abliterated".to_string(),
-            name: "Qwen3 4B Abliterated (opt-in, uncensored - for NSFW game descriptions)"
-                .to_string(),
+            name: "Qwen3 4B Abliterated".to_string(),
+            subtitle: "opt-in, uncensored - for NSFW game descriptions".to_string(),
             repo: "bartowski/mlabonne_Qwen3-4B-abliterated-GGUF".to_string(),
             file: "mlabonne_Qwen3-4B-abliterated-Q4_K_M.gguf".to_string(),
             size_bytes: 2_500_000_000,

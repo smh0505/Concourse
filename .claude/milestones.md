@@ -429,54 +429,27 @@ available to test against).
   its own mount-time check doesn't cover repeat opens the way it first seemed to
 
 ## Milestone 21 — Internationalization & Offline Translation
-- [x] UI string localization via `vue-i18n`, locale JSON files, no external service - every
-  component converted, language picker added to Settings
-- [x] 9 additional locales added (machine-translated by Claude, not yet native-reviewed):
-  Korean, Japanese, Simplified Chinese, Spanish, French, German, Brazilian Portuguese, Russian,
-  Italian - 10 languages total, all verified to have exact key parity with `en.json`
-- [x] New `translation` host-native Rust module (`src-tauri/src/translation.rs`) - NOT a Rust ML
-  crate dependency. Downloads llama.cpp's own prebuilt Windows CPU release binary once, runs
-  `llama-server.exe` as a subprocess, talks to it over its OpenAI-compatible HTTP API. 4
-  selectable tiers - `qwen2.5-1.5b` (~1.12GB, cheapest, general-purpose), `translategemma-4b`
-  (~2.49GB, recommended, translation-specialized), `qwen3-4b` (~2.5GB, broader coverage,
-  general-purpose), `qwen3-4b-abliterated` (~2.5GB, opt-in, uncensored - so a safety-tuned model
-  doesn't refuse to translate an existing NSFW game's own store description) - all Q4_K_M,
-  capped under ~2.5GB resident RAM each since this engine loads the full GGUF into RAM and needs
-  to coexist with a running game (see devlog for the 16GB/32GB gaming-machine sizing analysis
-  behind this cap, why the originally-offered 12B/27B tiers were removed, and why
-  `gemma3-1b`/`gemma4-e4b`/EuroLLM-1.7B were tried and rejected in favor of the 3 non-abliterated
-  tiers). `download_translation_engine`/`is_translation_engine_downloaded`/
-  `download_translation_model`/`is_translation_model_downloaded`/`translate_text`/
-  `list_translation_models` Tauri commands. Server subprocess stays alive across calls, only
-  restarts when the requested model id changes
-- [x] Settings UI: engine-download row plus model picker in `AppSettings.vue` (name/size per
-  tier, Download button with live progress via a new `translation-download-progress` event,
-  "Downloaded" status) - download-on-first-use, nothing bundled in the installer
-- [x] `GameDetail.vue`: a "Translate"/"Show original" toggle next to the description (view mode),
-  translating to the current UI locale - client-side only, never overwrites the stored
-  `game.description`. Gated on both the engine and the selected model being downloaded
-- [x] Engine/library research, done twice over: first pass (`llama-cpp-2`/`llama-cpp-sys-2`
-  bindings) hit two live Windows-specific bugs (CMake build failure, >4GB-GGUF MSVC correctness
-  bug), switched to `mistralrs` (Candle-based, pure Rust, no CMake) - compiled clean but was
-  never tested against a real Gemma 3 GGUF before shipping. Real user testing then hit `Unknown
-  GGUF architecture "gemma3"` at runtime: mistralrs's own GGUF loader has no `gemma3` entry at
-  all (a genuine, current upstream gap, confirmed via multiple open issues on the crate).
-  Compared alternatives (`candle-transformers` direct, mistralrs's HF-hub/ISQ path, Ollama, LM
-  Studio) and landed on bundling llama.cpp's own prebuilt server binary - see devlog for the
-  full comparison and why each alternative was rejected
-- [x] App-exit hook kills the running `llama-server.exe` subprocess (`RunEvent::Exit` in
-  `lib.rs` calling `TranslationState::shutdown()`) - no orphaned process left behind after the
-  app window closes
-- [x] Idle-timeout auto-shutdown: the running server stops itself after 5 minutes unused (not
-  just on model-switch/app-exit), so a one-off translation doesn't hold 1-5GB of RAM resident
-  for the rest of a gaming session
+- [x] UI string localization via `vue-i18n`, 10 locales, language picker in Settings, exact key
+  parity verified across all locale JSON files
+- [x] `translation` host-native Rust module (`src-tauri/src/translation.rs`) - downloads
+  llama.cpp's own prebuilt server binary, runs it as a subprocess, talks to it over HTTP (not a
+  Rust ML crate dependency)
+- [x] 4 selectable model tiers, all Q4_K_M and under ~2.5GB RAM: `qwen2.5-1.5b` (cheapest),
+  `translategemma-4b` (recommended, translation-specialized), `qwen3-4b` (general-purpose),
+  `qwen3-4b-abliterated` (opt-in, uncensored, for NSFW game descriptions) - see devlog for the
+  full model-research history and rejected candidates
+- [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
+  download-on-first-use
+- [x] `GameDetail.vue`: "Translate"/"Show original" toggle, client-side only, never overwrites
+  stored `game.description`
+- [x] App-exit hook and 5-minute idle-timeout both auto-kill the `llama-server.exe` subprocess
+- [x] Engine research: `llama-cpp-2` (Windows CMake bugs) → `mistralrs` (compiled clean but
+  can't load `gemma3` GGUF, caught by real user testing) → llama.cpp prebuilt binary - see
+  devlog for the full alternatives comparison
 
-Milestone 21 fully closed. See devlog for the model/library comparison behind translation's
-scoping, the vue-i18n conversion's own implementation detail, and the translation feature's
-implementation (deliberately deferred for a later pass: persisting a translated description
-back to the DB, translating other fields, canceling an in-progress download, any model beyond
-the 3 TranslateGemma tiers, and detecting
-already-installed Ollama/LM Studio as an opportunistic alternative to the bundled engine).
+Milestone 21 fully closed. See devlog for full rationale on every decision above. Deliberately
+deferred: persisting a translated description back to the DB, translating other fields,
+canceling an in-progress download, detecting already-installed Ollama/LM Studio.
 
 ## Milestone 22 — Plugin-Developer Documentation Site
 - [x] New `docs/` VitePress project (own `package.json`, decoupled from the app's own frontend

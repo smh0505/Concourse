@@ -1,18 +1,8 @@
-//! Offline translation for game descriptions, via llama.cpp's own prebuilt server binary
-//! (Milestone 21's second half). Not a Rust ML crate dependency - nothing is compiled or linked
-//! into this app's own binary. Instead, llama.cpp's official prebuilt Windows release (CPU-only
-//! x64 build - it bundles a dedicated `llama-gemma3-cli.exe`, confirming real Gemma 3 support in
-//! this exact build) is downloaded once, the same way a wrapper plugin manages its own installed
-//! runtime, and run as a subprocess talked to over its OpenAI-compatible HTTP API.
-//!
-//! Why this instead of a Rust crate: two real dead ends found first. `llama-cpp-2`/
-//! `llama-cpp-sys-2` (a Rust binding that compiles llama.cpp from source) has live Windows CMake
-//! build bugs. `mistralrs` (pure Rust via Candle, no CMake) compiles clean but its own GGUF
-//! loader has no `gemma3` architecture entry at all yet (`Unknown GGUF architecture "gemma3"`,
-//! hit for real, not just in research) - `llama.cpp` itself is GGUF's reference implementation
-//! and has mature Gemma 3 support, so talking to its own server binary over HTTP sidesteps both
-//! problems without adding a heavy dependency to every user's binary regardless of whether they
-//! ever use translation.
+//! Offline translation for game descriptions (Milestone 21's second half). Not a Rust ML crate
+//! dependency - llama.cpp's own prebuilt server binary is downloaded once and run as a
+//! subprocess, talked to over its OpenAI-compatible HTTP API, instead of linking an inference
+//! engine into this app's own binary. See devlog for why (mistralrs/llama-cpp-2 both hit real
+//! dead ends first) and for the model-lineup research history behind `list_models()` below.
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -26,10 +16,7 @@ use tokio::sync::Mutex;
 const LLAMA_CPP_VERSION: &str = "b10290";
 const LLAMA_CPP_ASSET: &str = "llama-b10290-bin-win-cpu-x64.zip";
 const SERVER_PORT: u16 = 8712;
-// RAM is the scarce resource this exists to protect (see the sizing analysis in devlog for why
-// the 12B/27B tiers were dropped) - an idle server left running after a one-off translation is
-// the same problem in a different shape, so it gets stopped automatically rather than only on
-// model-switch/app-exit.
+// Stops the idle server automatically, not just on model-switch/app-exit - see devlog.
 const IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 const IDLE_CHECK_INTERVAL: Duration = Duration::from_secs(30);
 
@@ -48,37 +35,14 @@ pub struct TranslationModel {
     size_bytes: u64,
 }
 
-/// All three tiers kept deliberately under ~2.5GB - the "sweet spot" sizing established against
-/// real 16GB/32GB gaming-machine RAM budgets (see devlog): large enough to translate well,
-/// small enough that this engine's fully-resident-in-RAM footprint doesn't meaningfully compete
-/// with a game's own working set. `translategemma-4b` (fine-tuned from Gemma 3 specifically for
-/// translation, 55 languages, all directly benchmarked - no regional bias) is the recommended
-/// default; `qwen2.5-1.5b`/`qwen3-4b` are general-purpose alternatives at the cheap and mid
-/// price points respectively, offered because a general chat model's *style* of output can
-/// suit some users better even at a real translation-quality cost against the specialized tier.
-///
-/// Earlier candidates considered and rejected for this list, worth recording so they don't get
-/// re-added without re-checking the same problem: `gemma3-1b`/`gemma4-e4b` (superseded by the
-/// Qwen picks above - same or smaller size, better/newer multilingual benchmarks, and Gemma 4's
-/// E2B tier in particular is actually *larger* on disk than translategemma-4b despite its
-/// smaller "effective param" name, since that naming reflects elastic/MatFormer active params,
-/// not GGUF file size); `EuroLLM-1.7B-Instruct` (rejected specifically, not just for size - its
-/// own model card splits its 35 languages into 24 "official EU" languages it's actually trained
-/// hardest on vs. 11 "additional, strategically important" languages tacked on secondarily, and
-/// Korean/Japanese/Chinese/Russian - 4 of this app's 10 shipped locales - all fall in that
-/// weaker secondary tier, not the core one). Sizes below are real quantized Q4_K_M file sizes
-/// verified against each repo's actual GGUF listing, not derived from parameter count alone.
-///
-/// A fourth, deliberately opt-in tier: `qwen3-4b-abliterated`, an "abliterated" (refusal-
-/// direction removed, not retrained) build of the same Qwen3 4B above. Real, legitimate use
-/// case for a personal game library, not a jailbreak - a safety-tuned model can flatly refuse
-/// to translate an existing NSFW game's own store description just for containing adult
-/// content, which is a false-positive refusal on third-party text the app is just relaying, not
-/// generating. Per abliteration's own writeup, it changes behavior specifically on refusal-
-/// triggering prompts and should leave normal-content translation quality close to the base
-/// model's - but it's a blunter technique than full safety tuning, so it's listed last and
-/// named plainly rather than made a default. No abliterated build of `translategemma-4b` itself
-/// exists (only of the non-translation-tuned base Gemma 3 instruct), so this is Qwen-based.
+/// 4 tiers, all under ~2.5GB resident RAM (the sweet spot sized against real 16GB/32GB gaming
+/// machines - see devlog). `translategemma-4b` is the recommended default (translation-tuned,
+/// no regional bias); `qwen2.5-1.5b`/`qwen3-4b` are cheaper/broader general-purpose
+/// alternatives; `qwen3-4b-abliterated` is an explicitly opt-in, non-default uncensored variant
+/// for translating NSFW games' own descriptions without false-positive refusals. Rejected
+/// candidates (`gemma3-1b`, `gemma4-e4b`, EuroLLM-1.7B) and the full reasoning for every pick
+/// here are recorded in devlog, not repeated in this comment - check there before re-proposing
+/// an alternative that might already be a documented dead end.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {

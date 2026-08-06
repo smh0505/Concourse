@@ -436,11 +436,23 @@ struct ChatMessage {
     content: String,
 }
 
+/// Hybrid "thinking" models (Qwen3's whole line) default to emitting a full `<think>...</think>`
+/// reasoning block before the actual answer - a real, unwanted latency hit for a task as simple
+/// as translation. `enable_thinking: false` is llama.cpp's own documented per-request override
+/// for this (no server restart needed). Harmless to always send: models whose chat template
+/// doesn't reference this variable (`translategemma-4b`, `qwen2.5-1.5b`) just render with an
+/// unused template variable, same as any Jinja template ignoring an extra context key.
+#[derive(Serialize)]
+struct ChatTemplateKwargs {
+    enable_thinking: bool,
+}
+
 #[derive(Serialize)]
 struct ChatRequest {
     model: &'static str,
     messages: Vec<ChatMessage>,
     temperature: f32,
+    chat_template_kwargs: ChatTemplateKwargs,
 }
 
 #[derive(Deserialize)]
@@ -479,6 +491,9 @@ pub async fn translate_text(
             content: prompt,
         }],
         temperature: 0.3,
+        chat_template_kwargs: ChatTemplateKwargs {
+            enable_thinking: false,
+        },
     };
 
     let response = reqwest::Client::new()

@@ -3817,6 +3817,19 @@ to by then, and not from the two `remove_translation_*` commands either, to avoi
 `stores/translation.ts`'s `init()`, looking up the model's display name via a small `modelName()`
 helper before toasting. `cargo fmt && cargo check` and `bun run build` both clean.
 
+**Follow-up, same session: fixed real slow-translation reports on `qwen3-4b`.** User reported
+translation taking noticeably longer than expected on that tier specifically. Root cause,
+confirmed via research rather than guessed: Qwen3's whole line are hybrid "thinking" models,
+defaulting to emitting a full `<think>...</think>` reasoning block before the actual answer -
+real, unwanted latency for a task as simple as translating a short description, not a raw
+inference-speed problem. Fix is llama.cpp's own documented per-request override,
+`chat_template_kwargs: {"enable_thinking": false}` in the `/v1/chat/completions` body (no server
+restart needed) - added a `ChatTemplateKwargs` struct to `translate_text`'s `ChatRequest`,
+always sent regardless of which tier is selected. Safe to always include: `translategemma-4b`/
+`qwen2.5-1.5b`'s chat templates don't reference this variable at all, so it renders as an
+unused Jinja context key with no effect, same as passing an extra unused kwarg anywhere else.
+`cargo fmt && cargo check` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

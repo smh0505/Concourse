@@ -160,19 +160,12 @@ const isEpicIcon = computed(() => displayPlatform.value?.trim().toLowerCase() ==
 // --color-text-reverse's own direction is.
 const epicIconFill = computed(() => (themeIsLight !== wantsReverse.value ? "#000000" : "#ffffff"));
 
-// Translated title/description are persisted alongside the originals (Milestone 21's deferred
-// follow-up - see stores/library.ts's saveTranslatedTitle/saveTranslatedDescription), not just
-// held client-side. Title and content are translated and shown independently of each other -
-// showTranslatedTitle/showTranslatedDescription are pure view toggles over already-cached data,
-// they don't themselves call the engine. Synced from the game's own persisted show_translated_*
-// columns whenever the viewed game changes, so navigating to a different game (or reopening the
-// same one later) shows whatever choice was last made for *that* game, not always the original.
+// Pure view toggles over already-persisted translations - don't call the engine themselves.
+// Synced from the game's own show_translated_* columns on every game change (incl. first
+// mount), so reopening a game shows whatever was last chosen for it specifically.
 const showTranslatedTitle = ref(false);
 const showTranslatedDescription = ref(false);
-// Split per field (not one shared flag) so only the field actually being translated shows a
-// skeleton - translating content only doesn't blank out an already-settled title, and vice
-// versa. `translating` (below) still covers both for the trigger button's own label/disabled
-// state, since only one translation can realistically be in flight at a time anyway.
+// Split per field so only the field actually being translated shows a skeleton.
 const translatingTitle = ref(false);
 const translatingContent = ref(false);
 const translating = computed(() => translatingTitle.value || translatingContent.value);
@@ -197,11 +190,9 @@ const canTranslate = computed(
     translation.isDownloaded(translation.selectedModelId),
 );
 
-// The dropdown shows one group at a time (translate/show/remove) rather than all 9 items
-// flattened - scrolling or pressing up/down while open pages between groups, in that fixed
-// order (skipping "translate" entirely when there's no usable model, same as the flat list's
-// old per-item gating - nothing in that group would be actionable anyway). menuEl gets focus
-// on open so arrow keys land on it without a global window listener.
+// Dropdown shows one group at a time; wheel/up-down while open pages between groups (skipping
+// "translate" when there's no usable model). menuEl gets focus on open so arrow keys land on it
+// without a global window listener.
 type TranslateMenuGroup = "translate" | "show" | "remove";
 const translateMenuGroups = computed<TranslateMenuGroup[]>(() =>
   canTranslate.value ? ["translate", "show", "remove"] : ["show", "remove"],
@@ -243,22 +234,15 @@ function onTranslateMenuKeydown(e: KeyboardEvent) {
   }
 }
 
-// A cached translation is only valid for the UI locale it was made for - switching languages,
-// or editing the original title/description (games.ts's update() clears all three translated_*
-// columns unconditionally), invalidates it without needing an explicit "stale" flag. Both
-// fields share one translated_locale column - translating title and content under two different
-// active UI locales (switching languages between the two actions) is a known, accepted edge
-// case where the older of the two would incorrectly read as "valid," not something this design
-// tracks separately.
+// Valid only for the UI locale the translation was made for - see devlog for the shared-column
+// edge case (translating title/content under two different locales).
 const hasValidTranslatedTitle = computed(
   () => !!game.value.translated_title && game.value.translated_locale === appSettings.locale,
 );
 const hasValidTranslatedDescription = computed(
   () => !!game.value.translated_description && game.value.translated_locale === appSettings.locale,
 );
-// Revoke works on any cached translation, even a stale one (locale mismatch) - the point is
-// clearing it out entirely, not just hiding it, so these check raw presence rather than
-// current-locale validity.
+// Revoke works on any cached translation, even a stale one - raw presence, not locale validity.
 const hasCachedTitle = computed(() => !!game.value.translated_title);
 const hasCachedDescription = computed(() => !!game.value.translated_description);
 

@@ -28,8 +28,7 @@ export interface Game {
   translated_description: string | null;
   translated_locale: string | null;
   /** SQLite booleans (0/1) - which of title/description GameDetail.vue's "show" toggle
-   *  currently displays for this specific game, persisted per-game rather than reset to "show
-   *  original" every time the detail page is reopened. */
+   *  currently displays, persisted per-game. */
   show_translated_title: number;
   show_translated_description: number;
 }
@@ -48,11 +47,9 @@ export type GameEditFields = Pick<
   | "locale_wrapper"
 >;
 
-/** The title to actually show for `game` under the current UI `locale` - the cached
- *  translation if one exists and is still valid for this locale, the original title
- *  otherwise. Shared by every place that lists/names a game outside GameDetail.vue itself
- *  (which additionally lets the user toggle back to the original on demand), so a translated
- *  title shows up consistently everywhere rather than only on the detail page. */
+/** The title to show for `game` under the current UI `locale` - a valid cached translation, or
+ *  the original. Shared by every place that names a game outside GameDetail.vue itself (which
+ *  additionally lets the user toggle back to the original on demand). */
 export function displayTitle(game: Game, locale: string): string {
   return game.translated_title && game.translated_locale === locale ? game.translated_title : game.title;
 }

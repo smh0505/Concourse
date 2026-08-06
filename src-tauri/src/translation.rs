@@ -39,28 +39,14 @@ pub struct TranslationModel {
     size_bytes: u64,
 }
 
-/// 4 tiers, all under ~3.1GB resident RAM (the sweet spot sized against real 16GB/32GB gaming
-/// machines - see devlog). `qwen3-4b` is the recommended default; `qwen2.5-1.5b` is a cheaper
-/// alternative; `gemma4-e2b` is a general-purpose alternative confirmed via direct testing to
-/// work correctly *without* `--jinja` (see below); `qwen3-4b-abliterated` is an explicitly
-/// opt-in, non-default uncensored variant for translating NSFW games' own descriptions without
-/// false-positive refusals. Rejected candidates (`gemma3-1b`, `gemma4-e4b`, EuroLLM-1.7B) and
-/// the full reasoning for every pick here are recorded in devlog, not repeated in this comment -
-/// check there before re-proposing an alternative that might already be a documented dead end.
-///
-/// `translategemma-4b` (translation-specialized, previously the recommended default) was
-/// removed entirely, not just demoted - confirmed via direct empirical testing that
-/// `llama-server.exe` crashes at model-load time when `--jinja` actually tries to parse its
-/// chat template ("Unable to generate parser for this template"), against both `mradermacher`'s
-/// and `bullerwins`' GGUF conversions of the exact same base model - a genuine, currently-open
-/// llama.cpp bug in this specific template's structure. `gemma4-e2b` doesn't hit this: without
-/// `--jinja` (removed from `ensure_server`'s launch args entirely after this), llama.cpp falls
-/// back to its own hardcoded Gemma chat formatting instead of the broken Jinja static parser,
-/// which works fine for a standard chat model - confirmed via a real round-trip translation
-/// request, not just documentation. TranslateGemma still has no working path either way: without
-/// `--jinja` it never receives the structured `source_lang_code`/`target_lang_code` fields its
-/// template requires (this app's original "silently wrong output" bug report, before any
-/// `--jinja` was added), and with `--jinja` it crashes outright. See devlog for both test logs.
+/// 4 tiers, all under ~3.1GB resident RAM (sized against real 16GB/32GB gaming machines - see
+/// devlog). `qwen3-4b` is the recommended default; `qwen2.5-1.5b` is cheaper; `gemma4-e2b` is a
+/// general-purpose alternative (works without `--jinja`, which is why that flag was removed
+/// from `ensure_server`'s launch args entirely); `qwen3-4b-abliterated` is opt-in/non-default,
+/// for translating NSFW games' own descriptions without false-positive refusals. Rejected
+/// candidates (`gemma3-1b`, `gemma4-e4b`, `translategemma-4b` - a confirmed llama.cpp `--jinja`
+/// parser crash, not a quantizer defect - EuroLLM-1.7B) and the full research are in devlog, not
+/// repeated here - check there before re-proposing something that might be a documented dead end.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {

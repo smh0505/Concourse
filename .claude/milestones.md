@@ -429,52 +429,28 @@ available to test against).
   its own mount-time check doesn't cover repeat opens the way it first seemed to
 
 ## Milestone 21 — Internationalization & Offline Translation
-- [x] UI string localization via `vue-i18n`, 10 locales, language picker in Settings, exact key
-  parity verified across all locale JSON files
-- [x] `translation` host-native Rust module (`src-tauri/src/translation.rs`) - downloads
-  llama.cpp's own prebuilt server binary, runs it as a subprocess, talks to it over HTTP (not a
-  Rust ML crate dependency)
-- [x] 4 selectable model tiers, all Q4_K_M and under ~3.1GB RAM: `qwen2.5-1.5b` (cheapest),
-  `qwen3-4b` (recommended), `gemma4-e2b` (general-purpose), `qwen3-4b-abliterated` (opt-in,
-  uncensored, for NSFW game descriptions) - see devlog for the full model-research history and
-  rejected candidates, including `translategemma-4b`'s removal (real, empirically-confirmed
-  llama.cpp bug, not a quantizer defect) and `gemma4-e2b`'s addition (works fine once `--jinja`
-  was removed entirely - confirmed via direct testing, not just documentation)
-- [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
-  download-on-first-use, Remove buttons to delete a downloaded engine/model
-- [x] `GameDetail.vue`: "Translate" button (always visible) opens a dropdown showing one of 3
-  groups at a time - translate title/content/both (skipped entirely if no usable model is set
-  up), toggle each field's view independently or together, revoke a cached translation per
-  field or both - paged via mouse wheel or ArrowUp/ArrowDown with an animated transition and a
-  3-dot position indicator, not a flat 9-item list. Title and content translate, display, and
-  revert fully independently; viewing/revoking an already-cached translation never needs a
-  usable model set up. Button reads "Translating..." mid-request; title/description each show
-  their own skeleton only while that specific field is being translated
-- [x] The "show" toggle's state (translated vs. original, per field) is persisted per game
-  (`show_translated_title`/`show_translated_description` columns, migration v5) - reopening a
-  game's detail page later shows whatever was last chosen for that specific game, not always
-  reset to the original
-- [x] Translated title (when a valid cached translation exists for the current locale) now
-  shows in place of the original on `GameCard`'s hover balloon, `GameListRow`, and both
-  `StatsPanel` game lists - shared via a `displayTitle(game, locale)` helper (`src/db/types.ts`)
-  rather than duplicated per component
-- [x] Translated title/description persisted to the DB (new `translated_title`/
-  `translated_description`/`translated_locale` columns, migration v4) alongside the originals,
-  not overwriting them - a locale mismatch or an edited original invalidates the cached
-  translation automatically
-- [x] App-exit hook and 5-minute idle-timeout both auto-kill the `llama-server.exe` subprocess
-- [x] `enable_thinking: false` sent on every translation request - Qwen3's default "thinking"
-  reasoning block was adding real unnecessary latency for a task this simple
-- [x] `max_tokens: 1024` cap - no limit existed at all, a real risk of unbounded generation
-- [x] `translategemma-4b` removed entirely after real testing (not just guessing): confirmed
-  via direct download-and-run against both `mradermacher`'s and `bullerwins`' GGUF conversions
-  that `llama-server.exe` crashes at model-load time when `--jinja` tries to parse its chat
-  template - a genuine, currently-open llama.cpp bug in this specific template, not fixable from
-  this app's side. `qwen3-4b` promoted to recommended default. See devlog for the full
-  investigation and test log
-- [x] Engine research: `llama-cpp-2` (Windows CMake bugs) → `mistralrs` (compiled clean but
-  can't load `gemma3` GGUF, caught by real user testing) → llama.cpp prebuilt binary - see
-  devlog for the full alternatives comparison
+- [x] UI string localization via `vue-i18n`, 10 locales, exact key parity verified
+- [x] `translation` host-native Rust module - downloads llama.cpp's own prebuilt server binary,
+  runs it as a subprocess over HTTP (not a Rust ML crate dependency)
+- [x] 4 model tiers, all under ~3.1GB RAM: `qwen2.5-1.5b`, `qwen3-4b` (recommended),
+  `gemma4-e2b`, `qwen3-4b-abliterated` (opt-in, uncensored) - see devlog for the full
+  model-research history, rejected candidates, and `translategemma-4b`'s removal (confirmed
+  llama.cpp `--jinja` parser bug)
+- [x] Settings UI: engine + per-tier download rows, live progress, Remove buttons
+- [x] `GameDetail.vue`: "Translate" button opens a 3-group paged dropdown (translate
+  title/content/both, view-toggle each independently or together, revoke per field or both) -
+  wheel/arrow-key paged, animated, 3-dot indicator. Title/content translate, display, revert,
+  and skeleton independently
+- [x] "Show" toggle state persisted per game (migration v5)
+- [x] Translated title shown in place of the original (when valid) on `GameCard`'s balloon,
+  `GameListRow`, and `StatsPanel` - via a shared `displayTitle()` helper
+- [x] Translated title/description persisted alongside the originals (migration v4), not
+  overwriting them - stale on locale mismatch or an edited original
+- [x] App-exit hook + 5-minute idle-timeout auto-kill the `llama-server.exe` subprocess
+- [x] `enable_thinking: false` and `max_tokens: 1024` on every request (Qwen3 thinking-mode
+  latency, unbounded-generation risk)
+- [x] Engine research: `llama-cpp-2` (Windows CMake bugs) → `mistralrs` (can't load `gemma3`
+  GGUF) → llama.cpp prebuilt binary - see devlog for the full comparison
 
 Milestone 21 fully closed. See devlog for full rationale on every decision above. Deliberately
 deferred: translating other fields (release date, tags), canceling an in-progress download,

@@ -73,11 +73,8 @@ export class GameRepository {
 
   async update(id: number, fields: GameEditFields): Promise<void> {
     const db = await getDb();
-    // Edited title/description invalidates any cached translation unconditionally, rather than
-    // checking which field actually changed - simplest way to guarantee a stale translation can
-    // never survive an edit that might have changed the very text it was translated from. Also
-    // resets the show_translated_* view-toggle flags back to "showing original" for the same
-    // reason - there's nothing left to show translated once the cache is cleared.
+    // Edited title/description invalidates any cached translation and view-toggle state
+    // unconditionally, rather than checking which field changed.
     await db.execute(
       `UPDATE games SET
          title = $1,
@@ -112,11 +109,8 @@ export class GameRepository {
     );
   }
 
-  /** Title and content are translated independently (see GameDetail.vue's dropdown) - each gets
-   *  its own update rather than one combined method, so translating one never touches the
-   *  other's already-cached value. Both share the single translated_locale column, so
-   *  translating title and content under two different active UI locales is a known, accepted
-   *  edge case (the older of the two would incorrectly read as still valid). */
+  /** Title and content translate independently - each gets its own update so translating one
+   *  never touches the other's already-cached value. */
   async updateTranslatedTitle(id: number, translatedTitle: string, locale: string): Promise<void> {
     const db = await getDb();
     await db.execute(
@@ -133,9 +127,8 @@ export class GameRepository {
     );
   }
 
-  /** Clears a cached translation back to "revoked" (display falls back to the original) - only
-   *  clears the field itself, leaving translated_locale untouched, since the other field's
-   *  cached translation (if any) still relies on it. */
+  /** Only clears the field itself, leaving translated_locale untouched - the other field's
+   *  cached translation may still depend on it. */
   async clearTranslatedTitle(id: number): Promise<void> {
     const db = await getDb();
     await db.execute("UPDATE games SET translated_title = NULL WHERE id = $1", [id]);
@@ -154,10 +147,7 @@ export class GameRepository {
     );
   }
 
-  /** Persists which of title/description GameDetail.vue's "show" toggle currently displays for
-   *  this game - both flags together, not one at a time, since every toggle handler already
-   *  knows both current values (title-only/content-only/both toggles all just flip one or both
-   *  local refs, then call this with the post-toggle state of both). */
+  /** Persists which of title/description GameDetail.vue's "show" toggle displays, per game. */
   async updateShowTranslated(id: number, showTitle: boolean, showDescription: boolean): Promise<void> {
     const db = await getDb();
     await db.execute(

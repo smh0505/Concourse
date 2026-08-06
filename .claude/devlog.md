@@ -3630,6 +3630,59 @@ Real end-to-end verification (an actual download, an actual translation, confirm
 actually fixes the crash, and confirming the exit hook actually kills the process) still can only
 happen on the user's own machine.
 
+**Follow-up: added cheaper Gemma 3/4 tiers, then removed the 12B/27B TranslateGemma tiers
+entirely once their RAM cost was actually sized against a real gaming machine.** User first
+asked to explore Gemma 3 and Gemma 4 (not just TranslateGemma) for cheaper options. Researched
+real GGUF file sizes via web search rather than estimating from parameter counts: Gemma 4
+(released April 2026, built on the same research as Gemini 3, natively multilingual across 140+
+languages) ships `E2B`/`E4B` elastic-sized tiers whose *file* sizes don't track their
+"effective" active-param naming - `gemma-4-E2B-it-Q4_K_M.gguf` (unsloth) is actually 3.11GB,
+*larger* than `translategemma-4b-it.Q4_K_M.gguf` (2.49GB, corrected from the earlier 2.6GB
+estimate) despite the smaller name, so E2B was skipped as strictly worse (bigger, less
+specialized). `gemma-4-E4B-it-Q4_K_M.gguf` (unsloth) at 4.98GB was added as the "balanced"
+general-purpose tier. `gemma-3-1b-it-Q4_K_M.gguf` (unsloth) at ~845MB was added as the cheapest
+tier - genuinely small, at a real quality cost since it's a general instruct model, not
+translation-tuned. `gemma-3-270m-it` (~253MB) was considered and rejected as too small to trust
+for real translation quality even as a bottom tier.
+
+User then asked for an actual sizing analysis against real 16GB/32GB gaming hardware, using
+average parts for each, rather than reasoning about RAM abstractly - and to decide whether the
+12B (7.3GB, corrected from 7.4GB)/27B (16.6GB) TranslateGemma tiers still belonged in the list
+given that. Researched current (2026) Steam Hardware Survey data and typical build guides:
+
+- **16GB tier** (Steam's single most common RAM configuration, 41.57% of surveyed systems) -
+  representative build: Ryzen 5 5600, RTX 4060 / RX 7600, 1080p. Typical games: esports/live-
+  service titles (Valorant, CS2, Fortnite, Apex Legends, League of Legends) plus AAA at 1080p
+  medium-high (GTA V, recent Call of Duty entries, Cyberpunk 2077 on non-ultra settings). Real
+  system-RAM budget on this class of machine: OS + background (Windows 11, Discord, browser)
+  commonly 3-5GB, a modern AAA title's own working set commonly 8-12GB - already a thin margin
+  on 16GB total before adding anything else running alongside it.
+- **32GB tier** (the survey-cited realistic baseline for a versatile mid-to-high-end build) -
+  representative build: Ryzen 7 7800X3D/9800X3D, RTX 4070 Super/5070/4080 Super, 1440p ultra.
+  Typical games: demanding modern AAA at max settings (Cyberpunk 2077 ultra, Alan Wake 2,
+  Baldur's Gate 3, Starfield) - same OS/background overhead, but 32GB total leaves comfortable
+  headroom (often 12GB+ spare) even under a heavy game's working set.
+
+Conclusion reached and acted on directly: on a 16GB machine, `translategemma-4b`/`gemma4-e4b`
+(2.49GB/4.98GB resident, since this engine loads the full GGUF into RAM rather than just memory-
+mapping cold pages) sitting alongside an already RAM-tight AAA session is a real risk of paging/
+stutter - the smaller `translategemma-4b` is the safer of the two there, and both are best used
+before/after a session rather than left resident during one. On a 32GB machine, either tier is a
+negligible fraction of available headroom - fine to leave running during gameplay. The 12B/27B
+tiers, by contrast, don't fit *either* profile - 7.3GB alone exceeds a 16GB machine's entire
+comfortable AAA headroom, and even 32GB users would be giving up double-digit GB of RAM to a
+background translation process for marginal quality gain over 4B (which the milestone's own
+earlier benchmark research already noted 12B "reportedly beats the 27B baseline" on, i.e. the
+27B tier's quality edge over 4B was never that large in the first place). Removed both tiers
+from `list_models()` entirely rather than leaving them in as a "not recommended" option - the
+per-model download infrastructure doesn't change, so nothing else in `translation.rs` needed
+touching. `cargo fmt && cargo check` and `bun run build` both clean.
+
+Not yet built, flagged as a real follow-up given this analysis: an idle-timeout auto-shutdown
+for the running `llama-server.exe` (so RAM isn't held resident indefinitely after a single
+translation, not just cleaned up on model-switch/app-exit as today) - would meaningfully help
+the 16GB case specifically. Deferred, not blocking this pass.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

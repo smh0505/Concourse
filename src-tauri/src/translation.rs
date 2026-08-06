@@ -42,17 +42,21 @@ pub struct TranslationModel {
 }
 
 /// Two model families, deliberately mixed rather than only offering translation-specialized
-/// ones: the `translategemma-*` tiers (fine-tuned from Gemma 3 specifically for translation,
-/// 55 languages) generally translate better per byte than a same-size general-purpose model,
-/// but RAM is the harder constraint for a background app sharing a machine with a running
-/// game - so `gemma3-1b` and `gemma4-e4b` are offered as meaningfully cheaper (RAM-wise)
-/// alternatives, at a real quality cost since neither is translation-tuned. `translategemma-4b`
-/// stays the cheapest translation-specialized option, real quantized file sizes below verified
-/// against each repo's actual GGUF listing (not the parameter count alone - Gemma 4's E2B/E4B
-/// naming reflects "effective" active params under its elastic sizing, not on-disk size, so
-/// e.g. E2B's own GGUF is actually larger than translategemma-4b's despite the smaller name).
-/// 12B stays the recommended default - `mradermacher`'s own listing calls its Q4_K_M "fast,
-/// recommended," and it reportedly beats the 27B baseline on WMT24++ benchmarks.
+/// ones: `translategemma-4b` (fine-tuned from Gemma 3 specifically for translation, 55
+/// languages) translates better per byte than a same-size general-purpose model, but RAM is
+/// the harder constraint for a background app sharing a machine with a running game -
+/// `gemma3-1b` and `gemma4-e4b` are offered as meaningfully cheaper (RAM-wise) general-purpose
+/// alternatives, at a real quality cost since neither is translation-tuned.
+///
+/// The 12B/27B TranslateGemma tiers this list used to offer were deliberately removed - their
+/// 7.3GB/16.6GB resident RAM footprints (this engine loads the full GGUF into RAM, not just
+/// disk) are a bad fit for a background service expected to coexist with a running game on a
+/// typical 16-32GB gaming machine (see devlog for the sizing analysis behind this cutoff). All
+/// remaining tiers stay under 5GB. Sizes below are real quantized Q4_K_M file sizes verified
+/// against each repo's actual GGUF listing (not derived from parameter count alone - Gemma 4's
+/// E2B/E4B naming reflects "effective" active params under its elastic sizing, not on-disk
+/// size, so e.g. its own E2B GGUF is actually larger than translategemma-4b's despite the
+/// smaller name, which is why E2B isn't offered here).
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
@@ -64,7 +68,7 @@ pub fn list_models() -> Vec<TranslationModel> {
         },
         TranslationModel {
             id: "translategemma-4b".to_string(),
-            name: "TranslateGemma 4B (fast, translation-specialized)".to_string(),
+            name: "TranslateGemma 4B (recommended, translation-specialized)".to_string(),
             repo: "mradermacher/translategemma-4b-it-GGUF".to_string(),
             file: "translategemma-4b-it.Q4_K_M.gguf".to_string(),
             size_bytes: 2_490_000_000,
@@ -75,20 +79,6 @@ pub fn list_models() -> Vec<TranslationModel> {
             repo: "unsloth/gemma-4-E4B-it-GGUF".to_string(),
             file: "gemma-4-E4B-it-Q4_K_M.gguf".to_string(),
             size_bytes: 4_980_000_000,
-        },
-        TranslationModel {
-            id: "translategemma-12b".to_string(),
-            name: "TranslateGemma 12B (recommended, translation-specialized)".to_string(),
-            repo: "mradermacher/translategemma-12b-it-GGUF".to_string(),
-            file: "translategemma-12b-it.Q4_K_M.gguf".to_string(),
-            size_bytes: 7_300_000_000,
-        },
-        TranslationModel {
-            id: "translategemma-27b".to_string(),
-            name: "TranslateGemma 27B (best quality, translation-specialized)".to_string(),
-            repo: "mradermacher/translategemma-27b-it-GGUF".to_string(),
-            file: "translategemma-27b-it.Q4_K_M.gguf".to_string(),
-            size_bytes: 16_600_000_000,
         },
     ]
 }

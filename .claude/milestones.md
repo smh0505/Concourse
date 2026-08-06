@@ -437,8 +437,12 @@ available to test against).
 - [x] New `translation` host-native Rust module (`src-tauri/src/translation.rs`) - NOT a Rust ML
   crate dependency. Downloads llama.cpp's own prebuilt Windows CPU release binary once, runs
   `llama-server.exe` as a subprocess, talks to it over its OpenAI-compatible HTTP API. 3
-  selectable TranslateGemma tiers (4B/12B/27B, all Q4_K_M from `mradermacher`'s GGUF
-  quantizations), `download_translation_engine`/`is_translation_engine_downloaded`/
+  selectable tiers - `gemma3-1b` (~845MB, cheapest, general-purpose), `translategemma-4b`
+  (~2.49GB, recommended, translation-specialized), `gemma4-e4b` (~4.98GB, balanced,
+  general-purpose) - all Q4_K_M, capped under 5GB resident RAM each since this engine loads the
+  full GGUF into RAM and needs to coexist with a running game (see devlog for the 16GB/32GB
+  gaming-machine sizing analysis behind this cap and why the originally-offered 12B/27B tiers
+  were removed). `download_translation_engine`/`is_translation_engine_downloaded`/
   `download_translation_model`/`is_translation_model_downloaded`/`translate_text`/
   `list_translation_models` Tauri commands. Server subprocess stays alive across calls, only
   restarts when the requested model id changes

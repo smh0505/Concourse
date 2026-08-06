@@ -59,7 +59,9 @@
     "showOriginalContent": "Originalinhalt anzeigen",
     "showTranslatedContent": "Übersetzten Inhalt anzeigen",
     "showOriginalBoth": "Originaltitel und -inhalt anzeigen",
-    "showTranslatedBoth": "Übersetzten Titel und Inhalt anzeigen"
+    "showTranslatedBoth": "Übersetzten Titel und Inhalt anzeigen",
+    "translating": "Wird übersetzt...",
+    "translateTitleAndContent": "Titel und Inhalt übersetzen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

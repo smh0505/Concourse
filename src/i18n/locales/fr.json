@@ -59,7 +59,9 @@
     "showOriginalContent": "Voir le contenu original",
     "showTranslatedContent": "Voir le contenu traduit",
     "showOriginalBoth": "Voir le titre et le contenu originaux",
-    "showTranslatedBoth": "Voir le titre et le contenu traduits"
+    "showTranslatedBoth": "Voir le titre et le contenu traduits",
+    "translating": "Traduction en cours...",
+    "translateTitleAndContent": "Traduire le titre et le contenu"
   },
   "candidatePicker": {
     "title": "Plusieurs correspondances trouvées",

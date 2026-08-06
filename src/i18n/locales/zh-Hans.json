@@ -59,7 +59,9 @@
     "showOriginalContent": "查看原内容",
     "showTranslatedContent": "查看译文内容",
     "showOriginalBoth": "查看原标题和内容",
-    "showTranslatedBoth": "查看译文标题和内容"
+    "showTranslatedBoth": "查看译文标题和内容",
+    "translating": "翻译中...",
+    "translateTitleAndContent": "翻译标题和内容"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

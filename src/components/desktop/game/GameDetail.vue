@@ -225,6 +225,25 @@ async function onTranslateContentOnly() {
   }
 }
 
+async function onTranslateTitleAndContent() {
+  translateMenuOpen.value = false;
+  translating.value = true;
+  try {
+    const translatedTitle = await translation.translate(game.value.title, appSettings.locale);
+    await library.saveTranslatedTitle(game.value.id, translatedTitle, appSettings.locale);
+    showTranslatedTitle.value = true;
+    if (game.value.description) {
+      const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
+      await library.saveTranslatedDescription(game.value.id, translatedDescription, appSettings.locale);
+      showTranslatedDescription.value = true;
+    }
+  } catch (e) {
+    toasts.push(String(e), "error");
+  } finally {
+    translating.value = false;
+  }
+}
+
 function onToggleTitleView() {
   showTranslatedTitle.value = !showTranslatedTitle.value;
   translateMenuOpen.value = false;
@@ -418,7 +437,7 @@ async function onDelete() {
                 @click="translateMenuOpen = !translateMenuOpen"
               >
                 <IconLanguage :size="14" :stroke-width="1.75" />
-                {{ t("gameDetail.translate") }}
+                {{ translating ? t("gameDetail.translating") : t("gameDetail.translate") }}
               </button>
               <div v-if="translateMenuOpen" class="translate-menu-backdrop" @click="translateMenuOpen = false" />
               <div v-if="translateMenuOpen" class="translate-menu">
@@ -427,6 +446,9 @@ async function onDelete() {
                 </button>
                 <button type="button" :disabled="!game.description" @click="onTranslateContentOnly">
                   {{ t("gameDetail.translateContentOnly") }}
+                </button>
+                <button type="button" @click="onTranslateTitleAndContent">
+                  {{ t("gameDetail.translateTitleAndContent") }}
                 </button>
                 <button type="button" :disabled="!hasValidTranslatedTitle" @click="onToggleTitleView">
                   {{ showTranslatedTitle ? t("gameDetail.showOriginalTitle") : t("gameDetail.showTranslatedTitle") }}

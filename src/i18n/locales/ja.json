@@ -59,7 +59,9 @@
     "showOriginalContent": "元の内容を表示",
     "showTranslatedContent": "翻訳された内容を表示",
     "showOriginalBoth": "元のタイトルと内容を表示",
-    "showTranslatedBoth": "翻訳されたタイトルと内容を表示"
+    "showTranslatedBoth": "翻訳されたタイトルと内容を表示",
+    "translating": "翻訳中...",
+    "translateTitleAndContent": "タイトルと内容を翻訳"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

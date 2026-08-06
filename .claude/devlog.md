@@ -3969,6 +3969,86 @@ translategemma-4b's specific GGUF re-converted correctly upstream. `cargo fmt &&
 clean. Real end-to-end confirmation that this actually resolves the slowness (not just addresses
 a plausible-sounding cause) still needs the user's own machine.
 
+**Follow-up, same session: the stop-sequence fix didn't help either - stopped guessing and
+empirically tested the real failure instead of proposing another plausible-sounding fix.** User
+reported no improvement, then volunteered the key diagnostic detail unprompted: `qwen3-4b`
+works fine, only `translategemma-4b` is slow, and specifically on cold start. Since `qwen3-4b`'s
+own GGUF is almost exactly the same file size as `translategemma-4b`'s (2.5GB vs 2.49GB), a
+generic "cold start = slow disk read" explanation didn't fit - if that were the whole story,
+both tiers would cold-start equally slowly. This model-specific asymmetry pointed at something
+in translategemma's own generation/template behavior, not disk I/O, and ruled out the disk-read
+theory directly rather than restating it.
+
+Given three consecutive fix attempts (structured content format, `--jinja`, explicit stop
+sequence) hadn't resolved it, asked the user directly whether to (a) try a different GGUF
+quantizer as a diagnostic, or (b) drop `translategemma-4b` outright in favor of the already-
+working `qwen3-4b`. User picked (a) - genuinely test a different source rather than guess again.
+
+**Ran a real empirical test instead of continuing to reason from documentation alone.** Fetched
+`bullerwins/translategemma-4b-it-GGUF`'s real Q4_K_M file size via the HF API (2.49GB, matching
+`mradermacher`'s), and separately pulled that same API's `gguf` metadata field directly -
+revealing `eos_token: "<eos>"` while the actual chat template only ever emits `<end_of_turn>` to
+end a turn, never `<eos>`, during normal single-turn chat. This is a genuine, well-known
+structural quirk of the whole Gemma chat-template family (not specific to any one GGUF
+conversion) - llama.cpp's built-in EOS-based auto-stop, driven by the GGUF's declared
+`eos_token`, would never fire during a single chat turn, which is exactly why the earlier
+`stop: ["<end_of_turn>"]` fix should have been the right lever. That it apparently wasn't enough
+meant something deeper was wrong, worth confirming directly rather than layering on a fourth
+guess.
+
+Downloaded `bullerwins/translategemma-4b-it-GGUF`'s real Q4_K_M file (2,489,909,312 bytes,
+verified against the exact expected size, redone once after a first attempt truncated at 596MB -
+`curl -C -` resume against a source that doesn't support byte-range resume cleanly produced a
+corrupted 2.75GB file; discarded and re-downloaded from scratch rather than trusting a resumed
+partial). Started the actual bundled `llama-server.exe` (the same binary this app downloads,
+already extracted from earlier verification work) with the exact flags `ensure_server` uses
+(`-m ... --port 8712 -c 4096 -t 16 -tb 16 --jinja`) and captured its own log output directly
+rather than going through the app.
+
+**Real result: the server crashes at model-load time, before any request is even sent.**
+```
+chat template parsing error: Unable to generate parser for this template. Automatic parser
+generation failed:
+Error: Jinja Exception: User role must provide `content` as an iterable with exactly one item.
+That item must be a `mapping(type:'text' | 'image', source_lang_code:string,
+target_lang_code:string, text:string | none, image:string | none)`.
+please consider disabling jinja via --no-jinja, or use a custom chat template via --chat-template
+exiting due to model loading error
+```
+llama-server's static template-parser (minja) can't prove the template's own `raise_exception`
+guard is unreachable, and refuses to even start the server with `--jinja` set - a genuine,
+currently-open llama.cpp limitation for this specific template's structure (matches
+`ggml-org/llama.cpp#20305`, "Jinja Template Parsing Error in TranslateGemma," and a HF
+discussion titled "After llama.cpp rework of template parsing, can no longer load this model").
+Downloaded and re-ran the identical test against `mradermacher/translategemma-4b-it-GGUF`'s own
+Q4_K_M (the exact file this app's real production code uses, not just a plausible substitute) -
+**identical crash, byte-for-byte the same error**, confirming this isn't specific to either
+quantizer's conversion - it's the model's own template structure against this exact llama.cpp
+build, full stop.
+
+This also explains every "still takes too long" report retroactively: `ensure_server` spawns
+the child successfully (the OS call itself doesn't fail), but nothing checks whether the child
+process exits early on its own - `wait_until_ready` just keeps polling `/health` against an
+already-dead process for the full 60-second timeout before finally returning an error. Every
+translategemma-4b attempt since `--jinja` was added was silently burning a guaranteed ~60 seconds
+before failing, not translating slowly - the eventual error toast likely auto-dismissed before
+being read carefully, reading as "it's just slow" rather than "it's failing every time."
+
+**Removed `translategemma-4b` entirely rather than continuing to patch around a confirmed
+upstream bug.** `list_models()` drops it; `qwen3-4b` promoted to the recommended default tier
+(3 tiers total now, not 4). Reverted all translategemma-specific request-building code added in
+the previous two fix attempts: `ChatContent`'s `Text`/`Parts` enum collapsed back to a plain
+`String` on `ChatMessage.content`, `TranslateGemmaPart`/`TRANSLATEGEMMA_SOURCE_LANG`/
+`translategemma_lang_code()` deleted, the `stop` field removed from `ChatRequest` (no remaining
+tier needs it). Also removed `--jinja` from the server launch args - its only justification was
+TranslateGemma's structured template; keeping it for the Qwen tiers would be introducing
+unverified risk to an already-working path for no benefit, so reverted rather than left in on a
+"probably fine" assumption. `enable_thinking`/`max_tokens` both kept - genuinely useful
+regardless of tier lineup. `cargo fmt && cargo check` and `bun run build` both clean; a
+repo-wide grep confirms no other file references `translategemma`/`TranslateGemma` anymore.
+Test artifacts (the ~5GB of downloaded GGUFs, server logs) cleaned up from the job's scratch
+directory afterward, not left behind.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

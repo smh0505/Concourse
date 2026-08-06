@@ -434,10 +434,11 @@ available to test against).
 - [x] `translation` host-native Rust module (`src-tauri/src/translation.rs`) - downloads
   llama.cpp's own prebuilt server binary, runs it as a subprocess, talks to it over HTTP (not a
   Rust ML crate dependency)
-- [x] 4 selectable model tiers, all Q4_K_M and under ~2.5GB RAM: `qwen2.5-1.5b` (cheapest),
-  `translategemma-4b` (recommended, translation-specialized), `qwen3-4b` (general-purpose),
-  `qwen3-4b-abliterated` (opt-in, uncensored, for NSFW game descriptions) - see devlog for the
-  full model-research history and rejected candidates
+- [x] 3 selectable model tiers, all Q4_K_M and under ~2.5GB RAM: `qwen2.5-1.5b` (cheapest),
+  `qwen3-4b` (recommended), `qwen3-4b-abliterated` (opt-in, uncensored, for NSFW game
+  descriptions) - see devlog for the full model-research history and rejected candidates,
+  including `translategemma-4b`'s removal (real, empirically-confirmed llama.cpp bug, not a
+  quantizer defect)
 - [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
   download-on-first-use, Remove buttons to delete a downloaded engine/model
 - [x] `GameDetail.vue`: "Translate"/"Show translated"/"Show original" toggle, covers both title
@@ -449,11 +450,13 @@ available to test against).
 - [x] App-exit hook and 5-minute idle-timeout both auto-kill the `llama-server.exe` subprocess
 - [x] `enable_thinking: false` sent on every translation request - Qwen3's default "thinking"
   reasoning block was adding real unnecessary latency for a task this simple
-- [x] Fixed `translategemma-4b` silently producing no translation: added `--jinja` (so
-  llama-server actually renders each GGUF's own chat template) and a TranslateGemma-specific
-  structured request format (its template needs `source_lang_code`/`target_lang_code`, not a
-  plain string) - known limitation, no source-language detection built, so `source_lang_code`
-  is hardcoded to `"en"`
+- [x] `max_tokens: 1024` cap - no limit existed at all, a real risk of unbounded generation
+- [x] `translategemma-4b` removed entirely after real testing (not just guessing): confirmed
+  via direct download-and-run against both `mradermacher`'s and `bullerwins`' GGUF conversions
+  that `llama-server.exe` crashes at model-load time when `--jinja` tries to parse its chat
+  template - a genuine, currently-open llama.cpp bug in this specific template, not fixable from
+  this app's side. `qwen3-4b` promoted to recommended default. See devlog for the full
+  investigation and test log
 - [x] Engine research: `llama-cpp-2` (Windows CMake bugs) → `mistralrs` (compiled clean but
   can't load `gemma3` GGUF, caught by real user testing) → llama.cpp prebuilt binary - see
   devlog for the full alternatives comparison

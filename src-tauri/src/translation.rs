@@ -39,14 +39,22 @@ pub struct TranslationModel {
     size_bytes: u64,
 }
 
-/// 4 tiers, all under ~2.5GB resident RAM (the sweet spot sized against real 16GB/32GB gaming
-/// machines - see devlog). `translategemma-4b` is the recommended default (translation-tuned,
-/// no regional bias); `qwen2.5-1.5b`/`qwen3-4b` are cheaper/broader general-purpose
-/// alternatives; `qwen3-4b-abliterated` is an explicitly opt-in, non-default uncensored variant
+/// 3 tiers, all under ~2.5GB resident RAM (the sweet spot sized against real 16GB/32GB gaming
+/// machines - see devlog). `qwen3-4b` is the recommended default; `qwen2.5-1.5b` is a cheaper
+/// alternative; `qwen3-4b-abliterated` is an explicitly opt-in, non-default uncensored variant
 /// for translating NSFW games' own descriptions without false-positive refusals. Rejected
 /// candidates (`gemma3-1b`, `gemma4-e4b`, EuroLLM-1.7B) and the full reasoning for every pick
 /// here are recorded in devlog, not repeated in this comment - check there before re-proposing
 /// an alternative that might already be a documented dead end.
+///
+/// `translategemma-4b` (translation-specialized, previously the recommended default) was
+/// removed entirely, not just demoted - confirmed via direct empirical testing (not just
+/// upstream issue reports) that `llama-server.exe` crashes at model-load time when `--jinja`
+/// actually tries to parse its chat template ("Unable to generate parser for this template"),
+/// against both `mradermacher`'s and `bullerwins`' GGUF conversions of the exact same base
+/// model - a genuine, currently-open llama.cpp bug in this specific template's structure, not a
+/// defect in any one quantizer's conversion. See devlog for the full test log and the upstream
+/// issues this matches.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
@@ -58,17 +66,9 @@ pub fn list_models() -> Vec<TranslationModel> {
             size_bytes: 1_120_000_000,
         },
         TranslationModel {
-            id: "translategemma-4b".to_string(),
-            name: "TranslateGemma 4B".to_string(),
-            subtitle: "recommended, translation-specialized".to_string(),
-            repo: "mradermacher/translategemma-4b-it-GGUF".to_string(),
-            file: "translategemma-4b-it.Q4_K_M.gguf".to_string(),
-            size_bytes: 2_490_000_000,
-        },
-        TranslationModel {
             id: "qwen3-4b".to_string(),
             name: "Qwen3 4B".to_string(),
-            subtitle: "broader coverage, general-purpose".to_string(),
+            subtitle: "recommended, general-purpose".to_string(),
             repo: "unsloth/Qwen3-4B-GGUF".to_string(),
             file: "Qwen3-4B-Q4_K_M.gguf".to_string(),
             size_bytes: 2_500_000_000,
@@ -419,11 +419,6 @@ async fn ensure_server(
         .unwrap_or(4)
         .to_string();
 
-    // --jinja makes llama-server actually render each GGUF's own embedded chat template
-    // (Jinja) instead of a generic built-in fallback formatter. Without it, TranslateGemma's
-    // real template - which requires structured, per-part source_lang_code/target_lang_code
-    // fields, not a plain string - never runs at all, silently producing garbage/empty output
-    // instead of an error. Harmless for the Qwen tiers, whose templates are plain string-based.
     let child = Command::new(&server_exe)
         .arg("-m")
         .arg(&model_path)
@@ -435,7 +430,6 @@ async fn ensure_server(
         .arg(&threads)
         .arg("-tb")
         .arg(&threads)
-        .arg("--jinja")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .kill_on_drop(true)
@@ -456,56 +450,18 @@ async fn ensure_server(
     wait_until_ready(&reqwest::Client::new()).await
 }
 
-/// Most models here (`qwen2.5-1.5b`, `qwen3-4b`, `qwen3-4b-abliterated`) take a plain string
-/// `content`, same as any generic OpenAI-style chat request. `translategemma-4b`'s own chat
-/// template is different and stricter: it requires `content` as a one-element array of a
-/// structured part carrying explicit `source_lang_code`/`target_lang_code` fields - a plain
-/// string silently fails to invoke the real template correctly (see `translate_text` below).
-#[derive(Serialize)]
-#[serde(untagged)]
-enum ChatContent {
-    Text(String),
-    Parts([TranslateGemmaPart; 1]),
-}
-
-#[derive(Serialize)]
-struct TranslateGemmaPart {
-    r#type: &'static str,
-    source_lang_code: &'static str,
-    target_lang_code: String,
-    text: String,
-}
-
-/// TranslateGemma's own template throws `UndefinedError` if `source_lang_code` is missing -
-/// there's no "auto-detect" option, and this app has no source-language detection built. Game
-/// descriptions/metadata in this app come overwhelmingly from English-language sources (Steam/
-/// IGDB/GOG/Epic APIs), so English is assumed as the source language - a known, documented
-/// limitation: translating an originally non-English description via `translategemma-4b`
-/// specifically will produce a wrong translation, unlike the Qwen tiers' freeform prompt, which
-/// has no such requirement since it doesn't need to know the source language at all.
-const TRANSLATEGEMMA_SOURCE_LANG: &str = "en";
-
-/// This app's own locale codes (`src/i18n/locales/*.json` file stems) already match what
-/// TranslateGemma's chat template accepts directly - `zh-Hans`/`pt-BR` included, both real
-/// TranslateGemma-supported codes, not just close approximations - so this is currently just an
-/// identity pass-through. Kept as its own function (not inlined at the call site) since it's the
-/// one place a future locale/code mismatch would need fixing.
-fn translategemma_lang_code(locale: &str) -> String {
-    locale.to_string()
-}
-
 #[derive(Serialize)]
 struct ChatMessage {
     role: &'static str,
-    content: ChatContent,
+    content: String,
 }
 
 /// Hybrid "thinking" models (Qwen3's whole line) default to emitting a full `<think>...</think>`
 /// reasoning block before the actual answer - a real, unwanted latency hit for a task as simple
 /// as translation. `enable_thinking: false` is llama.cpp's own documented per-request override
-/// for this (no server restart needed). Harmless to always send: models whose chat template
-/// doesn't reference this variable (`translategemma-4b`, `qwen2.5-1.5b`) just render with an
-/// unused template variable, same as any Jinja template ignoring an extra context key.
+/// for this (no server restart needed). Harmless to always send: `qwen2.5-1.5b`'s chat template
+/// doesn't reference this variable, so it just renders with an unused template variable, same
+/// as any Jinja template ignoring an extra context key.
 #[derive(Serialize)]
 struct ChatTemplateKwargs {
     enable_thinking: bool,
@@ -517,22 +473,11 @@ struct ChatRequest {
     messages: Vec<ChatMessage>,
     temperature: f32,
     chat_template_kwargs: ChatTemplateKwargs,
-    /// No cap here meant a model that fails to emit a clean stop token (a real risk at Q4
-    /// quantization) could ramble all the way out to the full 4096-token context before
-    /// stopping - at CPU-only generation speed that's minutes, not seconds, and reads to a user
-    /// as "translation takes forever" rather than the actual bug (unbounded generation length).
-    /// 1024 tokens is generous for a game description/title translation, which is realistically
-    /// a paragraph or two at most.
+    /// No cap here meant a model that fails to emit a clean stop token could ramble all the way
+    /// out to the full 4096-token context before stopping - at CPU-only generation speed that's
+    /// minutes, not seconds. 1024 tokens is generous for a game description/title translation,
+    /// which is realistically a paragraph or two at most.
     max_tokens: u32,
-    /// Explicit stop sequences, on top of whatever the GGUF's own tokenizer metadata provides -
-    /// needed for `translategemma-4b` specifically. Gemma3-family GGUF conversions have a
-    /// documented, real bug (llama.cpp/unslothai issue trackers) where `<end_of_turn>` gets
-    /// written as a NORMAL token instead of CONTROL, so llama.cpp fails to recognize it as a
-    /// stop signal at all - generation just keeps going until it hits `max_tokens` instead of
-    /// stopping cleanly. Passing the literal string here works regardless of whether the
-    /// GGUF's own metadata is correct, since llama-server also matches stop sequences against
-    /// raw decoded text. Empty for the Qwen tiers, which aren't affected by this bug.
-    stop: Vec<&'static str>,
 }
 
 #[derive(Deserialize)]
@@ -560,36 +505,21 @@ pub async fn translate_text(
 ) -> Result<String, String> {
     ensure_server(&app, &state, &model_id).await?;
 
-    let is_translategemma = model_id.starts_with("translategemma");
-    let content = if is_translategemma {
-        ChatContent::Parts([TranslateGemmaPart {
-            r#type: "text",
-            source_lang_code: TRANSLATEGEMMA_SOURCE_LANG,
-            target_lang_code: translategemma_lang_code(&target_language),
-            text,
-        }])
-    } else {
-        ChatContent::Text(format!(
-            "Translate the following text into {}. Only output the translation, nothing else.\n\n{}",
-            target_language, text
-        ))
-    };
+    let prompt = format!(
+        "Translate the following text into {}. Only output the translation, nothing else.\n\n{}",
+        target_language, text
+    );
     let request = ChatRequest {
         model: "translation",
         messages: vec![ChatMessage {
             role: "user",
-            content,
+            content: prompt,
         }],
         temperature: 0.3,
         chat_template_kwargs: ChatTemplateKwargs {
             enable_thinking: false,
         },
         max_tokens: 1024,
-        stop: if is_translategemma {
-            vec!["<end_of_turn>"]
-        } else {
-            vec![]
-        },
     };
 
     let response = reqwest::Client::new()

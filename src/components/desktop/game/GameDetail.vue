@@ -20,6 +20,7 @@ import { useAppSettingsStore } from "@/stores/appSettings";
 import { useTranslationStore } from "@/stores/translation";
 import { useToastStore } from "@/stores/toasts";
 import { useImageBrightness } from "@/composables/useImageBrightness";
+import { DropdownMenu } from "@/components/desktop/common";
 import type { Game, GameEditFields } from "@/db";
 
 const { t } = useI18n();
@@ -199,12 +200,12 @@ const translateMenuGroups = computed<TranslateMenuGroup[]>(() =>
 );
 const translateMenuGroupIndex = ref(0);
 const translateMenuGroup = computed(() => translateMenuGroups.value[translateMenuGroupIndex.value]);
-const menuEl = ref<HTMLElement | null>(null);
+const menuEl = ref<InstanceType<typeof DropdownMenu> | null>(null);
 
 function openTranslateMenu() {
   translateMenuOpen.value = true;
   translateMenuGroupIndex.value = 0;
-  nextTick(() => menuEl.value?.focus());
+  nextTick(() => menuEl.value?.focusPanel());
 }
 
 function nextTranslateMenuGroup() {
@@ -524,92 +525,91 @@ async function onDelete() {
               <span v-if="game.release_date">{{ game.release_date }}</span>
               <span>{{ t("gameDetail.minPlayed", { minutes: playtimeMinutes }) }}</span>
             </div>
-            <div class="translate-menu-wrap">
-              <button
-                type="button"
-                class="compact-button translate-button"
-                :disabled="translating"
-                @click="toggleTranslateMenu"
-              >
-                <IconLanguage :size="14" :stroke-width="1.75" />
-                {{ translating ? t("gameDetail.translating") : t("gameDetail.translate") }}
-              </button>
-              <div v-if="translateMenuOpen" class="translate-menu-backdrop" @click="translateMenuOpen = false" />
-              <div
-                v-if="translateMenuOpen"
-                ref="menuEl"
-                class="translate-menu"
-                tabindex="-1"
-                @wheel="onTranslateMenuWheel"
-                @keydown="onTranslateMenuKeydown"
-              >
-                <Transition name="menu-group" mode="out-in">
-                  <div :key="translateMenuGroup" class="translate-menu-group">
-                    <template v-if="translateMenuGroup === 'translate'">
-                      <button type="button" @click="onTranslateTitleOnly">
-                        {{ t("gameDetail.translateTitleOnly") }}
-                      </button>
-                      <button type="button" :disabled="!game.description" @click="onTranslateContentOnly">
-                        {{ t("gameDetail.translateContentOnly") }}
-                      </button>
-                      <button type="button" @click="onTranslateTitleAndContent">
-                        {{ t("gameDetail.translateTitleAndContent") }}
-                      </button>
-                    </template>
-                    <template v-else-if="translateMenuGroup === 'show'">
-                      <button type="button" :disabled="!hasValidTranslatedTitle" @click="onToggleTitleView">
-                        {{
-                          showTranslatedTitle
-                            ? t("gameDetail.showOriginalTitle")
-                            : t("gameDetail.showTranslatedTitle")
-                        }}
-                      </button>
-                      <button type="button" :disabled="!hasValidTranslatedDescription" @click="onToggleContentView">
-                        {{
-                          showTranslatedDescription
-                            ? t("gameDetail.showOriginalContent")
-                            : t("gameDetail.showTranslatedContent")
-                        }}
-                      </button>
-                      <button
-                        type="button"
-                        :disabled="!hasValidTranslatedTitle && !hasValidTranslatedDescription"
-                        @click="onToggleBothView"
-                      >
-                        {{
-                          showTranslatedTitle && showTranslatedDescription
-                            ? t("gameDetail.showOriginalBoth")
-                            : t("gameDetail.showTranslatedBoth")
-                        }}
-                      </button>
-                    </template>
-                    <template v-else>
-                      <button type="button" :disabled="!hasCachedTitle" @click="onRevokeTitleOnly">
-                        {{ t("gameDetail.revokeTitleOnly") }}
-                      </button>
-                      <button type="button" :disabled="!hasCachedDescription" @click="onRevokeContentOnly">
-                        {{ t("gameDetail.revokeContentOnly") }}
-                      </button>
-                      <button
-                        type="button"
-                        :disabled="!hasCachedTitle && !hasCachedDescription"
-                        @click="onRevokeBoth"
-                      >
-                        {{ t("gameDetail.revokeBoth") }}
-                      </button>
-                    </template>
-                  </div>
-                </Transition>
-                <div class="translate-menu-dots">
-                  <span
-                    v-for="(group, i) in translateMenuGroups"
-                    :key="group"
-                    class="translate-menu-dot"
-                    :class="{ active: i === translateMenuGroupIndex }"
-                  />
+            <DropdownMenu
+              ref="menuEl"
+              v-model:open="translateMenuOpen"
+              wrap-class="translate-menu-wrap"
+              panel-class="translate-menu"
+              @wheel="onTranslateMenuWheel"
+              @keydown="onTranslateMenuKeydown"
+            >
+              <template #trigger>
+                <button
+                  type="button"
+                  class="compact-button translate-button"
+                  :disabled="translating"
+                  @click="toggleTranslateMenu"
+                >
+                  <IconLanguage :size="14" :stroke-width="1.75" />
+                  {{ translating ? t("gameDetail.translating") : t("gameDetail.translate") }}
+                </button>
+              </template>
+              <Transition name="menu-group" mode="out-in">
+                <div :key="translateMenuGroup" class="translate-menu-group">
+                  <template v-if="translateMenuGroup === 'translate'">
+                    <button type="button" @click="onTranslateTitleOnly">
+                      {{ t("gameDetail.translateTitleOnly") }}
+                    </button>
+                    <button type="button" :disabled="!game.description" @click="onTranslateContentOnly">
+                      {{ t("gameDetail.translateContentOnly") }}
+                    </button>
+                    <button type="button" @click="onTranslateTitleAndContent">
+                      {{ t("gameDetail.translateTitleAndContent") }}
+                    </button>
+                  </template>
+                  <template v-else-if="translateMenuGroup === 'show'">
+                    <button type="button" :disabled="!hasValidTranslatedTitle" @click="onToggleTitleView">
+                      {{
+                        showTranslatedTitle
+                          ? t("gameDetail.showOriginalTitle")
+                          : t("gameDetail.showTranslatedTitle")
+                      }}
+                    </button>
+                    <button type="button" :disabled="!hasValidTranslatedDescription" @click="onToggleContentView">
+                      {{
+                        showTranslatedDescription
+                          ? t("gameDetail.showOriginalContent")
+                          : t("gameDetail.showTranslatedContent")
+                      }}
+                    </button>
+                    <button
+                      type="button"
+                      :disabled="!hasValidTranslatedTitle && !hasValidTranslatedDescription"
+                      @click="onToggleBothView"
+                    >
+                      {{
+                        showTranslatedTitle && showTranslatedDescription
+                          ? t("gameDetail.showOriginalBoth")
+                          : t("gameDetail.showTranslatedBoth")
+                      }}
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button type="button" :disabled="!hasCachedTitle" @click="onRevokeTitleOnly">
+                      {{ t("gameDetail.revokeTitleOnly") }}
+                    </button>
+                    <button type="button" :disabled="!hasCachedDescription" @click="onRevokeContentOnly">
+                      {{ t("gameDetail.revokeContentOnly") }}
+                    </button>
+                    <button
+                      type="button"
+                      :disabled="!hasCachedTitle && !hasCachedDescription"
+                      @click="onRevokeBoth"
+                    >
+                      {{ t("gameDetail.revokeBoth") }}
+                    </button>
+                  </template>
                 </div>
+              </Transition>
+              <div class="translate-menu-dots">
+                <span
+                  v-for="(group, i) in translateMenuGroups"
+                  :key="group"
+                  class="translate-menu-dot"
+                  :class="{ active: i === translateMenuGroupIndex }"
+                />
               </div>
-            </div>
+            </DropdownMenu>
             <div v-if="game.description" class="description-wrap">
               <template v-if="translatingContent">
                 <div class="skeleton-bar skeleton-desc"><div class="shimmer" /></div>
@@ -977,8 +977,9 @@ async function onDelete() {
   margin-bottom: var(--space-3);
 }
 
+/* Shell (trigger/panel/backdrop positioning and chrome) comes from DropdownMenu.vue, shared
+   with AppSettings.vue's model picker. */
 .translate-menu-wrap {
-  position: relative;
   margin-bottom: var(--space-2);
 }
 
@@ -986,33 +987,11 @@ async function onDelete() {
   margin-bottom: 0;
 }
 
-/* Full-viewport, invisible - exists only to catch a click outside the menu and close it,
-   avoiding a window-level event listener/lifecycle hook for a single dropdown. Sits below the
-   menu itself (lower z-index) so menu-item clicks reach their own buttons first. */
-.translate-menu-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9;
-}
-
-.translate-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 0.25rem;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
+/* :deep() is required here, not a plain scoped selector - the panel div lives inside
+   DropdownMenu.vue's own template (not its root, the only element Vue's scoped-CSS child
+   exception reaches), so it never carries this component's own scope attribute. */
+.translate-menu-wrap :deep(.translate-menu) {
   min-width: 220px;
-  background: var(--color-base);
-  border: var(--button-border-width) solid var(--color-surface1);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-  /* Receives focus on open (menuEl.focus()) so ArrowUp/ArrowDown land here without a global
-     window listener - custom focus styling below instead of the default outline, matching
-     every other dropdown/menu-style control in this app. */
-  outline: none;
 }
 
 /* One group (translate/show/remove) shown at a time - scrolling (wheel) or ArrowUp/ArrowDown

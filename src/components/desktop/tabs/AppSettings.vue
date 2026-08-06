@@ -5,6 +5,7 @@ import { IconChevronDown } from "@tabler/icons-vue";
 
 import { useAppSettingsStore } from "@/stores/appSettings";
 import { useTranslationStore } from "@/stores/translation";
+import { DropdownMenu } from "@/components/desktop/common";
 import { messages } from "@/i18n";
 
 const { t } = useI18n();
@@ -99,36 +100,39 @@ function selectModel(modelId: string) {
       </div>
 
       <div class="model-row model-row-spaced">
-        <div class="model-menu-wrap">
-          <button
-            type="button"
-            class="compact-button model-menu-trigger"
-            @click="modelMenuOpen = !modelMenuOpen"
-          >
-            <span class="model-menu-trigger-info">
-              <span class="model-name">{{ selectedModel?.name }}</span>
-              <span class="model-subtitle">{{ selectedModel?.subtitle }}</span>
-            </span>
-            <IconChevronDown :size="14" :stroke-width="1.75" />
-          </button>
-          <div v-if="modelMenuOpen" class="model-menu-backdrop" @click="modelMenuOpen = false" />
-          <div v-if="modelMenuOpen" class="model-menu">
+        <DropdownMenu
+          v-model:open="modelMenuOpen"
+          wrap-class="model-menu-wrap"
+          panel-class="model-menu-panel"
+        >
+          <template #trigger>
             <button
-              v-for="model in translation.models"
-              :key="model.id"
               type="button"
-              class="model-menu-item"
-              :class="{ active: model.id === translation.selectedModelId }"
-              @click="selectModel(model.id)"
+              class="compact-button model-menu-trigger"
+              @click="modelMenuOpen = !modelMenuOpen"
             >
-              <span class="model-menu-item-info">
-                <span class="model-name">{{ model.name }}</span>
-                <span class="model-subtitle">{{ model.subtitle }}</span>
+              <span class="model-menu-trigger-info">
+                <span class="model-name">{{ selectedModel?.name }}</span>
+                <span class="model-subtitle">{{ selectedModel?.subtitle }}</span>
               </span>
-              <span class="model-size">{{ formatBytes(model.size_bytes) }}</span>
+              <IconChevronDown :size="14" :stroke-width="1.75" />
             </button>
-          </div>
-        </div>
+          </template>
+          <button
+            v-for="model in translation.models"
+            :key="model.id"
+            type="button"
+            class="model-menu-item"
+            :class="{ active: model.id === translation.selectedModelId }"
+            @click="selectModel(model.id)"
+          >
+            <span class="model-menu-item-info">
+              <span class="model-name">{{ model.name }}</span>
+              <span class="model-subtitle">{{ model.subtitle }}</span>
+            </span>
+            <span class="model-size">{{ formatBytes(model.size_bytes) }}</span>
+          </button>
+        </DropdownMenu>
         <button
           v-if="selectedModel && translation.isDownloaded(selectedModel.id)"
           type="button"
@@ -209,12 +213,11 @@ function selectModel(modelId: string) {
   font-size: 0.75rem;
 }
 
-/* Shaped like GameDetail.vue's .translate-menu-wrap/.translate-menu (button trigger, absolute
-   panel, backdrop-to-close) - title/subtitle stacked on two left-aligned lines instead of a
-   native <select>'s single-line "Name — subtitle" text, which a <select> can't style per-line
-   anyway. */
+/* Shell (trigger/panel/backdrop positioning and chrome) comes from DropdownMenu.vue, shared
+   with GameDetail.vue's translate menu - title/subtitle stacked on two left-aligned lines
+   instead of a native <select>'s single-line "Name — subtitle" text, which a <select> can't
+   style per-line anyway. */
 .model-menu-wrap {
-  position: relative;
   flex: 1;
   min-width: 0;
 }
@@ -233,26 +236,12 @@ function selectModel(modelId: string) {
   min-width: 0;
 }
 
-.model-menu-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9;
-}
-
-.model-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
+/* :deep() is required here, not a plain scoped selector - the panel div lives inside
+   DropdownMenu.vue's own template (not its root, which is the only element Vue's scoped-CSS
+   child exception reaches), so it never carries this component's own scope attribute. Stretches
+   the panel to the trigger's full width - DropdownMenu's own panel only sets left:0. */
+.model-menu-wrap :deep(.model-menu-panel) {
   right: 0;
-  margin-top: 0.25rem;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-base);
-  border: var(--button-border-width) solid var(--color-surface1);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
 }
 
 .model-menu-item {

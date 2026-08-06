@@ -4341,6 +4341,55 @@ etc.'s "act then close" shape in `GameDetail.vue`. `bun run build` clean; confir
 `IconChevronDown` resolves via the build itself rather than grepping the icon package's file
 list (Tabler's icon file naming under `@tabler/icons-vue` didn't match a simple `find` pattern).
 
+**Follow-up: extracted the shared trigger/panel/backdrop shell into `DropdownMenu.vue`, wired
+both `AppSettings.vue`'s model picker and `GameDetail.vue`'s translate menu through it.** User
+asked whether the just-hand-built shape should become a shared component, since they wanted the
+same design for the locale picker too - confirmed both existing dropdowns (model picker,
+translate menu) were the only two hand-built instances of this shape before extracting.
+
+Deliberately extracted only the *shell* - open/close state, trigger slot, absolute panel,
+backdrop-to-close - not the panel *content*. `AppSettings.vue`'s menu is a real value-picker
+(flat item list, each item selects one id); `GameDetail.vue`'s is a multi-group action carousel
+(paged via wheel/arrow-keys, animated transition, dot indicator, several differently-disabled
+buttons per group). Forcing both through one API with slots for grouping/paging/dots would have
+bloated the shared component for a single caller's edge case - flagged this distinction directly
+to the user rather than building an overly generic one-size-fits-all dropdown.
+
+New `src/components/desktop/common/DropdownMenu.vue` (added to that folder's existing barrel,
+alongside `BaseModal`/`InstallableStatus`/`ToastContainer`): `open`/`update:open` v-model prop,
+`#trigger` scoped slot (receives `open`/`close`), default slot for panel content (receives
+`close`), plus `wheel`/`keydown` events re-emitted from the panel element itself (not relied on
+via Vue's attrs-fallthrough, which only reaches a child component's *root* node, not arbitrary
+internal elements) so `GameDetail.vue` can still page groups while listening from outside. A
+`focusPanel()` method is exposed via `defineExpose` for the same reason - `GameDetail.vue` needs
+to focus the actual panel DOM node right after opening so arrow keys land on it, and that node
+lives inside the child's own template. `wrapClass`/`panelClass` props let each caller add its
+own width/positioning overrides on top of the shared chrome (background/border/radius/shadow/
+overflow/flex-column, all now living once in `DropdownMenu.vue` instead of duplicated in both
+callers).
+
+Ran into a real Vue scoped-CSS subtlety while wiring `panelClass`: Vue's scoped-CSS mechanism
+only gives a *child component's root element* the parent's own scope attribute (specifically so
+a parent can style a child's root via plain scoped selectors) - it does **not** extend that to
+arbitrary non-root elements inside the child's template, even ones a parent passed a custom
+class name to via a prop. The panel div lives inside `DropdownMenu.vue`'s own template, not at
+its root (the root is the wrap div) - so a plain `.model-menu-panel { right: 0; }` in
+`AppSettings.vue`'s scoped style silently failed to match anything. Fixed by anchoring on the
+wrap element (which *does* carry the parent's scope attribute, being the child's root) and using
+`:deep()` to reach the panel: `.model-menu-wrap :deep(.model-menu-panel) { right: 0; }` in
+`AppSettings.vue`, `.translate-menu-wrap :deep(.translate-menu) { min-width: 220px; }` in
+`GameDetail.vue` - same fix applied to both consumers once the root cause was understood, not
+patched ad hoc per file.
+
+`GameDetail.vue`'s `menuEl` ref changed from a plain `HTMLElement | null` (previously pointing
+directly at the `.translate-menu` div) to `InstanceType<typeof DropdownMenu> | null`, and
+`openTranslateMenu`'s focus call changed from `menuEl.value?.focus()` to
+`menuEl.value?.focusPanel()` - everything else in that file (group paging, wheel/keydown
+handlers, the animated transition, dot indicators) untouched, since only the shell moved.
+`bun run build` clean on both files; a repo-wide grep confirms no leftover `.translate-menu-
+backdrop`/`.model-menu-backdrop` CSS rules survived the move (backdrop styling now lives only
+in `DropdownMenu.vue`, with no consumer-side override needed by either caller).
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

@@ -438,7 +438,8 @@ available to test against).
   removal (confirmed
   llama.cpp `--jinja` parser bug)
 - [x] Settings UI: engine row + a model dropdown (not per-tier radio rows) with one status
-  button that follows the selected model's install state, live progress, Remove buttons
+  button that follows the selected model's install state, live progress, Remove buttons - shares
+  a new `DropdownMenu.vue` shell component with `GameDetail.vue`'s translate menu
 - [x] `GameDetail.vue`: "Translate" button opens a 3-group paged dropdown (translate
   title/content/both, view-toggle each independently or together, revoke per field or both) -
   wheel/arrow-key paged, animated, 3-dot indicator. Title/content translate, display, revert,

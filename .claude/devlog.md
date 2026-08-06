@@ -4049,6 +4049,54 @@ repo-wide grep confirms no other file references `translategemma`/`TranslateGemm
 Test artifacts (the ~5GB of downloaded GGUFs, server logs) cleaned up from the job's scratch
 directory afterward, not left behind.
 
+**Follow-up, same session: user pushed back with real-world evidence, leading to `gemma4-e2b`
+being added.** User pointed out Ollama - which is also llama.cpp-backed - runs Gemma 4 fluently
+on their own machine, and asked for a direct test without `--jinja` for the Gemma line, rather
+than accepting "Gemma templates are broken in llama.cpp" as a blanket conclusion from the
+TranslateGemma crash alone. Fair challenge, worth checking empirically rather than assuming
+Ollama's success (which very plausibly goes through its own Go-based templating layer, not
+llama-server's `--jinja`/minja path at all) somehow contradicted the crash already found.
+
+Downloaded `unsloth/gemma-4-E2B-it-GGUF`'s real Q4_K_M (3,106,738,272 bytes, verified against
+HF's own tree listing before downloading) and started the bundled `llama-server.exe` **without**
+`--jinja` this time - `/health` came back ready with no crash. Sent a real translation request
+through it (the exact JSON shape `translate_text` builds - system-free instruction prompt,
+`enable_thinking: false`, `max_tokens: 1024`) and got back a correct, clean Korean translation:
+`finish_reason: "stop"` (no rambling), 41 completion tokens, 4.1s round trip, ~11.5 tok/s -
+matching the expected CPU-only throughput range from earlier research, and confirming this
+isn't just "loads without crashing" but actually produces a real, sensible answer end-to-end.
+
+This resolves the apparent contradiction rather than leaving it unexplained: the crash found
+earlier was specifically about forcing `--jinja`'s strict static Jinja parser (minja) onto
+templates too structurally complex for it to prove safe ahead of time - both Gemma 4's own
+official template (independently confirmed via separate research: llama.cpp "cannot handle
+Gemma-4's complex Jinja template with macros, namespaces, and dictsort," bypassing it with
+hardcoded C++ workarounds instead) and TranslateGemma's structured-content template hit this
+same class of limitation. Without `--jinja` (already removed entirely in the previous fix),
+llama.cpp falls back to its own hardcoded per-architecture chat formatting instead of the broken
+parser path - which works fine for a standard chat model like Gemma 4, since it doesn't need
+the parser to correctly reason about a conditional `raise_exception` guard the way
+TranslateGemma's translation-specific template does. TranslateGemma still has no working path
+either way, since its correctness genuinely depends on structured input only the real (crash-
+prone) Jinja template provides - this is a real, asymmetric difference between the two model
+families' template complexity, not evidence the first test was wrong.
+
+Directly acknowledged to the user, when asked, that the *original* "TranslateGemma silently
+fails without `--jinja`" claim was never independently re-tested by this session the way the
+crash-with-`--jinja` claim was - it rests on the user's own real first bug report (from before
+`--jinja` existed in this codebase at all) plus research into the template's structural
+requirements, not a direct empirical test run here. Worth being explicit about that distinction
+rather than letting "confirmed via testing" quietly cover a claim that was actually inference -
+the same discipline this whole investigation has otherwise tried to hold to.
+
+Added `gemma4-e2b` as a 4th tier (~3.1GB, `unsloth/gemma-4-E2B-it-GGUF`, real verified size) -
+general-purpose, no special-casing needed in `translate_text` since it uses the same plain-
+string content format as the Qwen tiers. `list_models()`'s doc comment updated to record both
+the `--jinja` crash class and this confirmed-working exception in the same place, so a future
+pass has both halves of the story rather than just "Gemma is broken." `cargo fmt && cargo check`
+and `bun run build` both clean; test GGUF and logs cleaned up from the job's scratch directory
+afterward.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

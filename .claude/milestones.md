@@ -434,11 +434,12 @@ available to test against).
 - [x] `translation` host-native Rust module (`src-tauri/src/translation.rs`) - downloads
   llama.cpp's own prebuilt server binary, runs it as a subprocess, talks to it over HTTP (not a
   Rust ML crate dependency)
-- [x] 3 selectable model tiers, all Q4_K_M and under ~2.5GB RAM: `qwen2.5-1.5b` (cheapest),
-  `qwen3-4b` (recommended), `qwen3-4b-abliterated` (opt-in, uncensored, for NSFW game
-  descriptions) - see devlog for the full model-research history and rejected candidates,
-  including `translategemma-4b`'s removal (real, empirically-confirmed llama.cpp bug, not a
-  quantizer defect)
+- [x] 4 selectable model tiers, all Q4_K_M and under ~3.1GB RAM: `qwen2.5-1.5b` (cheapest),
+  `qwen3-4b` (recommended), `gemma4-e2b` (general-purpose), `qwen3-4b-abliterated` (opt-in,
+  uncensored, for NSFW game descriptions) - see devlog for the full model-research history and
+  rejected candidates, including `translategemma-4b`'s removal (real, empirically-confirmed
+  llama.cpp bug, not a quantizer defect) and `gemma4-e2b`'s addition (works fine once `--jinja`
+  was removed entirely - confirmed via direct testing, not just documentation)
 - [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
   download-on-first-use, Remove buttons to delete a downloaded engine/model
 - [x] `GameDetail.vue`: "Translate"/"Show translated"/"Show original" toggle, covers both title

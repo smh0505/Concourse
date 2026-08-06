@@ -39,22 +39,28 @@ pub struct TranslationModel {
     size_bytes: u64,
 }
 
-/// 3 tiers, all under ~2.5GB resident RAM (the sweet spot sized against real 16GB/32GB gaming
+/// 4 tiers, all under ~3.1GB resident RAM (the sweet spot sized against real 16GB/32GB gaming
 /// machines - see devlog). `qwen3-4b` is the recommended default; `qwen2.5-1.5b` is a cheaper
-/// alternative; `qwen3-4b-abliterated` is an explicitly opt-in, non-default uncensored variant
-/// for translating NSFW games' own descriptions without false-positive refusals. Rejected
-/// candidates (`gemma3-1b`, `gemma4-e4b`, EuroLLM-1.7B) and the full reasoning for every pick
-/// here are recorded in devlog, not repeated in this comment - check there before re-proposing
-/// an alternative that might already be a documented dead end.
+/// alternative; `gemma4-e2b` is a general-purpose alternative confirmed via direct testing to
+/// work correctly *without* `--jinja` (see below); `qwen3-4b-abliterated` is an explicitly
+/// opt-in, non-default uncensored variant for translating NSFW games' own descriptions without
+/// false-positive refusals. Rejected candidates (`gemma3-1b`, `gemma4-e4b`, EuroLLM-1.7B) and
+/// the full reasoning for every pick here are recorded in devlog, not repeated in this comment -
+/// check there before re-proposing an alternative that might already be a documented dead end.
 ///
 /// `translategemma-4b` (translation-specialized, previously the recommended default) was
-/// removed entirely, not just demoted - confirmed via direct empirical testing (not just
-/// upstream issue reports) that `llama-server.exe` crashes at model-load time when `--jinja`
-/// actually tries to parse its chat template ("Unable to generate parser for this template"),
-/// against both `mradermacher`'s and `bullerwins`' GGUF conversions of the exact same base
-/// model - a genuine, currently-open llama.cpp bug in this specific template's structure, not a
-/// defect in any one quantizer's conversion. See devlog for the full test log and the upstream
-/// issues this matches.
+/// removed entirely, not just demoted - confirmed via direct empirical testing that
+/// `llama-server.exe` crashes at model-load time when `--jinja` actually tries to parse its
+/// chat template ("Unable to generate parser for this template"), against both `mradermacher`'s
+/// and `bullerwins`' GGUF conversions of the exact same base model - a genuine, currently-open
+/// llama.cpp bug in this specific template's structure. `gemma4-e2b` doesn't hit this: without
+/// `--jinja` (removed from `ensure_server`'s launch args entirely after this), llama.cpp falls
+/// back to its own hardcoded Gemma chat formatting instead of the broken Jinja static parser,
+/// which works fine for a standard chat model - confirmed via a real round-trip translation
+/// request, not just documentation. TranslateGemma still has no working path either way: without
+/// `--jinja` it never receives the structured `source_lang_code`/`target_lang_code` fields its
+/// template requires (this app's original "silently wrong output" bug report, before any
+/// `--jinja` was added), and with `--jinja` it crashes outright. See devlog for both test logs.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
@@ -72,6 +78,14 @@ pub fn list_models() -> Vec<TranslationModel> {
             repo: "unsloth/Qwen3-4B-GGUF".to_string(),
             file: "Qwen3-4B-Q4_K_M.gguf".to_string(),
             size_bytes: 2_500_000_000,
+        },
+        TranslationModel {
+            id: "gemma4-e2b".to_string(),
+            name: "Gemma 4 E2B".to_string(),
+            subtitle: "broader coverage, general-purpose".to_string(),
+            repo: "unsloth/gemma-4-E2B-it-GGUF".to_string(),
+            file: "gemma-4-E2B-it-Q4_K_M.gguf".to_string(),
+            size_bytes: 3_106_738_272,
         },
         TranslationModel {
             id: "qwen3-4b-abliterated".to_string(),

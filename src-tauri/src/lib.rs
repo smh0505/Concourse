@@ -1,4 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use tauri::Manager;
+
 mod db;
 mod image_utils;
 mod launcher;
@@ -52,6 +54,13 @@ pub fn run() {
             translation::download_translation_model,
             translation::translate_text
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::Exit = event {
+                app_handle
+                    .state::<translation::TranslationState>()
+                    .shutdown();
+            }
+        });
 }

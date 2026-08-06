@@ -457,12 +457,15 @@ available to test against).
   Compared alternatives (`candle-transformers` direct, mistralrs's HF-hub/ISQ path, Ollama, LM
   Studio) and landed on bundling llama.cpp's own prebuilt server binary - see devlog for the
   full comparison and why each alternative was rejected
+- [x] App-exit hook kills the running `llama-server.exe` subprocess (`RunEvent::Exit` in
+  `lib.rs` calling `TranslationState::shutdown()`) - no orphaned process left behind after the
+  app window closes
 
 Milestone 21 fully closed. See devlog for the model/library comparison behind translation's
 scoping, the vue-i18n conversion's own implementation detail, and the translation feature's
 implementation (deliberately deferred for a later pass: persisting a translated description
 back to the DB, translating other fields, canceling an in-progress download, any model beyond
-the 3 TranslateGemma tiers, killing the `llama-server.exe` subprocess on app exit, and detecting
+the 3 TranslateGemma tiers, and detecting
 already-installed Ollama/LM Studio as an opportunistic alternative to the bundled engine).
 
 ## Milestone 22 — Plugin-Developer Documentation Site

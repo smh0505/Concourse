@@ -3615,12 +3615,19 @@ flatten-and-diff Node script used throughout this project - re-verified exact ke
 all 10 locales. `bun run build` (full frontend, all three touched files together) and a final
 `cargo fmt && cargo check` pass both clean.
 
-Known limitation, explicitly not fixed this pass: nothing kills the `llama-server.exe` child
-process on app exit yet. `.kill_on_drop(true)` is set on the `Command`, which may help if the
-`Child` handle's `Drop` runs, but Tauri's own exit sequence (`RunEvent::Exit`) isn't wired up - a
-real, acknowledged risk of an orphaned `llama-server.exe` process lingering after the app window
-closes. Tracked as a follow-up, not blocking this fix. Real end-to-end verification (an actual
-download, an actual translation, confirming this pivot actually fixes the crash) still can only
+**Follow-up, same session: wired the app-exit kill.** The orphaned-`llama-server.exe` risk
+flagged above was fixed directly rather than left open. `TranslationState::shutdown()` added -
+a plain synchronous method (`self.0.blocking_lock()`, not `.await`) that calls `Child::
+start_kill()` (a sync, fire-and-forget kill signal - no runtime needed, unlike `child.kill()`
+which is async) if a server is currently running. `lib.rs` switched from `.run(context)` to
+`.build(context)?.run(|app_handle, event| ...)` so a `RunEvent::Exit` handler could be added,
+calling `app_handle.state::<TranslationState>().shutdown()` - needed adding `use tauri::Manager`
+at the top of `lib.rs` for `.state::<T>()` to resolve. `blocking_lock` is safe here since exit
+teardown runs on the main thread outside any async task, never contending with a held guard
+elsewhere. `cargo fmt && cargo check` clean.
+
+Real end-to-end verification (an actual download, an actual translation, confirming this pivot
+actually fixes the crash, and confirming the exit hook actually kills the process) still can only
 happen on the user's own machine.
 
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition

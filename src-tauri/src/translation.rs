@@ -207,9 +207,7 @@ pub async fn download_translation_model(app: AppHandle, model_id: String) -> Res
 
 /// The currently-running `llama-server.exe`, if any - starting it (loading a multi-gigabyte
 /// GGUF) is too slow to redo per translation call, so it stays running across calls and only
-/// restarts when the requested model id actually changes. Known limitation, not addressed this
-/// pass: nothing kills this child process on app exit yet, so it can outlive the app window if
-/// the OS doesn't clean it up on its own - see devlog.
+/// restarts when the requested model id actually changes.
 struct RunningServer {
     model_id: String,
     child: Child,
@@ -220,6 +218,17 @@ pub struct TranslationState(Mutex<Option<RunningServer>>);
 impl TranslationState {
     pub fn new() -> Self {
         Self(Mutex::new(None))
+    }
+
+    /// Called from `RunEvent::Exit` - a plain synchronous fire-and-forget kill, not an
+    /// `.await`ed `child.kill()`, since app-exit teardown isn't running inside the async
+    /// runtime by the time this fires. `blocking_lock` is safe here: this always runs on the
+    /// main thread outside of any async task, never inside a `tokio::sync::Mutex` guard held
+    /// elsewhere.
+    pub fn shutdown(&self) {
+        if let Some(mut running) = self.0.blocking_lock().take() {
+            let _ = running.child.start_kill();
+        }
     }
 }
 

@@ -4390,6 +4390,17 @@ handlers, the animated transition, dot indicators) untouched, since only the she
 backdrop`/`.model-menu-backdrop` CSS rules survived the move (backdrop styling now lives only
 in `DropdownMenu.vue`, with no consumer-side override needed by either caller).
 
+**Follow-up: fixed low-contrast text on the selected model item under a "brick"-style theme.**
+User reported the `.model-menu-item.active` highlight reading dark/hard-to-read under a
+specific theme. Root cause: that rule filled the selected item's background with `--color-
+surface1` while leaving text at `--color-text` unchanged - a theme can set `--color-surface1`
+independently dark/saturated (tuned against `--color-base`/`--color-surface0`'s own lightness,
+not against `--color-text`), so nothing here previously guaranteed the two would stay readable
+together. Fixed by deriving the highlight from `currentColor` instead of a fixed surface token -
+`background: color-mix(in srgb, currentColor 12%, transparent)` - a low-opacity tint of the
+text's own color, which by construction can never clash with that same text regardless of what
+a given theme's surface tokens happen to be set to. `bun run build` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

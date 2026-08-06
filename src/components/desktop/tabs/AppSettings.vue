@@ -261,7 +261,12 @@ function selectModel(modelId: string) {
   background: var(--color-surface0);
 }
 
+/* Derived from currentColor (the text's own color), not a fixed --color-surfaceX token - some
+   themes set --color-surface1 dark/saturated independent of --color-text (tuned against
+   --color-base/--color-surface0's lightness instead), which could make selected-item text
+   unreadable against it. Tinting toward currentColor at low opacity guarantees a visible but
+   readable highlight regardless of what a given theme sets its surface tokens to. */
 .model-menu-item.active {
-  background: var(--color-surface1);
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 </style>

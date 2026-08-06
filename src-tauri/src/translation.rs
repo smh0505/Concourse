@@ -15,7 +15,8 @@
 //! ever use translation.
 
 use std::path::PathBuf;
-use std::time::Duration;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
@@ -25,6 +26,12 @@ use tokio::sync::Mutex;
 const LLAMA_CPP_VERSION: &str = "b10290";
 const LLAMA_CPP_ASSET: &str = "llama-b10290-bin-win-cpu-x64.zip";
 const SERVER_PORT: u16 = 8712;
+// RAM is the scarce resource this exists to protect (see the sizing analysis in devlog for why
+// the 12B/27B tiers were dropped) - an idle server left running after a one-off translation is
+// the same problem in a different shape, so it gets stopped automatically rather than only on
+// model-switch/app-exit.
+const IDLE_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+const IDLE_CHECK_INTERVAL: Duration = Duration::from_secs(30);
 
 /// One selectable model tier. `repo`/`file` are both needed to build the real download URL
 /// (`https://huggingface.co/{repo}/resolve/main/{file}`) and the on-disk path this gets saved
@@ -220,17 +227,29 @@ pub async fn download_translation_model(app: AppHandle, model_id: String) -> Res
 
 /// The currently-running `llama-server.exe`, if any - starting it (loading a multi-gigabyte
 /// GGUF) is too slow to redo per translation call, so it stays running across calls and only
-/// restarts when the requested model id actually changes.
+/// restarts when the requested model id actually changes (or gets stopped by the idle watchdog
+/// below after `IDLE_TIMEOUT` of disuse). `generation` disambiguates this instance from
+/// whatever might replace it in the `Mutex` slot later - the watchdog task spawned alongside a
+/// given server captures this value and only ever acts on a server it still matches, so an old
+/// watchdog can never kill a newer server that happens to occupy the same slot.
 struct RunningServer {
     model_id: String,
     child: Child,
+    last_used: Instant,
+    generation: u64,
 }
 
-pub struct TranslationState(Mutex<Option<RunningServer>>);
+pub struct TranslationState {
+    running: Mutex<Option<RunningServer>>,
+    next_generation: AtomicU64,
+}
 
 impl TranslationState {
     pub fn new() -> Self {
-        Self(Mutex::new(None))
+        Self {
+            running: Mutex::new(None),
+            next_generation: AtomicU64::new(0),
+        }
     }
 
     /// Called from `RunEvent::Exit` - a plain synchronous fire-and-forget kill, not an
@@ -239,9 +258,39 @@ impl TranslationState {
     /// main thread outside of any async task, never inside a `tokio::sync::Mutex` guard held
     /// elsewhere.
     pub fn shutdown(&self) {
-        if let Some(mut running) = self.0.blocking_lock().take() {
+        if let Some(mut running) = self.running.blocking_lock().take() {
             let _ = running.child.start_kill();
         }
+    }
+}
+
+/// Polls every `IDLE_CHECK_INTERVAL` and stops the server once it's sat unused for
+/// `IDLE_TIMEOUT` - spawned once per server start (from `ensure_server`), not a single
+/// long-lived task, so it naturally stops mattering once the server it watches is gone.
+/// Exits quietly (no error to report - this isn't a user-initiated action) as soon as the slot
+/// no longer holds the generation it was spawned for, whether that's because the server was
+/// killed by a model switch, by `shutdown()` on app exit, or by this same function already
+/// having fired.
+async fn watch_idle(app: AppHandle, generation: u64) {
+    loop {
+        tokio::time::sleep(IDLE_CHECK_INTERVAL).await;
+
+        let state = app.state::<TranslationState>();
+        let mut guard = state.running.lock().await;
+        match guard.as_ref() {
+            Some(running) if running.generation == generation => {
+                if running.last_used.elapsed() < IDLE_TIMEOUT {
+                    continue;
+                }
+            }
+            _ => return,
+        }
+
+        if let Some(mut running) = guard.take() {
+            drop(guard);
+            let _ = running.child.kill().await;
+        }
+        return;
     }
 }
 
@@ -263,9 +312,10 @@ async fn ensure_server(
     state: &TranslationState,
     model_id: &str,
 ) -> Result<(), String> {
-    let mut guard = state.0.lock().await;
-    if let Some(running) = guard.as_ref() {
+    let mut guard = state.running.lock().await;
+    if let Some(running) = guard.as_mut() {
         if running.model_id == model_id {
+            running.last_used = Instant::now();
             return Ok(());
         }
     }
@@ -306,11 +356,16 @@ async fn ensure_server(
         .spawn()
         .map_err(|e| format!("Failed to start translation engine: {}", e))?;
 
+    let generation = state.next_generation.fetch_add(1, Ordering::SeqCst);
     *guard = Some(RunningServer {
         model_id: model_id.to_string(),
         child,
+        last_used: Instant::now(),
+        generation,
     });
     drop(guard);
+
+    tauri::async_runtime::spawn(watch_idle(app.clone(), generation));
 
     wait_until_ready(&reqwest::Client::new()).await
 }

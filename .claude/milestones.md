@@ -464,6 +464,9 @@ available to test against).
 - [x] App-exit hook kills the running `llama-server.exe` subprocess (`RunEvent::Exit` in
   `lib.rs` calling `TranslationState::shutdown()`) - no orphaned process left behind after the
   app window closes
+- [x] Idle-timeout auto-shutdown: the running server stops itself after 5 minutes unused (not
+  just on model-switch/app-exit), so a one-off translation doesn't hold 1-5GB of RAM resident
+  for the rest of a gaming session
 
 Milestone 21 fully closed. See devlog for the model/library comparison behind translation's
 scoping, the vue-i18n conversion's own implementation detail, and the translation feature's

@@ -3683,6 +3683,29 @@ for the running `llama-server.exe` (so RAM isn't held resident indefinitely afte
 translation, not just cleaned up on model-switch/app-exit as today) - would meaningfully help
 the 16GB case specifically. Deferred, not blocking this pass.
 
+**Immediate follow-up, same session: built the idle-timeout auto-shutdown.** `RunningServer`
+gained `last_used: Instant` (bumped in `ensure_server`'s "same model, reuse" branch on every
+`translate_text` call) and `generation: u64` (a monotonic id from a new `TranslationState.
+next_generation: AtomicU64`, incremented each time a server actually (re)starts). A new
+`watch_idle(app, generation)` async task is spawned (`tauri::async_runtime::spawn`, not raw
+`tokio::spawn` - keeps it independent of whichever runtime Tauri happens to be driving) once per
+server start, polling every 30s (`IDLE_CHECK_INTERVAL`) and killing the server once `last_used`
+is more than 5 minutes stale (`IDLE_TIMEOUT`).
+
+The `generation` tag exists specifically to avoid a real race: without it, a watchdog spawned
+for an old server could fire *after* a model switch already replaced it in the `Mutex` slot with
+a different, freshly-started server, and kill the wrong one. `watch_idle` re-reads the state on
+every tick and only acts if `running.generation` still matches the value it was spawned with -
+otherwise (slot empty, or now holds a newer generation) it just returns quietly, since some
+other path (model switch, `shutdown()` on app exit, or its own timeout firing) has already made
+this watchdog's job moot. This is the same generation-counter pattern used to distinguish stale
+async work from current state, just applied to a background task instead of a request.
+
+`TranslationState`'s single `Mutex<Option<RunningServer>>` field also got named (`running`)
+instead of staying a bare tuple-struct field (`state.0`) - `next_generation` living alongside it
+made the tuple-struct shape confusing (`state.0` vs `state.1` reads as arbitrary), a plain named
+struct reads clearly at every call site. `cargo fmt && cargo check` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

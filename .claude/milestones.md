@@ -437,7 +437,8 @@ available to test against).
   devlog for the full model-research history, rejected candidates, and `translategemma-4b`'s
   removal (confirmed
   llama.cpp `--jinja` parser bug)
-- [x] Settings UI: engine + per-tier download rows, live progress, Remove buttons
+- [x] Settings UI: engine row + a model dropdown (not per-tier radio rows) with one status
+  button that follows the selected model's install state, live progress, Remove buttons
 - [x] `GameDetail.vue`: "Translate" button opens a 3-group paged dropdown (translate
   title/content/both, view-toggle each independently or together, revoke per field or both) -
   wheel/arrow-key paged, animated, 3-dot indicator. Title/content translate, display, revert,

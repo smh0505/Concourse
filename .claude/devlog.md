@@ -4298,6 +4298,32 @@ default now that `translategemma-4b` and its structured-content branch are gone)
 cargo check` clean; no frontend changes needed since `AppSettings.vue`/`GameDetail.vue` both
 read the tier list dynamically.
 
+**Discussed whether translation should become a plugin - decided no, stayed host-native.** User
+asked directly. Answer: this app's plugin architecture (source/theme/metadata/controller) is a
+WASM-sandboxed model (wasmtime, no subprocess spawn, no arbitrary binary download) - translation
+needs raw process spawn (`llama-server.exe`), app-data filesystem writes, and a long-lived
+background task with idle-timeout logic, none of which fits a WASM guest sandbox. It also
+doesn't map onto any of the 4 existing plugin kinds. This was already the original Milestone 21
+design decision (host-native module chosen specifically because a heavy inference-adjacent
+feature doesn't fit the sandbox model) - reaffirmed here, not revisited, since nothing changed
+that would make third-party-swappable translation implementations a real need.
+
+**Follow-up: replaced the per-tier radio-button list with a single dropdown + one status
+button.** User asked for this UI change directly - `AppSettings.vue`'s model picker previously
+rendered one `<label>` row per tier (radio input, name/subtitle, size, its own download/remove/
+downloading button) in a `.model-list`. Replaced with a single `<select>` (one `<option>` per
+tier, name/subtitle/size all in the option text) plus one status/action button that now tracks
+whichever model is currently selected via a new `selectedModel` computed
+(`translation.models.find(m => m.id === translation.selectedModelId)`). The button's own
+three-way branch (Remove/Downloading.../Download) is unchanged logic, just reading
+`selectedModel.id` instead of a per-row `model.id` - selecting a different option in the
+dropdown makes the button immediately reflect that model's real install state, matching what was
+asked ("the button next to it should follow the selected model's installation status"). Removed
+the now-dead `.model-list`/`.model-info`/`.model-subtitle` CSS rules, added `.model-select`
+(`flex: 1`) and a small `.model-row-spaced` margin between the engine row and the model row
+(previously supplied by `.model-list`'s own `margin-top`, lost when that wrapper was removed).
+`bun run build` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

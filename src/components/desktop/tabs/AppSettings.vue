@@ -32,6 +32,10 @@ const downloadPercent = computed(() => {
   if (!progress || progress.total === 0) return 0;
   return Math.round((progress.downloaded / progress.total) * 100);
 });
+
+const selectedModel = computed(() =>
+  translation.models.find((m) => m.id === translation.selectedModelId) ?? null,
+);
 </script>
 
 <template>
@@ -86,46 +90,41 @@ const downloadPercent = computed(() => {
         </button>
       </div>
 
-      <div class="model-list">
-        <label v-for="model in translation.models" :key="model.id" class="model-row">
-          <input
-            type="radio"
-            name="translation-model"
-            :value="model.id"
-            :checked="translation.selectedModelId === model.id"
-            @change="translation.setSelectedModel(model.id)"
-          />
-          <span class="model-info">
-            <span class="model-name">{{ model.name }}</span>
-            <span class="model-subtitle">{{ model.subtitle }}</span>
-          </span>
-          <span class="model-size">{{ formatBytes(model.size_bytes) }}</span>
-          <button
-            v-if="translation.isDownloaded(model.id)"
-            type="button"
-            class="compact-button"
-            @click="translation.removeModel(model.id)"
-          >
-            {{ t("settings.remove") }}
-          </button>
-          <button
-            v-else-if="translation.downloadingId === model.id"
-            type="button"
-            class="compact-button"
-            disabled
-          >
-            {{ t("settings.downloading", { percent: downloadPercent }) }}
-          </button>
-          <button
-            v-else
-            type="button"
-            class="compact-button"
-            :disabled="translation.downloadingId !== null"
-            @click="translation.downloadModel(model.id)"
-          >
-            {{ t("settings.download") }}
-          </button>
-        </label>
+      <div class="model-row model-row-spaced">
+        <select
+          class="model-select"
+          :value="translation.selectedModelId ?? ''"
+          @change="translation.setSelectedModel(($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="model in translation.models" :key="model.id" :value="model.id">
+            {{ model.name }} — {{ model.subtitle }} ({{ formatBytes(model.size_bytes) }})
+          </option>
+        </select>
+        <button
+          v-if="selectedModel && translation.isDownloaded(selectedModel.id)"
+          type="button"
+          class="compact-button"
+          @click="translation.removeModel(selectedModel.id)"
+        >
+          {{ t("settings.remove") }}
+        </button>
+        <button
+          v-else-if="selectedModel && translation.downloadingId === selectedModel.id"
+          type="button"
+          class="compact-button"
+          disabled
+        >
+          {{ t("settings.downloading", { percent: downloadPercent }) }}
+        </button>
+        <button
+          v-else
+          type="button"
+          class="compact-button"
+          :disabled="!selectedModel || translation.downloadingId !== null"
+          @click="selectedModel && translation.downloadModel(selectedModel.id)"
+        >
+          {{ t("settings.download") }}
+        </button>
       </div>
     </div>
   </div>
@@ -156,13 +155,6 @@ const downloadPercent = computed(() => {
   margin: 0;
 }
 
-.model-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
 .model-row {
   display: flex;
   align-items: center;
@@ -170,24 +162,16 @@ const downloadPercent = computed(() => {
   font-size: 0.85rem;
 }
 
+.model-row-spaced {
+  margin-top: var(--space-2);
+}
+
 .model-name {
   flex: 1;
 }
 
-.model-info {
+.model-select {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.model-subtitle {
-  opacity: 0.7;
-  font-size: 0.75rem;
-}
-
-.model-size {
-  opacity: 0.7;
-  font-size: 0.75rem;
 }
 </style>

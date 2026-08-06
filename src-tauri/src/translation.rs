@@ -517,6 +517,13 @@ struct ChatRequest {
     messages: Vec<ChatMessage>,
     temperature: f32,
     chat_template_kwargs: ChatTemplateKwargs,
+    /// No cap here meant a model that fails to emit a clean stop token (a real risk at Q4
+    /// quantization) could ramble all the way out to the full 4096-token context before
+    /// stopping - at CPU-only generation speed that's minutes, not seconds, and reads to a user
+    /// as "translation takes forever" rather than the actual bug (unbounded generation length).
+    /// 1024 tokens is generous for a game description/title translation, which is realistically
+    /// a paragraph or two at most.
+    max_tokens: u32,
 }
 
 #[derive(Deserialize)]
@@ -567,6 +574,7 @@ pub async fn translate_text(
         chat_template_kwargs: ChatTemplateKwargs {
             enable_thinking: false,
         },
+        max_tokens: 1024,
     };
 
     let response = reqwest::Client::new()

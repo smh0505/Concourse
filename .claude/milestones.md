@@ -449,6 +449,11 @@ available to test against).
 - [x] App-exit hook and 5-minute idle-timeout both auto-kill the `llama-server.exe` subprocess
 - [x] `enable_thinking: false` sent on every translation request - Qwen3's default "thinking"
   reasoning block was adding real unnecessary latency for a task this simple
+- [x] Fixed `translategemma-4b` silently producing no translation: added `--jinja` (so
+  llama-server actually renders each GGUF's own chat template) and a TranslateGemma-specific
+  structured request format (its template needs `source_lang_code`/`target_lang_code`, not a
+  plain string) - known limitation, no source-language detection built, so `source_lang_code`
+  is hardcoded to `"en"`
 - [x] Engine research: `llama-cpp-2` (Windows CMake bugs) → `mistralrs` (compiled clean but
   can't load `gemma3` GGUF, caught by real user testing) → llama.cpp prebuilt binary - see
   devlog for the full alternatives comparison

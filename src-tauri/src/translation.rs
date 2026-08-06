@@ -419,6 +419,11 @@ async fn ensure_server(
         .unwrap_or(4)
         .to_string();
 
+    // --jinja makes llama-server actually render each GGUF's own embedded chat template
+    // (Jinja) instead of a generic built-in fallback formatter. Without it, TranslateGemma's
+    // real template - which requires structured, per-part source_lang_code/target_lang_code
+    // fields, not a plain string - never runs at all, silently producing garbage/empty output
+    // instead of an error. Harmless for the Qwen tiers, whose templates are plain string-based.
     let child = Command::new(&server_exe)
         .arg("-m")
         .arg(&model_path)
@@ -430,6 +435,7 @@ async fn ensure_server(
         .arg(&threads)
         .arg("-tb")
         .arg(&threads)
+        .arg("--jinja")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .kill_on_drop(true)
@@ -450,10 +456,48 @@ async fn ensure_server(
     wait_until_ready(&reqwest::Client::new()).await
 }
 
+/// Most models here (`qwen2.5-1.5b`, `qwen3-4b`, `qwen3-4b-abliterated`) take a plain string
+/// `content`, same as any generic OpenAI-style chat request. `translategemma-4b`'s own chat
+/// template is different and stricter: it requires `content` as a one-element array of a
+/// structured part carrying explicit `source_lang_code`/`target_lang_code` fields - a plain
+/// string silently fails to invoke the real template correctly (see `translate_text` below).
+#[derive(Serialize)]
+#[serde(untagged)]
+enum ChatContent {
+    Text(String),
+    Parts([TranslateGemmaPart; 1]),
+}
+
+#[derive(Serialize)]
+struct TranslateGemmaPart {
+    r#type: &'static str,
+    source_lang_code: &'static str,
+    target_lang_code: String,
+    text: String,
+}
+
+/// TranslateGemma's own template throws `UndefinedError` if `source_lang_code` is missing -
+/// there's no "auto-detect" option, and this app has no source-language detection built. Game
+/// descriptions/metadata in this app come overwhelmingly from English-language sources (Steam/
+/// IGDB/GOG/Epic APIs), so English is assumed as the source language - a known, documented
+/// limitation: translating an originally non-English description via `translategemma-4b`
+/// specifically will produce a wrong translation, unlike the Qwen tiers' freeform prompt, which
+/// has no such requirement since it doesn't need to know the source language at all.
+const TRANSLATEGEMMA_SOURCE_LANG: &str = "en";
+
+/// This app's own locale codes (`src/i18n/locales/*.json` file stems) already match what
+/// TranslateGemma's chat template accepts directly - `zh-Hans`/`pt-BR` included, both real
+/// TranslateGemma-supported codes, not just close approximations - so this is currently just an
+/// identity pass-through. Kept as its own function (not inlined at the call site) since it's the
+/// one place a future locale/code mismatch would need fixing.
+fn translategemma_lang_code(locale: &str) -> String {
+    locale.to_string()
+}
+
 #[derive(Serialize)]
 struct ChatMessage {
     role: &'static str,
-    content: String,
+    content: ChatContent,
 }
 
 /// Hybrid "thinking" models (Qwen3's whole line) default to emitting a full `<think>...</think>`
@@ -500,15 +544,24 @@ pub async fn translate_text(
 ) -> Result<String, String> {
     ensure_server(&app, &state, &model_id).await?;
 
-    let prompt = format!(
-        "Translate the following text into {}. Only output the translation, nothing else.\n\n{}",
-        target_language, text
-    );
+    let content = if model_id.starts_with("translategemma") {
+        ChatContent::Parts([TranslateGemmaPart {
+            r#type: "text",
+            source_lang_code: TRANSLATEGEMMA_SOURCE_LANG,
+            target_lang_code: translategemma_lang_code(&target_language),
+            text,
+        }])
+    } else {
+        ChatContent::Text(format!(
+            "Translate the following text into {}. Only output the translation, nothing else.\n\n{}",
+            target_language, text
+        ))
+    };
     let request = ChatRequest {
         model: "translation",
         messages: vec![ChatMessage {
             role: "user",
-            content: prompt,
+            content,
         }],
         temperature: 0.3,
         chat_template_kwargs: ChatTemplateKwargs {

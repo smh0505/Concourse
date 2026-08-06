@@ -3869,6 +3869,65 @@ code constructs a `Game` object manually (a repo-wide grep for `Game` literals a
 empty) - the 3 new required-but-nullable fields only ever come from a real DB row via `SELECT
 *`, so no other call site needed touching.
 
+**Follow-up: split each model's `name`'s "(...)" qualifier into a dedicated `subtitle` field.**
+User asked for the parenthetical part of each tier's display name (e.g. "TranslateGemma 4B
+(recommended, translation-specialized)") to render as a visual subtitle instead of packed inline
+- added `subtitle: String` to `TranslationModel` (both the Rust struct and the frontend
+`TranslationModel` interface) rather than having the frontend regex-parse it back out of a
+parenthesized string, which would've been fragile the moment a name/qualifier contained its own
+parens. `AppSettings.vue`'s per-tier row wraps name+subtitle in a new `.model-info` column
+(flex:1, so it still fills the same horizontal space the old flat `.model-name` did); the
+engine-download row (which has no subtitle) keeps using the older plain `.model-name` span
+directly, so `.model-name`'s own `flex: 1` rule had to stay in place for that row alongside the
+new `.model-info` wrapper for the model list. `bun run build` clean.
+
+**Follow-up: pinned `llama-server.exe`'s thread count, then found and fixed the real cause of
+translategemma-4b silently producing no translation.** User reported `qwen3-4b` translation
+taking longer than expected; researched llama-server's own thread defaults and initially
+proposed explicit `-t`/`-tb` flags as the fix. Verified against the actual bundled binary's own
+`--help` output (still had it extracted from earlier verification work) before committing to
+that claim - `--threads` already defaults to `-1`, which is llama.cpp's own auto-detect, not
+single-threaded - so explicitly pinning `-t`/`-tb` to `std::thread::available_parallelism()` is
+a safe defensive tweak, not the fix it was first assumed to be. Corrected this directly to the
+user rather than letting an overstated claim stand: the real, unavoidable cause of slow
+translation is CPU-only 4B-class inference's inherent ~8-15 tok/s ceiling on typical consumer
+hardware - an accepted cost of the "no GPU dependency, no heavy Rust ML crate" design already
+chosen for this engine, not something more thread-tuning fixes.
+
+User then reported `translategemma-4b` specifically failing to translate at all - no error
+toast, no console error, just nothing happening. Researched TranslateGemma's actual expected
+request format rather than assuming it was a generic instruct model like the Qwen tiers, and
+found the real bug: TranslateGemma's own chat template requires `content` as a structured
+one-element array (`[{type: "text", source_lang_code, target_lang_code, text}]`), not a plain
+string - and its template throws `UndefinedError` if `source_lang_code` is missing, with no
+"auto-detect" option. This app was sending the same plain-string, freeform-instruction prompt to
+every model regardless of tier. Worse, llama-server only actually renders a GGUF's own embedded
+Jinja chat template when started with `--jinja` - without it, TranslateGemma's real template
+likely never ran at all, falling back to some generic formatter that produced empty/garbage
+output silently instead of erroring, which explains why nothing appeared and nothing logged.
+
+Fixed properly rather than papering over: added the `--jinja` server flag (harmless for the
+Qwen tiers, whose templates are plain-string-based and unaffected either way - and arguably more
+correct for them too, now actually using their own real templates instead of a fallback).
+`ChatMessage.content` changed from `String` to a new `#[serde(untagged)] enum ChatContent {
+Text(String), Parts([TranslateGemmaPart; 1]) }`, letting `translate_text` branch on
+`model_id.starts_with("translategemma")` and build the correct shape per model rather than
+forcing one generic request format on every template. Added `translategemma_lang_code()` to map
+this app's own locale codes to what TranslateGemma's template accepts - turned out to be a
+no-op today (`zh-Hans`/`pt-BR` are already real TranslateGemma-supported codes, verified via
+research rather than assumed), but kept as its own named function since it's the one place a
+future locale/code mismatch would need fixing.
+
+`source_lang_code` has no auto-detect option in TranslateGemma's template at all and this app
+has no source-language detection built, so it's hardcoded to `"en"` - a real, documented
+limitation: translating an originally non-English description via `translategemma-4b`
+specifically will produce a wrong translation, since the app has no way to know otherwise. Game
+metadata in this app comes overwhelmingly from English-language sources (Steam/IGDB/GOG/Epic
+APIs), making this the pragmatic default rather than blocking the fix on building source-language
+detection, which nothing asked for. The Qwen tiers have no such requirement at all, since their
+plain freeform prompt doesn't need to know the source language to translate correctly.
+`cargo fmt && cargo check` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

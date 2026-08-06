@@ -128,4 +128,25 @@ export class GameRepository {
       [translatedDescription, locale, id],
     );
   }
+
+  /** Clears a cached translation back to "revoked" (display falls back to the original) - only
+   *  clears the field itself, leaving translated_locale untouched, since the other field's
+   *  cached translation (if any) still relies on it. */
+  async clearTranslatedTitle(id: number): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE games SET translated_title = NULL WHERE id = $1", [id]);
+  }
+
+  async clearTranslatedDescription(id: number): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE games SET translated_description = NULL WHERE id = $1", [id]);
+  }
+
+  async clearTranslation(id: number): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE games SET translated_title = NULL, translated_description = NULL, translated_locale = NULL WHERE id = $1",
+      [id],
+    );
+  }
 }

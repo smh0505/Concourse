@@ -442,9 +442,15 @@ available to test against).
   was removed entirely - confirmed via direct testing, not just documentation)
 - [x] Settings UI: engine + per-tier model download rows in `AppSettings.vue`, live progress,
   download-on-first-use, Remove buttons to delete a downloaded engine/model
-- [x] `GameDetail.vue`: "Translate" button opens a 5-item dropdown (translate title/content
-  independently, toggle each field's translated/original view independently, toggle both at
-  once) - title and content translate and display separately, not as one combined action
+- [x] `GameDetail.vue`: "Translate" button opens a 9-item dropdown (translate title/content/both,
+  toggle each field's translated/original view independently or together, revoke a cached
+  translation per field or both) - title and content translate, display, and revert fully
+  independently. Button reads "Translating..." mid-request; title/description each show their
+  own skeleton only while that specific field is being translated
+- [x] Translated title (when a valid cached translation exists for the current locale) now
+  shows in place of the original on `GameCard`'s hover balloon, `GameListRow`, and both
+  `StatsPanel` game lists - shared via a `displayTitle(game, locale)` helper (`src/db/types.ts`)
+  rather than duplicated per component
 - [x] Translated title/description persisted to the DB (new `translated_title`/
   `translated_description`/`translated_locale` columns, migration v4) alongside the originals,
   not overwriting them - a locale mismatch or an edited original invalidates the cached

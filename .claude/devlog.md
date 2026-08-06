@@ -4148,6 +4148,61 @@ via grep before deleting) and 8 new ones added (`translateTitleOnly`/`translateC
 flatten-and-diff Node script used throughout this project - parity re-verified clean.
 `bun run build` clean; no Rust changes this pass.
 
+**Follow-up, same session: added a "Translate Title and Content" combined action with a visible
+"Translating..." state, revoke actions per field, per-field skeletons during translation, and
+propagated translated titles to every other place a game's name appears.** Four related asks in
+one pass.
+
+**Combined translate + visible progress.** `onTranslateTitleAndContent` runs both translate
+calls sequentially (title first, then content only if a description exists), each in its own
+try/finally so a title-translation failure aborts before ever starting content (matches the
+existing per-field error-toast behavior, doesn't partially succeed silently). The trigger
+button's label is dynamic again (`"Translating..."` while in flight, `"Translate"` otherwise) -
+a partial reversal of the earlier "button always reads Translate" decision, since the user
+specifically wanted visible wait-feedback this time; re-added the `translating`/`gameDetail.
+translating` key that had just been removed the previous pass, this time as a computed
+derived from two new granular refs rather than one shared boolean (see below).
+
+**Per-field skeletons.** `translating` split into `translatingTitle`/`translatingContent` refs
+(a `computed` `translating = translatingTitle || translatingContent` still covers the trigger
+button's own label/disabled state, since only one translation realistically runs at a time
+anyway). Title and description each reuse the existing `.skeleton-title`/`.skeleton-desc`
+classes already established for the `textPending` (image-brightness-resolving) case elsewhere
+in this same file - translating content only doesn't blank the already-settled title, and vice
+versa, matching the same "only show a skeleton for what's actually loading" principle.
+
+**Revoke actions.** Three new dropdown items clear a cached translation back out entirely
+(`games.ts`'s `clearTranslatedTitle`/`clearTranslatedDescription`/`clearTranslation`, each only
+touching their own field(s) - the per-field ones deliberately leave `translated_locale` alone,
+since the *other* field's cached translation may still depend on it being correct). Gated on raw
+presence (`hasCachedTitle`/`hasCachedDescription`, a plain `!!game.translated_title` check) not
+current-locale validity, unlike the view-toggle items - the whole point of revoke is clearing
+out a translation even if it's already stale/wrong-locale, not just hiding a valid one. A thin
+`.translate-menu-divider` separates the revoke group from the translate/view-toggle groups above
+it in the dropdown, since 9 items in one flat list needed at least one visual grouping cue.
+
+**Translated titles everywhere else a game is named.** Added `displayTitle(game, locale)` as a
+small pure function in `src/db/types.ts` (co-located with the `Game` type it reads, re-exported
+from `db/index.ts`'s barrel) rather than duplicating the same locale/validity check in three
+separate components - `game.translated_title && game.translated_locale === locale ? ... :
+game.title`. This is deliberately simpler than `GameDetail.vue`'s own `hasValidTranslatedTitle`/
+`showTranslatedTitle` pair, since there's no per-view toggle concept anywhere except the detail
+page itself - everywhere else just always prefers a valid cached translation with no way to
+opt back to the original inline (the user can still revoke it entirely from the detail page if
+they want the original back). Wired into `GameCard.vue`'s hover balloon (`balloon-title`),
+`GameListRow.vue`'s `.title`, and both of `StatsPanel.vue`'s game lists (Most Played, Recently
+Played) - each pulls `appSettings.locale` from the already-established `useAppSettingsStore`.
+Deliberately left untouched: `GameCard`/`BigPictureTile`'s cover-placeholder initial letter and
+image `alt` text (always the original title's first character/full text - not requested, and a
+translated title changing a tile's fallback initial felt like a separate design question), and
+`GameListRow`'s plain-text description preview (translation only ever applies to title here,
+matching exactly what was asked).
+
+8 new i18n keys added (`translateTitleAndContent`, `revokeTitleOnly`/`revokeContentOnly`/
+`revokeBoth`, plus re-adding `translating`) - propagated to all 9 non-English locales via the
+same flatten-and-diff Node script used throughout this project, parity re-verified clean.
+`bun run build` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

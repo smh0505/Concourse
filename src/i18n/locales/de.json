@@ -61,7 +61,10 @@
     "showOriginalBoth": "Originaltitel und -inhalt anzeigen",
     "showTranslatedBoth": "Übersetzten Titel und Inhalt anzeigen",
     "translating": "Wird übersetzt...",
-    "translateTitleAndContent": "Titel und Inhalt übersetzen"
+    "translateTitleAndContent": "Titel und Inhalt übersetzen",
+    "revokeTitleOnly": "Titelübersetzung widerrufen",
+    "revokeContentOnly": "Inhaltsübersetzung widerrufen",
+    "revokeBoth": "Titel- und Inhaltsübersetzung widerrufen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

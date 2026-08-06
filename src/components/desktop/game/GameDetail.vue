@@ -168,7 +168,13 @@ const epicIconFill = computed(() => (themeIsLight !== wantsReverse.value ? "#000
 // to a different game doesn't keep showing the previous one's toggle state.
 const showTranslatedTitle = ref(false);
 const showTranslatedDescription = ref(false);
-const translating = ref(false);
+// Split per field (not one shared flag) so only the field actually being translated shows a
+// skeleton - translating content only doesn't blank out an already-settled title, and vice
+// versa. `translating` (below) still covers both for the trigger button's own label/disabled
+// state, since only one translation can realistically be in flight at a time anyway.
+const translatingTitle = ref(false);
+const translatingContent = ref(false);
+const translating = computed(() => translatingTitle.value || translatingContent.value);
 const translateMenuOpen = ref(false);
 watch(game, () => {
   showTranslatedTitle.value = false;
@@ -195,10 +201,15 @@ const hasValidTranslatedTitle = computed(
 const hasValidTranslatedDescription = computed(
   () => !!game.value.translated_description && game.value.translated_locale === appSettings.locale,
 );
+// Revoke works on any cached translation, even a stale one (locale mismatch) - the point is
+// clearing it out entirely, not just hiding it, so these check raw presence rather than
+// current-locale validity.
+const hasCachedTitle = computed(() => !!game.value.translated_title);
+const hasCachedDescription = computed(() => !!game.value.translated_description);
 
 async function onTranslateTitleOnly() {
   translateMenuOpen.value = false;
-  translating.value = true;
+  translatingTitle.value = true;
   try {
     const translatedTitle = await translation.translate(game.value.title, appSettings.locale);
     await library.saveTranslatedTitle(game.value.id, translatedTitle, appSettings.locale);
@@ -206,14 +217,14 @@ async function onTranslateTitleOnly() {
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
-    translating.value = false;
+    translatingTitle.value = false;
   }
 }
 
 async function onTranslateContentOnly() {
   translateMenuOpen.value = false;
   if (!game.value.description) return;
-  translating.value = true;
+  translatingContent.value = true;
   try {
     const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
     await library.saveTranslatedDescription(game.value.id, translatedDescription, appSettings.locale);
@@ -221,26 +232,33 @@ async function onTranslateContentOnly() {
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
-    translating.value = false;
+    translatingContent.value = false;
   }
 }
 
 async function onTranslateTitleAndContent() {
   translateMenuOpen.value = false;
-  translating.value = true;
+  translatingTitle.value = true;
   try {
     const translatedTitle = await translation.translate(game.value.title, appSettings.locale);
     await library.saveTranslatedTitle(game.value.id, translatedTitle, appSettings.locale);
     showTranslatedTitle.value = true;
-    if (game.value.description) {
-      const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
-      await library.saveTranslatedDescription(game.value.id, translatedDescription, appSettings.locale);
-      showTranslatedDescription.value = true;
-    }
+  } catch (e) {
+    toasts.push(String(e), "error");
+    return;
+  } finally {
+    translatingTitle.value = false;
+  }
+  if (!game.value.description) return;
+  translatingContent.value = true;
+  try {
+    const translatedDescription = await translation.translate(game.value.description, appSettings.locale);
+    await library.saveTranslatedDescription(game.value.id, translatedDescription, appSettings.locale);
+    showTranslatedDescription.value = true;
   } catch (e) {
     toasts.push(String(e), "error");
   } finally {
-    translating.value = false;
+    translatingContent.value = false;
   }
 }
 
@@ -252,6 +270,25 @@ function onToggleTitleView() {
 function onToggleContentView() {
   showTranslatedDescription.value = !showTranslatedDescription.value;
   translateMenuOpen.value = false;
+}
+
+async function onRevokeTitleOnly() {
+  translateMenuOpen.value = false;
+  await library.revokeTranslatedTitle(game.value.id);
+  showTranslatedTitle.value = false;
+}
+
+async function onRevokeContentOnly() {
+  translateMenuOpen.value = false;
+  await library.revokeTranslatedDescription(game.value.id);
+  showTranslatedDescription.value = false;
+}
+
+async function onRevokeBoth() {
+  translateMenuOpen.value = false;
+  await library.revokeTranslation(game.value.id);
+  showTranslatedTitle.value = false;
+  showTranslatedDescription.value = false;
 }
 
 function onToggleBothView() {
@@ -407,7 +444,8 @@ async function onDelete() {
             <div class="skeleton-bar skeleton-desc short"><div class="shimmer" /></div>
           </template>
           <template v-else-if="!editing">
-            <h1>{{ displayTitle }}</h1>
+            <div v-if="translatingTitle" class="skeleton-bar skeleton-title"><div class="shimmer" /></div>
+            <h1 v-else>{{ displayTitle }}</h1>
             <div class="meta">
               <span
                 class="platform-tag"
@@ -471,10 +509,29 @@ async function onDelete() {
                       : t("gameDetail.showTranslatedBoth")
                   }}
                 </button>
+                <div class="translate-menu-divider" />
+                <button type="button" :disabled="!hasCachedTitle" @click="onRevokeTitleOnly">
+                  {{ t("gameDetail.revokeTitleOnly") }}
+                </button>
+                <button type="button" :disabled="!hasCachedDescription" @click="onRevokeContentOnly">
+                  {{ t("gameDetail.revokeContentOnly") }}
+                </button>
+                <button
+                  type="button"
+                  :disabled="!hasCachedTitle && !hasCachedDescription"
+                  @click="onRevokeBoth"
+                >
+                  {{ t("gameDetail.revokeBoth") }}
+                </button>
               </div>
             </div>
             <div v-if="game.description" class="description-wrap">
-              <div class="description" v-html="descriptionHtml"></div>
+              <template v-if="translatingContent">
+                <div class="skeleton-bar skeleton-desc"><div class="shimmer" /></div>
+                <div class="skeleton-bar skeleton-desc"><div class="shimmer" /></div>
+                <div class="skeleton-bar skeleton-desc short"><div class="shimmer" /></div>
+              </template>
+              <div v-else class="description" v-html="descriptionHtml"></div>
             </div>
           </template>
 
@@ -886,6 +943,12 @@ async function onDelete() {
 .translate-menu button:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+.translate-menu-divider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--color-surface1);
 }
 
 /* Rendered markdown's child elements (marked's HTML output, injected via v-html) aren't

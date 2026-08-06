@@ -42,3 +42,12 @@ export type GameEditFields = Pick<
   | "locale_profile_guid"
   | "locale_wrapper"
 >;
+
+/** The title to actually show for `game` under the current UI `locale` - the cached
+ *  translation if one exists and is still valid for this locale, the original title
+ *  otherwise. Shared by every place that lists/names a game outside GameDetail.vue itself
+ *  (which additionally lets the user toggle back to the original on demand), so a translated
+ *  title shows up consistently everywhere rather than only on the detail page. */
+export function displayTitle(game: Game, locale: string): string {
+  return game.translated_title && game.translated_locale === locale ? game.translated_title : game.title;
+}

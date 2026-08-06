@@ -61,7 +61,10 @@
     "showOriginalBoth": "元のタイトルと内容を表示",
     "showTranslatedBoth": "翻訳されたタイトルと内容を表示",
     "translating": "翻訳中...",
-    "translateTitleAndContent": "タイトルと内容を翻訳"
+    "translateTitleAndContent": "タイトルと内容を翻訳",
+    "revokeTitleOnly": "タイトルの翻訳を取り消す",
+    "revokeContentOnly": "内容の翻訳を取り消す",
+    "revokeBoth": "タイトルと内容の翻訳を取り消す"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

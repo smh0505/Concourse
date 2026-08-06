@@ -61,7 +61,10 @@
     "showOriginalBoth": "Ver título e conteúdo originais",
     "showTranslatedBoth": "Ver título e conteúdo traduzidos",
     "translating": "Traduzindo...",
-    "translateTitleAndContent": "Traduzir título e conteúdo"
+    "translateTitleAndContent": "Traduzir título e conteúdo",
+    "revokeTitleOnly": "Revogar tradução do título",
+    "revokeContentOnly": "Revogar tradução do conteúdo",
+    "revokeBoth": "Revogar tradução do título e conteúdo"
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",

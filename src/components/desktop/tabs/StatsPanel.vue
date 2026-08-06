@@ -5,11 +5,13 @@ import { IconChartBar, IconClock, IconDeviceGamepad2 } from "@tabler/icons-vue";
 
 import { useLibraryStore } from "@/stores/library";
 import { useStatsStore } from "@/stores/stats";
-import type { Game } from "@/db";
+import { useAppSettingsStore } from "@/stores/appSettings";
+import { displayTitle, type Game } from "@/db";
 
 const { t } = useI18n();
 const library = useLibraryStore();
 const stats = useStatsStore();
+const appSettings = useAppSettingsStore();
 
 onMounted(() => {
   stats.refresh();
@@ -76,7 +78,7 @@ function hoursPlayed(game: Game) {
           :style="game.cover_art_url ? { backgroundImage: `url(${game.cover_art_url})` } : undefined"
         >
           <div class="scrim" />
-          <div class="stat-row-title">{{ game.title }}</div>
+          <div class="stat-row-title">{{ displayTitle(game, appSettings.locale) }}</div>
           <div class="stat-row-subtitle">{{ t("stats.hoursSuffix", { hours: hoursPlayed(game) }) }}</div>
         </div>
       </div>
@@ -93,7 +95,7 @@ function hoursPlayed(game: Game) {
           :style="game.cover_art_url ? { backgroundImage: `url(${game.cover_art_url})` } : undefined"
         >
           <div class="scrim" />
-          <div class="stat-row-title">{{ game.title }}</div>
+          <div class="stat-row-title">{{ displayTitle(game, appSettings.locale) }}</div>
         </div>
       </div>
     </section>

@@ -61,7 +61,10 @@
     "showOriginalBoth": "Показать оригинал (название и описание)",
     "showTranslatedBoth": "Показать перевод (название и описание)",
     "translating": "Перевод...",
-    "translateTitleAndContent": "Перевести название и описание"
+    "translateTitleAndContent": "Перевести название и описание",
+    "revokeTitleOnly": "Отменить перевод названия",
+    "revokeContentOnly": "Отменить перевод описания",
+    "revokeBoth": "Отменить перевод названия и описания"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

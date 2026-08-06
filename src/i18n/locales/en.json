@@ -61,7 +61,10 @@
     "showOriginalContent": "See Original Content",
     "showTranslatedContent": "See Translated Content",
     "showOriginalBoth": "See Original Title and Content",
-    "showTranslatedBoth": "See Translated Title and Content"
+    "showTranslatedBoth": "See Translated Title and Content",
+    "revokeTitleOnly": "Revoke Title Translation",
+    "revokeContentOnly": "Revoke Content Translation",
+    "revokeBoth": "Revoke Title and Content Translation"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

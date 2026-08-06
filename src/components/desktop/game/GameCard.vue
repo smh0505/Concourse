@@ -10,19 +10,22 @@ import {
 } from "@tabler/icons-vue";
 
 import { useLibraryStore } from "@/stores/library";
+import { useAppSettingsStore } from "@/stores/appSettings";
 import { useBalloonAnchor } from "@/composables/useBalloonAnchor";
 import { CardVisualRenderer } from "@/theme/cardVisualAst";
 import { useActiveCardVisual } from "@/theme/cardVisualRegistry";
-import type { Game } from "@/db";
+import { displayTitle, type Game } from "@/db";
 
 const props = defineProps<{ game: Game }>();
 
 const { t } = useI18n();
 const library = useLibraryStore();
+const appSettings = useAppSettingsStore();
 const activeCardVisual = useActiveCardVisual();
 
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
 const playtimeMinutes = computed(() => Math.round(props.game.total_playtime / 60));
+const title = computed(() => displayTitle(props.game, appSettings.locale));
 
 const cardEl = ref<HTMLElement | null>(null);
 const balloonEl = ref<HTMLElement | null>(null);
@@ -73,7 +76,7 @@ const { anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(c
         :class="`balloon-${balloonAnchor.placement}`"
         :style="{ top: `${balloonAnchor.top}px`, left: `${balloonAnchor.left}px` }"
       >
-        <div class="balloon-title">{{ game.title }}</div>
+        <div class="balloon-title">{{ title }}</div>
         <div class="balloon-playtime">{{ t("gameCard.minutesPlayed", { minutes: playtimeMinutes }) }}</div>
       </div>
     </Transition>

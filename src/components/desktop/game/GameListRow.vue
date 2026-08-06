@@ -10,14 +10,17 @@ import {
 } from "@tabler/icons-vue";
 
 import { useLibraryStore } from "@/stores/library";
-import type { Game } from "@/db";
+import { useAppSettingsStore } from "@/stores/appSettings";
+import { displayTitle, type Game } from "@/db";
 
 const props = defineProps<{ game: Game }>();
 
 const { t } = useI18n();
 const library = useLibraryStore();
+const appSettings = useAppSettingsStore();
 
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
+const title = computed(() => displayTitle(props.game, appSettings.locale));
 </script>
 
 <template>
@@ -33,7 +36,7 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
     </div>
 
     <div class="info">
-      <div class="title">{{ game.title }}</div>
+      <div class="title">{{ title }}</div>
       <div class="details">
         <p v-if="game.description" class="description">{{ game.description }}</p>
         <div class="meta">

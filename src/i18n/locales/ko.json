@@ -61,7 +61,10 @@
     "showOriginalBoth": "원본 제목과 내용 보기",
     "showTranslatedBoth": "번역된 제목과 내용 보기",
     "translating": "번역 중...",
-    "translateTitleAndContent": "제목과 내용 번역"
+    "translateTitleAndContent": "제목과 내용 번역",
+    "revokeTitleOnly": "제목 번역 취소",
+    "revokeContentOnly": "내용 번역 취소",
+    "revokeBoth": "제목과 내용 번역 취소"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

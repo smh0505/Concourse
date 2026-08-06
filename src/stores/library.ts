@@ -212,6 +212,21 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
   }
 
+  async function revokeTranslatedTitle(gameId: number) {
+    await gameRepo.clearTranslatedTitle(gameId);
+    await refresh();
+  }
+
+  async function revokeTranslatedDescription(gameId: number) {
+    await gameRepo.clearTranslatedDescription(gameId);
+    await refresh();
+  }
+
+  async function revokeTranslation(gameId: number) {
+    await gameRepo.clearTranslation(gameId);
+    await refresh();
+  }
+
   async function launchGame(game: Game) {
     const toasts = useToastStore();
     try {
@@ -294,6 +309,9 @@ export const useLibraryStore = defineStore("library", () => {
     saveEdit,
     saveTranslatedTitle,
     saveTranslatedDescription,
+    revokeTranslatedTitle,
+    revokeTranslatedDescription,
+    revokeTranslation,
     launchGame,
     init,
     dispose,

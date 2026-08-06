@@ -11,3 +11,4 @@ export const playtime = new PlaytimeRepository();
 export const settings = new SettingsRepository();
 
 export type { Game, GameEditFields } from "./types";
+export { displayTitle } from "./types";

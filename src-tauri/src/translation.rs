@@ -28,9 +28,10 @@ const SERVER_PORT: u16 = 8712;
 
 /// One selectable model tier. `repo`/`file` are both needed to build the real download URL
 /// (`https://huggingface.co/{repo}/resolve/main/{file}`) and the on-disk path this gets saved
-/// to (`<app data>/models/{id}/{file}`). All three tiers are the same Q4_K_M quantization from
-/// `mradermacher` (a well-established community GGUF quantizer) - a consistent quality/size
-/// tradeoff point across tiers rather than mixing quant levels.
+/// to (`<app data>/models/{id}/{file}`). All tiers are Q4_K_M quantizations from established
+/// community quantizers (`mradermacher`, `unsloth`) - a consistent quantization level across
+/// tiers rather than mixing quant levels, so the size/quality tradeoff is driven by parameter
+/// count alone.
 #[derive(Clone, Serialize)]
 pub struct TranslationModel {
     id: String,
@@ -40,29 +41,51 @@ pub struct TranslationModel {
     size_bytes: u64,
 }
 
-/// 12B is the recommended default, not necessarily the largest - per the model comparison this
-/// milestone's own research already did, TranslateGemma's 12B checkpoint reportedly beats the
-/// 27B baseline on benchmarks, and `mradermacher`'s own listing calls 12B's Q4_K_M "fast,
-/// recommended." 4B/27B are offered too since size/quality is still a real user tradeoff.
+/// Two model families, deliberately mixed rather than only offering translation-specialized
+/// ones: the `translategemma-*` tiers (fine-tuned from Gemma 3 specifically for translation,
+/// 55 languages) generally translate better per byte than a same-size general-purpose model,
+/// but RAM is the harder constraint for a background app sharing a machine with a running
+/// game - so `gemma3-1b` and `gemma4-e4b` are offered as meaningfully cheaper (RAM-wise)
+/// alternatives, at a real quality cost since neither is translation-tuned. `translategemma-4b`
+/// stays the cheapest translation-specialized option, real quantized file sizes below verified
+/// against each repo's actual GGUF listing (not the parameter count alone - Gemma 4's E2B/E4B
+/// naming reflects "effective" active params under its elastic sizing, not on-disk size, so
+/// e.g. E2B's own GGUF is actually larger than translategemma-4b's despite the smaller name).
+/// 12B stays the recommended default - `mradermacher`'s own listing calls its Q4_K_M "fast,
+/// recommended," and it reportedly beats the 27B baseline on WMT24++ benchmarks.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
+            id: "gemma3-1b".to_string(),
+            name: "Gemma 3 1B (cheapest, general-purpose)".to_string(),
+            repo: "unsloth/gemma-3-1b-it-GGUF".to_string(),
+            file: "gemma-3-1b-it-Q4_K_M.gguf".to_string(),
+            size_bytes: 845_000_000,
+        },
+        TranslationModel {
             id: "translategemma-4b".to_string(),
-            name: "TranslateGemma 4B (fast)".to_string(),
+            name: "TranslateGemma 4B (fast, translation-specialized)".to_string(),
             repo: "mradermacher/translategemma-4b-it-GGUF".to_string(),
             file: "translategemma-4b-it.Q4_K_M.gguf".to_string(),
-            size_bytes: 2_600_000_000,
+            size_bytes: 2_490_000_000,
+        },
+        TranslationModel {
+            id: "gemma4-e4b".to_string(),
+            name: "Gemma 4 E4B (balanced, general-purpose)".to_string(),
+            repo: "unsloth/gemma-4-E4B-it-GGUF".to_string(),
+            file: "gemma-4-E4B-it-Q4_K_M.gguf".to_string(),
+            size_bytes: 4_980_000_000,
         },
         TranslationModel {
             id: "translategemma-12b".to_string(),
-            name: "TranslateGemma 12B (recommended)".to_string(),
+            name: "TranslateGemma 12B (recommended, translation-specialized)".to_string(),
             repo: "mradermacher/translategemma-12b-it-GGUF".to_string(),
             file: "translategemma-12b-it.Q4_K_M.gguf".to_string(),
-            size_bytes: 7_400_000_000,
+            size_bytes: 7_300_000_000,
         },
         TranslationModel {
             id: "translategemma-27b".to_string(),
-            name: "TranslateGemma 27B (best quality)".to_string(),
+            name: "TranslateGemma 27B (best quality, translation-specialized)".to_string(),
             repo: "mradermacher/translategemma-27b-it-GGUF".to_string(),
             file: "translategemma-27b-it.Q4_K_M.gguf".to_string(),
             size_bytes: 16_600_000_000,

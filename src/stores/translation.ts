@@ -21,13 +21,17 @@ interface TranslationDownloadProgress {
   total_bytes: number;
 }
 
-/** Milestone 21's second half - offline translation via a local LLM (`mistralrs`, host-native
- *  Rust module, see src-tauri/src/translation.rs). Unlike the plugin stores, there's nothing
- *  installable/multi-select here - one selected model tier, downloaded on first use. */
+/** Milestone 21's second half - offline translation via llama.cpp's own prebuilt server binary,
+ *  run as a subprocess (host-native Rust module, see src-tauri/src/translation.rs - not an ML
+ *  crate dependency). Unlike the plugin stores, there's nothing installable/multi-select here -
+ *  one selected model tier, downloaded on first use, plus the engine binary itself (a separate,
+ *  much smaller one-time download). */
 export const useTranslationStore = defineStore("translation", () => {
   const models = ref<TranslationModel[]>([]);
   const selectedModelId = ref<string | null>(null);
   const downloadedIds = ref<Set<string>>(new Set());
+  const engineDownloaded = ref(false);
+  const downloadingEngine = ref(false);
   // Only one download can realistically run at a time (a multi-GB fetch) - a single in-flight
   // id plus its progress, rather than a per-model map nothing else needs.
   const downloadingId = ref<string | null>(null);
@@ -67,6 +71,16 @@ export const useTranslationStore = defineStore("translation", () => {
     return downloadedIds.value.has(modelId);
   }
 
+  async function downloadEngine() {
+    downloadingEngine.value = true;
+    try {
+      await invoke("download_translation_engine");
+      engineDownloaded.value = true;
+    } finally {
+      downloadingEngine.value = false;
+    }
+  }
+
   /** Translates `text` into `targetLanguage` using the currently-selected model - throws if no
    *  model is selected/downloaded yet, since there's nothing sensible to fall back to. */
   async function translate(text: string, targetLanguage: string): Promise<string> {
@@ -87,6 +101,7 @@ export const useTranslationStore = defineStore("translation", () => {
     models.value = await invoke<TranslationModel[]>("list_translation_models");
     selectedModelId.value = (await settingsRepo.get(TRANSLATION_MODEL_SETTING)) || models.value[0]?.id || null;
     await refreshDownloadedStatus();
+    engineDownloaded.value = await invoke<boolean>("is_translation_engine_downloaded");
 
     unlistenProgress = await listen<TranslationDownloadProgress>("translation-download-progress", (event) => {
       if (event.payload.model_id !== downloadingId.value) return;
@@ -107,8 +122,11 @@ export const useTranslationStore = defineStore("translation", () => {
     downloadingId,
     downloadProgress,
     translating,
+    engineDownloaded,
+    downloadingEngine,
     setSelectedModel,
     downloadModel,
+    downloadEngine,
     isDownloaded,
     translate,
     init,

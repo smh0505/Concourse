@@ -14,10 +14,12 @@
     "autoLaunchBigPicture": "Lancer en mode Big Picture au démarrage",
     "language": "Langue",
     "translation": "Traduction hors ligne",
-    "translationHint": "Traduit les descriptions de jeux localement, sans service externe. Choisissez un modèle et téléchargez-le une fois pour l'utiliser.",
+    "translationHint": "Traduit les descriptions de jeux localement, sans service externe. Téléchargez le moteur une fois, puis choisissez un modèle et téléchargez-le aussi.",
     "downloaded": "Téléchargé",
     "downloading": "{percent}%",
-    "download": "Télécharger"
+    "download": "Télécharger",
+    "translationEngine": "Moteur de traduction",
+    "downloadingEngine": "Téléchargement..."
   },
   "app": {
     "switchToSlideshow": "Passer à l'affichage diaporama",

@@ -1,21 +1,30 @@
-//! Offline translation for game descriptions, via a local LLM (Milestone 21's second half).
-//! Built-in host-native module, not a WASM plugin - `mistralrs` (Candle-based inference) is a
-//! heavy native dependency that doesn't fit the wasmtime Component Model sandbox the way a
-//! source/metadata/wrapper plugin does. The model itself is still opt-in: nothing is bundled
-//! into the installer, a user picks a tier and downloads it on first use.
+//! Offline translation for game descriptions, via llama.cpp's own prebuilt server binary
+//! (Milestone 21's second half). Not a Rust ML crate dependency - nothing is compiled or linked
+//! into this app's own binary. Instead, llama.cpp's official prebuilt Windows release (CPU-only
+//! x64 build - it bundles a dedicated `llama-gemma3-cli.exe`, confirming real Gemma 3 support in
+//! this exact build) is downloaded once, the same way a wrapper plugin manages its own installed
+//! runtime, and run as a subprocess talked to over its OpenAI-compatible HTTP API.
 //!
-//! Engine choice: `mistralrs`, not `llama-cpp-2` - the research spike (see .claude/devlog.md)
-//! found live Windows-specific bugs in `llama-cpp-sys-2` (a CMake build failure in a recent
-//! patch version, a >4GB-GGUF MSVC correctness bug) and verified `mistralrs` compiles clean on
-//! this target with no native build step at all (pure Rust via Candle).
+//! Why this instead of a Rust crate: two real dead ends found first. `llama-cpp-2`/
+//! `llama-cpp-sys-2` (a Rust binding that compiles llama.cpp from source) has live Windows CMake
+//! build bugs. `mistralrs` (pure Rust via Candle, no CMake) compiles clean but its own GGUF
+//! loader has no `gemma3` architecture entry at all yet (`Unknown GGUF architecture "gemma3"`,
+//! hit for real, not just in research) - `llama.cpp` itself is GGUF's reference implementation
+//! and has mature Gemma 3 support, so talking to its own server binary over HTTP sidesteps both
+//! problems without adding a heavy dependency to every user's binary regardless of whether they
+//! ever use translation.
 
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::time::Duration;
 
-use mistralrs::{GgufModelBuilder, Model, TextMessageRole, TextMessages};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager};
+use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
+
+const LLAMA_CPP_VERSION: &str = "b10290";
+const LLAMA_CPP_ASSET: &str = "llama-b10290-bin-win-cpu-x64.zip";
+const SERVER_PORT: u16 = 8712;
 
 /// One selectable model tier. `repo`/`file` are both needed to build the real download URL
 /// (`https://huggingface.co/{repo}/resolve/main/{file}`) and the on-disk path this gets saved
@@ -75,6 +84,17 @@ fn models_dir(app: &AppHandle, model_id: &str) -> Result<PathBuf, String> {
         .map_err(|e| format!("Failed to resolve app data dir: {}", e))
 }
 
+fn llama_cpp_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|dir| dir.join("llama-cpp"))
+        .map_err(|e| format!("Failed to resolve app data dir: {}", e))
+}
+
+fn llama_server_exe(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(llama_cpp_dir(app)?.join("llama-server.exe"))
+}
+
 #[tauri::command]
 pub fn list_translation_models() -> Vec<TranslationModel> {
     list_models()
@@ -86,6 +106,39 @@ pub fn is_translation_model_downloaded(app: AppHandle, model_id: String) -> Resu
     Ok(models_dir(&app, &model_id)?.join(&model.file).exists())
 }
 
+#[tauri::command]
+pub fn is_translation_engine_downloaded(app: AppHandle) -> Result<bool, String> {
+    Ok(llama_server_exe(&app)?.exists())
+}
+
+/// Downloads llama.cpp's own prebuilt CPU-only Windows server build once - a flat zip (no
+/// wrapping subfolder, verified against a real download of this exact release), extracted
+/// straight into `<app data>/llama-cpp/`. Pinned to a specific release tag, not "latest" - same
+/// "never trust a mutable pointer" reasoning the plugin registry already pins exact commit SHAs
+/// for. Small enough (~18MB) that a one-shot download suffices, unlike the multi-gigabyte model
+/// files below.
+#[tauri::command]
+pub async fn download_translation_engine(app: AppHandle) -> Result<(), String> {
+    let dir = llama_cpp_dir(&app)?;
+    let url = format!(
+        "https://github.com/ggml-org/llama.cpp/releases/download/{}/{}",
+        LLAMA_CPP_VERSION, LLAMA_CPP_ASSET
+    );
+    let bytes = reqwest::get(&url)
+        .await
+        .map_err(|e| format!("Failed to download {}: {}", url, e))?
+        .error_for_status()
+        .map_err(|e| format!("Failed to download {}: {}", url, e))?
+        .bytes()
+        .await
+        .map_err(|e| format!("Failed to download {}: {}", url, e))?;
+
+    let staging_dir = llama_cpp_dir(&app)?.with_extension("staging");
+    crate::zip_install::extract_zip(&bytes, &staging_dir)?;
+    crate::zip_install::replace_dir(&staging_dir, &dir)?;
+    Ok(())
+}
+
 #[derive(Clone, Serialize)]
 struct TranslationDownloadProgress {
     model_id: String,
@@ -94,9 +147,9 @@ struct TranslationDownloadProgress {
 }
 
 /// Streams the GGUF into `<app data>/models/<id>/<file>`, emitting `translation-download-
-/// progress` as it goes - the file itself is multi-gigabyte, so unlike every other download in
-/// this app (small plugin manifests/`.wasm` files, a one-shot `bytes()` read), this genuinely
-/// needs incremental progress reporting rather than a single all-at-once buffer.
+/// progress` as it goes - the file itself is multi-gigabyte, so unlike the engine zip above
+/// (small, one-shot) or every other download in this app (small plugin manifests/`.wasm`
+/// files), this genuinely needs incremental progress reporting.
 #[tauri::command]
 pub async fn download_translation_model(app: AppHandle, model_id: String) -> Result<(), String> {
     let model = find_model(&model_id)?;
@@ -152,15 +205,17 @@ pub async fn download_translation_model(app: AppHandle, model_id: String) -> Res
     Ok(())
 }
 
-/// The one loaded model, if any - loading a multi-gigabyte GGUF is too slow to redo on every
-/// `translate_text` call, so this stays loaded across calls and only reloads when the
-/// requested model id actually changes.
-struct LoadedModel {
+/// The currently-running `llama-server.exe`, if any - starting it (loading a multi-gigabyte
+/// GGUF) is too slow to redo per translation call, so it stays running across calls and only
+/// restarts when the requested model id actually changes. Known limitation, not addressed this
+/// pass: nothing kills this child process on app exit yet, so it can outlive the app window if
+/// the OS doesn't clean it up on its own - see devlog.
+struct RunningServer {
     model_id: String,
-    model: Arc<Model>,
+    child: Child,
 }
 
-pub struct TranslationState(Mutex<Option<LoadedModel>>);
+pub struct TranslationState(Mutex<Option<RunningServer>>);
 
 impl TranslationState {
     pub fn new() -> Self {
@@ -168,42 +223,102 @@ impl TranslationState {
     }
 }
 
-async fn get_or_load_model(
+async fn wait_until_ready(client: &reqwest::Client) -> Result<(), String> {
+    let url = format!("http://127.0.0.1:{}/health", SERVER_PORT);
+    for _ in 0..120 {
+        if let Ok(resp) = client.get(&url).send().await {
+            if resp.status().is_success() {
+                return Ok(());
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+    Err("Translation engine didn't become ready in time.".to_string())
+}
+
+async fn ensure_server(
     app: &AppHandle,
     state: &TranslationState,
     model_id: &str,
-) -> Result<Arc<Model>, String> {
+) -> Result<(), String> {
     let mut guard = state.0.lock().await;
-    if let Some(loaded) = guard.as_ref() {
-        if loaded.model_id == model_id {
-            return Ok(loaded.model.clone());
+    if let Some(running) = guard.as_ref() {
+        if running.model_id == model_id {
+            return Ok(());
         }
+    }
+
+    // Switching models (or starting for the first time) - stop whatever's running first, since
+    // only one server/port is managed at a time.
+    if let Some(mut running) = guard.take() {
+        let _ = running.child.kill().await;
     }
 
     let model_spec = find_model(model_id)?;
     let dir = models_dir(app, model_id)?;
-    if !dir.join(&model_spec.file).exists() {
+    let model_path = dir.join(&model_spec.file);
+    if !model_path.exists() {
         return Err(format!(
             "Model '{}' isn't downloaded yet - download it in Settings first.",
             model_spec.name
         ));
     }
 
-    let model = GgufModelBuilder::new(
-        dir.to_string_lossy().to_string(),
-        vec![model_spec.file.clone()],
-    )
-    .with_logging()
-    .build()
-    .await
-    .map_err(|e| format!("Failed to load model '{}': {}", model_spec.name, e))?;
+    let server_exe = llama_server_exe(app)?;
+    if !server_exe.exists() {
+        return Err(
+            "Translation engine isn't downloaded yet - download it in Settings first.".to_string(),
+        );
+    }
 
-    let model = Arc::new(model);
-    *guard = Some(LoadedModel {
+    let child = Command::new(&server_exe)
+        .arg("-m")
+        .arg(&model_path)
+        .arg("--port")
+        .arg(SERVER_PORT.to_string())
+        .arg("-c")
+        .arg("4096")
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true)
+        .spawn()
+        .map_err(|e| format!("Failed to start translation engine: {}", e))?;
+
+    *guard = Some(RunningServer {
         model_id: model_id.to_string(),
-        model: model.clone(),
+        child,
     });
-    Ok(model)
+    drop(guard);
+
+    wait_until_ready(&reqwest::Client::new()).await
+}
+
+#[derive(Serialize)]
+struct ChatMessage {
+    role: &'static str,
+    content: String,
+}
+
+#[derive(Serialize)]
+struct ChatRequest {
+    model: &'static str,
+    messages: Vec<ChatMessage>,
+    temperature: f32,
+}
+
+#[derive(Deserialize)]
+struct ChatChoice {
+    message: ChatMessageResponse,
+}
+
+#[derive(Deserialize)]
+struct ChatMessageResponse {
+    content: String,
+}
+
+#[derive(Deserialize)]
+struct ChatResponse {
+    choices: Vec<ChatChoice>,
 }
 
 #[tauri::command]
@@ -214,21 +329,40 @@ pub async fn translate_text(
     text: String,
     target_language: String,
 ) -> Result<String, String> {
-    let model = get_or_load_model(&app, &state, &model_id).await?;
+    ensure_server(&app, &state, &model_id).await?;
 
     let prompt = format!(
         "Translate the following text into {}. Only output the translation, nothing else.\n\n{}",
         target_language, text
     );
-    let messages = TextMessages::new().add_message(TextMessageRole::User, prompt);
-    let response = model
-        .send_chat_request(messages)
-        .await
-        .map_err(|e| format!("Translation failed: {}", e))?;
+    let request = ChatRequest {
+        model: "translation",
+        messages: vec![ChatMessage {
+            role: "user",
+            content: prompt,
+        }],
+        temperature: 0.3,
+    };
 
-    response.choices[0]
-        .message
-        .content
-        .clone()
+    let response = reqwest::Client::new()
+        .post(format!(
+            "http://127.0.0.1:{}/v1/chat/completions",
+            SERVER_PORT
+        ))
+        .json(&request)
+        .send()
+        .await
+        .map_err(|e| format!("Translation request failed: {}", e))?
+        .error_for_status()
+        .map_err(|e| format!("Translation request failed: {}", e))?
+        .json::<ChatResponse>()
+        .await
+        .map_err(|e| format!("Failed to parse translation response: {}", e))?;
+
+    response
+        .choices
+        .into_iter()
+        .next()
+        .map(|c| c.message.content)
         .ok_or_else(|| "Model returned an empty response".to_string())
 }

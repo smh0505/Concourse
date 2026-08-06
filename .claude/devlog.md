@@ -3526,6 +3526,103 @@ beyond the 3 TranslateGemma tiers. Manual, real end-to-end verification (an actu
 actual translation) is still only possible on the user's own machine - this environment has no
 way to run the full Tauri GUI or spend the time/bandwidth downloading a multi-gigabyte model.
 
+**Real user testing broke the above: `mistralrs` cannot load Gemma 3 GGUF at all, pivoted to
+llama.cpp's own prebuilt binary run as a subprocess.** The "manual end-to-end verification" gap
+flagged above turned out to be load-bearing - the user actually ran the built app, downloaded a
+model, and hit a real runtime panic: `thread 'tokio-rt-worker' panicked at ...mistralrs-core-
+0.8.1\src\gguf\content.rs:151:22: called \`Result::unwrap()\` on an \`Err\` value: Unknown GGUF
+architecture "gemma3"`. Root-caused via web research rather than guessing at a version-pinning
+fix: `mistralrs`'s own `GGUFArchitecture` enum has no `gemma3` variant at all - a genuine,
+current gap in the crate (confirmed via multiple open GitHub issues on `EricLBuehler/mistral.rs`
+showing the same failure mode for other model families, e.g. Qwen3.5). This directly falsified
+the earlier "redo the research spike" verification, which had only confirmed `mistralrs`
+*compiles* on Windows, not that it could load the *actual target model format* - a real gap in
+verification thoroughness, called out to the user as such rather than glossed over.
+
+User asked for a broad alternatives comparison ("is there any alternatives besides llama-cpp-2/
+mistralrs", "let's compare all possible solutions"). Researched and rejected in turn:
+- **`candle-transformers`'s `quantized_gemma3.rs`** - confirmed to exist in Candle's own source
+  (one layer below `mistralrs`, meaning Candle itself supports gemma3 GGUF even though
+  `mistralrs`'s convenience wrapper doesn't dispatch to it) - rejected as too much hand-rolled
+  implementation risk (no builder API; would mean writing tokenization/sampling/the generation
+  loop ourselves).
+- **`mistralrs`'s non-GGUF `ModelBuilder`/`TextModelBuilder` path** (HF-hub, safetensors+ISQ) -
+  confirmed Gemma 3 support exists here, but `google/translategemma-4b-it` on Hugging Face is a
+  gated repo (manual "Request access" click-through, license acceptance, an access token) - a
+  real UX/portability regression against the anonymous-download design goal. No confirmed
+  progress-callback API either. Rejected.
+- **Ollama** - TranslateGemma is officially published in Ollama's own library (`ollama pull
+  translategemma:4b`/`:12b`), zero gating, proven to work - but it's a full separate installed
+  application (installer, background service, tray icon), not something Concourse can invisibly
+  bundle/manage the way a bare subprocess binary can. Rejected as the primary mechanism.
+- **LM Studio** - OpenAI-compatible API at `localhost:1234/v1`, llama.cpp-backed under the hood
+  (same gemma3 maturity), no auth (loopback-only) - but its server must be manually started by
+  the user each session, and we can only detect "currently running," not "installed but idle," a
+  weaker signal than Ollama's. Rejected as primary mechanism for the same reasons as Ollama.
+- **Detecting user-installed runtimes generally** - user then explicitly narrowed the comparison
+  to exactly this question ("llama.cpp prebuilt binary as plugin vs check availability of user-
+  installed binaries such as ollama, lmstudio"). Rejected as the primary/sole mechanism: only
+  helps the minority of users who already have one installed *and* have already pulled the exact
+  model; adds real UI/testing/support surface (multiple different code paths); still needs a
+  bundled fallback regardless, making detection purely additive complexity on top of the bundle
+  approach rather than a replacement for it. Deferred as a possible future opportunistic
+  enhancement, not built.
+- Reverting to `llama-cpp-2`/`llama-cpp-sys-2` was also re-considered and re-rejected - same
+  known Windows CMake fragility documented earlier in this milestone.
+
+User said "okay, go with A" - bundle llama.cpp's own prebuilt server binary, run it as a
+subprocess, talk to it over its OpenAI-compatible HTTP API. Verified every claim about the
+chosen release hands-on rather than trusting docs: `gh api repos/ggml-org/llama.cpp/releases/
+latest --jq '.tag_name, .assets[].name'` to find the real pinned version (`b10290`) and exact
+asset name (`llama-b10290-bin-win-cpu-x64.zip`); downloaded the actual zip and ran `unzip -l` on
+it to confirm it's flat (no wrapping subfolder) and contains `llama-server.exe` (a thin 9KB
+launcher), `llama-server-impl.dll` (~9.9MB, the real implementation), all needed `ggml-cpu-*.dll`
+CPU-dispatch libraries, and - concrete proof of Gemma 3 support in this exact build - a dedicated
+`llama-gemma3-cli.exe`; extracted it and ran `./llama-server.exe --version` to confirm it
+actually executes on this machine (`version: 10290 (c8e03ce81)`, built with Clang 20.1.8).
+
+Rewrote `src-tauri/src/translation.rs` from scratch around this design. Removed the `mistralrs`
+Cargo dependency entirely - this is no longer a Rust ML crate dependency at all, nothing is
+compiled or linked into Concourse's own binary. `tokio` gained `process`/`time` features
+(subprocess management, async sleep/polling) alongside its existing `fs`/`io-util`/`sync`.
+`download_translation_engine` reuses `zip_install.rs`'s existing `extract_zip`/`replace_dir`
+helpers (already used by `plugin_installer.rs`'s `install_plugin`) rather than writing new
+zip-handling code - downloads to a `.staging` dir, atomically swapped into place on success, same
+pattern as a wrapper plugin's own runtime install. `TranslationState` (`Mutex<Option<
+RunningServer>>`, `RunningServer { model_id, child: Child }`) keeps the `llama-server.exe`
+subprocess alive across `translate_text` calls, only restarting (`child.kill().await`) when the
+requested model id differs from what's currently running - mirrors the old loaded-model-cache
+design but at the process level instead of the in-memory-model level. Readiness polled via
+`GET http://127.0.0.1:8712/health` (`SERVER_PORT` fixed at `8712` - a known simplification, could
+collide with another local llama.cpp instance, not handled this pass), up to 120 retries at 500ms
+each (60s timeout). `translate_text` posts to the server's `/v1/chat/completions` with the same
+translation-instruction prompt as before, unchanged from the mistralrs era since the store's
+public `translate()` signature didn't need to change. Two new commands
+(`is_translation_engine_downloaded`, `download_translation_engine`) added to `lib.rs`'s
+`generate_handler!` alongside the 4 existing ones. `cargo check` clean (~2m10s, full
+dependency-graph recompile after removing `mistralrs`).
+
+Frontend: `stores/translation.ts` gained `engineDownloaded`/`downloadingEngine` refs and a
+`downloadEngine()` action, plus an `is_translation_engine_downloaded` check in `init()`.
+`AppSettings.vue` gained a "Translation engine" download row (reusing the existing `.model-row`/
+`.compact-button` classes) above the per-tier model list, since the engine is now a genuinely
+separate one-time download from any model. `GameDetail.vue`'s `canTranslate` computed updated to
+also require `translation.engineDownloaded`, not just a selected-and-downloaded model - the
+engine is a real prerequisite now, not implicit. Two new i18n keys (`settings.translationEngine`,
+`settings.downloadingEngine`) plus an updated `settings.translationHint` wording (mentions the
+two-step download) added to `en.json` and propagated to all 9 other locales via the same
+flatten-and-diff Node script used throughout this project - re-verified exact key parity across
+all 10 locales. `bun run build` (full frontend, all three touched files together) and a final
+`cargo fmt && cargo check` pass both clean.
+
+Known limitation, explicitly not fixed this pass: nothing kills the `llama-server.exe` child
+process on app exit yet. `.kill_on_drop(true)` is set on the `Command`, which may help if the
+`Child` handle's `Drop` runs, but Tauri's own exit sequence (`RunEvent::Exit`) isn't wired up - a
+real, acknowledged risk of an orphaned `llama-server.exe` process lingering after the app window
+closes. Tracked as a follow-up, not blocking this fix. Real end-to-end verification (an actual
+download, an actual translation, confirming this pivot actually fixes the crash) still can only
+happen on the user's own machine.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

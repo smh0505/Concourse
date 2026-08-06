@@ -172,7 +172,10 @@ watch(game, () => {
 });
 
 const canTranslate = computed(
-  () => !!translation.selectedModelId && translation.isDownloaded(translation.selectedModelId),
+  () =>
+    translation.engineDownloaded &&
+    !!translation.selectedModelId &&
+    translation.isDownloaded(translation.selectedModelId),
 );
 
 async function onToggleTranslateDescription() {

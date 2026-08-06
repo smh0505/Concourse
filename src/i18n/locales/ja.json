@@ -14,10 +14,12 @@
     "autoLaunchBigPicture": "起動時にビッグピクチャーモードで起動",
     "language": "言語",
     "translation": "オフライン翻訳",
-    "translationHint": "外部サービスを使わず、ゲームの説明をローカルで翻訳します。モデルを選んで一度ダウンロードすれば使用できます。",
+    "translationHint": "外部サービスを使わず、ゲームの説明をローカルで翻訳します。エンジンを一度ダウンロードした後、モデルを選んで同様にダウンロードしてください。",
     "downloaded": "ダウンロード済み",
     "downloading": "{percent}%",
-    "download": "ダウンロード"
+    "download": "ダウンロード",
+    "translationEngine": "翻訳エンジン",
+    "downloadingEngine": "ダウンロード中..."
   },
   "app": {
     "switchToSlideshow": "スライドショー表示に切り替え",

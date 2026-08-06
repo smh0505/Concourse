@@ -47,6 +47,8 @@ pub fn run() {
             wasm_plugin_runtime::is_plugin_capability_granted,
             translation::list_translation_models,
             translation::is_translation_model_downloaded,
+            translation::is_translation_engine_downloaded,
+            translation::download_translation_engine,
             translation::download_translation_model,
             translation::translate_text
         ])

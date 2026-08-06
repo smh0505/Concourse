@@ -434,29 +434,36 @@ available to test against).
 - [x] 9 additional locales added (machine-translated by Claude, not yet native-reviewed):
   Korean, Japanese, Simplified Chinese, Spanish, French, German, Brazilian Portuguese, Russian,
   Italian - 10 languages total, all verified to have exact key parity with `en.json`
-- [x] New `translation` host-native Rust module (`src-tauri/src/translation.rs`) wrapping
-  `mistralrs` for local inference - 3 selectable TranslateGemma tiers (4B/12B/27B, all Q4_K_M
-  from `mradermacher`'s GGUF quantizations), `download_translation_model`/
-  `is_translation_model_downloaded`/`translate_text`/`list_translation_models` Tauri commands,
-  a loaded-model cache (reloads only when the selected model id changes, not per call)
-- [x] Settings UI: model picker in `AppSettings.vue` (name/size per tier, Download button with
-  live progress via a new `translation-download-progress` event, "Downloaded" status) - download-
-  on-first-use, nothing bundled in the installer
+- [x] New `translation` host-native Rust module (`src-tauri/src/translation.rs`) - NOT a Rust ML
+  crate dependency. Downloads llama.cpp's own prebuilt Windows CPU release binary once, runs
+  `llama-server.exe` as a subprocess, talks to it over its OpenAI-compatible HTTP API. 3
+  selectable TranslateGemma tiers (4B/12B/27B, all Q4_K_M from `mradermacher`'s GGUF
+  quantizations), `download_translation_engine`/`is_translation_engine_downloaded`/
+  `download_translation_model`/`is_translation_model_downloaded`/`translate_text`/
+  `list_translation_models` Tauri commands. Server subprocess stays alive across calls, only
+  restarts when the requested model id changes
+- [x] Settings UI: engine-download row plus model picker in `AppSettings.vue` (name/size per
+  tier, Download button with live progress via a new `translation-download-progress` event,
+  "Downloaded" status) - download-on-first-use, nothing bundled in the installer
 - [x] `GameDetail.vue`: a "Translate"/"Show original" toggle next to the description (view mode),
   translating to the current UI locale - client-side only, never overwrites the stored
-  `game.description`
-- [x] Research spike, redone: `llama-cpp-2`/`llama-cpp-sys-2` (llama.cpp bindings) have two live
-  Windows-specific bugs (a CMake build failure in a recent patch version, a >4GB-GGUF MSVC
-  correctness bug) - switched candidate engine to `mistralrs` (built on Candle, pure Rust, no
-  CMake/native-C++ build step, confirmed Gemma 3 support). Verified hands-on: a scratch project
-  depending on `mistralrs` v0.8.1 (default CPU-only features) compiled clean on this Windows
-  machine in ~4.5 min, no native toolchain errors anywhere in the chain
+  `game.description`. Gated on both the engine and the selected model being downloaded
+- [x] Engine/library research, done twice over: first pass (`llama-cpp-2`/`llama-cpp-sys-2`
+  bindings) hit two live Windows-specific bugs (CMake build failure, >4GB-GGUF MSVC correctness
+  bug), switched to `mistralrs` (Candle-based, pure Rust, no CMake) - compiled clean but was
+  never tested against a real Gemma 3 GGUF before shipping. Real user testing then hit `Unknown
+  GGUF architecture "gemma3"` at runtime: mistralrs's own GGUF loader has no `gemma3` entry at
+  all (a genuine, current upstream gap, confirmed via multiple open issues on the crate).
+  Compared alternatives (`candle-transformers` direct, mistralrs's HF-hub/ISQ path, Ollama, LM
+  Studio) and landed on bundling llama.cpp's own prebuilt server binary - see devlog for the
+  full comparison and why each alternative was rejected
 
 Milestone 21 fully closed. See devlog for the model/library comparison behind translation's
 scoping, the vue-i18n conversion's own implementation detail, and the translation feature's
 implementation (deliberately deferred for a later pass: persisting a translated description
-back to the DB, translating other fields, canceling an in-progress download, and any model
-beyond the 3 TranslateGemma tiers).
+back to the DB, translating other fields, canceling an in-progress download, any model beyond
+the 3 TranslateGemma tiers, killing the `llama-server.exe` subprocess on app exit, and detecting
+already-installed Ollama/LM Studio as an opportunistic alternative to the bundled engine).
 
 ## Milestone 22 — Plugin-Developer Documentation Site
 - [x] New `docs/` VitePress project (own `package.json`, decoupled from the app's own frontend

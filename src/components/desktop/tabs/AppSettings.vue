@@ -62,6 +62,25 @@ const downloadPercent = computed(() => {
     <div class="translation-section">
       <h3>{{ t("settings.translation") }}</h3>
       <small>{{ t("settings.translationHint") }}</small>
+
+      <div class="model-row">
+        <span class="model-name">{{ t("settings.translationEngine") }}</span>
+        <span v-if="translation.engineDownloaded" class="model-status">
+          {{ t("settings.downloaded") }}
+        </span>
+        <button v-else-if="translation.downloadingEngine" type="button" class="compact-button" disabled>
+          {{ t("settings.downloadingEngine") }}
+        </button>
+        <button
+          v-else
+          type="button"
+          class="compact-button"
+          @click="translation.downloadEngine()"
+        >
+          {{ t("settings.download") }}
+        </button>
+      </div>
+
       <div class="model-list">
         <label v-for="model in translation.models" :key="model.id" class="model-row">
           <input

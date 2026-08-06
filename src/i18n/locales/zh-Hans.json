@@ -14,10 +14,12 @@
     "autoLaunchBigPicture": "启动时进入大屏幕模式",
     "language": "语言",
     "translation": "离线翻译",
-    "translationHint": "在本地翻译游戏简介,无需外部服务。选择一个模型并下载一次即可使用。",
+    "translationHint": "在本地翻译游戏简介,无需外部服务。先下载一次引擎,然后选择一个模型并同样下载。",
     "downloaded": "已下载",
     "downloading": "{percent}%",
-    "download": "下载"
+    "download": "下载",
+    "translationEngine": "翻译引擎",
+    "downloadingEngine": "下载中..."
   },
   "app": {
     "switchToSlideshow": "切换到幻灯片视图",

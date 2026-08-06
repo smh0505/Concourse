@@ -14,9 +14,11 @@
     "autoLaunchBigPicture": "Launch into Big Picture Mode on startup",
     "language": "Language",
     "translation": "Offline Translation",
-    "translationHint": "Translate game descriptions locally, no external service. Pick a model and download it once to use it.",
+    "translationHint": "Translate game descriptions locally, no external service. Download the engine once, then pick a model and download it too.",
+    "translationEngine": "Translation engine",
     "downloaded": "Downloaded",
     "downloading": "{percent}%",
+    "downloadingEngine": "Downloading...",
     "download": "Download"
   },
   "app": {

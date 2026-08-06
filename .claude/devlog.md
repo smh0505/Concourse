@@ -3928,6 +3928,47 @@ detection, which nothing asked for. The Qwen tiers have no such requirement at a
 plain freeform prompt doesn't need to know the source language to translate correctly.
 `cargo fmt && cargo check` clean.
 
+**Follow-up: added `max_tokens` cap, then found and fixed the real reason `translategemma-4b`
+specifically kept "taking too long."** First added `max_tokens: 1024` to `ChatRequest` as a
+defensive cap - no limit existed at all, meaning a model failing to emit a clean stop token
+could ramble out to the full 4096-token context before stopping, which at CPU-only generation
+speed is minutes, not seconds, and would read to a user as "translation is slow" rather than the
+actual bug (unbounded generation).
+
+User reported this didn't actually fix it, and gave the key diagnostic detail unprompted:
+`qwen3-4b` translates fine, only `translategemma-4b` is slow, and specifically on cold start
+(first translate after the model's been unloaded). Since `qwen3-4b`'s own GGUF is almost
+exactly the same file size as `translategemma-4b`'s (2.5GB vs 2.49GB), a generic "cold start
+means reading a multi-gigabyte file off disk" explanation didn't fit - if that were the whole
+story, both tiers would be equally slow to cold-start, not just one. This model-specific
+difference pointed at something in translategemma's own generation behavior, not disk I/O.
+
+Researched and found a real, documented bug class affecting exactly this situation: Gemma3-
+family GGUF conversions (translategemma is a Gemma 3 fine-tune) commonly write `<end_of_turn>`
+into the GGUF's tokenizer metadata as a NORMAL token instead of CONTROL (multiple open issues on
+both `ggml-org/llama.cpp` and `unslothai/unsloth`'s trackers describe this exact failure mode) -
+llama.cpp only recognizes CONTROL-flagged tokens as stop signals, so a NORMAL-tagged
+`<end_of_turn>` is invisible to it as a stop condition. Concretely: the model *does* finish its
+actual translation and then correctly try to end the turn, but llama.cpp doesn't recognize that
+signal and keeps generating past it - explaining why this was newly capped at `max_tokens=1024`
+by the previous fix rather than continuing indefinitely, and why it "still takes too long" even
+with that cap in place (1024 tokens of pure waste, generated at CPU speed, on every single
+translation). Also found a second, related open issue (`ggml-org/llama.cpp#20305`) describing
+Jinja template-parsing changes that specifically broke TranslateGemma's own structured template
+in some more recent llama.cpp builds - not confirmed as affecting this project's exact pinned
+`b10290` release, but consistent with this being a known-fragile area for this specific model
+family under `--jinja`, not a one-off bug in this app's own code.
+
+Fixed via the standard, documented workaround for this exact bug class: added a `stop: Vec<
+&'static str>` field to `ChatRequest`, set to `["<end_of_turn>"]` only when `is_translategemma`
+(empty for the Qwen tiers, which aren't affected by this bug and already stop cleanly on their
+own). llama-server matches stop sequences against raw decoded output text in addition to
+tokenizer-level stop-token recognition, so this works regardless of whether the GGUF's own
+metadata has the NORMAL/CONTROL tagging bug or not - a safe fix that doesn't depend on getting
+translategemma-4b's specific GGUF re-converted correctly upstream. `cargo fmt && cargo check`
+clean. Real end-to-end confirmation that this actually resolves the slowness (not just addresses
+a plausible-sounding cause) still needs the user's own machine.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

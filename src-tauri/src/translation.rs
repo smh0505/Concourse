@@ -524,6 +524,15 @@ struct ChatRequest {
     /// 1024 tokens is generous for a game description/title translation, which is realistically
     /// a paragraph or two at most.
     max_tokens: u32,
+    /// Explicit stop sequences, on top of whatever the GGUF's own tokenizer metadata provides -
+    /// needed for `translategemma-4b` specifically. Gemma3-family GGUF conversions have a
+    /// documented, real bug (llama.cpp/unslothai issue trackers) where `<end_of_turn>` gets
+    /// written as a NORMAL token instead of CONTROL, so llama.cpp fails to recognize it as a
+    /// stop signal at all - generation just keeps going until it hits `max_tokens` instead of
+    /// stopping cleanly. Passing the literal string here works regardless of whether the
+    /// GGUF's own metadata is correct, since llama-server also matches stop sequences against
+    /// raw decoded text. Empty for the Qwen tiers, which aren't affected by this bug.
+    stop: Vec<&'static str>,
 }
 
 #[derive(Deserialize)]
@@ -551,7 +560,8 @@ pub async fn translate_text(
 ) -> Result<String, String> {
     ensure_server(&app, &state, &model_id).await?;
 
-    let content = if model_id.starts_with("translategemma") {
+    let is_translategemma = model_id.starts_with("translategemma");
+    let content = if is_translategemma {
         ChatContent::Parts([TranslateGemmaPart {
             r#type: "text",
             source_lang_code: TRANSLATEGEMMA_SOURCE_LANG,
@@ -575,6 +585,11 @@ pub async fn translate_text(
             enable_thinking: false,
         },
         max_tokens: 1024,
+        stop: if is_translategemma {
+            vec!["<end_of_turn>"]
+        } else {
+            vec![]
+        },
     };
 
     let response = reqwest::Client::new()

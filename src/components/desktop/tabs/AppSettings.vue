@@ -48,7 +48,11 @@ function selectModel(modelId: string) {
 </script>
 
 <template>
-  <div class="app-settings settings-panel">
+  <div class="app-settings panel settings-panel">
+    <div class="sticky-header">
+      <h2>{{ t("common.settings") }}</h2>
+    </div>
+
     <label class="checkbox-label">
       <input
         type="checkbox"

@@ -4401,6 +4401,26 @@ together. Fixed by deriving the highlight from `currentColor` instead of a fixed
 text's own color, which by construction can never clash with that same text regardless of what
 a given theme's surface tokens happen to be set to. `bun run build` clean.
 
+**Follow-up: added a top-level `<h2>` panel title to `AppSettings.vue`, matching every other
+tab.** User asked which heading level this project prefers (`h2` vs `h3`) - answered from the
+existing convention already in the codebase rather than picking arbitrarily: every other tab
+(`CollectionsPanel.vue`, `PluginSettings.vue`, `TagsPanel.vue`, `UiTest.vue`) uses `h2` for its
+own top-level panel title, while `h3` is reserved for sub-sections within a panel
+(`StatsPanel.vue`'s "Most Played"/"Recently Played"). `AppSettings.vue`'s existing `h3` for
+"Offline Translation" was already correct under this convention (a sub-section, not the panel's
+own title) - but the panel had no top-level `h2` title at all, unlike every sibling tab.
+
+Added one, reusing the already-existing `common.settings` i18n key ("Settings") rather than
+creating a new `settings.heading` key duplicating that same string. Wrapped in a `.sticky-header`
+div (the same shared global class `CollectionsPanel.vue`/`TagsPanel.vue` already use for their
+own `h2`) rather than a bare `<h2>`, so it gets the same sticky-on-scroll behavior and spacing as
+every other tab's title for free. Had to add the `panel` class alongside the existing `settings-
+panel` class on the root div too - `styles.css`'s `.panel.settings-panel { padding-top: 0; }`
+rule (a compound selector, only fires when *both* classes are present) exists specifically to
+cancel `.settings-panel`'s own `padding-top` once `.sticky-header` starts supplying that same gap
+itself; without also adding `panel`, the page would have gotten double top padding (once from
+`.settings-panel` alone, once from `.sticky-header`). `bun run build` clean.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

@@ -156,3 +156,20 @@ an emulator/ROM scanner plugin and additional source plugins (Xbox/EA/Ubisoft, M
 ## License
 
 MIT - see [`LICENSE`](LICENSE).
+
+### Third-party notices
+
+Concourse's own source is MIT-licensed; nothing third-party is bundled into the repo or the
+built binary. The offline translation feature (Milestone 21) downloads two kinds of third-party
+content directly to your machine at runtime, under their own separate terms - covered here for
+transparency, not because Concourse redistributes any of it:
+
+- **[llama.cpp](https://github.com/ggml-org/llama.cpp)** (MIT) - the translation engine itself.
+  Concourse downloads its official prebuilt Windows release binary from GitHub and runs it as a
+  subprocess; no llama.cpp code is compiled into or shipped with Concourse.
+- **Model weights**, downloaded from Hugging Face on your own selection in Settings, each under
+  its own model card's license - `qwen2.5-1.5b`/`qwen3-4b`/`gemma4-e2b` are all Apache 2.0
+  (Gemma 4 specifically moved to Apache 2.0 in April 2026, replacing the more restrictive
+  license earlier Gemma generations shipped under). The two abliterated tiers
+  (`qwen3-4b-abliterated`, `gemma4-e2b-abliterated`) inherit their base model's license; check
+  each one's own Hugging Face model card before relying on it commercially.

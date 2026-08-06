@@ -436,14 +436,16 @@ available to test against).
   Italian - 10 languages total, all verified to have exact key parity with `en.json`
 - [x] New `translation` host-native Rust module (`src-tauri/src/translation.rs`) - NOT a Rust ML
   crate dependency. Downloads llama.cpp's own prebuilt Windows CPU release binary once, runs
-  `llama-server.exe` as a subprocess, talks to it over its OpenAI-compatible HTTP API. 3
+  `llama-server.exe` as a subprocess, talks to it over its OpenAI-compatible HTTP API. 4
   selectable tiers - `qwen2.5-1.5b` (~1.12GB, cheapest, general-purpose), `translategemma-4b`
   (~2.49GB, recommended, translation-specialized), `qwen3-4b` (~2.5GB, broader coverage,
-  general-purpose) - all Q4_K_M, capped under ~2.5GB resident RAM each since this engine loads
-  the full GGUF into RAM and needs to coexist with a running game (see devlog for the 16GB/32GB
-  gaming-machine sizing analysis behind this cap, why the originally-offered 12B/27B tiers were
-  removed, and why `gemma3-1b`/`gemma4-e4b`/EuroLLM-1.7B were tried and rejected in favor of the
-  current 3). `download_translation_engine`/`is_translation_engine_downloaded`/
+  general-purpose), `qwen3-4b-abliterated` (~2.5GB, opt-in, uncensored - so a safety-tuned model
+  doesn't refuse to translate an existing NSFW game's own store description) - all Q4_K_M,
+  capped under ~2.5GB resident RAM each since this engine loads the full GGUF into RAM and needs
+  to coexist with a running game (see devlog for the 16GB/32GB gaming-machine sizing analysis
+  behind this cap, why the originally-offered 12B/27B tiers were removed, and why
+  `gemma3-1b`/`gemma4-e4b`/EuroLLM-1.7B were tried and rejected in favor of the 3 non-abliterated
+  tiers). `download_translation_engine`/`is_translation_engine_downloaded`/
   `download_translation_model`/`is_translation_model_downloaded`/`translate_text`/
   `list_translation_models` Tauri commands. Server subprocess stays alive across calls, only
   restarts when the requested model id changes

@@ -3745,6 +3745,33 @@ pass doesn't re-propose them without re-checking the same problem. `cargo fmt &&
 clean; no frontend changes needed since `AppSettings.vue`/`GameDetail.vue` both read the tier
 list dynamically rather than hardcoding ids.
 
+**Immediate follow-up, same session: added a fourth, opt-in "abliterated" tier for NSFW game
+libraries.** User asked whether an abliterated (refusal-direction-removed, not retrained) model
+made sense here. Judged this a legitimate use case rather than a jailbreak request: this app's
+own library can legitimately contain adult games, and a safety-tuned model can flatly refuse to
+translate that game's *own existing store description* just for containing adult content - a
+false-positive refusal on third-party text the app is only relaying, not generating new content
+via. Researched real abliterated GGUF builds of the tiers already in the list:
+`Qwen2.5-1.5B-Instruct-abliterated` (`mradermacher`, ~986MB) and `Qwen3-4B-abliterated`
+(`bartowski/mlabonne_Qwen3-4B-abliterated-GGUF`, same ~2.5GB size class as base Qwen3-4B - exact
+Q4_K_M byte count wasn't published for this specific repo, so the base model's own verified size
+was reused as a reasonable estimate, same as this file already does elsewhere for `download_
+translation_model`'s fallback path). No abliterated build of `translategemma-4b` itself exists
+(only of the non-translation-tuned base Gemma 3 instruct it was fine-tuned from), so this had to
+be Qwen-based rather than an uncensored variant of the recommended default.
+
+Picked `qwen3-4b-abliterated` over the 1.5B option - better baseline translation quality matters
+more here than squeezing size further, since this is already an opt-in extra a majority of users
+will never select. Added as a 4th `TranslationModel` entry, listed last, named explicitly
+("Qwen3 4B Abliterated (opt-in, uncensored - for NSFW game descriptions)") rather than folded in
+quietly - no separate warning UI built, the name itself in `AppSettings.vue`'s existing radio
+list carries the disclosure. Doc comment on `list_models()` records the reasoning (real use
+case, not a jailbreak; abliteration's own writeup claims behavior changes specifically on
+refusal-triggering prompts, normal-content quality should track the base model closely, but it's
+a blunter technique than full safety tuning so it isn't a default) so this doesn't need
+re-litigating later. `cargo fmt && cargo check` clean; no frontend changes needed, same as the
+prior tier swap.
+
 ## Milestone 14 — UI Polish (Continuous, ongoing) — post-close addition
 
 **`src/components/desktop/`'s loose `.vue` files sorted into `game/`/`shell/`/`common/`

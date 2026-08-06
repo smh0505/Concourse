@@ -68,6 +68,17 @@ pub struct TranslationModel {
 /// Korean/Japanese/Chinese/Russian - 4 of this app's 10 shipped locales - all fall in that
 /// weaker secondary tier, not the core one). Sizes below are real quantized Q4_K_M file sizes
 /// verified against each repo's actual GGUF listing, not derived from parameter count alone.
+///
+/// A fourth, deliberately opt-in tier: `qwen3-4b-abliterated`, an "abliterated" (refusal-
+/// direction removed, not retrained) build of the same Qwen3 4B above. Real, legitimate use
+/// case for a personal game library, not a jailbreak - a safety-tuned model can flatly refuse
+/// to translate an existing NSFW game's own store description just for containing adult
+/// content, which is a false-positive refusal on third-party text the app is just relaying, not
+/// generating. Per abliteration's own writeup, it changes behavior specifically on refusal-
+/// triggering prompts and should leave normal-content translation quality close to the base
+/// model's - but it's a blunter technique than full safety tuning, so it's listed last and
+/// named plainly rather than made a default. No abliterated build of `translategemma-4b` itself
+/// exists (only of the non-translation-tuned base Gemma 3 instruct), so this is Qwen-based.
 pub fn list_models() -> Vec<TranslationModel> {
     vec![
         TranslationModel {
@@ -89,6 +100,14 @@ pub fn list_models() -> Vec<TranslationModel> {
             name: "Qwen3 4B (broader coverage, general-purpose)".to_string(),
             repo: "unsloth/Qwen3-4B-GGUF".to_string(),
             file: "Qwen3-4B-Q4_K_M.gguf".to_string(),
+            size_bytes: 2_500_000_000,
+        },
+        TranslationModel {
+            id: "qwen3-4b-abliterated".to_string(),
+            name: "Qwen3 4B Abliterated (opt-in, uncensored - for NSFW game descriptions)"
+                .to_string(),
+            repo: "bartowski/mlabonne_Qwen3-4B-abliterated-GGUF".to_string(),
+            file: "mlabonne_Qwen3-4B-abliterated-Q4_K_M.gguf".to_string(),
             size_bytes: 2_500_000_000,
         },
     ]

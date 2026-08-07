@@ -473,3 +473,26 @@ detecting already-installed Ollama/LM Studio.
   tooling in this dev environment, so the user needs to capture them manually - swap out
   `%APPDATA%\com.bloppy.concourse\library.db*` for a throwaway/fake-data copy first (real
   library has NSFW entries not meant for public docs), screenshot, then restore the originals
+
+## Milestone 23 — Docs Site Internationalization (scoped, not started)
+User asked whether the VitePress docs site (Milestone 22) could be localized like the app's own
+UI (Milestone 21's 10 languages). Confirmed feasible - VitePress 1.6.4 (this project's pinned
+version) supports i18n natively via a `locales` config key plus per-locale content
+subdirectories, with its own built-in locale switcher in the default theme. Scoped as its own
+milestone rather than folded into 21/22, since translating ~12 prose-heavy pages (guide +
+plugin-developer reference, including code samples) is a materially bigger task than the app's
+short UI-string localization - not a quick follow-on.
+- [ ] Decide scope before starting: same 10 languages as the app, or a smaller subset first -
+  108 translated files (12 pages × 9 non-English locales) is a lot of content to keep in sync
+  with the English source as it evolves, unlike short UI strings
+- [ ] Decide translation approach: machine-translated (same disclosed approach as the app's own
+  9 non-English locales) vs. holding out for native-speaker review given this is technical/
+  developer-facing content, where mistranslation risk is higher than UI button labels
+- [ ] `docs/.vitepress/config.ts`: add `locales` config, per-locale `themeConfig` overrides (nav/
+  sidebar labels), decide URL structure (VitePress default: `/ko/`, `/ja/`, ... subpaths)
+- [ ] Translate all pages under `docs/guide/` and `docs/plugins/` per the scope/approach decided
+  above
+- [ ] Add a locale switcher to the nav (VitePress's built-in one, or custom) - confirm it works
+  correctly under this project's `base: "/Concourse/"` GitHub Pages path
+- [ ] Verify `.github/workflows/docs.yml` builds/deploys the localized site correctly (multi-
+  locale VitePress output structure, still under the same Pages deployment)

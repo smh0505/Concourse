@@ -4722,3 +4722,28 @@ same shared `.shimmer` class as the cover skeleton above, not a new animation. A
 re-triggers `useImageBrightness` and thus `textPending` the same way initial navigation does -
 no separate handling needed for that path. `bun run build` clean.
 
+## Milestone 23 — Docs Site Internationalization (scoped, not started)
+
+User asked whether the docs site (Milestone 22) could get i18n like the app's own UI (Milestone
+21's 10 languages). Checked feasibility directly against this project's actual pinned VitePress
+version (`docs/package.json` → `1.6.4`) rather than assuming from general VitePress knowledge -
+1.6.4 does support i18n natively, via a `locales` key in `.vitepress/config.ts` plus per-locale
+content subdirectories, with a locale switcher built into the default theme.
+
+Deliberately scoped as its own milestone (23) rather than treated as a quick follow-on to 21 or
+22, and said so directly to the user: the docs site currently has 12 real pages
+(`docs/index.md`, 5 under `docs/guide/`, 7 under `docs/plugins/`, per `config.ts`'s own nav/
+sidebar), all prose-heavy technical/developer content with code samples - translating all of
+them into the app's same 9 non-English locales would be 108 translated files, a categorically
+bigger and higher-mistranslation-risk task than the app's own UI-string localization (which was
+short button/label text, forgiving of an imperfect machine translation). Recorded as `[ ]`
+unstarted in `milestones.md`, with the real open questions before starting: how many locales
+(same 10 as the app, or fewer to start), machine-translated (same disclosed approach as the
+app's 9 locales) vs. holding out for native-speaker review given the higher stakes of technical
+docs, the actual VitePress config/URL-structure work (`locales` key, per-locale `themeConfig`
+nav/sidebar overrides, confirming the locale switcher and generated links behave under this
+project's `base: "/Concourse/"` GitHub Pages path), and confirming `docs.yml`'s existing build/
+deploy workflow handles VitePress's multi-locale output structure without changes. Not started
+this pass - scoping only, per this project's own "one step at a time" convention already
+followed for every other milestone.
+

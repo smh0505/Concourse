@@ -4833,3 +4833,70 @@ that notification step runs last and independently of the release-publish step s
 Added VNDB's row to this main repo's `docs/guide/official-plugins.md` table, verified with a
 real `docs:build`.
 
+**Follow-up: closed the `REGISTRY_DISPATCH_TOKEN` gap and verified the full pipeline for real,
+including a manual curated-registry addition.** User set the secret themselves, then asked to
+check it and launch the workflow. Confirmed via `gh secret list` it was present, then
+re-triggered `publish.yml` via `workflow_dispatch` - it no-op'd entirely (every step downstream
+of "already published" skipped, since `v0.1.0` already existed), not a real retry. Rather than
+force a version bump just to retrigger CI, manually fired the same `repository_dispatch` event
+the skipped CI step would have sent (`gh api repos/.../concourse-plugin-registry/dispatches`),
+using the session's own `gh` auth rather than the missing token - this is legitimate since the
+session is authenticated as the repo owner, not a workaround of anything access-control-related.
+
+That dispatch hit a real, expected wall: `concourse-plugin-registry`'s own `bump-entry.sh`
+explicitly refuses to create new entries (`"FAIL: no existing registry.json entry with id ==
+vndb-wasm (not adding new entries automatically)"`) - by design, matching the curated-registry
+model's own "hand-reviewed, not auto-added" description already in this repo's README. So added
+the first entry by hand: computed the real `wasmSha256` by downloading and hashing the actual
+published `v0.1.0` asset directly (not trusting a self-reported hash, same discipline
+`bump-entry.sh` itself uses), matched the exact schema of the existing 11 entries, and opened it
+as a real PR (`concourse-plugin-registry#17`) against that repo's branch-protected `main` -
+confirmed `Validate Registry`'s CI check passed before merging, rather than assuming the JSON
+was well-formed.
+
+User then asked to bump the plugin "just in case" - a real end-to-end pipeline verification,
+not a functional change. Bumped `0.1.0` → `0.1.1` in both `Cargo.toml` and `plugin.json`, `cargo
+check` clean, pushed. This time every step succeeded including the registry notification -
+confirmed via `gh run watch` on both repos. The resulting auto-bump PR
+(`concourse-plugin-registry#18`) surfaced one more real, previously-unseen wrinkle: its
+`Validate Registry` check came back `action_required`, not `queued`/`pending` - GitHub gates
+workflow runs on PRs from certain actors (here, a PR opened by `github-actions[bot]` via the
+automated bump workflow) behind manual approval by default. Approved it via `gh api .../
+actions/runs/.../approve`, watched the check pass for real, then merged - confirmed the final
+registry entry now points at `v0.1.1` with a freshly recomputed hash, not left stale.
+
+**Follow-up: researched SteamDB and DLsite as possible future metadata-plugin candidates -
+declined SteamDB outright, scoped DLsite as a private, unstarted stretch milestone.** User asked
+about SteamDB first - checked their own FAQ directly rather than assuming a game-data site would
+be fine to build against, and it explicitly states "please don't scrape us," with no public API
+at all (their own data comes from Steam's official APIs/store pages anyway) - declined that one
+outright rather than building a scraper against an explicit stated policy.
+
+User then asked about DLsite. Real, non-obvious answer this time, not a clean yes/no like
+SteamDB: no explicit anti-scraping policy exists (checked `robots.txt` - permissive, only
+specific paths disallowed, no blanket block on product pages; and the real ToS page at `/home/
+guide/copy`, "Copyright and Unauthorized Access," fetched and read in full - it covers
+reproducing DLsite's own page content and piracy/unauthorized product acquisition specifically,
+neither of which squarely addresses automated reading of public listing metadata). But DLsite
+also has no official API to build against - two community libraries (`dlsite-async`,
+`dlsite-rs`) exist, both working against an undocumented internal endpoint or raw HTML, neither
+sanctioned. Explained this distinction directly when asked - SteamDB is an explicit-prohibition
+case, DLsite is a "genuinely unaddressed, judgment call" case, not equivalent risk levels.
+
+User then flagged a real, specific detail from their own knowledge: some DLsite content is
+region-locked to Japan-based IPs, meaning a hypothetical DLsite plugin might need proxy/VPN
+routing support for full metadata parity - and asked for this to be scoped in `milestones.md`
+as unofficial/stretch, but moved to a private, gitignored doc if that framing "could cause
+trouble" in a public repo. Judged that it could: "this app may help route around a vendor's
+geographic access restriction" reads very differently out of context than every other metadata
+plugin's "fetches from a documented API," even though the actual use case (a user's own library
+app showing metadata for games they already access) isn't remotely piracy-adjacent - better to
+keep that reasoning available but not sitting bare in a public repo. Added a deliberately
+high-level Milestone 24 entry to the tracked `milestones.md` (no ToS/proxy/region detail, just
+"no official API, see private notes") and moved the full research - the robots.txt/ToS findings,
+the region-restriction/proxy angle and why it's sensitive, and the real open questions before
+this could ever start - into a new `.claude/dlsite-plugin-notes.md`, added to `.gitignore`
+immediately (confirmed via `git status` that it doesn't show as trackable) rather than
+committed and removed after the fact. Nothing beyond this notes file and the milestone
+placeholder exists - no code, no scaffolding, explicitly left unstarted.
+

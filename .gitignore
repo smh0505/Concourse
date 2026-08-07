@@ -1,3 +1,7 @@
+# Private research notes not meant for the public repo (sensitive framing out of context) -
+# content itself isn't secret, just kept out of git.
+.claude/dlsite-plugin-notes.md
+
 # Logs
 logs
 *.log

@@ -496,3 +496,11 @@ short UI-string localization - not a quick follow-on.
   correctly under this project's `base: "/Concourse/"` GitHub Pages path
 - [ ] Verify `.github/workflows/docs.yml` builds/deploys the localized site correctly (multi-
   locale VitePress output structure, still under the same Pages deployment)
+
+## Milestone 24 — DLsite Metadata Provider (unofficial, stretch)
+No official public API - unlike every other metadata provider plugin (IGDB/SteamGridDB/RAWG/
+TheGamesDB/VNDB, all built against a real sanctioned API). Would depend on an unofficial/
+undocumented access path instead. Deliberately not detailed further here - see
+`.claude/dlsite-plugin-notes.md` (gitignored, not tracked) for the full research and open
+questions before this gets started.
+- [ ] Not started - research/scoping only exists in the private notes file above

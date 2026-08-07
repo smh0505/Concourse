@@ -1,5 +1,12 @@
 # Concourse
 
+[한국어](README.ko.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) |
+[Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) |
+[Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md) | [Italiano](README.it.md)
+
+*Translations other than English are machine-translated (same disclosed approach as the app's
+own UI locales - see [Localization](#features) below), not yet native-speaker reviewed.*
+
 A desktop app that aggregates games from multiple sources (Steam, Epic, GOG, manual entries,
 and more via plugins) into one unified library, with a console-like controller-first "Big
 Picture" mode - similar in spirit to Playnite or Steam's own library.

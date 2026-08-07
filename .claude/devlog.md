@@ -4747,3 +4747,19 @@ deploy workflow handles VitePress's multi-locale output structure without change
 this pass - scoping only, per this project's own "one step at a time" convention already
 followed for every other milestone.
 
+**Immediate follow-up, same session: while docs-site i18n stays scoped/unstarted, translated
+the top-level README instead.** User asked to i18n the README specifically, distinct from the
+Milestone 23 docs-site scope above - a single file, not 12 pages, so no milestone entry needed
+for this one; just done directly. Added `README.<locale>.md` for all 9 non-English UI locales
+(`ko`/`ja`/`zh-Hans`/`es`/`fr`/`de`/`pt-BR`/`ru`/`it`), each a full translation of every
+section (Features through the new Third-Party Notices), machine-translated - same disclosed
+approach already used for the app's own UI strings, stated explicitly at the top of each
+translated file rather than left implicit. Every file (including `README.md` itself) gained a
+language-switcher line linking to all the others, plus the disclosure note. Code blocks,
+inline code (package/command names, CSS variables, file paths), and every URL were left
+untouched across all 9 translations - only prose was translated. `README.md`'s own switcher
+line links to `#features` for the disclosure note's "see Localization below" reference; each
+translated file's equivalent anchor points at that file's own translated heading text (e.g.
+`#기능`, `#功能`, `#funcionalidades`), which is what GitHub's anchor-slugger actually generates
+from each file's real heading, not a hardcoded English slug reused everywhere.
+

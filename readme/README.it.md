@@ -1,6 +1,6 @@
 # Concourse
 
-[English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
+[English](../README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
 [简体中文](README.zh-Hans.md) | [Español](README.es.md) | [Français](README.fr.md) |
 [Deutsch](README.de.md) | [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md)
 
@@ -160,7 +160,7 @@ rete", non è un modello di fiducia completo a livello di app store.
 
 La documentazione completa per sviluppatori di plugin e utenti è pubblicata su
 **[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)** (sorgente in
-[`docs/`](docs/), costruita con VitePress) - una guida utente (installazione, gestione della
+[`docs/`](../docs/), costruita con VitePress) - una guida utente (installazione, gestione della
 libreria, modalità Big Picture) e un riferimento per sviluppatori di plugin (panoramica
 dell'architettura, una guida introduttiva, il riferimento completo di manifesto/interfaccia
 WIT, il modello di sicurezza e come pubblicare un plugin).
@@ -168,9 +168,9 @@ WIT, il modello di sicurezza e come pubblicare un plugin).
 ## Stato
 
 Sviluppato attivamente, un traguardo alla volta. Vedi
-[`.claude/proposal.md`](.claude/proposal.md) per la proposta di design originale,
-[`.claude/milestones.md`](.claude/milestones.md) per il tracciamento aggiornato dei progressi
-rispetto ad essa, e [`.claude/devlog.md`](.claude/devlog.md) per la storia
+[`.claude/proposal.md`](../.claude/proposal.md) per la proposta di design originale,
+[`.claude/milestones.md`](../.claude/milestones.md) per il tracciamento aggiornato dei progressi
+rispetto ad essa, e [`.claude/devlog.md`](../.claude/devlog.md) per la storia
 dell'implementazione/il ragionamento dietro ogni voce dei traguardi.
 
 Ad oggi: la libreria principale, il tracciamento di metadati/tempo di gioco, la modalità Big
@@ -188,7 +188,7 @@ plugin sorgente (Xbox/EA/Ubisoft, Milestone 16).
 
 ## Licenza
 
-MIT - vedi [`LICENSE`](LICENSE).
+MIT - vedi [`LICENSE`](../LICENSE).
 
 ### Avvisi di terze parti
 

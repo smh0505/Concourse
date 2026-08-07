@@ -1,6 +1,6 @@
 # Concourse
 
-[English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
+[English](../README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
 [简体中文](README.zh-Hans.md) | [Español](README.es.md) | [Français](README.fr.md) |
 [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md) | [Italiano](README.it.md)
 
@@ -160,7 +160,7 @@ vollständiges Vertrauensmodell auf App-Store-Niveau.
 
 Vollständige Dokumentation für Plugin-Entwickler und Nutzer wird unter
 **[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)** veröffentlicht
-(Quelle in [`docs/`](docs/), gebaut mit VitePress) - ein Benutzerhandbuch (Installation,
+(Quelle in [`docs/`](../docs/), gebaut mit VitePress) - ein Benutzerhandbuch (Installation,
 Bibliotheksverwaltung, Big-Picture-Modus) und eine Referenz für Plugin-Entwickler
 (Architekturüberblick, ein Einstiegs-Walkthrough, die vollständige Manifest-/WIT-Schnittstellen-
 Referenz, das Sicherheitsmodell und wie man ein Plugin veröffentlicht).
@@ -168,9 +168,9 @@ Referenz, das Sicherheitsmodell und wie man ein Plugin veröffentlicht).
 ## Status
 
 Aktiv entwickelt, Meilenstein für Meilenstein. Siehe
-[`.claude/proposal.md`](.claude/proposal.md) für den ursprünglichen Designvorschlag,
-[`.claude/milestones.md`](.claude/milestones.md) für die aktuelle Fortschrittsverfolgung dazu
-und [`.claude/devlog.md`](.claude/devlog.md) für die Implementierungshistorie/Begründung
+[`.claude/proposal.md`](../.claude/proposal.md) für den ursprünglichen Designvorschlag,
+[`.claude/milestones.md`](../.claude/milestones.md) für die aktuelle Fortschrittsverfolgung dazu
+und [`.claude/devlog.md`](../.claude/devlog.md) für die Implementierungshistorie/Begründung
 hinter jedem Meilenstein-Punkt.
 
 Stand jetzt: Kernbibliothek, Metadaten-/Spielzeiterfassung, Big-Picture-Modus, das Plugin-System
@@ -187,7 +187,7 @@ weitere Quell-Plugins (Xbox/EA/Ubisoft, Milestone 16).
 
 ## Lizenz
 
-MIT - siehe [`LICENSE`](LICENSE).
+MIT - siehe [`LICENSE`](../LICENSE).
 
 ### Hinweise zu Drittanbietern
 

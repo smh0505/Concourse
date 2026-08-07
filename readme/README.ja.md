@@ -1,6 +1,6 @@
 # Concourse
 
-[English](README.md) | [한국어](README.ko.md) | [简体中文](README.zh-Hans.md) |
+[English](../README.md) | [한국어](README.ko.md) | [简体中文](README.zh-Hans.md) |
 [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) |
 [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md) | [Italiano](README.it.md)
 
@@ -143,7 +143,7 @@ WASMサンドボックスを一切必要としない、別のコード不要URL�
 
 完全なプラグイン開発者向けおよびユーザー向けドキュメントは
 **[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)**で公開されています
-(ソースは[`docs/`](docs/)、VitePressでビルド) - ユーザーガイド(インストール、ライブラリ
+(ソースは[`docs/`](../docs/)、VitePressでビルド) - ユーザーガイド(インストール、ライブラリ
 管理、Big Picture モード)とプラグイン開発者向けリファレンス(アーキテクチャ概要、
 はじめにガイド、完全なマニフェスト/WITインターフェースリファレンス、セキュリティモデル、
 プラグインの公開方法)を含みます。
@@ -151,9 +151,9 @@ WASMサンドボックスを一切必要としない、別のコード不要URL�
 ## ステータス
 
 マイルストーンごとに継続的に開発されています。元の設計提案は
-[`.claude/proposal.md`](.claude/proposal.md)、最新の進捗トラッキングは
-[`.claude/milestones.md`](.claude/milestones.md)、各マイルストーン項目の実装履歴/根拠は
-[`.claude/devlog.md`](.claude/devlog.md)を参照してください。
+[`.claude/proposal.md`](../.claude/proposal.md)、最新の進捗トラッキングは
+[`.claude/milestones.md`](../.claude/milestones.md)、各マイルストーン項目の実装履歴/根拠は
+[`.claude/devlog.md`](../.claude/devlog.md)を参照してください。
 
 現時点で: コアライブラリ、メタデータ/プレイ時間トラッキング、Big Pictureモード、プラグイン
 システム(WebAssemblyランタイムプラグインパイプラインおよび互換性ラッパーの管理された
@@ -168,7 +168,7 @@ WASMサンドボックスを一切必要としない、別のコード不要URL�
 
 ## ライセンス
 
-MIT - [`LICENSE`](LICENSE)を参照。
+MIT - [`LICENSE`](../LICENSE)を参照。
 
 ### サードパーティに関する告知
 

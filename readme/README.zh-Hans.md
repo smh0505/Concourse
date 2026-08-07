@@ -1,6 +1,6 @@
 # Concourse
 
-[English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
+[English](../README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
 [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) |
 [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md) | [Italiano](README.it.md)
 
@@ -123,15 +123,15 @@ bunx tauri build        # 生产环境桌面二进制文件
 
 完整的插件开发者及用户文档发布于
 **[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)**(源码位于
-[`docs/`](docs/),使用 VitePress 构建) - 包含用户指南(安装、游戏库管理、Big Picture 模式)
+[`docs/`](../docs/),使用 VitePress 构建) - 包含用户指南(安装、游戏库管理、Big Picture 模式)
 以及插件开发者参考(架构概览、入门指南、完整的清单/WIT 接口参考、安全模型,以及如何发布
 插件)。
 
 ## 状态
 
-按里程碑持续开发中。原始设计提案见 [`.claude/proposal.md`](.claude/proposal.md),最新
-进度追踪见 [`.claude/milestones.md`](.claude/milestones.md),各里程碑项目的实现历史/理由
-见 [`.claude/devlog.md`](.claude/devlog.md)。
+按里程碑持续开发中。原始设计提案见 [`.claude/proposal.md`](../.claude/proposal.md),最新
+进度追踪见 [`.claude/milestones.md`](../.claude/milestones.md),各里程碑项目的实现历史/理由
+见 [`.claude/devlog.md`](../.claude/devlog.md)。
 
 截至目前:核心游戏库、元数据/游玩时长追踪、Big Picture 模式、插件系统(包括 WebAssembly
 运行时插件管线及兼容性包装器的托管安装)、WASM 插件权限沙箱化(Milestone 12)、插件信任/
@@ -143,7 +143,7 @@ bunx tauri build        # 生产环境桌面二进制文件
 
 ## 许可证
 
-MIT - 详见 [`LICENSE`](LICENSE)。
+MIT - 详见 [`LICENSE`](../LICENSE)。
 
 ### 第三方声明
 

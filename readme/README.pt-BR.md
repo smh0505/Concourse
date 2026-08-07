@@ -1,6 +1,6 @@
 # Concourse
 
-[English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
+[English](../README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
 [简体中文](README.zh-Hans.md) | [Español](README.es.md) | [Français](README.fr.md) |
 [Deutsch](README.de.md) | [Русский](README.ru.md) | [Italiano](README.it.md)
 
@@ -158,7 +158,7 @@ independentes.
 
 A documentação completa para desenvolvedores de plugins e usuários é publicada em
 **[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)** (código-fonte em
-[`docs/`](docs/), construído com VitePress) - um guia do usuário (instalação, gerenciamento da
+[`docs/`](../docs/), construído com VitePress) - um guia do usuário (instalação, gerenciamento da
 biblioteca, modo Big Picture) e uma referência para desenvolvedores de plugins (visão geral da
 arquitetura, um passo a passo inicial, a referência completa de manifesto/interface WIT, o
 modelo de segurança, e como publicar um plugin).
@@ -166,9 +166,9 @@ modelo de segurança, e como publicar um plugin).
 ## Status
 
 Em desenvolvimento ativo, marco a marco. Veja
-[`.claude/proposal.md`](.claude/proposal.md) para a proposta de design original,
-[`.claude/milestones.md`](.claude/milestones.md) para o acompanhamento atualizado do progresso
-em relação a ela, e [`.claude/devlog.md`](.claude/devlog.md) para o histórico de
+[`.claude/proposal.md`](../.claude/proposal.md) para a proposta de design original,
+[`.claude/milestones.md`](../.claude/milestones.md) para o acompanhamento atualizado do progresso
+em relação a ela, e [`.claude/devlog.md`](../.claude/devlog.md) para o histórico de
 implementação/raciocínio por trás de cada item de marco.
 
 Até o momento: a biblioteca principal, rastreamento de metadados/tempo de jogo, modo Big
@@ -186,7 +186,7 @@ adicionais (Xbox/EA/Ubisoft, Milestone 16).
 
 ## Licença
 
-MIT - veja [`LICENSE`](LICENSE).
+MIT - veja [`LICENSE`](../LICENSE).
 
 ### Avisos de terceiros
 

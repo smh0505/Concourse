@@ -1,8 +1,10 @@
 # Concourse
 
-[한국어](README.ko.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) |
-[Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) |
-[Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md) | [Italiano](README.it.md)
+[한국어](readme/README.ko.md) | [日本語](readme/README.ja.md) |
+[简体中文](readme/README.zh-Hans.md) | [Español](readme/README.es.md) |
+[Français](readme/README.fr.md) | [Deutsch](readme/README.de.md) |
+[Português (Brasil)](readme/README.pt-BR.md) | [Русский](readme/README.ru.md) |
+[Italiano](readme/README.it.md)
 
 *Translations other than English are machine-translated (same disclosed approach as the app's
 own UI locales - see [Localization](#features) below), not yet native-speaker reviewed.*

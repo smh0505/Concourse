@@ -1,6 +1,6 @@
 # Concourse
 
-[English](README.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) |
+[English](../README.md) | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) |
 [Español](README.es.md) | [Français](README.fr.md) | [Deutsch](README.de.md) |
 [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md) | [Italiano](README.it.md)
 
@@ -137,16 +137,16 @@ bunx tauri build        # 프로덕션 데스크톱 바이너리
 
 전체 플러그인 개발자 및 사용자 문서는
 **[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)**에 게시되어
-있습니다(소스는 [`docs/`](docs/), VitePress로 빌드) - 사용자 가이드(설치, 라이브러리 관리,
+있습니다(소스는 [`docs/`](../docs/), VitePress로 빌드) - 사용자 가이드(설치, 라이브러리 관리,
 Big Picture 모드)와 플러그인 개발자 참고 자료(아키텍처 개요, 시작하기 안내, 전체 매니페스트/
 WIT 인터페이스 참고, 보안 모델, 플러그인 게시 방법)를 포함합니다.
 
 ## 상태
 
 마일스톤 단위로 활발히 개발 중입니다. 원래 설계 제안서는
-[`.claude/proposal.md`](.claude/proposal.md), 최신 진행 상황 추적은
-[`.claude/milestones.md`](.claude/milestones.md), 각 마일스톤 항목의 구현 히스토리/근거는
-[`.claude/devlog.md`](.claude/devlog.md)를 참고하세요.
+[`.claude/proposal.md`](../.claude/proposal.md), 최신 진행 상황 추적은
+[`.claude/milestones.md`](../.claude/milestones.md), 각 마일스톤 항목의 구현 히스토리/근거는
+[`.claude/devlog.md`](../.claude/devlog.md)를 참고하세요.
 
 현재까지: 핵심 라이브러리, 메타데이터/플레이타임 추적, Big Picture 모드, 플러그인 시스템
 (WebAssembly 런타임 플러그인 파이프라인과 호환성 래퍼의 관리형 설치 포함), WASM 플러그인
@@ -160,7 +160,7 @@ WIT 인터페이스 참고, 보안 모델, 플러그인 게시 방법)를 포함
 
 ## 라이선스
 
-MIT - [`LICENSE`](LICENSE) 참고.
+MIT - [`LICENSE`](../LICENSE) 참고.
 
 ### 서드파티 고지
 

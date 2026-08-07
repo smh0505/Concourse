@@ -1,6 +1,6 @@
 # Concourse
 
-[English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
+[English](../README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) |
 [简体中文](README.zh-Hans.md) | [Español](README.es.md) | [Français](README.fr.md) |
 [Deutsch](README.de.md) | [Português (Brasil)](README.pt-BR.md) | [Italiano](README.it.md)
 
@@ -156,7 +156,7 @@ wasmtime гарантирует безопасность памяти (плаг�
 
 Полная документация для разработчиков плагинов и пользователей публикуется на
 **[smh0505.github.io/Concourse](https://smh0505.github.io/Concourse/)** (исходники в
-[`docs/`](docs/), собрано с помощью VitePress) - руководство пользователя (установка,
+[`docs/`](../docs/), собрано с помощью VitePress) - руководство пользователя (установка,
 управление библиотекой, режим Big Picture) и справочник для разработчиков плагинов (обзор
 архитектуры, руководство по началу работы, полный справочник по манифесту/интерфейсу WIT,
 модель безопасности и как опубликовать плагин).
@@ -164,9 +164,9 @@ wasmtime гарантирует безопасность памяти (плаг�
 ## Статус
 
 Активно разрабатывается, этап за этапом. См.
-[`.claude/proposal.md`](.claude/proposal.md) для исходного проектного предложения,
-[`.claude/milestones.md`](.claude/milestones.md) для актуального отслеживания прогресса
-относительно него, и [`.claude/devlog.md`](.claude/devlog.md) для истории реализации/
+[`.claude/proposal.md`](../.claude/proposal.md) для исходного проектного предложения,
+[`.claude/milestones.md`](../.claude/milestones.md) для актуального отслеживания прогресса
+относительно него, и [`.claude/devlog.md`](../.claude/devlog.md) для истории реализации/
 обоснования по каждому пункту этапа.
 
 На данный момент завершены: основная библиотека, учёт метаданных/времени игры, режим Big
@@ -183,7 +183,7 @@ Picture, система плагинов (включая конвейер WebAss
 
 ## Лицензия
 
-MIT - см. [`LICENSE`](LICENSE).
+MIT - см. [`LICENSE`](../LICENSE).
 
 ### Уведомления о стороннем ПО
 

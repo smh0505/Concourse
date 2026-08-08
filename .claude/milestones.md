@@ -7,6 +7,12 @@ see `.claude/devlog.md`.
 real-world use. Further work continues under **Post-1.0 Roadmap** at the bottom of this file,
 numbered as a continuing milestone sequence for the same devlog cross-reference convention.
 
+**2.0.0**: user decision (no breaking change forcing it) - Milestone 22's close is the last
+one counted under the 1.x line (currently 1.6.0); Milestone 23's close bumps to 2.0.0 instead
+of 1.7.0. Milestones 15/16/24 (already scoped, unstarted) and 25-38 (brainstormed, unstarted)
+fall under the 2.x line along with 23 - not required to close before 2.0.0 ships, since 23 is
+the one that actually triggers it.
+
 ## Milestone 1 — Core Library Foundation
 - [x] Pick stack (Tauri + Vue/TypeScript, SQLite)
 - [x] Set up SQLite schema (games, tags, playtime sessions)

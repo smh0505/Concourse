@@ -8,6 +8,7 @@ import type { ControllerMappingPlugin, GamepadMapping } from "@/plugins/types";
 
 const ACTIVE_MAPPING_SETTING = "active_controller_mapping_id";
 const DEFAULT_MAPPING_ID = "standard-gamepad";
+const MAPPING_OVERRIDE_PREFIX = "controller_mapping_override_";
 
 const FALLBACK_MAPPING: GamepadMapping = {
   dpadUp: 12,
@@ -31,10 +32,35 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
     return plugins[0] ?? null;
   }
 
+  /** Per-plugin, user-remapped button/axis indices layered on top of a mapping plugin's own
+   *  defaults - lets "Standard Gamepad" stay a plain data-shaped default while still letting a
+   *  user override individual buttons (e.g. a controller whose face buttons enumerate
+   *  differently) without forking the plugin itself. */
+  async function getMappingOverride(id: string): Promise<Partial<GamepadMapping>> {
+    const raw = await settingsRepo.get(`${MAPPING_OVERRIDE_PREFIX}${id}`);
+    if (!raw) return {};
+    try {
+      return JSON.parse(raw) as Partial<GamepadMapping>;
+    } catch {
+      return {};
+    }
+  }
+
+  async function setMappingOverride(id: string, override: Partial<GamepadMapping>) {
+    await settingsRepo.set(`${MAPPING_OVERRIDE_PREFIX}${id}`, JSON.stringify(override));
+    if (activeMappingId.value === id) await setActiveMapping(id);
+  }
+
+  async function resetMappingOverride(id: string) {
+    await settingsRepo.set(`${MAPPING_OVERRIDE_PREFIX}${id}`, "");
+    if (activeMappingId.value === id) await setActiveMapping(id);
+  }
+
   async function setActiveMapping(id: string | null) {
     if (id) {
       const plugin = await loadMappingPlugin(id);
-      activeMapping.value = plugin?.mapping ?? FALLBACK_MAPPING;
+      const override = await getMappingOverride(id);
+      activeMapping.value = plugin ? { ...plugin.mapping, ...override } : FALLBACK_MAPPING;
     } else {
       activeMapping.value = FALLBACK_MAPPING;
     }
@@ -53,5 +79,14 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
     }
   }
 
-  return { manifests, activeMappingId, activeMapping, setActiveMapping, init };
+  return {
+    manifests,
+    activeMappingId,
+    activeMapping,
+    setActiveMapping,
+    getMappingOverride,
+    setMappingOverride,
+    resetMappingOverride,
+    init,
+  };
 });

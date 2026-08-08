@@ -208,6 +208,25 @@
     "manifestUrlLabel": "Plugin manifest URL",
     "builtIn": "Built-in"
   },
+  "gamepadRemap": {
+    "settingsTrigger": "Remap",
+    "title": "Standard Gamepad — Button Mapping",
+    "listen": "Listen",
+    "listening": "Press a button...",
+    "unmapped": "Unmapped",
+    "actions": {
+      "dpadUp": "Up",
+      "dpadDown": "Down",
+      "dpadLeft": "Left",
+      "dpadRight": "Right",
+      "buttonConfirm": "Confirm",
+      "buttonCancel": "Cancel"
+    },
+    "axisThreshold": "Stick sensitivity",
+    "repeatDelayMs": "Repeat delay (ms)",
+    "repeatIntervalMs": "Repeat interval (ms)",
+    "reset": "Reset to Default"
+  },
   "library": {
     "emptyMessage": "Your library is empty. Add a game or scan a source plugin to get started.",
     "noMatchMessage": "No games match your search/filters."

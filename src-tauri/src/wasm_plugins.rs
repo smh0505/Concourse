@@ -217,17 +217,19 @@ impl PluginHostState {
         })
     }
 
-    /// Steam is the one plugin whose legitimate read scope genuinely can't be known ahead of
-    /// time (install location and library folders are wherever the user's own Steam install
-    /// put them) - this is the verified-elevation half of that: the host checks for a
-    /// `steamapps` subdirectory, Steam's own real structural signature, before trusting a
-    /// plugin-requested root at all. Any plugin id without a known validator is rejected
-    /// outright rather than silently trusted or given a real user-facing approval prompt -
-    /// there's no third-party plugin exercising that path yet, so a real prompt UI is deferred
-    /// until one actually needs it (see milestones.md/devlog.md).
+    /// Steam and Xbox are the plugins whose legitimate read scope genuinely can't be known
+    /// ahead of time (Steam's install/library folders, Xbox's per-package `PackageRootFolder`,
+    /// are wherever the user's own install/AppX repository put them) - this is the verified-
+    /// elevation half of that: the host checks for a real structural signature before trusting
+    /// a plugin-requested root at all (Steam: a `steamapps` subdirectory; Xbox: an
+    /// `AppxManifest.xml` file, every AppX package's own real manifest). Any plugin id without
+    /// a known validator is rejected outright rather than silently trusted or given a real
+    /// user-facing approval prompt - there's no third-party plugin exercising that path yet,
+    /// so a real prompt UI is deferred until one actually needs it (see milestones.md/devlog.md).
     fn do_request_read_scope(&mut self, path: String) -> Result<(), String> {
-        let recognized = match self.plugin_id.as_str() {
-            "steam-wasm" => Path::new(&path).join("steamapps").is_dir(),
+        let (recognized, expected_signature) = match self.plugin_id.as_str() {
+            "steam-wasm" => (Path::new(&path).join("steamapps").is_dir(), "no steamapps subdirectory"),
+            "xbox-wasm" => (Path::new(&path).join("AppxManifest.xml").is_file(), "no AppxManifest.xml"),
             _ => {
                 return Err(format!(
                     "No path-scope validator is registered for plugin \"{}\" - request-read-scope isn't available to it yet.",
@@ -237,8 +239,8 @@ impl PluginHostState {
         };
         if !recognized {
             return Err(format!(
-                "\"{}\" doesn't look like a real Steam library (no steamapps subdirectory) - scope request denied.",
-                path
+                "\"{}\" doesn't look like a real install directory for this plugin ({}) - scope request denied.",
+                path, expected_signature
             ));
         }
         self.dynamic_read_scopes.push(PathBuf::from(path));

@@ -59,6 +59,10 @@ numbered as a continuing milestone sequence for the same devlog cross-reference 
 - [x] Per-game compatibility wrappers (Locale Remulator + Locale Emulator)
 - [x] Playtime tracking for URI-launched games (Steam/Epic/GOG)
 
+Post-close: `standard-gamepad`'s controller mapping made user-configurable (remap UI, live
+button-press diagram, axis-driven bindings for stickless pads) - see devlog. New `8bitdo-micro`
+mapping plugin added alongside it.
+
 ## Milestone 8 — Remote/Downloadable Plugins (future)
 Pivoted to WASM — see devlog.
 - [x] Embed a WASM runtime (`wasmtime`, Component Model); define WIT world for `SourcePlugin`
@@ -504,3 +508,25 @@ undocumented access path instead. Deliberately not detailed further here - see
 `.claude/dlsite-plugin-notes.md` (gitignored, not tracked) for the full research and open
 questions before this gets started.
 - [ ] Not started - research/scoping only exists in the private notes file above
+
+## Milestone 25 — Detachable Controller Mapping Plugins (data tier, not started)
+User asked whether `standard-gamepad`/`8bitdo-micro` (currently build-time-only TS plugins, see
+Milestone 7) could be detached into separately-installed plugins like source/metadata/theme
+already are. A controller mapping is pure data (`GamepadMapping` - button/axis bindings, no
+`scan()`/`launch()` behavior), so it fits the existing data-only tier Milestone 17 built for
+themes (`DataThemeManifest`, install-by-URL, no WASM/code execution) rather than the WASM tier -
+that infra is theme-shaped today, not generic, so this is real new work, not a flag flip.
+- [ ] Generalize or duplicate the data-plugin Rust commands (`plugin_installer.rs`'s
+  `DataThemeManifest`/`list_data_themes`/`install_data_theme`/`uninstall_data_theme`) for
+  `kind: "controller"`
+- [ ] Decide manifest shape - a `GamepadMapping`'s fields embedded directly in `plugin.json`
+  (mirrors `cssVariables`' precedent), covering `dpadUp`/`dpadDown`/`dpadLeft`/`dpadRight`/
+  `buttonConfirm`/`buttonCancel`/`axisThreshold`/`repeatDelayMs`/`repeatIntervalMs`
+- [ ] `loader.ts` wiring - a controller-kind equivalent of `getInstalledDataThemeManifests`/
+  `createDataThemePlugin`
+- [ ] `PluginSettings.vue`/`AddPlugin.vue` - wire the Controller tab's install-by-URL flow to
+  accept a data-controller manifest, same as the Theme tab already does
+- [ ] New repo (`data-controller-plugins`, mirrors `data-theme-plugins`) once the above lands -
+  migrate `standard-gamepad` and/or `8bitdo-micro` out as the first real entries
+- [ ] Extend `concourse-plugin-registry` to `kind: "controller"` (same precedent as Milestone 17's
+  `kind: "theme"` extension)

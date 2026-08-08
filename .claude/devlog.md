@@ -4900,3 +4900,82 @@ immediately (confirmed via `git status` that it doesn't show as trackable) rathe
 committed and removed after the fact. Nothing beyond this notes file and the milestone
 placeholder exists - no code, no scaffolding, explicitly left unstarted.
 
+## Milestone 7 — Polish & Extras — post-close addition
+
+**Made `standard-gamepad`'s controller mapping user-configurable, then added an `8bitdo-micro`
+plugin and generalized the binding model to axis-driven inputs.** Several requests in sequence,
+each surfacing a real gap the previous step didn't cover:
+
+1. User asked to make the built-in `standard-gamepad` plugin configurable. Added a
+   `settingsComponent` (the existing per-plugin settings-UI hook every plugin kind already
+   supports) with a remap modal: click "Listen," press a real button, its index gets captured
+   live via a `requestAnimationFrame` gamepad poll. Persisted as a per-plugin override in
+   `useControllerMappingStore` (`controller_mapping_override_<id>` setting, merged on top of the
+   plugin's own default `mapping`) rather than editing the plugin's shipped default in place.
+2. User reported raw button indices were hard to read. Added a name lookup (`buttonNames.ts` -
+   A/B/X/Y/LB/RB/LT/RT/Back/Start/LS/RS/D-Up/Down/Left/Right/Home, per the Gamepad API's
+   "standard" mapping) and a live physical-layout diagram (CSS grid, rough top-down controller
+   shape) highlighting whichever button is actually pressed while the modal is open - doubles as
+   a "which index is this" reference during remapping, not just a static legend.
+3. User asked "can it be detached" re: WASM/multi-controller support in general, specifically
+   naming the 8BitDo Micro. Researched via web search - no verified public Gamepad API index
+   table exists for that device (Bluetooth-only, indices shift by connection mode/OS). Rather
+   than guess and ship wrong numbers as fact: extracted the remap modal into a reusable
+   `GamepadRemapSettings.vue` (props: `pluginId`, `defaultMapping`, `hasSticks`) so
+   `standard-gamepad` and a new `8bitdo-micro` plugin share one implementation; the new plugin
+   ships every button unbound, letting a user's real hardware fill in the truth via Listen.
+4. User tested their actual Micro with a third-party gamepad tester and found its d-pad reports
+   as joystick axis crossings, not four buttons - explaining why remapping it produced nothing.
+   The `GamepadMapping` type only supported plain button indices, with no way to represent that.
+   Fixed by introducing `GamepadDirectionBinding` (initially `{ button?, axisInput? }`, letting
+   either fire) and updating both `useGamepadNav`'s `isDirectionActive` and the remap capture
+   loop to detect a newly-crossed axis (edge-detected the same way as a newly-pressed button,
+   not just a raw threshold check) in addition to a button press. Added a live axis-value
+   readout to the modal so a user can see which axis number moves.
+5. User asked directly whether the binding held both input types simultaneously or one at a
+   time - it held both (by design, `standard-gamepad`'s default set both a button *and* an axis
+   fallback for each direction), but the remap UI's Listen always captured and wrote only one,
+   silently leaving the other stale. User asked to make it an explicit `button | axisInput |
+   null` union instead. Replaced `GamepadDirectionBinding` with a real discriminated union
+   (`GamepadButtonBinding | GamepadAxisBinding | null`, tagged via a `kind` field) - a direction
+   is now unambiguously bound to exactly one source or unassigned, matching what a single
+   Listen capture actually observes. Traded away `standard-gamepad`'s previous implicit
+   button+axis dual default in the process (a real behavior change, called out to the user
+   rather than silently dropped) - its left-stick navigation isn't bound by default anymore
+   unless a user explicitly remaps a direction onto it.
+6. User asked to apply the same binding type to confirm/cancel, which had stayed plain button
+   indices while d-pad directions already got the flexible type - inconsistent, and wouldn't
+   have supported a pad reporting an analog trigger as an axis for confirm/cancel either.
+   Unified all six mapped inputs (4 directions + confirm + cancel) onto one
+   `GamepadDirectionBinding` shape and one remap code path in `GamepadRemapSettings.vue`
+   (`ACTIONS` replacing the earlier separate `DPAD_ACTIONS`/`BUTTON_ACTIONS` split);
+   `useGamepadNav`'s confirm/cancel edge-detection now goes through the same
+   `isDirectionActive` helper the d-pad uses.
+
+Each step was verified with `bun run build` (typecheck + production build) before committing -
+no GUI/hardware testing possible in this environment, so the user validated steps 1-4 with
+their own real controllers between requests.
+
+## Milestone 25 — Detachable Controller Mapping Plugins (scoped, not started)
+
+User asked, after the above work, whether `standard-gamepad`/`8bitdo-micro` - still build-time-
+bundled TS plugins - could be "detached" the way source/metadata/wrapper plugins already are
+(separate repo, install-by-URL, independent versioning/updates).
+
+Answered directly rather than treating it as a quick toggle: two detach paths exist today, and
+neither currently covers the `controller` kind.
+- **WASM runtime** (`source`/`wrapper`/`metadata`) - built for plugins with real behavior
+  (`scan()`/`launch()`/`fetchMetadataById()` etc.) needing a sandboxed execution environment.
+  Overkill for a controller mapping, which is pure data.
+- **Data-only runtime** (`theme` only, Milestone 17) - `plugin_installer.rs`'s
+  `DataThemeManifest` struct and `list_data_themes`/`install_data_theme`/`uninstall_data_theme`
+  commands, install-by-URL, zero code execution. A controllers's `GamepadMapping` is exactly
+  this shape (data, no behavior) - the natural fit - but the existing structs/commands are
+  theme-shaped specifically (`cssVariables`/`cardVisual`/`fontFaces` fields), not generic, so
+  reusing this tier for `kind: "controller"` is real new backend + frontend work, not a flag.
+
+Scoped as Milestone 25 in `milestones.md` rather than started immediately - genuine new surface
+area (new Rust struct/commands, `loader.ts` wiring, `PluginSettings.vue`/`AddPlugin.vue` install-
+flow support for the Controller tab, eventually a new `data-controller-plugins` repo mirroring
+`data-theme-plugins`, and a `concourse-plugin-registry` `kind: "controller"` extension - same
+precedent Milestone 17 set for `kind: "theme"`). Left unstarted pending the user's go-ahead.

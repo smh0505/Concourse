@@ -5119,7 +5119,21 @@ real published `v0.1.0` asset, computed its real SHA256
 self-reported value, opened `concourse-plugin-registry#19`, confirmed the `Validate Registry`
 check passed for real, merged.
 
-**Not yet done**: real in-app verification (install via the registry, scan, confirm Minecraft
-is detected, confirm it actually launches through the running app's real UI) - everything above
-is compiled/CI-verified, not GUI-tested. EA app and Ubisoft Connect plugins remain unstarted,
-now in the same "research done, nothing built" position Xbox was in before this pass.
+**Real in-app verification, and a real bug caught by it.** User installed via the freeform Add
+Plugin URL flow and hit a crash in `ConfirmInstall.vue` (`Cannot read properties of undefined
+(reading 'length')`) before the install dialog could even render fully. Traced to
+`plugin_installer.rs`'s `PluginPreview` struct: `#[derive(Serialize)]` with no `rename_all`, so
+`path_scopes`/`http_scopes` serialized to the frontend as snake_case while `manifest.ts`/
+`ConfirmInstall.vue` read `pathScopes`/`httpScopes` (camelCase) - a real, pre-existing bug, not
+specific to this plugin (`WasmPluginManifest`, the *Deserialize*-side struct for reading a
+plugin author's own manifest, already had per-field `rename = "..."` attributes; `PluginPreview`,
+the outward-facing *Serialize*-side struct sent to the frontend, was never given the mirrored
+treatment). It only ever surfaced for a plugin with a non-empty declared scope installed via the
+freeform URL path specifically - most prior verification apparently went through the registry-
+list install flow instead, which this bug's code path doesn't cover the same way. Fixed with a
+single `#[serde(rename_all = "camelCase")]` on `PluginPreview`, `cargo check` clean, confirmed
+fixed by the user after restarting `tauri dev` (a Rust-side change, not picked up by Vite's
+hot-reload). Xbox plugin then verified fully end-to-end: installed, scanned, Minecraft for
+Windows detected, launched successfully through the real running app - not just CI-clean this
+time, actually GUI-tested. EA app and Ubisoft Connect plugins remain unstarted, now in the same
+"research done, nothing built" position Xbox was in before this pass.

@@ -349,9 +349,10 @@ stretch goal nothing had been done on yet.
   mirroring Steam's `steamapps` check). `library.ts` gained an `xbox://` pseudo-URI launch route,
   mirroring the existing `gog://` one. Registered in `concourse-plugin-registry`
   (`concourse-plugin-registry#19`)
-- [ ] Real in-app verification still pending - install via the registry, scan, confirm Minecraft
-  is detected and actually launches through the real UI (everything above is compiled/CI-clean,
-  not yet GUI-tested)
+- [x] Real in-app verification done - installed via the freeform Add Plugin URL flow (which
+  surfaced and got a real fix for a pre-existing `PluginPreview` snake_case/camelCase serde bug,
+  see devlog), scanned, Minecraft for Windows detected and launched successfully end-to-end
+  through the running app
 - [ ] EA app and Ubisoft Connect plugins - not started, same "research done, implementation not"
   state the Xbox one was in before this pass
 - [x] Each ships as its own WASM plugin in a separate repo from day one (confirmed for Xbox;

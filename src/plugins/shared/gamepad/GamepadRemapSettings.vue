@@ -1,18 +1,30 @@
 <script setup lang="ts">
-import { onBeforeUnmount, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useControllerMappingStore } from "@/stores/controllerMapping";
 import type { GamepadMapping } from "@/plugins/types";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
-import defaultPlugin from "./index";
 import { gamepadButtonLabel, STANDARD_GAMEPAD_LAYOUT_BUTTONS } from "./buttonNames";
+
+// Reusable across every ControllerMappingPlugin, not just Standard Gamepad - each plugin passes
+// its own id/default mapping in, so this component owns none of the plugin-specific data itself.
+const props = withDefaults(
+  defineProps<{
+    pluginId: string;
+    defaultMapping: GamepadMapping;
+    /** False for a pad with no analog sticks (e.g. 8BitDo Micro) - hides the stick-sensitivity
+     *  field, which is meaningless when the device has no axes to threshold. */
+    hasSticks?: boolean;
+  }>(),
+  { hasSticks: true },
+);
 
 const { t } = useI18n();
 const controllerMapping = useControllerMappingStore();
 
-const PLUGIN_ID = defaultPlugin.id;
-const DEFAULT_MAPPING = defaultPlugin.mapping;
+const PLUGIN_ID = props.pluginId;
+const DEFAULT_MAPPING = props.defaultMapping;
 
 // Only the actions with a real button index - stick direction is handled by axisThreshold below,
 // not remappable per-direction (a physical stick only has the two axes, not four buttons).
@@ -91,6 +103,14 @@ function onClose() {
   open.value = false;
 }
 
+// Stick-click buttons (indices 10/11) don't exist on a stickless pad - omit them from the
+// diagram entirely rather than showing two boxes that can never light up.
+const layoutButtons = computed(() =>
+  props.hasSticks
+    ? STANDARD_GAMEPAD_LAYOUT_BUTTONS
+    : STANDARD_GAMEPAD_LAYOUT_BUTTONS.filter((b) => b.index !== 10 && b.index !== 11),
+);
+
 onBeforeUnmount(stopPolling);
 </script>
 
@@ -102,7 +122,7 @@ onBeforeUnmount(stopPolling);
     <template #body>
       <div class="pad-layout">
         <div
-          v-for="btn in STANDARD_GAMEPAD_LAYOUT_BUTTONS"
+          v-for="btn in layoutButtons"
           :key="btn.index"
           class="pad-btn"
           :class="[`pad-btn-${btn.index}`, { pressed: pressed[btn.index] }]"
@@ -119,7 +139,7 @@ onBeforeUnmount(stopPolling);
             {{ listeningFor === action ? t("gamepadRemap.listening") : t("gamepadRemap.listen") }}
           </button>
         </div>
-        <label class="remap-row">
+        <label class="remap-row" v-if="hasSticks">
           {{ t("gamepadRemap.axisThreshold") }}
           <input
             type="number"

@@ -1,0 +1,7 @@
+{
+  "id": "8bitdo-micro",
+  "name": "8BitDo Micro",
+  "version": "1.0.0",
+  "kind": "controller",
+  "entry": "index.ts"
+}

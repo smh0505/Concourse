@@ -530,3 +530,65 @@ that infra is theme-shaped today, not generic, so this is real new work, not a f
   migrate `standard-gamepad` and/or `8bitdo-micro` out as the first real entries
 - [ ] Extend `concourse-plugin-registry` to `kind: "controller"` (same precedent as Milestone 17's
   `kind: "theme"` extension)
+
+## Milestone 26 — Library Functions Update: Batch Ops + Filter/Sort (not started)
+`GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s
+`filteredGames` filters on search text and the active tag/collection, no sort at all) - one
+game at a time is the only way to tag/remove/collection-assign. Two workstreams, scoped
+together since both touch the same filter-bar area and library selection state.
+
+**Batch operations.**
+- [ ] Multi-select mode for the grid/list view (checkbox or ctrl/shift-click) - new selection
+  state, likely `library.ts` or a new `stores/librarySelection.ts`
+- [ ] Batch actions on a selection: add/remove tag, assign/remove collection, remove from
+  library
+- [ ] Selection UI affordance (a "N selected" bar, Select All/Clear)
+
+**Filter/sort expansion.**
+- [ ] Sort options (title A-Z, recently played, most played, recently added) - `filteredGames`
+  currently has no sort step at all
+- [ ] Expandable panel under `GameFilters.vue`'s existing bar (collapsed by default) housing sort
+  + any additional filters (platform, playtime range, install status) beyond the existing
+  tag/collection pills
+- [ ] Persist chosen sort/filter state the same way `viewMode` already persists via
+  `settingsRepo`
+
+## Milestone 27 — Quick-Launch Search (not started)
+Spotlight/Alfred-style overlay: global hotkey opens a search box, type to filter the library,
+launch directly - faster than opening the app to the desktop UI for a single launch.
+- [ ] Global hotkey registration (Tauri global-shortcut plugin) - decide default binding,
+  configurable in `AppSettings`
+- [ ] A dedicated always-on-top overlay window (separate from the main window) or an in-app
+  modal if a true OS-level overlay proves too heavy for this pass
+- [ ] Fuzzy title search over `library.ts`'s `games`, keyboard-navigable results
+- [ ] Enter launches the selected game via the same path `GameCard`/`GameListRow` already use,
+  then closes the overlay
+- [ ] Decide behavior when the main window isn't running/is minimized
+
+## Milestone 28 — Library Backup/Export (not started)
+Export/import games, tags, collections, and settings as a portable file - covers reinstall/
+migration without re-scanning every source plugin and redoing manual metadata edits.
+- [ ] Export command - serialize `games`/`tags`/`game_tags`/`collections`/`settings` tables
+  (excluding secrets like API keys, or exporting them separately with a clear warning) to JSON
+- [ ] Import command - restore from an exported file, decide merge-vs-replace semantics against
+  an existing library
+- [ ] Settings UI: Export/Import buttons, file picker (Tauri's dialog plugin)
+- [ ] Decide what happens to `executable_path`s that don't exist on the importing machine
+  (different install locations) - flag rather than silently break
+- [ ] Version the export format (so a future schema migration can still read an older export)
+
+## Milestone 29 — Discord Rich Presence Plugin (not started)
+Shows "Playing <game>" on the user's Discord status while a game is running - fits the existing
+plugin architecture, though Rich Presence is behavior tied to *any* running game, not one
+specific source/theme/metadata/controller, so it likely needs a new plugin kind (or a non-
+plugin, always-on feature) rather than forcing it into one of the four existing kinds.
+- [ ] Decide integration shape: new plugin kind (`presence`?) vs. a built-in non-plugin feature,
+  given there's only ever one Discord client to report to (unlike source/metadata's multi-enable
+  model)
+- [ ] Discord IPC/RPC integration (local Discord client, not a bot/webhook - no server-side
+  component)
+- [ ] Wire into `launcher.rs`'s existing launch/session-end lifecycle (same hook playtime
+  tracking already uses) to set/clear presence
+- [ ] Settings toggle (on/off, and per-game opt-out for privacy)
+- [ ] Handle Discord not running / IPC connection failure gracefully (feature quietly no-ops,
+  not a hard error)

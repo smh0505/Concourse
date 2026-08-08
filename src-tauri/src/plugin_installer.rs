@@ -160,7 +160,15 @@ fn detect_kind(probe: &ManifestKindProbe) -> Result<String, String> {
 }
 
 /// What the confirm-before-install dialog shows - a subset common to every manifest shape.
+///
+/// `rename_all = "camelCase"` matters here: unlike `WasmPluginManifest` (which renames
+/// `path_scopes`/`http_scopes` per-field on the Deserialize side, for reading a plugin author's
+/// own camelCase manifest), this struct only ever gets Serialize'd out to the frontend - without
+/// this, `path_scopes`/`http_scopes` would go over the wire as snake_case, silently breaking
+/// `ConfirmInstall.vue`'s `manifest.pathScopes`/`manifest.httpScopes` reads (`undefined.length`)
+/// for any freeform-URL-installed plugin that declares a non-empty scope.
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginPreview {
     pub id: String,
     pub name: String,

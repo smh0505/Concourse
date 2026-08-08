@@ -64,9 +64,9 @@ function buttonBindingLabel(index: number): string {
 }
 
 function directionBindingLabel(binding: GamepadDirectionBinding): string {
-  if (binding.button !== undefined) return gamepadButtonLabel(binding.button);
-  if (binding.axisInput) {
-    return `${t("gamepadRemap.axis")} ${binding.axisInput.axis} ${binding.axisInput.sign > 0 ? "+" : "-"}`;
+  if (binding?.kind === "button") return gamepadButtonLabel(binding.index);
+  if (binding?.kind === "axis") {
+    return `${t("gamepadRemap.axis")} ${binding.axis} ${binding.sign > 0 ? "+" : "-"}`;
   }
   return t("gamepadRemap.unmapped");
 }
@@ -115,12 +115,16 @@ function pollGamepad() {
 
     const target = listeningFor.value;
     if (target && newlyPressedButton !== -1) {
-      if (target.kind === "dpad") mapping.value[target.action] = { button: newlyPressedButton };
-      else mapping.value[target.action] = newlyPressedButton;
+      if (target.kind === "dpad") {
+        mapping.value[target.action] = { kind: "button", index: newlyPressedButton };
+      } else {
+        mapping.value[target.action] = newlyPressedButton;
+      }
       listeningFor.value = null;
       void persist();
-    } else if (target?.kind === "dpad" && newlyCrossedAxis) {
-      mapping.value[target.action] = { axisInput: newlyCrossedAxis };
+    } else if (target?.kind === "dpad" && newlyCrossedAxis !== null) {
+      const axis: { axis: number; sign: 1 | -1 } = newlyCrossedAxis;
+      mapping.value[target.action] = { kind: "axis", axis: axis.axis, sign: axis.sign };
       listeningFor.value = null;
       void persist();
     }

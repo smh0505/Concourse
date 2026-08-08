@@ -9,12 +9,10 @@ function isDirectionActive(
   pad: Gamepad,
   axisThreshold: number,
 ): boolean {
-  if (binding.button !== undefined && pad.buttons[binding.button]?.pressed) return true;
-  if (binding.axisInput) {
-    const value = pad.axes[binding.axisInput.axis] ?? 0;
-    return binding.axisInput.sign === 1 ? value > axisThreshold : value < -axisThreshold;
-  }
-  return false;
+  if (!binding) return false;
+  if (binding.kind === "button") return pad.buttons[binding.index]?.pressed ?? false;
+  const value = pad.axes[binding.axis] ?? 0;
+  return binding.sign === 1 ? value > axisThreshold : value < -axisThreshold;
 }
 
 type Direction = "up" | "down" | "left" | "right";

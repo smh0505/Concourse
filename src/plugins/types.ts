@@ -67,21 +67,24 @@ export interface MetadataProviderPlugin extends PluginBase {
   fetchMetadataById(id: string): Promise<MetadataResult | null>;
 }
 
+export interface GamepadButtonBinding {
+  kind: "button";
+  index: number;
+}
+
 export interface GamepadAxisBinding {
+  kind: "axis";
   axis: number;
   /** Which way the axis travels when this direction is "pressed" - +1 for a positive-going
    *  axis value, -1 for negative-going. */
   sign: 1 | -1;
 }
 
-/** A d-pad direction can be driven by a discrete button, an axis crossing (a stickless pad like
- *  the 8BitDo Micro reports its d-pad as a joystick axis, not four buttons), or both at once -
- *  either one firing counts as that direction being active. */
-export interface GamepadDirectionBinding {
-  /** Physical button index, or omitted if this direction has no discrete button. */
-  button?: number;
-  axisInput?: GamepadAxisBinding;
-}
+/** A d-pad direction is driven by exactly one source at a time - a discrete button, an axis
+ *  crossing (a stickless pad like the 8BitDo Micro reports its d-pad as a joystick axis, not
+ *  four buttons), or nothing yet (null). Not both at once - remapping one always replaces
+ *  whatever was bound before, matching what a single Listen capture actually observed. */
+export type GamepadDirectionBinding = GamepadButtonBinding | GamepadAxisBinding | null;
 
 export interface GamepadMapping {
   dpadUp: GamepadDirectionBinding;

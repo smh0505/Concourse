@@ -11,10 +11,10 @@ const plugin: ControllerMappingPlugin = {
   id: "standard-gamepad",
   name: "Standard Gamepad",
   mapping: {
-    dpadUp: { button: 12, axisInput: { axis: 1, sign: -1 } },
-    dpadDown: { button: 13, axisInput: { axis: 1, sign: 1 } },
-    dpadLeft: { button: 14, axisInput: { axis: 0, sign: -1 } },
-    dpadRight: { button: 15, axisInput: { axis: 0, sign: 1 } },
+    dpadUp: { kind: "button", index: 12 },
+    dpadDown: { kind: "button", index: 13 },
+    dpadLeft: { kind: "button", index: 14 },
+    dpadRight: { kind: "button", index: 15 },
     buttonConfirm: 0, // A / Cross
     buttonCancel: 1, // B / Circle
     axisThreshold: 0.5,

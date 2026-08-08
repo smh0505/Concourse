@@ -7,18 +7,17 @@ import GamepadRemapSettings from "@/plugins/shared/gamepad/GamepadRemapSettings.
 // third-party gamepad tester that its d-pad actually reports as joystick axis crossings, not
 // four buttons. That, plus real per-button indices varying by connection mode (Bluetooth vs. a
 // 2.4G dongle) and OS, means there's no single correct mapping to ship here the way Standard
-// Gamepad's is a documented spec. Every binding starts empty ({} for d-pad directions, -1 for
-// confirm/cancel) rather than a guess presented as fact - GamepadRemapSettings' Listen capture
-// detects whichever the real hardware reports (button press or axis crossing) and fills it in
-// for your specific unit/connection mode.
+// Gamepad's is a documented spec. Every binding starts null (unassigned) rather than a guess
+// presented as fact - GamepadRemapSettings' Listen capture detects whichever the real hardware
+// reports (button press or axis crossing) and fills it in for your specific unit/connection mode.
 const plugin: ControllerMappingPlugin = {
   id: "8bitdo-micro",
   name: "8BitDo Micro",
   mapping: {
-    dpadUp: {},
-    dpadDown: {},
-    dpadLeft: {},
-    dpadRight: {},
+    dpadUp: null,
+    dpadDown: null,
+    dpadLeft: null,
+    dpadRight: null,
     buttonConfirm: -1,
     buttonCancel: -1,
     axisThreshold: 0.5,

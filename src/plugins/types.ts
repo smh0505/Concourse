@@ -80,10 +80,12 @@ export interface GamepadAxisBinding {
   sign: 1 | -1;
 }
 
-/** A d-pad direction is driven by exactly one source at a time - a discrete button, an axis
- *  crossing (a stickless pad like the 8BitDo Micro reports its d-pad as a joystick axis, not
- *  four buttons), or nothing yet (null). Not both at once - remapping one always replaces
- *  whatever was bound before, matching what a single Listen capture actually observed. */
+/** Every mapped input (d-pad directions and confirm/cancel alike) is driven by exactly one
+ *  source at a time - a discrete button, an axis crossing (a stickless pad like the 8BitDo
+ *  Micro reports its d-pad as a joystick axis, not four buttons; some pads report analog
+ *  triggers as axes rather than buttons too), or nothing yet (null). Not both at once -
+ *  remapping one always replaces whatever was bound before, matching what a single Listen
+ *  capture actually observed. */
 export type GamepadDirectionBinding = GamepadButtonBinding | GamepadAxisBinding | null;
 
 export interface GamepadMapping {
@@ -91,10 +93,10 @@ export interface GamepadMapping {
   dpadDown: GamepadDirectionBinding;
   dpadLeft: GamepadDirectionBinding;
   dpadRight: GamepadDirectionBinding;
-  buttonConfirm: number;
-  buttonCancel: number;
-  /** Crossing threshold (0-1) for any axisInput binding above - shared by every direction's
-   *  axis binding and the fallback default stick, not per-axis. */
+  buttonConfirm: GamepadDirectionBinding;
+  buttonCancel: GamepadDirectionBinding;
+  /** Crossing threshold (0-1) for any axis binding above - shared by every input's axis binding,
+   *  not per-axis. */
   axisThreshold?: number;
   repeatDelayMs?: number;
   repeatIntervalMs?: number;

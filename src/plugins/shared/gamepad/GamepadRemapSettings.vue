@@ -26,28 +26,20 @@ const controllerMapping = useControllerMappingStore();
 const PLUGIN_ID = props.pluginId;
 const DEFAULT_MAPPING = props.defaultMapping;
 
-// D-pad directions can bind to either a button or an axis crossing (see GamepadDirectionBinding)
-// - a stickless pad's d-pad reporting as a joystick axis (confirmed on the 8BitDo Micro via a
-// third-party gamepad tester) is exactly why this isn't just a plain button index like confirm/
-// cancel are.
-const DPAD_ACTIONS: Array<keyof Pick<GamepadMapping, "dpadUp" | "dpadDown" | "dpadLeft" | "dpadRight">> = [
-  "dpadUp",
-  "dpadDown",
-  "dpadLeft",
-  "dpadRight",
-];
-const BUTTON_ACTIONS: Array<keyof Pick<GamepadMapping, "buttonConfirm" | "buttonCancel">> = [
-  "buttonConfirm",
-  "buttonCancel",
-];
-
-type ListenTarget =
-  | { kind: "dpad"; action: (typeof DPAD_ACTIONS)[number] }
-  | { kind: "button"; action: (typeof BUTTON_ACTIONS)[number] };
+// Every mapped input shares the same GamepadDirectionBinding shape (button, axis, or unbound) -
+// a stickless pad's d-pad reporting as a joystick axis (confirmed on the 8BitDo Micro via a
+// third-party gamepad tester), and some pads reporting analog triggers as axes too, are both
+// reasons confirm/cancel need the same flexibility d-pad directions do, not a plain button index.
+const ACTIONS: Array<
+  keyof Pick<
+    GamepadMapping,
+    "dpadUp" | "dpadDown" | "dpadLeft" | "dpadRight" | "buttonConfirm" | "buttonCancel"
+  >
+> = ["dpadUp", "dpadDown", "dpadLeft", "dpadRight", "buttonConfirm", "buttonCancel"];
 
 const open = ref(false);
 const mapping = ref<GamepadMapping>({ ...DEFAULT_MAPPING });
-const listeningFor = ref<ListenTarget | null>(null);
+const listeningFor = ref<(typeof ACTIONS)[number] | null>(null);
 // Live-pressed state per physical button index, driving the "what am I pressing" diagram -
 // reactive() over a plain object (not a Map) so :class bindings in the template stay simple.
 const pressed = reactive<Record<number, boolean>>({});
@@ -58,10 +50,6 @@ const axisValues = reactive<Record<number, number>>({});
 // never needs to redraw anything, just remembers "was this axis already crossed last frame").
 const axisWasCrossed: Record<string, boolean> = {};
 let frameHandle: number | undefined;
-
-function buttonBindingLabel(index: number): string {
-  return index < 0 ? t("gamepadRemap.unmapped") : gamepadButtonLabel(index);
-}
 
 function directionBindingLabel(binding: GamepadDirectionBinding): string {
   if (binding?.kind === "button") return gamepadButtonLabel(binding.index);
@@ -86,9 +74,9 @@ function stopPolling() {
 }
 
 // Single poll loop drives both the live diagram (always, while the modal is open) and, when
-// actively remapping an action, captures whichever the real hardware reports first - a newly-
-// pressed button always wins if one fires; otherwise, for a d-pad direction only, a newly-
-// crossed axis is captured instead. One gamepad read per frame, not competing loops.
+// actively remapping an input, captures whichever the real hardware reports first - a newly-
+// pressed button always wins if one fires, otherwise a newly-crossed axis is captured instead.
+// One gamepad read per frame, not competing loops.
 function pollGamepad() {
   const pad = navigator.getGamepads()[0];
   if (pad) {
@@ -115,16 +103,12 @@ function pollGamepad() {
 
     const target = listeningFor.value;
     if (target && newlyPressedButton !== -1) {
-      if (target.kind === "dpad") {
-        mapping.value[target.action] = { kind: "button", index: newlyPressedButton };
-      } else {
-        mapping.value[target.action] = newlyPressedButton;
-      }
+      mapping.value[target] = { kind: "button", index: newlyPressedButton };
       listeningFor.value = null;
       void persist();
-    } else if (target?.kind === "dpad" && newlyCrossedAxis !== null) {
+    } else if (target && newlyCrossedAxis !== null) {
       const axis: { axis: number; sign: 1 | -1 } = newlyCrossedAxis;
-      mapping.value[target.action] = { kind: "axis", axis: axis.axis, sign: axis.sign };
+      mapping.value[target] = { kind: "axis", axis: axis.axis, sign: axis.sign };
       listeningFor.value = null;
       void persist();
     }
@@ -132,12 +116,8 @@ function pollGamepad() {
   frameHandle = requestAnimationFrame(pollGamepad);
 }
 
-function startListeningDpad(action: (typeof DPAD_ACTIONS)[number]) {
-  listeningFor.value = { kind: "dpad", action };
-}
-
-function startListeningButton(action: (typeof BUTTON_ACTIONS)[number]) {
-  listeningFor.value = { kind: "button", action };
+function startListening(action: (typeof ACTIONS)[number]) {
+  listeningFor.value = action;
 }
 
 async function onThresholdOrRepeatChange() {
@@ -198,25 +178,12 @@ onBeforeUnmount(stopPolling);
       </div>
 
       <div class="remap-fields">
-        <div class="remap-row" v-for="action in DPAD_ACTIONS" :key="action">
+        <div class="remap-row" v-for="action in ACTIONS" :key="action">
           <span class="action-label">{{ t(`gamepadRemap.actions.${action}`) }}</span>
           <span class="button-index">{{ directionBindingLabel(mapping[action]) }}</span>
-          <button type="button" class="compact-button" @click="startListeningDpad(action)">
+          <button type="button" class="compact-button" @click="startListening(action)">
             {{
-              listeningFor?.kind === "dpad" && listeningFor.action === action
-                ? t("gamepadRemap.listening")
-                : t("gamepadRemap.listen")
-            }}
-          </button>
-        </div>
-        <div class="remap-row" v-for="action in BUTTON_ACTIONS" :key="action">
-          <span class="action-label">{{ t(`gamepadRemap.actions.${action}`) }}</span>
-          <span class="button-index">{{ buttonBindingLabel(mapping[action]) }}</span>
-          <button type="button" class="compact-button" @click="startListeningButton(action)">
-            {{
-              listeningFor?.kind === "button" && listeningFor.action === action
-                ? t("gamepadRemap.listening")
-                : t("gamepadRemap.listen")
+              listeningFor === action ? t("gamepadRemap.listening") : t("gamepadRemap.listen")
             }}
           </button>
         </div>

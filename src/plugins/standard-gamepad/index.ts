@@ -15,8 +15,8 @@ const plugin: ControllerMappingPlugin = {
     dpadDown: { kind: "button", index: 13 },
     dpadLeft: { kind: "button", index: 14 },
     dpadRight: { kind: "button", index: 15 },
-    buttonConfirm: 0, // A / Cross
-    buttonCancel: 1, // B / Circle
+    buttonConfirm: { kind: "button", index: 0 }, // A / Cross
+    buttonCancel: { kind: "button", index: 1 }, // B / Circle
     axisThreshold: 0.5,
     repeatDelayMs: 350,
     repeatIntervalMs: 130,

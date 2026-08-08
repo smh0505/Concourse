@@ -86,13 +86,13 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
       handleDirection("left", isDirectionActive(mapping.dpadLeft, pad, axisThreshold), now);
       handleDirection("right", isDirectionActive(mapping.dpadRight, pad, axisThreshold), now);
 
-      const confirmPressed = pad.buttons[mapping.buttonConfirm]?.pressed ?? false;
+      const confirmPressed = isDirectionActive(mapping.buttonConfirm, pad, axisThreshold);
       if (confirmPressed && !confirmWasPressed) {
         options.onSelect(focusedIndex.value);
       }
       confirmWasPressed = confirmPressed;
 
-      const cancelPressed = pad.buttons[mapping.buttonCancel]?.pressed ?? false;
+      const cancelPressed = isDirectionActive(mapping.buttonCancel, pad, axisThreshold);
       if (cancelPressed && !cancelWasPressed) {
         options.onCancel?.();
       }

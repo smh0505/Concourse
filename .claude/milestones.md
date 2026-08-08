@@ -592,3 +592,102 @@ plugin, always-on feature) rather than forcing it into one of the four existing 
 - [ ] Settings toggle (on/off, and per-game opt-out for privacy)
 - [ ] Handle Discord not running / IPC connection failure gracefully (feature quietly no-ops,
   not a hard error)
+
+## Milestone 30 — Multi-Library / Profile Support (not started)
+Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a
+filtered "kids mode" view. Real schema/architecture question, not just a UI toggle - today
+there's exactly one SQLite DB (`library.db`) and no concept of "whose library this is."
+- [ ] Decide scope: fully separate DB files per profile (simplest, but no shared source-plugin
+  scan reuse) vs. a `profile_id` column threaded through every table (shared scan results,
+  per-profile visibility/filtering)
+- [ ] Profile switcher UI (likely at app launch, before the main library loads)
+- [ ] Decide what's global vs. per-profile: plugin enablement/settings, theme, controller
+  mapping are probably global; games/tags/collections/playtime are probably per-profile
+- [ ] "Kids mode" as a filtered view of one profile (age-rating/tag-based hide-list) vs. a real
+  separate profile - decide which before building
+
+## Milestone 31 — Custom Launch Arguments Per Game (not started)
+`launcher.rs`'s `launch_game` spawns `executable_path` bare - some games need `-windowed`,
+mod-loader flags, or other CLI args that currently have no home.
+- [ ] New `launch_args` column on `games` (migration)
+- [ ] `launch_game` passes stored args to the spawned process
+- [ ] `GameDetail.vue` edit-mode field for launch args, alongside the existing executable path
+- [ ] Decide handling for URI-launched entries (`steam://`, etc.) - args likely don't apply the
+  same way there
+
+## Milestone 32 — Pre-Launch Scripts/Hooks (not started)
+Run a script before/after launch (mount a virtual drive, kill a background app, apply a mod) -
+builds on Milestone 31's launch-args groundwork but is a materially bigger trust/security
+surface (arbitrary script execution, not just CLI flags).
+- [ ] Decide trust model first - this is arbitrary code execution tied to a game entry, a
+  bigger surface than anything in the existing WASM capability-gating model (Milestone 12)
+- [ ] Schema: pre-launch/post-exit script path (or inline command) per game
+- [ ] `launcher.rs` wiring - run pre-launch script, wait/decide on failure behavior, launch game,
+  run post-exit script after the existing session-end detection
+- [ ] `GameDetail.vue` UI for setting the hook scripts
+- [ ] Explicit user-facing warning given the security surface - this isn't sandboxed like a
+  plugin is
+
+## Milestone 33 — Game Notes/Journal (not started)
+Free-text per-game notes (playthrough progress, build order, "where I left off").
+- [ ] New `notes` column on `games` (migration) or a separate `game_notes` table if history/
+  timestamps per note entry matter (a journal, not just one overwritable field)
+- [ ] `GameDetail.vue` - a notes section, markdown-rendered same as the existing description
+  field (`marked` + `DOMPurify.sanitize`, already wired for descriptions)
+- [ ] Decide: one note per game (simple) vs. a dated log (more journal-like, more schema)
+
+## Milestone 34 — Random Game Picker (not started)
+"Surprise me" button for a big backlog - optionally filtered ("something under 2 hours", by
+tag/collection).
+- [ ] Picker button (sidebar or library toolbar) - random selection from `filteredGames`
+  (respects whatever search/tag/collection/sort filters, including Milestone 26's new ones, are
+  already active)
+- [ ] Optional playtime-range filter specific to the picker (distinct from Milestone 26's general
+  filters, if that one doesn't already cover it)
+- [ ] Result presentation - jump straight to `GameDetail`, or a lightweight reveal
+  animation/modal before committing to navigation
+
+## Milestone 35 — Recently-Removed / Trash Bin (not started)
+Soft-delete with an undo window instead of immediate removal - more important once Milestone
+26's batch-remove ships (accidental mass-delete becomes much easier).
+- [ ] Soft-delete: `deleted_at` column on `games` (migration) instead of a hard `DELETE`,
+  filtered out of normal library queries
+- [ ] "Recently Removed" view (sidebar tab or a filter toggle) listing soft-deleted games with
+  Restore/Delete Forever actions
+- [ ] Auto-purge policy - permanently delete after N days, or manual-only
+- [ ] Toast with an inline "Undo" action on removal (`stores/toasts.ts` already supports
+  `pushAction()`, added for Milestone 20's update banner) - immediate undo without needing to
+  visit the trash view at all
+
+## Milestone 36 — Time-Played Goals/Reminders (not started)
+"Haven't played X in 3 months" surfacing, or backlog-clearing nudges - encourages using the
+library rather than just cataloging it.
+- [ ] Decide trigger model: computed from existing `playtime_sessions`/`total_playtime` (no new
+  tracking needed) vs. explicit user-set goals ("play this for 10 hours") needing new schema
+- [ ] Surfacing UI - a dashboard/stats-panel callout (`StatsPanel.vue` already exists) vs. a
+  toast/notification on app start
+- [ ] Decide whether this needs OS-level notifications (app must be running vs. a true
+  background nudge) - likely app-open-only for a first pass
+
+## Milestone 37 — Touch/Mouse-as-Gamepad Input for Big Picture (not started)
+Second Big Picture input method for handheld/tablet Windows devices without a physical
+controller - `useGamepadNav` today reads only real Gamepad API input via the active
+`ControllerMappingPlugin`.
+- [ ] On-screen virtual d-pad/buttons overlay for Big Picture, mapped to the same `focusedIndex`/
+  `onSelect`/`onCancel` interface `useGamepadNav` already exposes - not a separate nav
+  implementation
+- [ ] Touch-drag/swipe gesture nav as an alternative to on-screen buttons
+- [ ] Decide auto-detection (no real gamepad connected -> show virtual overlay) vs. a manual
+  toggle in settings
+
+## Milestone 38 — Bulk Cover Art Auto-Crop/Regen Tool (not started)
+Bulk re-fetch/fix missing or misformatted art after adding many manual games at once, or after
+enabling a new metadata provider retroactively.
+- [ ] "Fetch metadata for all missing" bulk action (library-wide, not per-game) - reuses the
+  existing `metadataProviders.ts` fetch/merge logic already used for single-game fetches
+- [ ] Auto-crop/aspect-ratio normalization for cover art that doesn't match the expected
+  card ratio (some manual/community sources return arbitrary image dimensions)
+- [ ] Progress UI for a bulk operation (this could take a while across a large library) -
+  likely the same event-based progress pattern `wasm_plugin_installer.rs`'s download flow uses
+- [ ] Rate-limit awareness - bulk-fetching against SGDB/IGDB/RAWG/etc. for every game at once
+  risks hitting per-provider API rate limits

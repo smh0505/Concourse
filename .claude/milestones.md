@@ -336,9 +336,26 @@ stretch goal nothing had been done on yet.
   binary/protobuf, GZIP-compressed, undocumented schema, not realistically parseable, so
   registry is the practical detection path; launch via `uplay://launch/<gameID>/0`, also a real
   `://` URI
-- [ ] Verify all three findings above against real installed games (Halo Infinite/Apex Legends/
-  Brawlhalla suggested as free, real-world test cases) before writing any parser code
-- [ ] Each ships as its own WASM plugin in a separate repo from day one
+- [x] Xbox findings verified for real against an already-installed game (Minecraft for
+  Windows, `Microsoft.MinecraftUWP`) - `AppxManifest.xml` structure, the `ms-xbl-*` protocol
+  signature, and the `shell:appsFolder\<PackageFamilyName>!<AppId>` launch string all confirmed
+  against real registry/file data before any plugin code was written
+- [x] `xbox-source-wasm-plugin` built and published (v0.1.0) - detection via
+  `list-registry-keys`/`read-registry-string` against the AppX package repository
+  (`HKCU\...\AppModel\Repository\Packages`, no new host primitive needed), filtered by each
+  candidate's `AppxManifest.xml` declaring an `ms-xbl-*` protocol; launch via
+  `spawn-process("explorer.exe", ["shell:appsFolder\..."])`, also no new primitive needed.
+  Host gained one new `request-read-scope` validator (`xbox-wasm`: checks for `AppxManifest.xml`,
+  mirroring Steam's `steamapps` check). `library.ts` gained an `xbox://` pseudo-URI launch route,
+  mirroring the existing `gog://` one. Registered in `concourse-plugin-registry`
+  (`concourse-plugin-registry#19`)
+- [ ] Real in-app verification still pending - install via the registry, scan, confirm Minecraft
+  is detected and actually launches through the real UI (everything above is compiled/CI-clean,
+  not yet GUI-tested)
+- [ ] EA app and Ubisoft Connect plugins - not started, same "research done, implementation not"
+  state the Xbox one was in before this pass
+- [x] Each ships as its own WASM plugin in a separate repo from day one (confirmed for Xbox;
+  applies once EA/Ubisoft are built too)
 
 ## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier
 Supersedes the original component-override design (blocked - see devlog legacy record). Ships

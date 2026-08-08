@@ -5033,3 +5033,93 @@ just prose in this file - added a new unchecked verification item ("verify all t
 against real installed games") so the checklist honestly reflects that this is research, not
 confirmed fact, until the user actually installs the three recommended test games and checks
 these paths/formats against reality.
+
+## Milestone 16 — Xbox Source Plugin: Built and Published
+
+User already had both the Xbox app (`Microsoft.GamingApp`) and Minecraft (`MinecraftUWP`/
+`MinecraftJavaEdition`) installed - checked via `Get-AppxPackage` directly rather than assuming
+a download was needed. Used Minecraft as the real verification target for everything below,
+same "verify against a real file before writing a parser" discipline as Steam/Epic/GOG.
+
+**Verified the real manifest first.** Read Minecraft's actual `AppxManifest.xml` directly
+(`C:\Program Files\WindowsApps\Microsoft.MinecraftUWP_.../appxmanifest.xml`, readable without
+extra elevation) - confirmed the structure the earlier research predicted:
+`<Application Id="Game" Executable="GameLaunchHelper.exe">`, and an `ms-xbl-35760c07` /
+`ms-xbl-multiplayer` `windows.protocol` registration. Test-launched via `explorer.exe
+"shell:appsFolder\Microsoft.MinecraftUWP_8wekyb3d8bbwe!Game"` to confirm the launch mechanism
+works for real (user confirmed Minecraft opened).
+
+**Found the real detection path is registry, not `HKEY_CLASSES_ROOT` as first assumed.** The
+`AppModel\Repository\Packages` key (which holds each package's `DisplayName`/
+`PackageRootFolder`) doesn't exist under `HKLM` at all, and doesn't merge into `HKCR` the way
+some online references implied - it's real and enumerable at
+`HKCU\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\
+Repository\Packages\<PackageFullName>`, confirmed directly via `Get-ItemProperty` against
+Minecraft's real registry entry. This matters architecturally: the WASM host's
+`read-registry-string`/`list-registry-keys` primitives only support `HKLM`/`HKCU` hives (never
+`HKCR`), so if the real data had only lived under `HKCR` a new host primitive would have been
+needed - it doesn't, so the existing generic primitives cover Xbox detection with zero new WIT
+functions. `PackageFamilyName` (needed for the launch string) isn't stored anywhere in the
+registry directly either - derived from `PackageFullName` by splitting on `_` and taking the
+first field (Name) and last field (PublisherId), verified against Minecraft's real values
+(`Microsoft.MinecraftUWP_1.26.4201.0_x64__8wekyb3d8bbwe` -> `Microsoft.MinecraftUWP_8wekyb3d8bbwe`,
+matching `Get-AppxPackage`'s own `PackageFamilyName` output exactly).
+
+**The one real host-side change: a new `request-read-scope` validator.** Reading a package's
+`AppxManifest.xml` needs read access outside the plugin's own `plugin-dir()`, and
+`PackageRootFolder` isn't knowable ahead of time (varies per install) - same situation Steam's
+already in. Added an `"xbox-wasm"` arm to `wasm_plugins.rs`'s `do_request_read_scope` match,
+checking for an `AppxManifest.xml` file in the requested directory (mirrors Steam's
+`steamapps` subdirectory check) - `cargo check` clean. This was the only main-repo Rust change
+needed; `spawn-process`/`read-file`/`list-registry-keys`/`read-registry-string` all already
+existed and needed no modification.
+
+**The filtering problem: distinguishing games from the hundreds of system UWP packages.** The
+`Packages` registry key lists every installed AppX package on the system - Calculator, Photos,
+Cortana, etc., not just games. Real Microsoft Store games without a bespoke local manifest
+have no dedicated "is a game" flag exposed locally, so used Minecraft's own `ms-xbl-*`
+`windows.protocol` registration (Xbox Live title-specific protocol IDs) as the filtering
+signal - a genuine, verified-present-on-a-real-game / verified-absent-on-system-apps heuristic,
+documented explicitly as a heuristic (not an authoritative flag from Microsoft) in both the
+plugin's own README and its module doc comment, since a hypothetical Store game without Xbox
+Live integration would be missed by it.
+
+**Built `xbox-source-wasm-plugin`** (new repo, `smh0505/xbox-source-wasm-plugin`), following
+the Steam plugin's structure/conventions as a template (`Cargo.toml`'s `cargo-component`
+metadata, `publish.yml` CI copied and adjusted for the new binary/repo names). `roxmltree`
+(pure-Rust, no OS deps) parses `AppxManifest.xml` for the `Application` element and the
+`ms-xbl-*` protocol check. `scan()` enumerates the Packages key, resolves `DisplayName`/
+`PackageRootFolder`/derived family name per candidate, requests the read scope, and reads/
+filters via the manifest check. `launch()` decodes the entry's `executable_path` (an
+`xbox://<PackageFamilyName>!<AppId>` pseudo-URI, this plugin's own convention - parallels GOG's
+`gog://<id>`) and calls `spawn-process("explorer.exe", ["shell:appsFolder\\..."])`. `plugin.json`
+declares the `run-programs` capability (unlike Steam's dead-code `launch()`, this one genuinely
+spawns a process) and a static `pathScopes` registry entry for the fixed `Packages` key prefix
+(the per-package `PackageRootFolder` paths still need the dynamic `request-read-scope` call,
+since those vary per install). Compiled clean via `cargo component build --release` on the
+first attempt.
+
+**`library.ts` gained an `xbox://` launch route**, mirroring the existing `gog://` branch
+exactly (constructs a `GameEntry`-shaped object and invokes `wasm_plugin_launch` with
+`pluginId: "xbox-wasm"`, rather than the generic URI/direct-process-spawn paths) - placed before
+the generic `isUri` branch in the same `if`/`else if` chain, same reasoning as GOG (an
+`xbox://` URI technically also matches the generic `includes("://")` check, so branch order,
+not the URI check itself, is what routes it correctly). `bun run build` clean.
+
+**Full pipeline run for real, start to finish**, same discipline as the VNDB plugin's earlier
+verification: created the repo, pushed, set `REGISTRY_DISPATCH_TOKEN` (user ran the `gh secret
+set` command themselves once given it), manually triggered `publish.yml` via
+`workflow_dispatch` (push-triggered runs hadn't fired for a still-unexplained reason - possibly
+Actions needing the very first push to already exist, unclear), watched it complete fully green
+including the registry-notify step. As expected from the VNDB precedent,
+`concourse-plugin-registry`'s auto-dispatch failed by design (`bump-entry.sh` refuses to add
+new entries) - added the first `xbox-wasm` entry by hand exactly the same way: downloaded the
+real published `v0.1.0` asset, computed its real SHA256
+(`b099e6f2d5569dafa1109c981124345f6e163b1c34d5e8f8fd467c85f016cc12`) rather than trusting any
+self-reported value, opened `concourse-plugin-registry#19`, confirmed the `Validate Registry`
+check passed for real, merged.
+
+**Not yet done**: real in-app verification (install via the registry, scan, confirm Minecraft
+is detected, confirm it actually launches through the running app's real UI) - everything above
+is compiled/CI-verified, not GUI-tested. EA app and Ubisoft Connect plugins remain unstarted,
+now in the same "research done, nothing built" position Xbox was in before this pass.

@@ -11,10 +11,10 @@ const DEFAULT_MAPPING_ID = "standard-gamepad";
 const MAPPING_OVERRIDE_PREFIX = "controller_mapping_override_";
 
 const FALLBACK_MAPPING: GamepadMapping = {
-  dpadUp: 12,
-  dpadDown: 13,
-  dpadLeft: 14,
-  dpadRight: 15,
+  dpadUp: { button: 12, axisInput: { axis: 1, sign: -1 } },
+  dpadDown: { button: 13, axisInput: { axis: 1, sign: 1 } },
+  dpadLeft: { button: 14, axisInput: { axis: 0, sign: -1 } },
+  dpadRight: { button: 15, axisInput: { axis: 0, sign: 1 } },
   buttonConfirm: 0,
   buttonCancel: 1,
   axisThreshold: 0.5,

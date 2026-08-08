@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useControllerMappingStore } from "@/stores/controllerMapping";
-import type { GamepadMapping } from "@/plugins/types";
+import type { GamepadDirectionBinding, GamepadMapping } from "@/plugins/types";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
 import { gamepadButtonLabel, STANDARD_GAMEPAD_LAYOUT_BUTTONS } from "./buttonNames";
 
@@ -26,20 +26,50 @@ const controllerMapping = useControllerMappingStore();
 const PLUGIN_ID = props.pluginId;
 const DEFAULT_MAPPING = props.defaultMapping;
 
-// Only the actions with a real button index - stick direction is handled by axisThreshold below,
-// not remappable per-direction (a physical stick only has the two axes, not four buttons).
-const BUTTON_ACTIONS: Array<keyof Pick<
-  GamepadMapping,
-  "dpadUp" | "dpadDown" | "dpadLeft" | "dpadRight" | "buttonConfirm" | "buttonCancel"
->> = ["dpadUp", "dpadDown", "dpadLeft", "dpadRight", "buttonConfirm", "buttonCancel"];
+// D-pad directions can bind to either a button or an axis crossing (see GamepadDirectionBinding)
+// - a stickless pad's d-pad reporting as a joystick axis (confirmed on the 8BitDo Micro via a
+// third-party gamepad tester) is exactly why this isn't just a plain button index like confirm/
+// cancel are.
+const DPAD_ACTIONS: Array<keyof Pick<GamepadMapping, "dpadUp" | "dpadDown" | "dpadLeft" | "dpadRight">> = [
+  "dpadUp",
+  "dpadDown",
+  "dpadLeft",
+  "dpadRight",
+];
+const BUTTON_ACTIONS: Array<keyof Pick<GamepadMapping, "buttonConfirm" | "buttonCancel">> = [
+  "buttonConfirm",
+  "buttonCancel",
+];
+
+type ListenTarget =
+  | { kind: "dpad"; action: (typeof DPAD_ACTIONS)[number] }
+  | { kind: "button"; action: (typeof BUTTON_ACTIONS)[number] };
 
 const open = ref(false);
 const mapping = ref<GamepadMapping>({ ...DEFAULT_MAPPING });
-const listeningFor = ref<(typeof BUTTON_ACTIONS)[number] | null>(null);
+const listeningFor = ref<ListenTarget | null>(null);
 // Live-pressed state per physical button index, driving the "what am I pressing" diagram -
 // reactive() over a plain object (not a Map) so :class bindings in the template stay simple.
 const pressed = reactive<Record<number, boolean>>({});
+// Live axis values (index -> -1..1), shown as a readout so a user can see which axis moves when
+// their d-pad/stick is actually axis-driven rather than button-driven.
+const axisValues = reactive<Record<number, number>>({});
+// Per axis+direction edge-detection state, local to the capture loop only (not reactive - it
+// never needs to redraw anything, just remembers "was this axis already crossed last frame").
+const axisWasCrossed: Record<string, boolean> = {};
 let frameHandle: number | undefined;
+
+function buttonBindingLabel(index: number): string {
+  return index < 0 ? t("gamepadRemap.unmapped") : gamepadButtonLabel(index);
+}
+
+function directionBindingLabel(binding: GamepadDirectionBinding): string {
+  if (binding.button !== undefined) return gamepadButtonLabel(binding.button);
+  if (binding.axisInput) {
+    return `${t("gamepadRemap.axis")} ${binding.axisInput.axis} ${binding.axisInput.sign > 0 ? "+" : "-"}`;
+  }
+  return t("gamepadRemap.unmapped");
+}
 
 async function loadMapping() {
   const override = await controllerMapping.getMappingOverride(PLUGIN_ID);
@@ -56,19 +86,41 @@ function stopPolling() {
 }
 
 // Single poll loop drives both the live diagram (always, while the modal is open) and, when
-// actively remapping an action, captures the first newly-pressed button for it - one gamepad
-// read per frame instead of two competing loops.
+// actively remapping an action, captures whichever the real hardware reports first - a newly-
+// pressed button always wins if one fires; otherwise, for a d-pad direction only, a newly-
+// crossed axis is captured instead. One gamepad read per frame, not competing loops.
 function pollGamepad() {
   const pad = navigator.getGamepads()[0];
   if (pad) {
-    let newlyPressedIndex = -1;
+    let newlyPressedButton = -1;
     pad.buttons.forEach((b, index) => {
       const isPressed = b.pressed || b.value > 0.5;
-      if (isPressed && !pressed[index]) newlyPressedIndex = newlyPressedIndex === -1 ? index : newlyPressedIndex;
+      if (isPressed && !pressed[index] && newlyPressedButton === -1) newlyPressedButton = index;
       pressed[index] = isPressed;
     });
-    if (listeningFor.value && newlyPressedIndex !== -1) {
-      mapping.value[listeningFor.value] = newlyPressedIndex;
+
+    const threshold = mapping.value.axisThreshold ?? 0.5;
+    let newlyCrossedAxis: { axis: number; sign: 1 | -1 } | null = null;
+    pad.axes.forEach((value, axisIndex) => {
+      axisValues[axisIndex] = value;
+      for (const sign of [1, -1] as const) {
+        const key = `${axisIndex}:${sign}`;
+        const isCrossed = sign === 1 ? value > threshold : value < -threshold;
+        if (isCrossed && !axisWasCrossed[key] && !newlyCrossedAxis) {
+          newlyCrossedAxis = { axis: axisIndex, sign };
+        }
+        axisWasCrossed[key] = isCrossed;
+      }
+    });
+
+    const target = listeningFor.value;
+    if (target && newlyPressedButton !== -1) {
+      if (target.kind === "dpad") mapping.value[target.action] = { button: newlyPressedButton };
+      else mapping.value[target.action] = newlyPressedButton;
+      listeningFor.value = null;
+      void persist();
+    } else if (target?.kind === "dpad" && newlyCrossedAxis) {
+      mapping.value[target.action] = { axisInput: newlyCrossedAxis };
       listeningFor.value = null;
       void persist();
     }
@@ -76,8 +128,12 @@ function pollGamepad() {
   frameHandle = requestAnimationFrame(pollGamepad);
 }
 
-function startListening(action: (typeof BUTTON_ACTIONS)[number]) {
-  listeningFor.value = action;
+function startListeningDpad(action: (typeof DPAD_ACTIONS)[number]) {
+  listeningFor.value = { kind: "dpad", action };
+}
+
+function startListeningButton(action: (typeof BUTTON_ACTIONS)[number]) {
+  listeningFor.value = { kind: "button", action };
 }
 
 async function onThresholdOrRepeatChange() {
@@ -131,15 +187,36 @@ onBeforeUnmount(stopPolling);
         </div>
       </div>
 
+      <div class="axis-readout" v-if="Object.keys(axisValues).length > 0">
+        <span v-for="(value, axis) in axisValues" :key="axis">
+          {{ t("gamepadRemap.axis") }} {{ axis }}: {{ value.toFixed(2) }}
+        </span>
+      </div>
+
       <div class="remap-fields">
-        <div class="remap-row" v-for="action in BUTTON_ACTIONS" :key="action">
+        <div class="remap-row" v-for="action in DPAD_ACTIONS" :key="action">
           <span class="action-label">{{ t(`gamepadRemap.actions.${action}`) }}</span>
-          <span class="button-index">{{ gamepadButtonLabel(mapping[action]) }}</span>
-          <button type="button" class="compact-button" @click="startListening(action)">
-            {{ listeningFor === action ? t("gamepadRemap.listening") : t("gamepadRemap.listen") }}
+          <span class="button-index">{{ directionBindingLabel(mapping[action]) }}</span>
+          <button type="button" class="compact-button" @click="startListeningDpad(action)">
+            {{
+              listeningFor?.kind === "dpad" && listeningFor.action === action
+                ? t("gamepadRemap.listening")
+                : t("gamepadRemap.listen")
+            }}
           </button>
         </div>
-        <label class="remap-row" v-if="hasSticks">
+        <div class="remap-row" v-for="action in BUTTON_ACTIONS" :key="action">
+          <span class="action-label">{{ t(`gamepadRemap.actions.${action}`) }}</span>
+          <span class="button-index">{{ buttonBindingLabel(mapping[action]) }}</span>
+          <button type="button" class="compact-button" @click="startListeningButton(action)">
+            {{
+              listeningFor?.kind === "button" && listeningFor.action === action
+                ? t("gamepadRemap.listening")
+                : t("gamepadRemap.listen")
+            }}
+          </button>
+        </div>
+        <label class="remap-row">
           {{ t("gamepadRemap.axisThreshold") }}
           <input
             type="number"
@@ -238,6 +315,15 @@ onBeforeUnmount(stopPolling);
 /* Stick clicks - bottom row. */
 .pad-btn-10 { grid-column: 4 / 6; grid-row: 6; } /* LS */
 .pad-btn-11 { grid-column: 8 / 10; grid-row: 6; } /* RS */
+
+.axis-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-bottom: var(--space-2);
+}
 
 .remap-fields {
   display: flex;

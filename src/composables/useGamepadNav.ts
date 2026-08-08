@@ -1,7 +1,21 @@
 import { onMounted, onUnmounted, ref } from "vue";
 
 import { useControllerMappingStore } from "@/stores/controllerMapping";
+import type { GamepadDirectionBinding } from "@/plugins/types";
 import { suppressMouseActivity } from "./useMouseActivity";
+
+function isDirectionActive(
+  binding: GamepadDirectionBinding,
+  pad: Gamepad,
+  axisThreshold: number,
+): boolean {
+  if (binding.button !== undefined && pad.buttons[binding.button]?.pressed) return true;
+  if (binding.axisInput) {
+    const value = pad.axes[binding.axisInput.axis] ?? 0;
+    return binding.axisInput.sign === 1 ? value > axisThreshold : value < -axisThreshold;
+  }
+  return false;
+}
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -68,17 +82,11 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
       const mapping = controllerMapping.activeMapping;
       const axisThreshold = mapping.axisThreshold ?? 0.5;
       const now = performance.now();
-      const axisX = pad.axes[0] ?? 0;
-      const axisY = pad.axes[1] ?? 0;
 
-      handleDirection("up", pad.buttons[mapping.dpadUp]?.pressed || axisY < -axisThreshold, now);
-      handleDirection("down", pad.buttons[mapping.dpadDown]?.pressed || axisY > axisThreshold, now);
-      handleDirection("left", pad.buttons[mapping.dpadLeft]?.pressed || axisX < -axisThreshold, now);
-      handleDirection(
-        "right",
-        pad.buttons[mapping.dpadRight]?.pressed || axisX > axisThreshold,
-        now,
-      );
+      handleDirection("up", isDirectionActive(mapping.dpadUp, pad, axisThreshold), now);
+      handleDirection("down", isDirectionActive(mapping.dpadDown, pad, axisThreshold), now);
+      handleDirection("left", isDirectionActive(mapping.dpadLeft, pad, axisThreshold), now);
+      handleDirection("right", isDirectionActive(mapping.dpadRight, pad, axisThreshold), now);
 
       const confirmPressed = pad.buttons[mapping.buttonConfirm]?.pressed ?? false;
       if (confirmPressed && !confirmWasPressed) {

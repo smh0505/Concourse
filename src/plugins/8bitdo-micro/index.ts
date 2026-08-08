@@ -3,24 +3,25 @@ import { defineComponent, h } from "vue";
 import type { ControllerMappingPlugin } from "@/plugins/types";
 import GamepadRemapSettings from "@/plugins/shared/gamepad/GamepadRemapSettings.vue";
 
-// The 8BitDo Micro has no analog sticks - just a d-pad and four face buttons - so it never
-// reports "standard" Gamepad API mapping the way a full XInput/PS-layout pad does, and its real
-// per-button indices vary by connection mode (Bluetooth vs. a 2.4G dongle) and OS. Unlike
-// Standard Gamepad's mapping (a verified, documented spec), there's no single correct index set
-// to ship here - -1 is a "no button assigned yet" sentinel (pad.buttons[-1] is always undefined,
-// so it's simply never pressed) rather than a guess presented as fact. Use this plugin's own
-// remap UI (Settings → Controller → this row) to press each real button once and capture its
-// actual index for your specific unit/connection mode.
+// The 8BitDo Micro has no analog sticks and no discrete d-pad buttons either - confirmed via a
+// third-party gamepad tester that its d-pad actually reports as joystick axis crossings, not
+// four buttons. That, plus real per-button indices varying by connection mode (Bluetooth vs. a
+// 2.4G dongle) and OS, means there's no single correct mapping to ship here the way Standard
+// Gamepad's is a documented spec. Every binding starts empty ({} for d-pad directions, -1 for
+// confirm/cancel) rather than a guess presented as fact - GamepadRemapSettings' Listen capture
+// detects whichever the real hardware reports (button press or axis crossing) and fills it in
+// for your specific unit/connection mode.
 const plugin: ControllerMappingPlugin = {
   id: "8bitdo-micro",
   name: "8BitDo Micro",
   mapping: {
-    dpadUp: -1,
-    dpadDown: -1,
-    dpadLeft: -1,
-    dpadRight: -1,
+    dpadUp: {},
+    dpadDown: {},
+    dpadLeft: {},
+    dpadRight: {},
     buttonConfirm: -1,
     buttonCancel: -1,
+    axisThreshold: 0.5,
     repeatDelayMs: 350,
     repeatIntervalMs: 130,
   },

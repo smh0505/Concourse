@@ -210,10 +210,11 @@
   },
   "gamepadRemap": {
     "settingsTrigger": "Remap",
-    "title": "Standard Gamepad — Button Mapping",
+    "title": "Controller Button Mapping",
     "listen": "Listen",
-    "listening": "Press a button...",
-    "unmapped": "Unmapped",
+    "listening": "Press a button or move a stick...",
+    "unmapped": "Unassigned",
+    "axis": "Axis",
     "actions": {
       "dpadUp": "Up",
       "dpadDown": "Down",
@@ -222,7 +223,7 @@
       "buttonConfirm": "Confirm",
       "buttonCancel": "Cancel"
     },
-    "axisThreshold": "Stick sensitivity",
+    "axisThreshold": "Axis threshold",
     "repeatDelayMs": "Repeat delay (ms)",
     "repeatIntervalMs": "Repeat interval (ms)",
     "reset": "Reset to Default"

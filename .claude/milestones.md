@@ -318,9 +318,26 @@ Carried over from Milestone 7 unstarted.
 ## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
 Originally a core-roadmap stretch goal, moved here unstarted - no reason to hold up 1.0 for a
 stretch goal nothing had been done on yet.
-- [ ] Xbox — research install detection and launch mechanism
-- [ ] EA app — research install detection and launch mechanism
-- [ ] Ubisoft Connect — research install detection and launch mechanism
+- [x] Xbox — research install detection and launch mechanism (community-sourced, not yet
+  verified against real files - see devlog): detection via installed AppX packages
+  (`Get-AppxPackage` or registry `HKCR\Local Settings\Software\Microsoft\Windows\CurrentVersion\
+  AppModel\Repository\Families\{PackageFamilyName}`) plus the package's own `appxmanifest.xml`;
+  launch is `explorer.exe shell:appsFolder\<PackageFamilyName>!<AppId>` - not a `://` URI, needs
+  its own launch-mechanism branch in `launcher.rs`, unlike Steam/Epic/EA/Ubisoft
+- [x] EA app — research install detection and launch mechanism (community-sourced, not yet
+  verified - see devlog): detection via `.mfst` files under `C:\ProgramData\Origin\LocalContent\
+  <GameFolder>\` (`AppName`/`InstallLocation` fields) or registry `HKLM\SOFTWARE\Wow6432Node\
+  Origin Games\<contentID>`; launch via `origin2://game/launch/?offerIds=<contentID>` - a real
+  `://` URI, fits the existing `openUrl()` branch already used for Steam/Epic
+- [x] Ubisoft Connect — research install detection and launch mechanism (community-sourced, not
+  yet verified - see devlog): detection via registry `HKLM\SOFTWARE\WOW6432Node\Ubisoft\
+  Launcher\Installs\<gameID>\InstallDir` (+ display name from the matching
+  `Uninstall\UPlay Install {gameID}` key) - the per-game `uplay_install.manifest` file itself is
+  binary/protobuf, GZIP-compressed, undocumented schema, not realistically parseable, so
+  registry is the practical detection path; launch via `uplay://launch/<gameID>/0`, also a real
+  `://` URI
+- [ ] Verify all three findings above against real installed games (Halo Infinite/Apex Legends/
+  Brawlhalla suggested as free, real-world test cases) before writing any parser code
 - [ ] Each ships as its own WASM plugin in a separate repo from day one
 
 ## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier

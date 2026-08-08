@@ -4979,3 +4979,57 @@ area (new Rust struct/commands, `loader.ts` wiring, `PluginSettings.vue`/`AddPlu
 flow support for the Controller tab, eventually a new `data-controller-plugins` repo mirroring
 `data-theme-plugins`, and a `concourse-plugin-registry` `kind: "controller"` extension - same
 precedent Milestone 17 set for `kind: "theme"`). Left unstarted pending the user's go-ahead.
+
+## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch) — research
+
+Ranged over several requests: brainstormed what else could go into `milestones.md` (M26-38
+recorded separately), which touched on M16's still-unstarted Xbox/EA/Ubisoft plugins - user
+doesn't use any of the three, asked what to download free for an end-to-end test, then asked to
+actually research each platform's real install-detection/launch format before writing any code
+(same discipline `steam.rs`/`epic.rs`/`gog.rs` were built against - verified real manifests, not
+assumption).
+
+**Free test candidates recommended** (client + a real free game to install per platform):
+Xbox app + Halo Infinite (multiplayer-only install, ~20-25GB, free-to-play); EA app + Apex
+Legends (~75-90GB - EA's only real permanent free-to-play title on EA app currently, no smaller
+free EA game under 10GB exists that's known); Ubisoft Connect + Brawlhalla (~1-2GB, by far the
+lightest of the three). Noted client apps themselves are all ~1-2GB.
+
+**Research findings, via `WebSearch` (community-sourced - forums, GitHub reverse-engineering
+repos, Ubisoft's own support docs - not yet verified against real files on this machine, unlike
+the Steam/Epic/GOG parsers which were built and tested against real manifests):**
+
+- **Xbox app**: detection via installed AppX packages (`Get-AppxPackage` PowerShell, or registry
+  `HKEY_CLASSES_ROOT\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\
+  Repository\Families\{PackageFamilyName}`) plus the package's own `appxmanifest.xml` inside the
+  install folder. Launch is genuinely different from the other three - `explorer.exe
+  shell:appsFolder\<PackageFamilyName>!<AppId>`, not a `://` URI scheme at all. `launcher.rs`'s
+  existing `://`-substring branch (built for Steam/Epic) wouldn't catch this - Xbox would need
+  its own launch-mechanism branch, a real architectural difference worth flagging before
+  starting implementation, not something to force into the existing URI path.
+- **EA app**: detection via `.mfst` manifest files under `C:\ProgramData\Origin\LocalContent\
+  <GameFolder>\` (fields include `AppName`/`InstallLocation`), or registry `HKEY_LOCAL_MACHINE\
+  SOFTWARE\Wow6432Node\Origin Games\<contentID>`. Launch via `origin2://game/launch/
+  ?offerIds=<contentID>` (optionally `&cmdParams=...` for launch args, relevant to Milestone
+  31's per-game launch-args idea too) - a real `://` URI, fits the existing `openUrl()` branch
+  already used for Steam/Epic directly, no new launch mechanism needed.
+- **Ubisoft Connect**: detection via registry `HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\
+  Ubisoft\Launcher\Installs\<gameID>\InstallDir` for the install path, with the display name
+  resolved separately from the matching `HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\
+  Windows\CurrentVersion\Uninstall\UPlay Install {gameID}` key's `DisplayName` value (the
+  install-dir key alone doesn't carry the game's name). The per-game `uplay_install.manifest`
+  file itself is binary, not text/JSON/YAML - GZIP-compressed protobuf data starting at a fixed
+  byte offset, and the protobuf schema isn't public (the client is VMProtect-packed, blocking
+  static extraction; someone would need to dump a running instance's memory to recover it) - not
+  realistically parseable, so the registry path above is the practical detection route instead,
+  same shape as how GOG's existing registry-based detection already works in this codebase.
+  Launch via `uplay://launch/<gameID>/0` (`0`/`1` selecting single-/multiplayer mode where a game
+  has both) - also a real `://` URI, same `openUrl()` pattern.
+
+Recorded directly in `milestones.md`'s M16 checklist (marked the three research items `[x]`,
+each carrying the "community-sourced, not yet verified" caveat inline) rather than only here,
+since the short-form finding is scannable enough to belong in the tracked checklist itself, not
+just prose in this file - added a new unchecked verification item ("verify all three findings
+against real installed games") so the checklist honestly reflects that this is research, not
+confirmed fact, until the user actually installs the three recommended test games and checks
+these paths/formats against reality.

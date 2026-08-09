@@ -5207,3 +5207,57 @@ real `v0.1.0` asset, computed its real SHA256
 **Not yet done**: real in-app verification (install, scan, confirm Unravel detected and
 launches through the running app) - same as Xbox's position before its own GUI test. Ubisoft
 Connect remains completely unstarted.
+
+## Milestone 16 — EA/Xbox: Two Real Bugs Caught by In-App Verification
+
+Real in-app testing of the EA plugin surfaced two genuine bugs - one host-config gap, one
+cross-plugin logic bug affecting Xbox too.
+
+**Bug 1: `origin2:` wasn't allowlisted in Tauri's opener capability.** Launching Unravel failed
+with "Not allowed to open url" - `src-tauri/capabilities/default.json`'s
+`opener:allow-open-url` permission only listed `{ "url": "steam:*" }` and
+`{ "url": "com.epicgames.launcher:*" }`, missing the new EA plugin's real launch protocol.
+Fixed by adding `{ "url": "origin2:*" }` to the same list. A `tauri.conf.json`/capabilities
+change, not picked up by Vite hot-reload - needed a full `tauri dev` restart to take effect.
+
+**Bug 2: playtime wasn't recording for EA at all - and the same root cause affects Xbox too.**
+User noticed Unravel's playtime wasn't updating after the launch-URL fix. Traced to
+`library.ts`'s post-launch playtime hookup: `const installDir = game.install_dir ??
+parentDir(game.executable_path);` - `parentDir()` returns `null` for any path containing
+`"://"`, and neither plugin's `scan()` ever set `GameEntry.install_dir` in the first place, so
+`installDir` resolved to `null` and `track_folder_playtime` was never even called. Silent, not
+an error - the game would launch fine, playtime just never accumulated.
+
+Compared against Steam's plugin, which does set a real `install_dir`
+(`steamapps\common\<installdir>`) - that's why Steam's playtime tracking already worked and
+this gap wasn't caught until a plugin without one shipped. Asked "investigate this for all
+plugins" - checked every plugin's `to_game_entry` and confirmed only EA and Xbox had the gap
+(Steam/GOG/Epic all set a real folder).
+
+Fixed both, bumped both to `0.1.1`:
+- **EA**: `Origin Games`'s own registry key never had an install path to begin with. Added a
+  second registry read against Windows' standard Uninstall key
+  (`HKLM\...\CurrentVersion\Uninstall`), filtered to `Publisher: "Electronic Arts, Inc."`,
+  cross-referenced against `Origin Games`'s `DisplayName` by exact string match (the only link
+  between the two - verified both said "Unravel™" identically for the same real install) to
+  recover `InstallLocation`. Best-effort: a title that doesn't match just gets `install_dir:
+  None`, degrading gracefully (scan/launch still work, only playtime tracking is affected) rather
+  than failing the whole scan.
+- **Xbox**: `PackageRootFolder` was already being read (needed for the `AppxManifest.xml`
+  check) but never carried through to the `GameEntry` - simple oversight, fixed by adding it to
+  the `XboxApp` struct and threading it into `to_game_entry`.
+
+**Publish/registry pipeline run for both, with two new wrinkles.** Push-triggered CI actually
+fired for both this time (unlike Xbox's first release, where it never did, for a reason still
+unexplained) - and since both are version bumps to an *existing* registry entry rather than a
+new one, `bump-entry.sh` auto-added the bump correctly for once (unlike every previous release
+in this session, all of which were first-time entries requiring a hand-authored PR). But the
+resulting auto-opened bump PRs hit the same `action_required` bot-PR-approval gate from the
+VNDB saga - twice each, in fact, since a duplicate `repository_dispatch` (artifact of the
+push-vs-manual-trigger race pattern from EA's first release) meant each PR's branch got a
+second commit requiring its own separate approval. Approved each real run via `gh api .../
+actions/runs/.../approve`, confirmed passing, then hit a bureaucratic wrinkle merging the EA PR
+specifically: `gh pr merge` refused ("head branch is not up to date with base") because the
+Xbox PR had merged to `main` moments earlier - resolved by manually merging `main` into the EA
+bump branch locally and pushing, which re-triggered validation and let the merge go through.
+Both registry entries verified pointing at their real `v0.1.1` releases/hashes afterward.

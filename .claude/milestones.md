@@ -365,8 +365,18 @@ stretch goal nothing had been done on yet.
   handled entirely by the host's existing generic `openUrl()` branch - no new host validator, no
   new `library.ts` routing, no pseudo-URI, unlike both GOG and Xbox. Registered in
   `concourse-plugin-registry` (`concourse-plugin-registry#20`)
-- [ ] Real in-app verification pending (install via registry, scan, confirm Unravel is detected
-  and launches through the real running app)
+- [x] Real in-app verification done - installed, scanned, Unravel detected, launch attempted;
+  surfaced a real `tauri.conf.json` capability gap (`opener:allow-open-url` only allowlisted
+  `steam:*`/`com.epicgames.launcher:*`, not `origin2:*` - "Not allowed to open url"), fixed
+- [x] Fixed a real cross-plugin bug this verification caught: neither EA's nor Xbox's `scan()`
+  populated `GameEntry.install_dir`, and both launch via a pure URI/pseudo-URI with no
+  filesystem path `library.ts`'s fallback (`parentDir()`) can derive one from - so
+  `track_folder_playtime` was never called and playtime silently never recorded for either
+  plugin. Both bumped to 0.1.1: EA's `install_dir` comes from cross-referencing the Uninstall
+  registry (filtered to `Publisher: "Electronic Arts, Inc."`) by exact `DisplayName` match
+  against the `Origin Games` key (which has no install path of its own); Xbox's `install_dir` was
+  already being read (`PackageRootFolder`, for the `AppxManifest.xml` check) but never carried
+  through to the entry - now it is
 - [ ] Ubisoft Connect plugin - not started, same "research done, implementation not" state EA
   was in before this pass
 - [x] Each ships as its own WASM plugin in a separate repo from day one (confirmed for Xbox and

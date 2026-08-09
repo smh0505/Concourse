@@ -5261,3 +5261,13 @@ specifically: `gh pr merge` refused ("head branch is not up to date with base") 
 Xbox PR had merged to `main` moments earlier - resolved by manually merging `main` into the EA
 bump branch locally and pushing, which re-triggered validation and let the merge go through.
 Both registry entries verified pointing at their real `v0.1.1` releases/hashes afterward.
+
+**User reported playtime still not updating after the 0.1.1 fix - turned out not to be a code
+bug at all.** Queried the real SQLite DB directly rather than guessing: Minecraft's rows all had
+an empty `install_dir` (imported under the pre-fix 0.1.0 plugin, never refreshed since), and
+Unravel wasn't in the `games` table at all yet. Confirmed `importEntries`'s merge path
+(`updateLaunchSource`) does refresh `install_dir` on an already-existing matched row - so the
+actual fix wasn't more code, just re-running Scan Now so the already-imported games picked up
+the corrected 0.1.1 data. A version bump alone never retroactively touches rows imported under
+an older plugin version; only a rescan does. User rescanned, confirmed playtime tracking for
+real afterward.

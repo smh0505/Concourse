@@ -377,6 +377,12 @@ stretch goal nothing had been done on yet.
   against the `Origin Games` key (which has no install path of its own); Xbox's `install_dir` was
   already being read (`PackageRootFolder`, for the `AppxManifest.xml` check) but never carried
   through to the entry - now it is
+- [x] Playtime confirmed tracking for real after a rescan picked up the 0.1.1 fix - the "still
+  not updating" report right after the fix wasn't a code bug: existing library rows (imported
+  under the pre-fix plugin versions) keep whatever `install_dir` they were originally scanned
+  with, a version bump alone doesn't retroactively touch already-imported rows. Confirmed via
+  direct DB query (Minecraft rows had empty `install_dir`, Unravel wasn't imported at all yet);
+  a fresh Scan Now refreshes existing rows via `importEntries`'s `updateLaunchSource` path
 - [ ] Ubisoft Connect plugin - not started, same "research done, implementation not" state EA
   was in before this pass
 - [x] Each ships as its own WASM plugin in a separate repo from day one (confirmed for Xbox and

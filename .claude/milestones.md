@@ -353,10 +353,24 @@ stretch goal nothing had been done on yet.
   surfaced and got a real fix for a pre-existing `PluginPreview` snake_case/camelCase serde bug,
   see devlog), scanned, Minecraft for Windows detected and launched successfully end-to-end
   through the running app
-- [ ] EA app and Ubisoft Connect plugins - not started, same "research done, implementation not"
-  state the Xbox one was in before this pass
-- [x] Each ships as its own WASM plugin in a separate repo from day one (confirmed for Xbox;
-  applies once EA/Ubisoft are built too)
+- [x] EA findings verified for real against a real purchase (Unravel, $5 via EA app) - Windows'
+  standard Uninstall registry entry gave Publisher/InstallLocation/DisplayIcon directly (a
+  much simpler path than the `.mfst`-file research assumed); `installerdata.xml`'s `contentID`
+  matched the `HKLM\SOFTWARE\WOW6432Node\Origin Games\<contentID>` subkey name exactly;
+  `origin2://` confirmed as a genuinely OS-registered protocol (`HKCR\origin2\shell\open\command`
+  -> `EALauncher.exe`), not a guess
+- [x] `ea-source-wasm-plugin` built and published (v0.1.0) - simplest of the three plugins so
+  far: detection is pure registry reads (`Origin Games` key subkeys are EA-specific by
+  construction, no filter heuristic needed unlike Xbox), launch is a real `origin2://` URI
+  handled entirely by the host's existing generic `openUrl()` branch - no new host validator, no
+  new `library.ts` routing, no pseudo-URI, unlike both GOG and Xbox. Registered in
+  `concourse-plugin-registry` (`concourse-plugin-registry#20`)
+- [ ] Real in-app verification pending (install via registry, scan, confirm Unravel is detected
+  and launches through the real running app)
+- [ ] Ubisoft Connect plugin - not started, same "research done, implementation not" state EA
+  was in before this pass
+- [x] Each ships as its own WASM plugin in a separate repo from day one (confirmed for Xbox and
+  EA; applies once Ubisoft is built too)
 
 ## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier
 Supersedes the original component-override design (blocked - see devlog legacy record). Ships

@@ -5137,3 +5137,73 @@ hot-reload). Xbox plugin then verified fully end-to-end: installed, scanned, Min
 Windows detected, launched successfully through the real running app - not just CI-clean this
 time, actually GUI-tested. EA app and Ubisoft Connect plugins remain unstarted, now in the same
 "research done, nothing built" position Xbox was in before this pass.
+
+## Milestone 16 — EA Source Plugin: Built and Published
+
+User bought Unravel ($5) via the EA app specifically to have a real title to verify against -
+same discipline as Xbox/Minecraft. Findings ended up meaningfully different from, and simpler
+than, the earlier community-sourced research predicted.
+
+**The earlier `.mfst`/`ProgramData\Origin\LocalContent` research didn't hold up.** That
+directory doesn't exist on this machine at all - EA app (formerly Origin) apparently moved its
+local data layout since that research was written. Real structure found instead:
+`C:\ProgramData\EA Desktop\InstallData\Unravel\` (just a checksum file, no useful manifest) and,
+more usefully, Windows' own standard "Programs and Features" Uninstall registry entry
+(`HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{GUID}`) - which for
+Unravel directly gave `Publisher: "Electronic Arts, Inc."`, `InstallLocation`, and `DisplayIcon`
+(the real exe path), no XML/manifest parsing needed at all for those.
+
+**Direct exe launch works (tested for real - `Unravel.exe` spawned and opened cleanly, user
+confirmed) but isn't the design that shipped.** Asked directly whether direct-launch is "better"
+than the official `origin2://` route: no - it bypasses EA's own entitlement/DRM check, which
+some titles (multiplayer-heavy, anti-cheat-gated, subscription titles) require and Unravel (an
+old, simple, non-DRM-heavy indie title) happens not to. Since this plugin needs to keep working
+across whatever EA games get bought later, not just Unravel, chose the officially-sanctioned
+route once it was confirmed practical (see next paragraph) rather than the simpler-but-narrower
+direct-exe path that only demonstrably works for this one title.
+
+**Resolving `origin2://`'s `offerIds` turned out to be trivial, not the hard part the original
+research implied.** `installerdata.xml` (found under Unravel's own `__Installer` folder) has a
+`<contentIDs><contentID>1031469</contentID></contentIDs>` block - and that same `1031469` is
+*also* directly the subkey name under `HKLM\SOFTWARE\WOW6432Node\Origin Games\1031469` (which
+has a `DisplayName` value giving the title too) - so no XML parsing is needed at all; the
+registry key alone gives contentID + title directly. Also confirmed `origin2://` is a genuinely
+OS-registered protocol handler (`HKCR\origin2\shell\open\command` -> `EALauncher.exe "%1"`, not
+a guess) - meaning this plugin can be Steam-shaped: a real URI, handled entirely by the host's
+existing generic `openUrl()` launch branch, with no plugin-routed `launch()` dispatch needed the
+way GOG's `gog://` or Xbox's `xbox://` pseudo-URIs require.
+
+**User asked directly how many launch conventions exist across all source plugins now** -
+answered with three: (1) real registered URI -> generic `openUrl()`, no plugin-specific
+frontend code (Steam, Epic, now EA); (2) pseudo-URI -> routed through the plugin's own
+`launch()` via `wasm_plugin_launch`, needing a dedicated `library.ts` branch (GOG, Xbox); (3)
+direct executable spawn, the manually-added-game/pre-wrap fallback, not actually any external
+source plugin's primary convention. EA landing in bucket (1) is why it needed zero new
+`library.ts` code and no new host-side validator, unlike both GOG and Xbox.
+
+**Built `ea-source-wasm-plugin`** (new repo, `smh0505/ea-source-wasm-plugin`) - the simplest of
+the three real-world source plugins built this session: no XML/VDF parsing dependency at all
+(pure registry reads), `pathScopes` declared statically in `plugin.json` (the `Origin Games` key
+is a fixed prefix, no per-install-varying path the way Xbox's `PackageRootFolder` is, so no
+dynamic `request-read-scope` call needed), and `launch()` is dead-code-for-completeness exactly
+like Steam's (real URI, host bypasses calling it). Compiled clean via `cargo component build
+--release` on the first attempt.
+
+**Full pipeline run, with one real wrinkle: a genuine CI race.** Push-triggered builds fired
+this time (unlike Xbox, where they mysteriously never did) - and since the registry secret was
+set a couple minutes after the initial push, a manually `workflow_dispatch`-triggered run ended
+up racing the push-triggered one. The push-triggered run published the release successfully but
+failed its own `Notify concourse-plugin-registry` step (secret didn't exist yet at that moment);
+the manual run's "already published?" check happened to run just before the push-triggered run's
+own publish step completed, so it proceeded to (re-)publish the same tag and this time succeeded
+on the registry-notify step too, since the secret existed by then. Verified the resulting release
+asset set was clean (exactly one `.wasm` + one `plugin.json`, no duplicates) before trusting it.
+As expected, `concourse-plugin-registry`'s auto-dispatch still failed by design (new entry, not
+an existing one to bump) - added `ea-wasm` by hand the same way as VNDB/Xbox: downloaded the
+real `v0.1.0` asset, computed its real SHA256
+(`6a3a08faf805f131f9d352a06e083ae0925a23f0428757d72b943a707aa1638f`), opened
+`concourse-plugin-registry#20`, confirmed `Validate Registry` passed, merged.
+
+**Not yet done**: real in-app verification (install, scan, confirm Unravel detected and
+launches through the running app) - same as Xbox's position before its own GUI test. Ubisoft
+Connect remains completely unstarted.

@@ -14,7 +14,7 @@
     "opener:default",
     {
       "identifier": "opener:allow-open-url",
-      "allow": [{ "url": "steam:*" }, { "url": "com.epicgames.launcher:*" }]
+      "allow": [{ "url": "steam:*" }, { "url": "com.epicgames.launcher:*" }, { "url": "origin2:*" }]
     },
     "sql:default",
     "sql:allow-execute",

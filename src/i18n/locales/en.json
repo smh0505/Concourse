@@ -97,7 +97,7 @@
     "themeNotice": "This installs a data-only theme (colors/CSS variables only, no code).",
     "codeWarning": "This downloads and runs code from the URL you provided. File/registry/network access is scoped to what it declares below (host-enforced) - but that scope is self-declared by the plugin's own author, not verified against what the code actually does. Only install plugins from sources you fully trust.",
     "declaresAccessTo": "Declares access to:",
-    "registryScope": "Registry: {hive}\\{prefix}",
+    "registryScope": "Registry: {hive} \\ {prefix}",
     "filesScope": "Files under: {prefix}",
     "networkScope": "Network: {host}",
     "runProgramsGrant": "This plugin runs other programs on your system (e.g. launching a game). I understand and allow this.",

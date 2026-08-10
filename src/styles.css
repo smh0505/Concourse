@@ -482,10 +482,17 @@ small {
   position: sticky;
   top: 0;
   z-index: 10;
-  /* Transparent by default (--background-sticky) - a theme opts into an opaque pinned bar
-     explicitly rather than inheriting --content-background automatically, since a themed
-     content pattern doesn't necessarily read well as a small pinned strip too. */
+  /* --background-sticky stays transparent by default - a theme opts into a solid tint
+     explicitly if it wants one, same as before. backdrop-filter is what actually hides
+     scrolled content underneath: it blurs whatever's directly behind this element in real
+     time, so it always matches .content's actual current background (any theme's pattern,
+     not just a flat color) without this element needing to redraw a second copy of it - a
+     second copy is positioned/sized relative to *this* small box, not .content, so it never
+     lines up with the real one scrolling underneath (this is what broke ARC Raiders' stripes
+     when .sticky-header briefly drew --content-background itself). */
   background: var(--background-sticky);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   padding-top: var(--space-5);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);

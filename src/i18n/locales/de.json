@@ -154,7 +154,7 @@
     "empty": "Noch keine Tags."
   },
   "filters": {
-    "searchPlaceholder": "Nach Titel suchen...",
+    "searchPlaceholder": "Nach Titel suchen... (z. B. platform:steam)",
     "switchToListView": "Zur Listenansicht wechseln",
     "switchToGridView": "Zur Rasteransicht wechseln"
   },

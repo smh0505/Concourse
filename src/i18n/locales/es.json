@@ -154,7 +154,7 @@
     "empty": "Aún no hay etiquetas."
   },
   "filters": {
-    "searchPlaceholder": "Buscar por título...",
+    "searchPlaceholder": "Buscar por título... (prueba platform:steam)",
     "switchToListView": "Cambiar a vista de lista",
     "switchToGridView": "Cambiar a vista de cuadrícula"
   },

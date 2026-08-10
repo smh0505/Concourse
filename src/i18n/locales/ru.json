@@ -154,7 +154,7 @@
     "empty": "Пока нет тегов."
   },
   "filters": {
-    "searchPlaceholder": "Поиск по названию...",
+    "searchPlaceholder": "Поиск по названию... (например, platform:steam)",
     "switchToListView": "Переключить на список",
     "switchToGridView": "Переключить на сетку"
   },

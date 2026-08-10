@@ -154,7 +154,7 @@
     "empty": "Aucun tag pour l'instant."
   },
   "filters": {
-    "searchPlaceholder": "Rechercher par titre...",
+    "searchPlaceholder": "Rechercher par titre... (essayez platform:steam)",
     "switchToListView": "Passer à l'affichage liste",
     "switchToGridView": "Passer à l'affichage grille"
   },

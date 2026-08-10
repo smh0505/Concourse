@@ -154,7 +154,7 @@
     "empty": "タグはまだありません。"
   },
   "filters": {
-    "searchPlaceholder": "タイトルで検索...",
+    "searchPlaceholder": "タイトルで検索...（例: platform:steam）",
     "switchToListView": "リスト表示に切り替え",
     "switchToGridView": "グリッド表示に切り替え"
   },

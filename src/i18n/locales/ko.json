@@ -154,7 +154,7 @@
     "empty": "아직 태그가 없습니다."
   },
   "filters": {
-    "searchPlaceholder": "제목으로 검색...",
+    "searchPlaceholder": "제목으로 검색... (예: platform:steam)",
     "switchToListView": "목록 보기로 전환",
     "switchToGridView": "그리드 보기로 전환"
   },

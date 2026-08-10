@@ -154,7 +154,7 @@
     "empty": "暂无标签。"
   },
   "filters": {
-    "searchPlaceholder": "按标题搜索...",
+    "searchPlaceholder": "按标题搜索...（例如 platform:steam）",
     "switchToListView": "切换到列表视图",
     "switchToGridView": "切换到网格视图"
   },

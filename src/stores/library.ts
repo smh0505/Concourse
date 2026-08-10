@@ -56,10 +56,26 @@ export const useLibraryStore = defineStore("library", () => {
   const filteredGames = computed(() => {
     const tags = useTagsStore();
     const collections = useCollectionsStore();
-    const query = search.value.trim().toLowerCase();
+    // "platform:steam" is a special token, not part of the title search - pulled out of
+    // whatever else was typed (e.g. "platform:steam zelda" still title-searches "zelda"
+    // within Steam games only) rather than requiring it alone.
+    const tokens = search.value.trim().split(/\s+/).filter(Boolean);
+    let platformFilter: string | null = null;
+    const titleTokens: string[] = [];
+    for (const token of tokens) {
+      if (token.toLowerCase().startsWith("platform:")) {
+        platformFilter = token.slice("platform:".length).toLowerCase();
+      } else {
+        titleTokens.push(token);
+      }
+    }
+    const titleQuery = titleTokens.join(" ").toLowerCase();
+
     return games.value.filter((game) => {
-      const matchesSearch = !query || game.title.toLowerCase().includes(query);
-      return matchesSearch && tags.matches(game.id) && collections.matches(game.id);
+      const matchesPlatform =
+        !platformFilter || (game.platform ?? "").toLowerCase() === platformFilter;
+      const matchesSearch = !titleQuery || game.title.toLowerCase().includes(titleQuery);
+      return matchesPlatform && matchesSearch && tags.matches(game.id) && collections.matches(game.id);
     });
   });
 

@@ -154,7 +154,7 @@
     "empty": "Ainda não há tags."
   },
   "filters": {
-    "searchPlaceholder": "Buscar por título...",
+    "searchPlaceholder": "Buscar por título... (tente platform:steam)",
     "switchToListView": "Mudar para visualização em lista",
     "switchToGridView": "Mudar para visualização em grade"
   },

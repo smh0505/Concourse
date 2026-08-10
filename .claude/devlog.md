@@ -5442,3 +5442,13 @@ diagonal. Reworked the stripe layer as its own separately-sized/positioned `back
 (`no-repeat bottom right / 55% 55%`, distinct from the star/base layers which still cover the
 whole area) instead of one gradient spanning the full box, dropped stripe width from 10% to 4%
 and opacity from solid to 40%. `1.0.1` -> `1.0.2`, same publish/registry-bump path as before.
+
+**Third round of feedback**: gaps between stripes still too wide, stripes visibly ended within
+the corner patch instead of reading as running off-frame, and no green-leaning color was
+visible - asked directly whether to shift cyan or add a genuine 5th green stripe (departing
+from the verified real 4-color palette); user chose neither exactly, specifying "change yellow
+to teal and shift orange toward a yellowish lemon" instead. Implemented: yellow ->
+`rgba(20,224,180,0.4)` (teal), orange -> `rgba(224,224,48,0.4)` (lemon-yellow), gaps narrowed
+(~12% -> ~5%), and the stripe layer's `background-size` bumped `55%` -> `140%` (same
+bottom-right position) so the pattern now bleeds past the content area's actual edges instead
+of visibly terminating within the visible corner patch. `1.0.2` -> `1.0.3`.

@@ -5314,3 +5314,17 @@ real `v0.1.0` asset, computed its real SHA256
 
 **Not yet done**: real in-app verification (install, scan, confirm Brawlhalla detected and
 launches, playtime tracks) - same position Xbox/EA were in before their own GUI tests.
+
+**Real in-app testing of the Ubisoft install caught another pre-existing i18n bug, latent since
+whenever `registryScope` was first written.** Ubisoft's install-confirm dialog threw
+`SyntaxError: Message compilation error: Unbalanced closing brace` under the Korean locale.
+Root cause: `confirmInstall.registryScope`'s message template was `"{hive}\{prefix}"` in every
+one of the 10 locale files - `\{` is vue-i18n's own escape sequence for a literal `{`, not a
+plain backslash, so the template's real `{prefix}` interpolation got escaped away, leaving a
+stray unmatched `}`. Not new to Ubisoft or to Korean specifically - every locale had the
+identical broken template, and any plugin declaring a registry `pathScope` (Steam, Xbox, GOG all
+qualify) would trigger the same compile error the first time its install-confirm dialog actually
+rendered that scope row; it apparently just went unnoticed until now, and `bun run build` never
+catches it since vue-i18n compiles message templates lazily at runtime; `vue-tsc` has no
+visibility into ICU-style message syntax at all. Fixed by space-padding the backslash
+(`"{hive} \ {prefix}"`) so it's never adjacent to a brace, across all 10 locales.

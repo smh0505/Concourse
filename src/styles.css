@@ -493,6 +493,16 @@ small {
   background: var(--background-sticky);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  /* Breaks out of .settings-panel's own left/right padding (negative margin equal to it,
+     compensating padding added back on this element) so the blur/background box spans the
+     same full width .filters already gets for free (.content has no horizontal padding of its
+     own) - without this, the blur only covered the narrower inset area, leaving a visible
+     unblurred strip in the gutters right next to it. The h2/small/add-form children stay
+     visually inset via the padding added here, same position as before. */
+  margin-left: calc(-1 * var(--space-6));
+  margin-right: calc(-1 * var(--space-6));
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
   padding-top: var(--space-5);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);

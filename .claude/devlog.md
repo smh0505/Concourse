@@ -5434,3 +5434,11 @@ navy-to-near-black `linear-gradient`, instead of the flat dark color it sat on b
 `1.0.0` -> `1.0.1` (value-only change, no new keys), republished, auto-bumped in the registry
 this time (existing entry) - hit the same bot-PR-approval gate as every other auto-bump this
 session, approved, merged.
+
+**User feedback after seeing it live**: full-opacity bands spanning the whole content area
+overpowered the UI and stopped reading as "ARC Raiders" at all - too loud, too much of the
+page. Also wanted it concentrated in one corner (bottom-right) rather than running the full
+diagonal. Reworked the stripe layer as its own separately-sized/positioned `background` layer
+(`no-repeat bottom right / 55% 55%`, distinct from the star/base layers which still cover the
+whole area) instead of one gradient spanning the full box, dropped stripe width from 10% to 4%
+and opacity from solid to 40%. `1.0.1` -> `1.0.2`, same publish/registry-bump path as before.

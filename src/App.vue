@@ -26,7 +26,6 @@ import {
   GameFilters,
   GameGrid,
   GameList,
-  PluginSettings,
 } from "./components/desktop/tabs";
 import { AddGame, CandidatePicker } from "./components/desktop/modalForms";
 import { ToastContainer } from "./components/desktop/common";
@@ -165,7 +164,6 @@ onUnmounted(() => {
 
         <template v-else-if="activeView === 'settings'">
           <AppSettings />
-          <PluginSettings />
         </template>
 
         <template v-else-if="activeView === 'uiTest'">

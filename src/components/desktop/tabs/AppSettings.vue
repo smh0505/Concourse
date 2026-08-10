@@ -7,6 +7,7 @@ import { useAppSettingsStore } from "@/stores/appSettings";
 import { useTranslationStore } from "@/stores/translation";
 import { DropdownMenu } from "@/components/desktop/common";
 import { messages } from "@/i18n";
+import PluginSettings from "./PluginSettings.vue";
 
 const { t } = useI18n();
 const appSettings = useAppSettingsStore();
@@ -164,6 +165,8 @@ function selectModel(modelId: string) {
         </button>
       </div>
     </div>
+
+    <PluginSettings />
   </div>
 </template>
 

@@ -136,9 +136,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="plugin-settings settings-panel">
+  <div class="plugin-settings">
     <div class="plugin-settings-header">
-      <h2>{{ t("pluginSettings.heading") }}</h2>
+      <h3>{{ t("pluginSettings.heading") }}</h3>
       <button type="button" @click="showAddPluginModal = true">
         {{ t("pluginSettings.addPlugin") }}
       </button>
@@ -408,13 +408,13 @@ onMounted(async () => {
 
 <style scoped>
 .plugin-settings {
-  margin-bottom: 1.5rem;
+  margin-top: var(--space-5);
 }
 
 .plugin-settings-header {
   display: flex;
   /* baseline (not center) - centers the flex box, not the text itself, so a leftover browser-
-     default h2 margin/line-height mismatch against the button's own font-size still reads as
+     default h3 margin/line-height mismatch against the button's own font-size still reads as
      visually offset even with align-items:center. baseline lines up the actual text. */
   align-items: baseline;
   justify-content: space-between;
@@ -422,8 +422,8 @@ onMounted(async () => {
   margin-bottom: 0.5rem;
 }
 
-.plugin-settings-header h2 {
-  font-size: 1rem;
+.plugin-settings-header h3 {
+  font-size: 0.95rem;
   margin: 0;
 }
 

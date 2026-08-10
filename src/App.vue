@@ -226,6 +226,11 @@ onUnmounted(() => {
      instead (and `.settings-panel` below, for the other view). Bottom stays here since both
      views want the same scroll-end breathing room regardless of which child owns left/right. */
   padding: 0 0 var(--space-5);
+  /* Opt-in hook for a theme wanting a patterned/gradient content background (e.g. diagonal
+     stripes) instead of `body`'s own flat `--color-base` - transparent by default so every
+     existing theme (which only ever sets `--color-base`, never this) renders identically to
+     before this hook existed, letting `body`'s solid color show through untouched. */
+  background: var(--content-background, transparent);
 }
 
 /* While a source plugin scan is running, GameGrid/GameList hide already-loaded games behind

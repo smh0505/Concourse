@@ -181,7 +181,15 @@
     "actionToastMessage": "Тест уведомления с действием - выглядит ли это правильно?",
     "confirm": "Подтвердить",
     "dismiss": "Отклонить",
-    "confirmedMessage": "Подтверждено!"
+    "confirmedMessage": "Подтверждено!",
+    "basicToastsHeading": "Базовые уведомления",
+    "i18nCheckHeading": "Проверка i18n уведомлений (тестовые данные)",
+    "appUpdateToastsButton": "Обновление приложения",
+    "libraryToastsButton": "Библиотека",
+    "metadataProviderToastsButton": "Поставщик метаданных",
+    "pluginInstallToastsButton": "Установка плагина",
+    "pluginScanToastsButton": "Сканирование/Тема плагина",
+    "pluginUpdateToastsButton": "Обновление плагина"
   },
   "pluginSettings": {
     "heading": "Плагины",

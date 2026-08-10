@@ -39,6 +39,8 @@ function testLongMessageToast() {
 // Fake-data triggers for the toast strings added when store toasts were translated - lets a
 // dev flip locales and click through every real i18n key/param combo without needing to
 // actually trigger a slow/flaky app update, plugin scan, or metadata fetch to see it render.
+// Button labels go through t() too, same as the section above - verified across all 10
+// locales this panel is itself dev-only for.
 function testAppUpdateToasts() {
   toasts.push(t("appUpdate.downloading", { version: "9.9.9" }), "info");
   toasts.push(t("appUpdate.updateFailed", { error: "Fake network error" }), "error");
@@ -84,6 +86,7 @@ function testPluginUpdateToasts() {
     <small>
       {{ t("uiTest.description") }}
     </small>
+    <h3>{{ t("uiTest.basicToastsHeading") }}</h3>
     <div class="test-buttons">
       <button type="button" @click="testInfoToast">{{ t("uiTest.infoToastButton") }}</button>
       <button type="button" @click="testSuccessToast">{{ t("uiTest.successToastButton") }}</button>
@@ -94,19 +97,20 @@ function testPluginUpdateToasts() {
       <button type="button" @click="testActionToast">{{ t("uiTest.actionToastButton") }}</button>
     </div>
 
-    <!-- Dev-only, never shipped (see the file's own DEV-gated import) - labels stay plain
-         English rather than going through t() like the buttons above, since translating a
-         debug tool's own button labels across 10 locales has no real user-facing payoff. The
-         toasts they push do use the real i18n keys/params, which is the actual thing being
-         tested here. -->
-    <h3>Toast i18n check (fake data)</h3>
+    <h3>{{ t("uiTest.i18nCheckHeading") }}</h3>
     <div class="test-buttons">
-      <button type="button" @click="testAppUpdateToasts">App Update</button>
-      <button type="button" @click="testLibraryToasts">Library</button>
-      <button type="button" @click="testMetadataProviderToasts">Metadata Provider</button>
-      <button type="button" @click="testPluginInstallToasts">Plugin Install</button>
-      <button type="button" @click="testPluginScanToasts">Plugin Scan/Theme</button>
-      <button type="button" @click="testPluginUpdateToasts">Plugin Update</button>
+      <button type="button" @click="testAppUpdateToasts">{{ t("uiTest.appUpdateToastsButton") }}</button>
+      <button type="button" @click="testLibraryToasts">{{ t("uiTest.libraryToastsButton") }}</button>
+      <button type="button" @click="testMetadataProviderToasts">
+        {{ t("uiTest.metadataProviderToastsButton") }}
+      </button>
+      <button type="button" @click="testPluginInstallToasts">
+        {{ t("uiTest.pluginInstallToastsButton") }}
+      </button>
+      <button type="button" @click="testPluginScanToasts">{{ t("uiTest.pluginScanToastsButton") }}</button>
+      <button type="button" @click="testPluginUpdateToasts">
+        {{ t("uiTest.pluginUpdateToastsButton") }}
+      </button>
     </div>
   </div>
 </template>
@@ -118,6 +122,12 @@ function testPluginUpdateToasts() {
 
 .ui-test small {
   display: block;
+}
+
+.ui-test h3 {
+  font-size: 0.9rem;
+  margin: var(--space-4) 0 0;
+  opacity: 0.8;
 }
 
 .test-buttons {

@@ -181,7 +181,15 @@
     "actionToastMessage": "Test del toast con azione - sembra corretto?",
     "confirm": "Conferma",
     "dismiss": "Ignora",
-    "confirmedMessage": "Confermato!"
+    "confirmedMessage": "Confermato!",
+    "basicToastsHeading": "Toast di base",
+    "i18nCheckHeading": "Verifica i18n dei toast (dati fittizi)",
+    "appUpdateToastsButton": "Aggiornamento app",
+    "libraryToastsButton": "Libreria",
+    "metadataProviderToastsButton": "Provider di metadati",
+    "pluginInstallToastsButton": "Installazione plugin",
+    "pluginScanToastsButton": "Scansione/Tema plugin",
+    "pluginUpdateToastsButton": "Aggiornamento plugin"
   },
   "pluginSettings": {
     "heading": "Plugin",

@@ -181,7 +181,15 @@
     "actionToastMessage": "测试可操作提示 - 效果看起来对吗?",
     "confirm": "确认",
     "dismiss": "关闭",
-    "confirmedMessage": "已确认!"
+    "confirmedMessage": "已确认!",
+    "basicToastsHeading": "基础 Toast",
+    "i18nCheckHeading": "Toast i18n 检查(虚构数据)",
+    "appUpdateToastsButton": "应用更新",
+    "libraryToastsButton": "库",
+    "metadataProviderToastsButton": "元数据提供方",
+    "pluginInstallToastsButton": "插件安装",
+    "pluginScanToastsButton": "插件扫描/主题",
+    "pluginUpdateToastsButton": "插件更新"
   },
   "pluginSettings": {
     "heading": "插件",

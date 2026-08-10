@@ -181,7 +181,15 @@
     "actionToastMessage": "アクショントーストのテスト - これで正しく見えますか?",
     "confirm": "確認",
     "dismiss": "閉じる",
-    "confirmedMessage": "確認しました!"
+    "confirmedMessage": "確認しました!",
+    "basicToastsHeading": "基本トースト",
+    "i18nCheckHeading": "トーストのi18n確認(ダミーデータ)",
+    "appUpdateToastsButton": "アプリ更新",
+    "libraryToastsButton": "ライブラリ",
+    "metadataProviderToastsButton": "メタデータプロバイダー",
+    "pluginInstallToastsButton": "プラグインインストール",
+    "pluginScanToastsButton": "プラグインスキャン/テーマ",
+    "pluginUpdateToastsButton": "プラグイン更新"
   },
   "pluginSettings": {
     "heading": "プラグイン",

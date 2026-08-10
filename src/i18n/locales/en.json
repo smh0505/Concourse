@@ -181,7 +181,15 @@
     "actionToastMessage": "Test actionable toast - does this look right?",
     "confirm": "Confirm",
     "dismiss": "Dismiss",
-    "confirmedMessage": "Confirmed!"
+    "confirmedMessage": "Confirmed!",
+    "basicToastsHeading": "Basic Toasts",
+    "i18nCheckHeading": "Toast i18n Check (Fake Data)",
+    "appUpdateToastsButton": "App Update",
+    "libraryToastsButton": "Library",
+    "metadataProviderToastsButton": "Metadata Provider",
+    "pluginInstallToastsButton": "Plugin Install",
+    "pluginScanToastsButton": "Plugin Scan/Theme",
+    "pluginUpdateToastsButton": "Plugin Update"
   },
   "pluginSettings": {
     "heading": "Plugins",

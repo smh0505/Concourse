@@ -181,7 +181,15 @@
     "actionToastMessage": "액션 토스트 테스트 - 이렇게 보이는 게 맞나요?",
     "confirm": "확인",
     "dismiss": "닫기",
-    "confirmedMessage": "확인되었습니다!"
+    "confirmedMessage": "확인되었습니다!",
+    "basicToastsHeading": "기본 토스트",
+    "i18nCheckHeading": "토스트 i18n 확인 (가짜 데이터)",
+    "appUpdateToastsButton": "앱 업데이트",
+    "libraryToastsButton": "라이브러리",
+    "metadataProviderToastsButton": "메타데이터 제공자",
+    "pluginInstallToastsButton": "플러그인 설치",
+    "pluginScanToastsButton": "플러그인 스캔/테마",
+    "pluginUpdateToastsButton": "플러그인 업데이트"
   },
   "pluginSettings": {
     "heading": "플러그인",

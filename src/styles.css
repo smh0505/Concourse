@@ -40,6 +40,13 @@
      too saturated to pair with its dark-navy --color-text (~3:1 contrast, fails normal-text AA;
      its own --color-button-text: #ffffff exists for the same underlying reason). */
   --color-tint: var(--color-crust);
+  /* Background for pinned/sticky bars (GameFilters.vue's .filters, the shared .sticky-header)
+     that sit above scrolling content - transparent by default, letting whatever .content
+     itself shows (its own --content-background, or nothing) show straight through instead of
+     a dedicated flat patch. A theme wanting an opaque pinned bar (so scrolled rows don't show
+     through underneath it) sets this explicitly - not automatic, since the "right" opaque
+     value depends entirely on what that theme's own content background actually looks like. */
+  --background-sticky: transparent;
 
   /* Spacing scale */
   --space-1: 0.25rem;
@@ -475,10 +482,10 @@ small {
   position: sticky;
   top: 0;
   z-index: 10;
-  /* Same content-area pattern as App.vue's .content and GameFilters.vue's .filters, not a
-     flat --color-base patch - a themed background pattern would otherwise visibly break at
-     this pinned bar's edges. Falls back to --color-base for every theme not setting the hook. */
-  background: var(--content-background, var(--color-base));
+  /* Transparent by default (--background-sticky) - a theme opts into an opaque pinned bar
+     explicitly rather than inheriting --content-background automatically, since a themed
+     content pattern doesn't necessarily read well as a small pinned strip too. */
+  background: var(--background-sticky);
   padding-top: var(--space-5);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);

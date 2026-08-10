@@ -8,7 +8,7 @@ import {
   IconLanguage,
   IconPlayerPlay,
 } from "@tabler/icons-vue";
-import { siSteam, siGogdotcom, siEpicgames } from "simple-icons";
+import { siSteam, siGogdotcom, siEpicgames, siEa, siUbisoft } from "simple-icons";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
@@ -134,11 +134,15 @@ const wantsReverse = computed(() => {
 const textPending = computed(() => !!backgroundArtUrl.value && !backdropReady.value);
 
 // Known platform ids map to a simple-icons brand glyph; anything else (manually-added games,
-// unrecognized strings) falls back to a generic icon.
+// unrecognized strings) falls back to a generic icon. Xbox is deliberately not mapped here -
+// no vetted simple-icons glyph exists for it, and Microsoft's own brand guidance gates
+// software use behind contacting their brand team (stricter than Steam/GOG/Epic/EA/Ubisoft,
+// all of which have an established or explicitly-permitted icon) - falls to the generic
+// gamepad icon like any other unrecognized platform, rather than risk an unlicensed mark.
 type PlatformIcon = { kind: "brand"; path: string; title: string } | { kind: "generic"; title: string };
 
-// One arm per known platform id (the lowercase literal each of steam/gog/epic-source-wasm-
-// plugin's lib.rs hardcodes), like a Rust match - default is the `_ => ...` wildcard.
+// One arm per known platform id (the lowercase literal each source plugin's lib.rs hardcodes),
+// like a Rust match - default is the `_ => ...` wildcard.
 function iconForPlatform(platform: string | null | undefined): PlatformIcon {
   switch (platform?.trim().toLowerCase()) {
     case "steam":
@@ -147,6 +151,10 @@ function iconForPlatform(platform: string | null | undefined): PlatformIcon {
       return { kind: "brand", path: siGogdotcom.path, title: siGogdotcom.title };
     case "epic":
       return { kind: "brand", path: siEpicgames.path, title: siEpicgames.title };
+    case "ea":
+      return { kind: "brand", path: siEa.path, title: siEa.title };
+    case "ubisoft":
+      return { kind: "brand", path: siUbisoft.path, title: siUbisoft.title };
     default:
       return { kind: "generic", title: t("gameDetail.unknownPlatform") };
   }

@@ -5387,3 +5387,34 @@ session, approved both, and hit the by-now-familiar "PR branch behind base" wrin
 second one (Ubisoft's PR merged to `main` moments before EA's), resolved the same way as
 before: merge `main` into the bump branch locally, push, re-validate, merge. Both registry
 entries verified pointing at their real fixed versions afterward.
+
+## Milestone 17 — ARC Raiders Theme + New `--content-background` Hook
+
+User asked for a theme "based on ARC Raiders" with 4 diagonal stripes in red/yellow/green/blue
+on the content background. Checked the real game's actual logo before building anything, same
+discipline as everything else this session - two independent sources (a font-generator site
+describing the real logo, a Steam Community discussion thread about what the stripe colors
+mean) both said the real ARC Raiders stripes are **cyan, yellow, orange, and red**, not
+red/yellow/green/blue. Surfaced this directly rather than silently building what was asked
+for or silently substituting what was "correct" - asked the user to pick, they chose the real
+palette. No official hex codes are published anywhere findable, so the actual hex values
+(`#00d4ff` cyan, `#ffd400` yellow, `#ff9500` orange, `#ff3b30` red) are reasonable
+representative picks, not sourced from an official palette.
+
+**No existing hook could do this.** `.content` (App.vue) had no background of its own at all -
+it just showed `body`'s flat `--color-base` through. Added a new opt-in CSS variable,
+`--content-background`, defaulting to `transparent` (so every existing theme, none of which set
+it, renders identically to before) - a theme can now set it to any real CSS `background` value,
+gradient/pattern included, not just a color. `arc-raiders-theme`'s manifest sets it to a
+`repeating-linear-gradient(135deg, ...)` layering all four real stripe colors at 10% opacity
+over the dark base, diagonal per the request.
+
+Published through the same pipeline every `data-theme-plugins` addition uses:
+`bun run validate` locally, pushed, `Release Theme Plugins` CI validated and published the
+`themes` release tag with the new manifest attached, `Notify concourse-plugin-registry`
+dispatched but failed by design (`bump-entry.sh` doesn't auto-add new entries, same as every
+other first-time plugin/theme this session) - added `arc-raiders-theme` to the registry by
+hand: fetched the real commit-pinned manifest and the actual published release asset
+separately, diffed them byte-for-byte to confirm they're identical before trusting either as
+the hash source, opened `concourse-plugin-registry#26`, confirmed `Validate Registry` passed,
+merged.

@@ -368,6 +368,12 @@ a constrained declarative template tier instead, measured against Brick Block's 
   system stack) instead of a hardcoded value, so a theme's `cssVariables` can override it and
   every element inherits the change (paired with the existing `fontFaces` mechanism to load a
   real `@font-face` first, if needed)
+- [x] Post-close: new `--content-background` hook - a theme can now paint the library content
+  area with any CSS `background` value (gradient/pattern), not just a flat color, transparent
+  by default so every existing theme is unaffected. Added for a new `arc-raiders-theme` (dark
+  base, the game's real signature diagonal stripe colors - cyan/yellow/orange/red, verified
+  against the actual logo - as a low-opacity repeating diagonal pattern), registered in
+  `concourse-plugin-registry` (`concourse-plugin-registry#26`)
 
 `concourse-plugin-registry` extended to `kind: "theme"`
 (`brick-block-data-theme` as first entry, hash-pinned and enforced same as WASM plugins - a gap

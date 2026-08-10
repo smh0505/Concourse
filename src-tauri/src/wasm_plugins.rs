@@ -217,14 +217,21 @@ impl PluginHostState {
         })
     }
 
-    /// Steam and Xbox are the plugins whose legitimate read scope can't be known ahead of time
-    /// (install location varies per user) - the host checks for a real structural signature
-    /// before trusting a requested root (Steam: a `steamapps` subdirectory; Xbox: an
-    /// `AppxManifest.xml` file). Any plugin id without a known validator is rejected outright.
+    /// Steam/Xbox/EA/Ubisoft are the plugins whose legitimate read scope can't be known ahead
+    /// of time (install location varies per user) - the host checks for a real structural
+    /// signature before trusting a requested root (Steam: a `steamapps` subdirectory; Xbox: an
+    /// `AppxManifest.xml` file; EA/Ubisoft: the directory just has to actually exist - neither
+    /// has a Steam/Xbox-style marker file, and "does this directory exist" doubles as the
+    /// signal these two plugins actually want: a registry entry (Origin Games / Uninstall) can
+    /// outlive the real install folder, e.g. a discontinued live-service game like XDefiant
+    /// whose Ubisoft Connect entry stayed registered after its install folder was gone -
+    /// request-read-scope failing here is exactly how `scan()` skips a stale entry instead of
+    /// showing a phantom game). Any plugin id without a known validator is rejected outright.
     fn do_request_read_scope(&mut self, path: String) -> Result<(), String> {
         let (recognized, expected_signature) = match self.plugin_id.as_str() {
             "steam-wasm" => (Path::new(&path).join("steamapps").is_dir(), "no steamapps subdirectory"),
             "xbox-wasm" => (Path::new(&path).join("AppxManifest.xml").is_file(), "no AppxManifest.xml"),
+            "ea-wasm" | "ubisoft-wasm" => (Path::new(&path).is_dir(), "directory does not exist"),
             _ => {
                 return Err(format!(
                     "No path-scope validator is registered for plugin \"{}\" - request-read-scope isn't available to it yet.",

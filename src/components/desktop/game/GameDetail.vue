@@ -958,8 +958,8 @@ async function onDelete() {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  font-size: 0.85rem;
-  opacity: 0.7;
+  font-size: 0.95rem;
+  opacity: 0.8;
   margin-bottom: var(--space-3);
 }
 
@@ -971,10 +971,11 @@ async function onDelete() {
   align-items: center;
 }
 
-/* Scaled to .meta's 0.85rem line height instead of the edit form's larger 32px. */
+/* Sized well above .meta's own line height (unlike the rest of the row's text) so the brand
+   glyph actually reads as a logo at a glance, not a barely-visible dot next to the date/playtime. */
 .platform-tag .platform-icon {
-  width: 1.1em;
-  height: 1.1em;
+  width: 1.8em;
+  height: 1.8em;
 }
 
 .platform-tag.text-reverse {

@@ -5418,3 +5418,19 @@ hand: fetched the real commit-pinned manifest and the actual published release a
 separately, diffed them byte-for-byte to confirm they're identical before trusting either as
 the hash source, opened `concourse-plugin-registry#26`, confirmed `Validate Registry` passed,
 merged.
+
+**Real-app testing caught two problems, both fixed.** First: `.sticky-header` (shared,
+`styles.css`) and `GameFilters.vue`'s `.filters` both hardcoded `background: var(--color-base)`
+- a flat solid patch that visibly broke the new pattern at their pinned edges. Both switched to
+`var(--content-background, var(--color-base))`, same hook `.content` itself uses, falling back
+identically for every theme that doesn't set it.
+
+Second: the original `repeating-linear-gradient` tiles infinitely across the whole content
+area - not what "4 exact diagonal stripes... with a gap between" actually asked for. Replaced
+with a single non-repeating `linear-gradient` using hard color stops (4 solid bands with
+transparent gaps between them, spanning the gradient line once), and added a genuine night-sky
+base underneath - a handful of small `radial-gradient` "stars" at fixed positions plus a dark
+navy-to-near-black `linear-gradient`, instead of the flat dark color it sat on before. Bumped
+`1.0.0` -> `1.0.1` (value-only change, no new keys), republished, auto-bumped in the registry
+this time (existing entry) - hit the same bot-PR-approval gate as every other auto-bump this
+session, approved, merged.

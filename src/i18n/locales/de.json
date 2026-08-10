@@ -97,7 +97,7 @@
     "themeNotice": "Dies installiert ein reines Daten-Theme (nur Farben/CSS-Variablen, kein Code).",
     "codeWarning": "Dies lädt Code von der angegebenen URL herunter und führt ihn aus. Der Zugriff auf Dateien/Registry/Netzwerk ist auf das unten Angegebene beschränkt (vom Host durchgesetzt) - dieser Umfang wird jedoch vom Plugin-Autor selbst deklariert und nicht dagegen geprüft, was der Code tatsächlich tut. Installiere nur Plugins aus Quellen, denen du voll vertraust.",
     "declaresAccessTo": "Deklarierter Zugriff auf:",
-    "registryScope": "Registry: {hive} \\ {prefix}",
+    "registryScope": "Registry: {hive}\\\\{prefix}",
     "filesScope": "Dateien unter: {prefix}",
     "networkScope": "Netzwerk: {host}",
     "runProgramsGrant": "Dieses Plugin führt andere Programme auf deinem System aus (z. B. das Starten eines Spiels). Ich verstehe das und erlaube es.",

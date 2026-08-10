@@ -97,7 +97,7 @@
     "themeNotice": "这将安装一个仅数据主题(仅颜色/CSS变量,不含代码)。",
     "codeWarning": "这将从您提供的URL下载并运行代码。文件/注册表/网络访问权限将限制在下方声明的范围内(由主机强制执行)——但该范围是插件作者自行声明的,并未验证是否与代码实际行为一致。请仅安装您完全信任来源的插件。",
     "declaresAccessTo": "声明访问以下内容:",
-    "registryScope": "注册表: {hive} \\ {prefix}",
+    "registryScope": "注册表: {hive}\\\\{prefix}",
     "filesScope": "以下路径下的文件: {prefix}",
     "networkScope": "网络: {host}",
     "runProgramsGrant": "此插件会在您的系统上运行其他程序(例如启动游戏)。我理解并允许此操作。",

@@ -97,7 +97,7 @@
     "themeNotice": "Esto instala un tema solo de datos (colores/variables CSS, sin código).",
     "codeWarning": "Esto descarga y ejecuta código desde la URL proporcionada. El acceso a archivos/registro/red se limita a lo declarado abajo (aplicado por el host), pero ese alcance lo declara el propio autor del plugin y no se verifica contra lo que el código realmente hace. Instala solo plugins de fuentes en las que confíes plenamente.",
     "declaresAccessTo": "Declara acceso a:",
-    "registryScope": "Registro: {hive} \\ {prefix}",
+    "registryScope": "Registro: {hive}\\\\{prefix}",
     "filesScope": "Archivos bajo: {prefix}",
     "networkScope": "Red: {host}",
     "runProgramsGrant": "Este plugin ejecuta otros programas en tu sistema (p. ej., iniciar un juego). Entiendo y permito esto.",

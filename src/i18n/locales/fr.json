@@ -97,7 +97,7 @@
     "themeNotice": "Ceci installe un thème constitué uniquement de données (couleurs/variables CSS, aucun code).",
     "codeWarning": "Ceci télécharge et exécute du code depuis l'URL fournie. L'accès aux fichiers/au registre/au réseau est limité à ce qui est déclaré ci-dessous (appliqué par l'hôte) - mais cette portée est déclarée par l'auteur du plugin lui-même, sans vérification par rapport au comportement réel du code. N'installez que des plugins provenant de sources en qui vous avez entièrement confiance.",
     "declaresAccessTo": "Déclare un accès à :",
-    "registryScope": "Registre : {hive} \\ {prefix}",
+    "registryScope": "Registre : {hive}\\\\{prefix}",
     "filesScope": "Fichiers sous : {prefix}",
     "networkScope": "Réseau : {host}",
     "runProgramsGrant": "Ce plugin exécute d'autres programmes sur votre système (par ex. lancer un jeu). Je comprends et j'autorise cela.",

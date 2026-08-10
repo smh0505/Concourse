@@ -5326,5 +5326,15 @@ identical broken template, and any plugin declaring a registry `pathScope` (Stea
 qualify) would trigger the same compile error the first time its install-confirm dialog actually
 rendered that scope row; it apparently just went unnoticed until now, and `bun run build` never
 catches it since vue-i18n compiles message templates lazily at runtime; `vue-tsc` has no
-visibility into ICU-style message syntax at all. Fixed by space-padding the backslash
-(`"{hive} \ {prefix}"`) so it's never adjacent to a brace, across all 10 locales.
+visibility into ICU-style message syntax at all.
+
+Initial fix space-padded the backslash (`"{hive} \ {prefix}"`) so it's never adjacent to a
+brace - works, but changes the intended "HKLM\SOFTWARE\..." look. User asked why `\\` (JSON's
+own escape for one literal backslash) didn't already dodge this, prompting a check of whether
+vue-i18n's *own* `\\` escape (a second, independent layer on top of JSON's) could produce a
+literal backslash that itself doesn't collide with brace-parsing. Verified directly against the
+real `@intlify/message-compiler`/`vue-i18n` runtime (a standalone script, not just
+build-passing, since this bug only manifests at lazy runtime compile) rather than guessing:
+`"{hive}\\\\{prefix}"` in the JSON source -> `"{hive}\\{prefix}"` after JSON parsing -> vue-i18n's
+own `\\` escape resolves to one real backslash, landing on the originally-intended format with
+no extra spaces. Switched all 10 locales to this cleaner fix.

@@ -748,14 +748,25 @@ async function onDelete() {
 }
 
 /* mask-image (not opacity) fades transparency spatially top-to-bottom, rather than dimming
-   the whole image uniformly. */
+   the whole image uniformly. Solid (fully opaque) through the first half of .hero's own
+   height, only fading out across the second half - not a continuous taper from the top. */
 .backdrop {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center top;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.05) 100%);
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
 }
 
 /* Flips to --color-text-reverse only within the top 50vh of the viewport (shorter than

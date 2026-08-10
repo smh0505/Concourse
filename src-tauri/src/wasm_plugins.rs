@@ -217,15 +217,10 @@ impl PluginHostState {
         })
     }
 
-    /// Steam and Xbox are the plugins whose legitimate read scope genuinely can't be known
-    /// ahead of time (Steam's install/library folders, Xbox's per-package `PackageRootFolder`,
-    /// are wherever the user's own install/AppX repository put them) - this is the verified-
-    /// elevation half of that: the host checks for a real structural signature before trusting
-    /// a plugin-requested root at all (Steam: a `steamapps` subdirectory; Xbox: an
-    /// `AppxManifest.xml` file, every AppX package's own real manifest). Any plugin id without
-    /// a known validator is rejected outright rather than silently trusted or given a real
-    /// user-facing approval prompt - there's no third-party plugin exercising that path yet,
-    /// so a real prompt UI is deferred until one actually needs it (see milestones.md/devlog.md).
+    /// Steam and Xbox are the plugins whose legitimate read scope can't be known ahead of time
+    /// (install location varies per user) - the host checks for a real structural signature
+    /// before trusting a requested root (Steam: a `steamapps` subdirectory; Xbox: an
+    /// `AppxManifest.xml` file). Any plugin id without a known validator is rejected outright.
     fn do_request_read_scope(&mut self, path: String) -> Result<(), String> {
         let (recognized, expected_signature) = match self.plugin_id.as_str() {
             "steam-wasm" => (Path::new(&path).join("steamapps").is_dir(), "no steamapps subdirectory"),

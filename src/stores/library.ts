@@ -259,11 +259,9 @@ export const useLibraryStore = defineStore("library", () => {
           },
         });
       } else if (game.executable_path.startsWith("xbox://")) {
-        // Xbox app games have no real executable path - "xbox://<PackageFamilyName>!<AppId>"
-        // is a pseudo-URI the xbox-wasm plugin's own launch() decodes into a
-        // "shell:appsFolder\..." invocation via explorer.exe, same reasoning as GOG above.
-        // Only the family name (before "!") feeds `id`, matching the plugin's own
-        // `format!("xbox-{}", family_name)` scan() id shape.
+        // Same pseudo-URI reasoning as GOG above - xbox-wasm's launch() decodes this into a
+        // shell:appsFolder invocation. Only the family name (before "!") feeds `id`, matching
+        // the plugin's own scan() id shape.
         const familyName = game.executable_path.replace("xbox://", "").split("!")[0];
         await invoke("wasm_plugin_launch", {
           pluginId: "xbox-wasm",

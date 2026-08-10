@@ -318,75 +318,17 @@ Carried over from Milestone 7 unstarted.
 ## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
 Originally a core-roadmap stretch goal, moved here unstarted - no reason to hold up 1.0 for a
 stretch goal nothing had been done on yet.
-- [x] Xbox — research install detection and launch mechanism (community-sourced, not yet
-  verified against real files - see devlog): detection via installed AppX packages
-  (`Get-AppxPackage` or registry `HKCR\Local Settings\Software\Microsoft\Windows\CurrentVersion\
-  AppModel\Repository\Families\{PackageFamilyName}`) plus the package's own `appxmanifest.xml`;
-  launch is `explorer.exe shell:appsFolder\<PackageFamilyName>!<AppId>` - not a `://` URI, needs
-  its own launch-mechanism branch in `launcher.rs`, unlike Steam/Epic/EA/Ubisoft
-- [x] EA app — research install detection and launch mechanism (community-sourced, not yet
-  verified - see devlog): detection via `.mfst` files under `C:\ProgramData\Origin\LocalContent\
-  <GameFolder>\` (`AppName`/`InstallLocation` fields) or registry `HKLM\SOFTWARE\Wow6432Node\
-  Origin Games\<contentID>`; launch via `origin2://game/launch/?offerIds=<contentID>` - a real
-  `://` URI, fits the existing `openUrl()` branch already used for Steam/Epic
-- [x] Ubisoft Connect — research install detection and launch mechanism (community-sourced, not
-  yet verified - see devlog): detection via registry `HKLM\SOFTWARE\WOW6432Node\Ubisoft\
-  Launcher\Installs\<gameID>\InstallDir` (+ display name from the matching
-  `Uninstall\UPlay Install {gameID}` key) - the per-game `uplay_install.manifest` file itself is
-  binary/protobuf, GZIP-compressed, undocumented schema, not realistically parseable, so
-  registry is the practical detection path; launch via `uplay://launch/<gameID>/0`, also a real
-  `://` URI
-- [x] Xbox findings verified for real against an already-installed game (Minecraft for
-  Windows, `Microsoft.MinecraftUWP`) - `AppxManifest.xml` structure, the `ms-xbl-*` protocol
-  signature, and the `shell:appsFolder\<PackageFamilyName>!<AppId>` launch string all confirmed
-  against real registry/file data before any plugin code was written
-- [x] `xbox-source-wasm-plugin` built and published (v0.1.0) - detection via
-  `list-registry-keys`/`read-registry-string` against the AppX package repository
-  (`HKCU\...\AppModel\Repository\Packages`, no new host primitive needed), filtered by each
-  candidate's `AppxManifest.xml` declaring an `ms-xbl-*` protocol; launch via
-  `spawn-process("explorer.exe", ["shell:appsFolder\..."])`, also no new primitive needed.
-  Host gained one new `request-read-scope` validator (`xbox-wasm`: checks for `AppxManifest.xml`,
-  mirroring Steam's `steamapps` check). `library.ts` gained an `xbox://` pseudo-URI launch route,
-  mirroring the existing `gog://` one. Registered in `concourse-plugin-registry`
-  (`concourse-plugin-registry#19`)
-- [x] Real in-app verification done - installed via the freeform Add Plugin URL flow (which
-  surfaced and got a real fix for a pre-existing `PluginPreview` snake_case/camelCase serde bug,
-  see devlog), scanned, Minecraft for Windows detected and launched successfully end-to-end
-  through the running app
-- [x] EA findings verified for real against a real purchase (Unravel, $5 via EA app) - Windows'
-  standard Uninstall registry entry gave Publisher/InstallLocation/DisplayIcon directly (a
-  much simpler path than the `.mfst`-file research assumed); `installerdata.xml`'s `contentID`
-  matched the `HKLM\SOFTWARE\WOW6432Node\Origin Games\<contentID>` subkey name exactly;
-  `origin2://` confirmed as a genuinely OS-registered protocol (`HKCR\origin2\shell\open\command`
-  -> `EALauncher.exe`), not a guess
-- [x] `ea-source-wasm-plugin` built and published (v0.1.0) - simplest of the three plugins so
-  far: detection is pure registry reads (`Origin Games` key subkeys are EA-specific by
-  construction, no filter heuristic needed unlike Xbox), launch is a real `origin2://` URI
-  handled entirely by the host's existing generic `openUrl()` branch - no new host validator, no
-  new `library.ts` routing, no pseudo-URI, unlike both GOG and Xbox. Registered in
-  `concourse-plugin-registry` (`concourse-plugin-registry#20`)
-- [x] Real in-app verification done - installed, scanned, Unravel detected, launch attempted;
-  surfaced a real `tauri.conf.json` capability gap (`opener:allow-open-url` only allowlisted
-  `steam:*`/`com.epicgames.launcher:*`, not `origin2:*` - "Not allowed to open url"), fixed
-- [x] Fixed a real cross-plugin bug this verification caught: neither EA's nor Xbox's `scan()`
-  populated `GameEntry.install_dir`, and both launch via a pure URI/pseudo-URI with no
-  filesystem path `library.ts`'s fallback (`parentDir()`) can derive one from - so
-  `track_folder_playtime` was never called and playtime silently never recorded for either
-  plugin. Both bumped to 0.1.1: EA's `install_dir` comes from cross-referencing the Uninstall
-  registry (filtered to `Publisher: "Electronic Arts, Inc."`) by exact `DisplayName` match
-  against the `Origin Games` key (which has no install path of its own); Xbox's `install_dir` was
-  already being read (`PackageRootFolder`, for the `AppxManifest.xml` check) but never carried
-  through to the entry - now it is
-- [x] Playtime confirmed tracking for real after a rescan picked up the 0.1.1 fix - the "still
-  not updating" report right after the fix wasn't a code bug: existing library rows (imported
-  under the pre-fix plugin versions) keep whatever `install_dir` they were originally scanned
-  with, a version bump alone doesn't retroactively touch already-imported rows. Confirmed via
-  direct DB query (Minecraft rows had empty `install_dir`, Unravel wasn't imported at all yet);
-  a fresh Scan Now refreshes existing rows via `importEntries`'s `updateLaunchSource` path
-- [ ] Ubisoft Connect plugin - not started, same "research done, implementation not" state EA
-  was in before this pass
-- [x] Each ships as its own WASM plugin in a separate repo from day one (confirmed for Xbox and
-  EA; applies once Ubisoft is built too)
+- [x] Xbox/EA/Ubisoft install-detection and launch mechanisms researched (community-sourced
+  initially; Xbox/EA re-verified against real installs - see devlog)
+- [x] `xbox-source-wasm-plugin` built, published (v0.1.1), registered, verified end-to-end
+  in-app (real install/scan/launch/playtime against Minecraft for Windows) - see devlog
+- [x] `ea-source-wasm-plugin` built, published (v0.1.1), registered, verified end-to-end in-app
+  (real install/scan/launch/playtime against a purchased copy of Unravel) - see devlog
+- [x] Two real bugs found and fixed along the way: `PluginPreview` serializing scope fields as
+  snake_case (main repo), and neither Xbox's nor EA's `scan()` populating `install_dir` (broke
+  playtime tracking for both) - see devlog
+- [ ] Ubisoft Connect plugin - not started
+- [x] Each ships as its own WASM plugin in a separate repo from day one
 
 ## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier
 Supersedes the original component-override design (blocked - see devlog legacy record). Ships

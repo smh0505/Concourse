@@ -1242,7 +1242,13 @@ async function onDelete() {
   justify-content: flex-end;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
-  background: var(--color-base);
+  /* Same treatment as the shared .sticky-header/.filters - --background-sticky (styles.css)
+     stays transparent by default, and backdrop-filter's blur is what actually keeps scrolled
+     content below from reading clearly through this bar, without redrawing a background that
+     would never align with .content's own (see .sticky-header's own comment for why). */
+  background: var(--background-sticky);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .action-bar button {

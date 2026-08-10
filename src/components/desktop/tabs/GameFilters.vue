@@ -75,7 +75,10 @@ function toggleViewMode() {
   position: sticky;
   top: 0;
   z-index: 150;
-  background: var(--color-base);
+  /* Not a flat --color-base patch - continues whatever pattern a theme sets on the content
+     area behind it (App.vue's .content), so a themed background doesn't visibly break at this
+     pinned bar's edges. Falls back to --color-base for every theme not setting the hook. */
+  background: var(--content-background, var(--color-base));
   /* Matches GameGrid.vue's `.grid`/GameList.vue's `.list` own horizontal padding, so this
      spans .content's full width (needed so the search input isn't visibly narrower than the
      grid) while still lining up visually with the grid/list content below it. Bottom padding

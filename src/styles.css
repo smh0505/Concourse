@@ -475,7 +475,10 @@ small {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--color-base);
+  /* Same content-area pattern as App.vue's .content and GameFilters.vue's .filters, not a
+     flat --color-base patch - a themed background pattern would otherwise visibly break at
+     this pinned bar's edges. Falls back to --color-base for every theme not setting the hook. */
+  background: var(--content-background, var(--color-base));
   padding-top: var(--space-5);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);

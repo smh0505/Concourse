@@ -330,12 +330,21 @@ stretch goal nothing had been done on yet.
 - [x] `ubisoft-source-wasm-plugin` built, published (v0.1.0), registered - detection/launch
   verified against a real install (Brawlhalla) before writing code, `install_dir` set correctly
   from the start (learned from the EA/Xbox bug above) - see devlog
-- [x] Real in-app verification for Ubisoft Connect: scan works. Caught two more real bugs -
-  a latent vue-i18n message-compiler escape bug in `confirmInstall.registryScope` (affected
-  every locale, every plugin with a registry pathScope, not Ubisoft-specific) and a missing
-  `uplay:` entry in the opener capability allowlist (same class of gap as EA's `origin2:` one)
-  - both fixed, see devlog. Launch/playtime re-verification pending after the fix
+- [x] Real in-app verification for Ubisoft Connect: scan, launch, and playtime all confirmed
+  working (Brawlhalla). Caught two more real bugs along the way - a latent vue-i18n message-
+  compiler escape bug in `confirmInstall.registryScope` (affected every locale, every plugin
+  with a registry pathScope, not Ubisoft-specific) and a missing `uplay:` entry in the opener
+  capability allowlist (same class of gap as EA's `origin2:` one) - both fixed, see devlog
+- [x] Real-world gap caught by the user (XDefiant, a discontinued live-service game, still
+  showing after its install was long gone): registry-only detection can outlive a real install.
+  EA (v0.1.2) and Ubisoft (v0.1.1) both fixed - `scan()` now verifies the install folder still
+  exists (new `ea-wasm`/`ubisoft-wasm` request-read-scope validators, directory-exists check)
+  before including a game, consistent with every other plugin's "installed games only" scan
+  semantics - see devlog
 - [x] Each ships as its own WASM plugin in a separate repo from day one
+
+Milestone 16 closed - Xbox, EA, and Ubisoft Connect source plugins all built, published,
+registered, and verified end-to-end in-app.
 
 ## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier
 Supersedes the original component-override design (blocked - see devlog legacy record). Ships

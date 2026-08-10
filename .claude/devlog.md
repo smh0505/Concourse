@@ -5338,3 +5338,52 @@ build-passing, since this bug only manifests at lazy runtime compile) rather tha
 `"{hive}\\\\{prefix}"` in the JSON source -> `"{hive}\\{prefix}"` after JSON parsing -> vue-i18n's
 own `\\` escape resolves to one real backslash, landing on the originally-intended format with
 no extra spaces. Switched all 10 locales to this cleaner fix.
+
+## Milestone 16 — XDefiant Phantom Entry: Registry-Only Detection Can Outlive a Real Install
+
+User noticed XDefiant (a Ubisoft live-service game, publicly shut down) still showed up after
+scanning Ubisoft Connect, and didn't think they even had it fully installed. Checked directly
+rather than assuming: `D:/XDEFIANT/XDefiant/` (the exact `InstallLocation` the registry
+reported) doesn't exist on disk at all - confirmed via `ls`. The registry entry
+(`Uplay Install 15657`, the same one used for detection) had genuinely outlived the real
+install folder, most likely left behind by the game's shutdown/removal process not fully
+cleaning up its own Uninstall registry key.
+
+This is a structural gap, not a one-off: every plugin in this milestone detects games purely by
+reading registry state, and none of them had ever verified the install folder they found still
+exists before including it in `scan()` results - `getInstallStatus` exists on the
+`SourcePlugin` contract for exactly this kind of check, but nothing in the frontend actually
+calls it anywhere (confirmed via a full grep - it's wired end-to-end, from WIT to `loader.ts`,
+and simply never invoked). So the real fix has to happen inside each plugin's own `scan()`,
+not bolted on afterward.
+
+**Host-side**: added `"ea-wasm" | "ubisoft-wasm"` arms to `wasm_plugins.rs`'s
+`do_request_read_scope` validator, both checking `Path::new(&path).is_dir()` - unlike Steam's
+`steamapps` subdirectory or Xbox's `AppxManifest.xml` (real structural signatures), EA/Ubisoft
+have no equivalent marker file, so "does this directory exist at all" doubles as both the
+security check request-read-scope already exists for *and* the exact signal these two plugins
+need to detect a stale entry.
+
+**Ubisoft** (0.1.1): `scan()` now calls `request-read-scope` on `InstallLocation` before
+including a game, `continue`-ing past it (skipping the entry entirely) on failure - matches
+what a stale entry actually means here, since Ubisoft's single Uninstall-registry entry is the
+*only* signal this plugin has for "installed," unlike EA below.
+
+**EA** (0.1.2): same directory-exists check, but with one extra design decision - the `Origin
+Games` registry key really represents *ownership* ("you bought this"), separate from
+`InstallLocation`'s *installation* state (joined from a second registry key by title match, see
+the earlier EA devlog entry). Considered keeping an owned-but-uninstalled title visible with no
+`install_dir` (closer to what "owning" actually means), but rejected it for consistency:
+every other source plugin in this app (Steam/GOG/Epic/Xbox/Ubisoft) scans *installed* games
+only, never an owned-but-not-installed library. Matching that existing convention, EA now skips
+a title entirely if no still-existing install folder is found for it - same behavior as
+Ubisoft, for a different underlying reason.
+
+Both plugins rebuilt clean, published (push-triggered CI fired correctly this time, no repeat
+of Xbox's first-release mystery no-op), and bumped via `concourse-plugin-registry`'s real
+auto-bump path this time (both are version bumps to *existing* entries, not first-time adds) -
+hit the same `action_required` bot-PR-approval gate as every previous auto-bump PR this
+session, approved both, and hit the by-now-familiar "PR branch behind base" wrinkle merging the
+second one (Ubisoft's PR merged to `main` moments before EA's), resolved the same way as
+before: merge `main` into the bump branch locally, push, re-validate, merge. Both registry
+entries verified pointing at their real fixed versions afterward.

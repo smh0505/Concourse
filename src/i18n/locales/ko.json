@@ -206,11 +206,17 @@
     "scanNow": "지금 스캔",
     "removeTheme": "삭제",
     "manifestUrlLabel": "플러그인 매니페스트 URL",
-    "builtIn": "내장"
+    "builtIn": "내장",
+    "noPluginsEnabled": "활성화된 플러그인이 없습니다.",
+    "scanComplete": "스캔 완료: {added}개 추가, {merged}개 병합.",
+    "scanFailed": "스캔 실패: {error}",
+    "removeThemeFailed": "테마 제거 실패: {error}"
   },
   "library": {
     "emptyMessage": "라이브러리가 비어 있습니다. 게임을 추가하거나 소스 플러그인을 스캔해 보세요.",
-    "noMatchMessage": "검색어/필터와 일치하는 게임이 없습니다."
+    "noMatchMessage": "검색어/필터와 일치하는 게임이 없습니다.",
+    "noMetadataFound": "\"{title}\"에 대한 메타데이터를 찾을 수 없습니다.",
+    "noBackgroundArtFound": "\"{title}\"에 대한 배경 아트를 찾을 수 없습니다."
   },
   "gameCard": {
     "play": "실행",
@@ -218,5 +224,24 @@
     "edit": "편집",
     "remove": "삭제",
     "minutesPlayed": "{minutes}분 플레이함"
+  },
+  "appUpdate": {
+    "downloading": "Concourse {version} 다운로드 중...",
+    "updateFailed": "업데이트 실패: {error}"
+  },
+  "metadataProviders": {
+    "noProviderEnabled": "활성화된 메타데이터 제공자가 없습니다.",
+    "searchFailed": "{name}: 검색 실패.",
+    "noMatch": "{name}: 일치하는 항목을 찾지 못했습니다.",
+    "foundMatch": "{name}: 일치하는 항목을 찾았습니다.",
+    "matchesFound": "{name}: {count}개의 일치 항목을 찾았습니다."
+  },
+  "pluginInstall": {
+    "installed": "플러그인이 설치되었습니다.",
+    "installFailed": "플러그인 설치 실패: {error}"
+  },
+  "pluginUpdates": {
+    "updated": "{name}이(가) {version}(으)로 업데이트되었습니다.",
+    "updateFailed": "{name} 업데이트 실패: {error}"
   }
 }

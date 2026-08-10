@@ -7,6 +7,7 @@ import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
+import { i18n } from "@/i18n";
 import type { PluginManifest } from "@/plugins/manifest";
 
 export interface UpdateCheckResult {
@@ -83,9 +84,15 @@ export const usePluginUpdatesStore = defineStore("pluginUpdates", () => {
       const updated = { ...results.value };
       delete updated[manifest.id];
       results.value = updated;
-      toasts.push(`${manifest.name} updated to ${result.latestVersion}.`, "success");
+      toasts.push(
+        i18n.global.t("pluginUpdates.updated", { name: manifest.name, version: result.latestVersion }),
+        "success",
+      );
     } catch (e) {
-      toasts.push(`Failed to update ${manifest.name}: ${String(e)}`, "error");
+      toasts.push(
+        i18n.global.t("pluginUpdates.updateFailed", { name: manifest.name, error: String(e) }),
+        "error",
+      );
     }
   }
 

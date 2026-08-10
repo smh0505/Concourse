@@ -3,6 +3,7 @@ import { ref } from "vue";
 
 import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
+import { i18n } from "@/i18n";
 import { useToastStore } from "./toasts";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { MetadataCandidate, MetadataProviderPlugin, MetadataResult } from "@/plugins/types";
@@ -102,7 +103,7 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
    */
   async function fetchMetadata(title: string): Promise<MetadataResult | null> {
     if (loadedPlugins.value.length === 0) {
-      throw new Error("No metadata provider enabled.");
+      throw new Error(i18n.global.t("metadataProviders.noProviderEnabled"));
     }
 
     const toasts = useToastStore();
@@ -115,17 +116,23 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
       try {
         candidates = await plugin.searchCandidates(title);
       } catch {
-        toasts.push(`${plugin.name}: search failed.`, "error");
+        toasts.push(i18n.global.t("metadataProviders.searchFailed", { name: plugin.name }), "error");
         continue;
       }
 
       if (candidates.length === 0) {
-        toasts.push(`${plugin.name}: no match found.`, "info");
+        toasts.push(i18n.global.t("metadataProviders.noMatch", { name: plugin.name }), "info");
       } else if (candidates.length === 1) {
-        toasts.push(`${plugin.name}: found a match.`, "success");
+        toasts.push(i18n.global.t("metadataProviders.foundMatch", { name: plugin.name }), "success");
         chosenIds[i] = candidates[0].id;
       } else {
-        toasts.push(`${plugin.name}: ${candidates.length} matches found.`, "info");
+        toasts.push(
+          i18n.global.t("metadataProviders.matchesFound", {
+            name: plugin.name,
+            count: candidates.length,
+          }),
+          "info",
+        );
         ambiguousSections.push({ index: i, pluginId: plugin.id, pluginName: plugin.name, candidates });
       }
     }

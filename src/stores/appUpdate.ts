@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
+import { i18n } from "@/i18n";
 import { useToastStore } from "./toasts";
 
 export const useAppUpdateStore = defineStore("appUpdate", () => {
@@ -31,12 +32,12 @@ export const useAppUpdateStore = defineStore("appUpdate", () => {
   async function applyUpdate(update: Update) {
     const toasts = useToastStore();
     clearActiveToast();
-    toasts.push(`Downloading Concourse ${update.version}...`, "info");
+    toasts.push(i18n.global.t("appUpdate.downloading", { version: update.version }), "info");
     try {
       await update.downloadAndInstall();
       await relaunch();
     } catch (e) {
-      toasts.push(`Update failed: ${String(e)}`, "error");
+      toasts.push(i18n.global.t("appUpdate.updateFailed", { error: String(e) }), "error");
     }
   }
 

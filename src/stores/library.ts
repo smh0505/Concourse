@@ -12,6 +12,7 @@ import {
   type GameEditFields,
 } from "@/db";
 import type { GameEntry } from "@/plugins/types";
+import { i18n } from "@/i18n";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
@@ -110,7 +111,7 @@ export const useLibraryStore = defineStore("library", () => {
         if (meta.backgroundArtUrl) await gameRepo.updateBackgroundArt(game.id, meta.backgroundArtUrl);
         await refresh();
       } else {
-        toasts.push(`No metadata found for "${game.title}".`, "error");
+        toasts.push(i18n.global.t("library.noMetadataFound", { title: game.title }), "error");
       }
     } catch (e) {
       toasts.push(String(e), "error");
@@ -132,7 +133,7 @@ export const useLibraryStore = defineStore("library", () => {
         await gameRepo.updateBackgroundArt(game.id, meta.backgroundArtUrl);
         await refresh();
       } else {
-        toasts.push(`No background art found for "${game.title}".`, "error");
+        toasts.push(i18n.global.t("library.noBackgroundArtFound", { title: game.title }), "error");
       }
     } catch (e) {
       toasts.push(String(e), "error");

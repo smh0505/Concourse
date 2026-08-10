@@ -7,6 +7,7 @@ import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loade
 import { setActiveCardVisual, clearActiveCardVisual } from "@/theme/cardVisualRegistry";
 import { setActiveFontFaces, clearActiveFontFaces } from "@/theme/fontFaceRegistry";
 import { useToastStore } from "./toasts";
+import { i18n } from "@/i18n";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { ThemePlugin } from "@/plugins/types";
 
@@ -48,7 +49,7 @@ export const useThemeStore = defineStore("theme", () => {
       if (activeThemeId.value === id) await setActiveTheme(DEFAULT_THEME_ID);
       await refreshManifests();
     } catch (e) {
-      toasts.push(`Failed to remove theme: ${String(e)}`, "error");
+      toasts.push(i18n.global.t("pluginSettings.removeThemeFailed", { error: String(e) }), "error");
     }
   }
 

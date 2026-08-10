@@ -206,7 +206,11 @@
     "scanNow": "Scan Now",
     "removeTheme": "Remove",
     "manifestUrlLabel": "Plugin manifest URL",
-    "builtIn": "Built-in"
+    "builtIn": "Built-in",
+    "noPluginsEnabled": "No plugins enabled.",
+    "scanComplete": "Scan complete: {added} added, {merged} merged.",
+    "scanFailed": "Scan failed: {error}",
+    "removeThemeFailed": "Failed to remove theme: {error}"
   },
   "gamepadRemap": {
     "settingsTrigger": "Remap",
@@ -230,7 +234,9 @@
   },
   "library": {
     "emptyMessage": "Your library is empty. Add a game or scan a source plugin to get started.",
-    "noMatchMessage": "No games match your search/filters."
+    "noMatchMessage": "No games match your search/filters.",
+    "noMetadataFound": "No metadata found for \"{title}\".",
+    "noBackgroundArtFound": "No background art found for \"{title}\"."
   },
   "gameCard": {
     "play": "Play",
@@ -238,5 +244,24 @@
     "edit": "Edit",
     "remove": "Remove",
     "minutesPlayed": "{minutes} min played"
+  },
+  "appUpdate": {
+    "downloading": "Downloading Concourse {version}...",
+    "updateFailed": "Update failed: {error}"
+  },
+  "metadataProviders": {
+    "noProviderEnabled": "No metadata provider enabled.",
+    "searchFailed": "{name}: search failed.",
+    "noMatch": "{name}: no match found.",
+    "foundMatch": "{name}: found a match.",
+    "matchesFound": "{name}: {count} matches found."
+  },
+  "pluginInstall": {
+    "installed": "Plugin installed.",
+    "installFailed": "Failed to install plugin: {error}"
+  },
+  "pluginUpdates": {
+    "updated": "{name} updated to {version}.",
+    "updateFailed": "Failed to update {name}: {error}"
   }
 }

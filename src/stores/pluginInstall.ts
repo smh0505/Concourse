@@ -6,6 +6,7 @@ import { usePluginStore } from "./plugins";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";
 import { useToastStore } from "./toasts";
+import { i18n } from "@/i18n";
 import type { PluginPreview } from "@/plugins/manifest";
 
 /** Mirrors the Rust `InstallResult` (`plugin_installer.rs`) - Milestone 14's provenance
@@ -94,10 +95,10 @@ export const usePluginInstallStore = defineStore("pluginInstall", () => {
       if (kind === "source") await usePluginStore().refreshManifests();
       else if (kind === "metadata") await useMetadataProviderStore().refreshManifests();
       else if (kind === "theme") await useThemeStore().refreshManifests();
-      toasts.push("Plugin installed.", "success");
+      toasts.push(i18n.global.t("pluginInstall.installed"), "success");
       toasts.push(result.verificationNote, result.verified ? "success" : "info");
     } catch (e) {
-      toasts.push(`Failed to install plugin: ${String(e)}`, "error");
+      toasts.push(i18n.global.t("pluginInstall.installFailed", { error: String(e) }), "error");
     } finally {
       installing.value = false;
       cancelInstall();

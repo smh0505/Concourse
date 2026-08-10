@@ -206,11 +206,17 @@
     "scanNow": "Сканировать сейчас",
     "removeTheme": "Удалить",
     "manifestUrlLabel": "URL манифеста плагина",
-    "builtIn": "Встроенный"
+    "builtIn": "Встроенный",
+    "noPluginsEnabled": "Нет включённых плагинов.",
+    "scanComplete": "Сканирование завершено: добавлено {added}, объединено {merged}.",
+    "scanFailed": "Ошибка сканирования: {error}",
+    "removeThemeFailed": "Не удалось удалить тему: {error}"
   },
   "library": {
     "emptyMessage": "Ваша библиотека пуста. Добавьте игру или просканируйте плагин-источник, чтобы начать.",
-    "noMatchMessage": "Нет игр, соответствующих поиску/фильтрам."
+    "noMatchMessage": "Нет игр, соответствующих поиску/фильтрам.",
+    "noMetadataFound": "Метаданные для \"{title}\" не найдены.",
+    "noBackgroundArtFound": "Фоновое изображение для \"{title}\" не найдено."
   },
   "gameCard": {
     "play": "Играть",
@@ -218,5 +224,24 @@
     "edit": "Изменить",
     "remove": "Удалить",
     "minutesPlayed": "Сыграно {minutes} мин"
+  },
+  "appUpdate": {
+    "downloading": "Загрузка Concourse {version}...",
+    "updateFailed": "Ошибка обновления: {error}"
+  },
+  "metadataProviders": {
+    "noProviderEnabled": "Нет включённых поставщиков метаданных.",
+    "searchFailed": "{name}: ошибка поиска.",
+    "noMatch": "{name}: совпадений не найдено.",
+    "foundMatch": "{name}: найдено совпадение.",
+    "matchesFound": "{name}: найдено совпадений: {count}."
+  },
+  "pluginInstall": {
+    "installed": "Плагин установлен.",
+    "installFailed": "Не удалось установить плагин: {error}"
+  },
+  "pluginUpdates": {
+    "updated": "{name} обновлён до {version}.",
+    "updateFailed": "Не удалось обновить {name}: {error}"
   }
 }

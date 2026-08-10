@@ -5,6 +5,7 @@ import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import { useLibraryStore } from "./library";
 import { useToastStore } from "./toasts";
+import { i18n } from "@/i18n";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { SourcePlugin } from "@/plugins/types";
 
@@ -52,7 +53,7 @@ export const usePluginStore = defineStore("plugins", () => {
   async function scanAll() {
     const toasts = useToastStore();
     if (loadedPlugins.value.length === 0) {
-      toasts.push("No plugins enabled.", "error");
+      toasts.push(i18n.global.t("pluginSettings.noPluginsEnabled"), "error");
       return;
     }
 
@@ -69,9 +70,12 @@ export const usePluginStore = defineStore("plugins", () => {
         totalMerged += merged;
       }
 
-      toasts.push(`Scan complete: ${totalAdded} added, ${totalMerged} merged.`, "success");
+      toasts.push(
+        i18n.global.t("pluginSettings.scanComplete", { added: totalAdded, merged: totalMerged }),
+        "success",
+      );
     } catch (e) {
-      toasts.push(`Scan failed: ${String(e)}`, "error");
+      toasts.push(i18n.global.t("pluginSettings.scanFailed", { error: String(e) }), "error");
     } finally {
       scanning.value = false;
     }

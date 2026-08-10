@@ -206,11 +206,17 @@
     "scanNow": "Escanear ahora",
     "removeTheme": "Eliminar",
     "manifestUrlLabel": "URL del manifiesto del plugin",
-    "builtIn": "Integrado"
+    "builtIn": "Integrado",
+    "noPluginsEnabled": "No hay plugins habilitados.",
+    "scanComplete": "Escaneo completo: {added} añadidos, {merged} fusionados.",
+    "scanFailed": "Error en el escaneo: {error}",
+    "removeThemeFailed": "No se pudo eliminar el tema: {error}"
   },
   "library": {
     "emptyMessage": "Tu biblioteca está vacía. Añade un juego o escanea un plugin de fuente para empezar.",
-    "noMatchMessage": "Ningún juego coincide con tu búsqueda/filtros."
+    "noMatchMessage": "Ningún juego coincide con tu búsqueda/filtros.",
+    "noMetadataFound": "No se encontraron metadatos para \"{title}\".",
+    "noBackgroundArtFound": "No se encontró arte de fondo para \"{title}\"."
   },
   "gameCard": {
     "play": "Jugar",
@@ -218,5 +224,24 @@
     "edit": "Editar",
     "remove": "Eliminar",
     "minutesPlayed": "{minutes} min jugados"
+  },
+  "appUpdate": {
+    "downloading": "Descargando Concourse {version}...",
+    "updateFailed": "Error al actualizar: {error}"
+  },
+  "metadataProviders": {
+    "noProviderEnabled": "Ningún proveedor de metadatos habilitado.",
+    "searchFailed": "{name}: búsqueda fallida.",
+    "noMatch": "{name}: no se encontró coincidencia.",
+    "foundMatch": "{name}: coincidencia encontrada.",
+    "matchesFound": "{name}: {count} coincidencias encontradas."
+  },
+  "pluginInstall": {
+    "installed": "Plugin instalado.",
+    "installFailed": "Error al instalar el plugin: {error}"
+  },
+  "pluginUpdates": {
+    "updated": "{name} actualizado a {version}.",
+    "updateFailed": "Error al actualizar {name}: {error}"
   }
 }

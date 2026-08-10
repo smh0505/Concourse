@@ -206,11 +206,17 @@
     "scanNow": "立即扫描",
     "removeTheme": "移除",
     "manifestUrlLabel": "插件清单URL",
-    "builtIn": "内置"
+    "builtIn": "内置",
+    "noPluginsEnabled": "没有已启用的插件。",
+    "scanComplete": "扫描完成:新增 {added} 个,合并 {merged} 个。",
+    "scanFailed": "扫描失败:{error}",
+    "removeThemeFailed": "移除主题失败:{error}"
   },
   "library": {
     "emptyMessage": "您的库是空的。添加一个游戏,或扫描一个来源插件以开始使用。",
-    "noMatchMessage": "没有游戏匹配您的搜索/筛选条件。"
+    "noMatchMessage": "没有游戏匹配您的搜索/筛选条件。",
+    "noMetadataFound": "未找到「{title}」的元数据。",
+    "noBackgroundArtFound": "未找到「{title}」的背景图。"
   },
   "gameCard": {
     "play": "运行",
@@ -218,5 +224,24 @@
     "edit": "编辑",
     "remove": "移除",
     "minutesPlayed": "已玩 {minutes} 分钟"
+  },
+  "appUpdate": {
+    "downloading": "正在下载 Concourse {version}...",
+    "updateFailed": "更新失败:{error}"
+  },
+  "metadataProviders": {
+    "noProviderEnabled": "没有已启用的元数据提供方。",
+    "searchFailed": "{name}:搜索失败。",
+    "noMatch": "{name}:未找到匹配项。",
+    "foundMatch": "{name}:已找到匹配项。",
+    "matchesFound": "{name}:找到 {count} 个匹配项。"
+  },
+  "pluginInstall": {
+    "installed": "插件已安装。",
+    "installFailed": "插件安装失败:{error}"
+  },
+  "pluginUpdates": {
+    "updated": "{name} 已更新到 {version}。",
+    "updateFailed": "更新 {name} 失败:{error}"
   }
 }

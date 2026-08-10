@@ -206,11 +206,17 @@
     "scanNow": "今すぐスキャン",
     "removeTheme": "削除",
     "manifestUrlLabel": "プラグインマニフェストURL",
-    "builtIn": "内蔵"
+    "builtIn": "内蔵",
+    "noPluginsEnabled": "有効なプラグインがありません。",
+    "scanComplete": "スキャン完了: {added}件追加、{merged}件マージ。",
+    "scanFailed": "スキャン失敗: {error}",
+    "removeThemeFailed": "テーマの削除に失敗しました: {error}"
   },
   "library": {
     "emptyMessage": "ライブラリが空です。ゲームを追加するか、ソースプラグインをスキャンしてください。",
-    "noMatchMessage": "検索/フィルターに一致するゲームがありません。"
+    "noMatchMessage": "検索/フィルターに一致するゲームがありません。",
+    "noMetadataFound": "「{title}」のメタデータが見つかりません。",
+    "noBackgroundArtFound": "「{title}」の背景アートが見つかりません。"
   },
   "gameCard": {
     "play": "プレイ",
@@ -218,5 +224,24 @@
     "edit": "編集",
     "remove": "削除",
     "minutesPlayed": "{minutes}分プレイ"
+  },
+  "appUpdate": {
+    "downloading": "Concourse {version} をダウンロード中...",
+    "updateFailed": "更新に失敗しました: {error}"
+  },
+  "metadataProviders": {
+    "noProviderEnabled": "有効なメタデータプロバイダーがありません。",
+    "searchFailed": "{name}: 検索に失敗しました。",
+    "noMatch": "{name}: 一致が見つかりませんでした。",
+    "foundMatch": "{name}: 一致が見つかりました。",
+    "matchesFound": "{name}: {count}件の一致が見つかりました。"
+  },
+  "pluginInstall": {
+    "installed": "プラグインをインストールしました。",
+    "installFailed": "プラグインのインストールに失敗しました: {error}"
+  },
+  "pluginUpdates": {
+    "updated": "{name} を {version} に更新しました。",
+    "updateFailed": "{name} の更新に失敗しました: {error}"
   }
 }

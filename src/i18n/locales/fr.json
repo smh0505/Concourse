@@ -206,11 +206,17 @@
     "scanNow": "Analyser maintenant",
     "removeTheme": "Supprimer",
     "manifestUrlLabel": "URL du manifeste du plugin",
-    "builtIn": "Intégré"
+    "builtIn": "Intégré",
+    "noPluginsEnabled": "Aucun plugin activé.",
+    "scanComplete": "Analyse terminée : {added} ajoutés, {merged} fusionnés.",
+    "scanFailed": "Échec de l'analyse : {error}",
+    "removeThemeFailed": "Échec de la suppression du thème : {error}"
   },
   "library": {
     "emptyMessage": "Votre bibliothèque est vide. Ajoutez un jeu ou analysez un plugin source pour commencer.",
-    "noMatchMessage": "Aucun jeu ne correspond à votre recherche/vos filtres."
+    "noMatchMessage": "Aucun jeu ne correspond à votre recherche/vos filtres.",
+    "noMetadataFound": "Aucune métadonnée trouvée pour \"{title}\".",
+    "noBackgroundArtFound": "Aucune image de fond trouvée pour \"{title}\"."
   },
   "gameCard": {
     "play": "Jouer",
@@ -218,5 +224,24 @@
     "edit": "Modifier",
     "remove": "Supprimer",
     "minutesPlayed": "{minutes} min jouées"
+  },
+  "appUpdate": {
+    "downloading": "Téléchargement de Concourse {version}...",
+    "updateFailed": "Échec de la mise à jour : {error}"
+  },
+  "metadataProviders": {
+    "noProviderEnabled": "Aucun fournisseur de métadonnées activé.",
+    "searchFailed": "{name} : échec de la recherche.",
+    "noMatch": "{name} : aucune correspondance trouvée.",
+    "foundMatch": "{name} : correspondance trouvée.",
+    "matchesFound": "{name} : {count} correspondances trouvées."
+  },
+  "pluginInstall": {
+    "installed": "Plugin installé.",
+    "installFailed": "Échec de l'installation du plugin : {error}"
+  },
+  "pluginUpdates": {
+    "updated": "{name} mis à jour vers {version}.",
+    "updateFailed": "Échec de la mise à jour de {name} : {error}"
   }
 }

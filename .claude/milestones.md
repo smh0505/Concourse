@@ -551,7 +551,7 @@ that infra is theme-shaped today, not generic, so this is real new work, not a f
 - [ ] Extend `concourse-plugin-registry` to `kind: "controller"` (same precedent as Milestone 17's
   `kind: "theme"` extension)
 
-## Milestone 26 — Library Functions Update: Batch Ops + Filter/Sort (not started)
+## Milestone 26 — Library Functions Update: Batch Ops + Filter/Sort (in progress)
 `GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s
 `filteredGames` filters on search text and the active tag/collection, no sort at all) - one
 game at a time is the only way to tag/remove/collection-assign. Two workstreams, scoped
@@ -565,11 +565,15 @@ together since both touch the same filter-bar area and library selection state.
 - [ ] Selection UI affordance (a "N selected" bar, Select All/Clear)
 
 **Filter/sort expansion.**
+- [x] Platform filter shipped early, via a `platform:steam` search-box token (`filteredGames`
+  pulls it out of the normal title-search tokens) rather than the expandable panel below -
+  simpler, ships now instead of waiting on the panel; covers the "platform" filter this section
+  originally scoped for the panel
 - [ ] Sort options (title A-Z, recently played, most played, recently added) - `filteredGames`
   currently has no sort step at all
 - [ ] Expandable panel under `GameFilters.vue`'s existing bar (collapsed by default) housing sort
-  + any additional filters (platform, playtime range, install status) beyond the existing
-  tag/collection pills
+  + any remaining filters (playtime range, install status) beyond tag/collection pills and the
+  platform token above
 - [ ] Persist chosen sort/filter state the same way `viewMode` already persists via
   `settingsRepo`
 

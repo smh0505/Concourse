@@ -327,7 +327,10 @@ stretch goal nothing had been done on yet.
 - [x] Two real bugs found and fixed along the way: `PluginPreview` serializing scope fields as
   snake_case (main repo), and neither Xbox's nor EA's `scan()` populating `install_dir` (broke
   playtime tracking for both) - see devlog
-- [ ] Ubisoft Connect plugin - not started
+- [x] `ubisoft-source-wasm-plugin` built, published (v0.1.0), registered - detection/launch
+  verified against a real install (Brawlhalla) before writing code, `install_dir` set correctly
+  from the start (learned from the EA/Xbox bug above) - see devlog
+- [ ] Real in-app verification pending for Ubisoft Connect (install/scan/launch/playtime)
 - [x] Each ships as its own WASM plugin in a separate repo from day one
 
 ## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier

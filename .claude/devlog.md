@@ -5271,3 +5271,46 @@ actual fix wasn't more code, just re-running Scan Now so the already-imported ga
 the corrected 0.1.1 data. A version bump alone never retroactively touches rows imported under
 an older plugin version; only a rescan does. User rescanned, confirmed playtime tracking for
 real afterward.
+
+## Milestone 16 — Ubisoft Connect Source Plugin: Built and Published
+
+User installed Ubisoft Connect + Brawlhalla specifically to verify against, same discipline as
+Xbox/EA. This one confirmed the original community-sourced research almost exactly, and turned
+out to be the simplest of the three plugins built this milestone.
+
+**Verified against the real install first.** `HKLM\SOFTWARE\WOW6432Node\Ubisoft\Launcher\
+Installs\16382\InstallDir` gave Brawlhalla's real path
+(`C:/Program Files (x86)/Ubisoft/Ubisoft Game Launcher/games/Brawlhalla/` - forward slashes, not
+an issue since the host's folder-tracking already normalizes both). More usefully, the standard
+Windows Uninstall registry key `Uplay Install 16382` (still "Uplay" internally, pre-rebrand
+naming) gives the *same* `InstallLocation` **plus** `DisplayName` ("Brawlhalla") **plus**
+`Publisher: "Ubisoft"` all in one entry - unlike EA, where the equivalent id-bearing key and the
+Uninstall key are two separate registrations only joinable by exact `DisplayName` text match.
+Confirmed the pattern holds across both of the user's installed games (Brawlhalla and XDefiant).
+`uplay://` confirmed as a real registered protocol (`HKCR\uplay\shell\open\command` ->
+`UbisoftConnect.exe`) via the same check used for `origin2://`. Test-launched Brawlhalla for
+real via `uplay://launch/16382/0` (`Start-Process`, then confirmed via `Get-Process` that
+`Brawlhalla.exe` was actually running under the expected install path) before writing any code.
+
+**Design ended up simpler than EA's.** Since one registry entry gives id + title + install path
+together, `scan()` needs a single registry-tree walk (`list-registry-keys` on the Uninstall key,
+filtered to entries whose subkey name starts with `"uplay install "` and whose `Publisher` is
+`"Ubisoft"`) - no title-matching join step. `install_dir` was set correctly from the very first
+version this time, having just fixed the same gap for EA/Xbox. The per-game
+`uplay_install.manifest` file (binary, GZIP-compressed protobuf, undocumented schema, client
+packed) is deliberately not touched at all - not realistically parseable, and unnecessary since
+the registry alone gives everything needed.
+
+**Built `ubisoft-source-wasm-plugin`** (new repo) - `launch()` is dead code exactly like
+Steam/EA's, since `uplay://` is a real URI the host's generic `openUrl()` branch already
+handles. Compiled clean on the first attempt. Full publish/registry pipeline run: same
+push-vs-manual-dispatch race as EA's first release (secret wasn't set until a couple minutes
+after the initial push), push-triggered run published but failed its own registry-notify step,
+manual dispatch run succeeded fully including registry-notify. `concourse-plugin-registry`'s
+auto-dispatch still failed by design (new entry) - added `ubisoft-wasm` by hand: downloaded the
+real `v0.1.0` asset, computed its real SHA256
+(`765fb4827c89f59b77c889ee3b8d4c6ac3c646c27931fedcf6dfed840e74910a`), opened
+`concourse-plugin-registry#23`, confirmed `Validate Registry` passed, merged.
+
+**Not yet done**: real in-app verification (install, scan, confirm Brawlhalla detected and
+launches, playtime tracks) - same position Xbox/EA were in before their own GUI tests.

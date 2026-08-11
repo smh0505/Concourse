@@ -192,11 +192,27 @@ onBeforeUnmount(stopPolling);
     <template #body>
       <div class="pad-silhouette">
         <svg class="pad-shape" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+          <!-- A generic top-down gamepad silhouette: a wide, gently-rounded trapezoid body
+               (holding the shoulders/triggers along its flat top edge) flaring at the bottom
+               into two large rounded grip lobes, with a shallow scalloped waist between them
+               where a real pad narrows toward the d-pad/face-button cluster. Not modeled on any
+               specific real controller - same reasoning as this codebase avoiding brand-specific
+               shapes/logos elsewhere. -->
           <path
-            d="M50,40 Q50,10 90,10 L310,10 Q350,10 350,40 L350,90 Q350,130 380,150
-               Q400,165 385,195 Q370,220 340,205 Q300,185 270,170 Q240,158 200,158
-               Q160,158 130,170 Q100,185 60,205 Q30,220 15,195 Q0,165 20,150
-               Q50,130 50,90 Z"
+            d="M100,45
+               C100,22 122,17 145,17
+               L255,17
+               C278,17 300,22 300,45
+               L300,78
+               C300,100 322,99 344,112
+               C388,136 392,192 353,206
+               C320,220 298,193 275,165
+               C258,144 230,133 200,133
+               C170,133 142,144 125,165
+               C102,193 80,220 47,206
+               C8,192 12,136 56,112
+               C78,99 100,100 100,78
+               Z"
           />
         </svg>
         <div

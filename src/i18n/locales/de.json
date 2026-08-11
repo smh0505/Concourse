@@ -222,6 +222,35 @@
     "removeControllerMapping": "Entfernen",
     "removeControllerMappingFailed": "Zuordnung konnte nicht entfernt werden: {error}"
   },
+  "gamepadRemap": {
+    "settingsTrigger": "Neu zuordnen",
+    "title": "Controller-Tastenbelegung",
+    "listen": "Hören",
+    "listening": "Taste drücken oder Stick bewegen...",
+    "unmapped": "Nicht zugewiesen",
+    "axis": "Achse",
+    "actions": {
+      "dpadUp": "Hoch",
+      "dpadDown": "Runter",
+      "dpadLeft": "Links",
+      "dpadRight": "Rechts",
+      "buttonConfirm": "Bestätigen",
+      "buttonCancel": "Abbrechen"
+    },
+    "axisThreshold": "Achsen-Schwellenwert",
+    "repeatDelayMs": "Wiederholverzögerung (ms)",
+    "repeatIntervalMs": "Wiederholintervall (ms)",
+    "reset": "Auf Standard zurücksetzen",
+    "buttonNames": {
+      "back": "Zurück",
+      "start": "Start",
+      "home": "Home",
+      "dUp": "D-Pad hoch",
+      "dDown": "D-Pad runter",
+      "dLeft": "D-Pad links",
+      "dRight": "D-Pad rechts"
+    }
+  },
   "library": {
     "emptyMessage": "Deine Bibliothek ist leer. Füge ein Spiel hinzu oder scanne ein Quell-Plugin, um loszulegen.",
     "noMatchMessage": "Keine Spiele entsprechen deiner Suche/deinen Filtern.",

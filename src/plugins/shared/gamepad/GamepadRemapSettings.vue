@@ -5,7 +5,11 @@ import { useI18n } from "vue-i18n";
 import { useControllerMappingStore } from "@/stores/controllerMapping";
 import type { GamepadDirectionBinding, GamepadMapping } from "@/plugins/types";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
-import { gamepadButtonLabel, STANDARD_GAMEPAD_LAYOUT_BUTTONS } from "./buttonNames";
+import {
+  gamepadButtonLiteral,
+  gamepadButtonTranslationKey,
+  STANDARD_GAMEPAD_LAYOUT_INDICES,
+} from "./buttonNames";
 
 // Reusable across every ControllerMappingPlugin, not just Standard Gamepad - each plugin passes
 // its own id/default mapping in, so this component owns none of the plugin-specific data itself.
@@ -51,8 +55,19 @@ const axisValues = reactive<Record<number, number>>({});
 const axisWasCrossed: Record<string, boolean> = {};
 let frameHandle: number | undefined;
 
+// Reactive to the active locale (unlike buttonNames.ts's own plain-data exports) since it goes
+// through this component's own `t()` - used both for directionBindingLabel below and for each
+// silhouette button's on-shape label in the template.
+function buttonLabel(index: number): string {
+  const literal = gamepadButtonLiteral(index);
+  if (literal) return literal;
+  const key = gamepadButtonTranslationKey(index);
+  if (key) return t(`gamepadRemap.buttonNames.${key}`);
+  return `#${index}`;
+}
+
 function directionBindingLabel(binding: GamepadDirectionBinding): string {
-  if (binding?.kind === "button") return gamepadButtonLabel(binding.index);
+  if (binding?.kind === "button") return buttonLabel(binding.index);
   if (binding?.kind === "axis") {
     return `${t("gamepadRemap.axis")} ${binding.axis} ${binding.sign > 0 ? "+" : "-"}`;
   }
@@ -145,10 +160,10 @@ function onClose() {
 
 // Stick-click buttons (indices 10/11) don't exist on a stickless pad - omit them from the
 // diagram entirely rather than showing two boxes that can never light up.
-const layoutButtons = computed(() =>
+const layoutIndices = computed(() =>
   props.hasSticks
-    ? STANDARD_GAMEPAD_LAYOUT_BUTTONS
-    : STANDARD_GAMEPAD_LAYOUT_BUTTONS.filter((b) => b.index !== 10 && b.index !== 11),
+    ? STANDARD_GAMEPAD_LAYOUT_INDICES
+    : STANDARD_GAMEPAD_LAYOUT_INDICES.filter((index) => index !== 10 && index !== 11),
 );
 
 // Silhouette placement, positioned as % of the SVG body's own viewBox (so hitzones track the
@@ -206,13 +221,13 @@ onBeforeUnmount(stopPolling);
           />
         </svg>
         <div
-          v-for="btn in layoutButtons"
-          :key="btn.index"
+          v-for="index in layoutIndices"
+          :key="index"
           class="pad-btn"
-          :class="[`pad-btn-${PAD_POSITIONS[btn.index]?.shape ?? 'round'}`, { pressed: pressed[btn.index] }]"
-          :style="{ left: `${PAD_POSITIONS[btn.index]?.x ?? 50}%`, top: `${PAD_POSITIONS[btn.index]?.y ?? 50}%` }"
+          :class="[`pad-btn-${PAD_POSITIONS[index]?.shape ?? 'round'}`, { pressed: pressed[index] }]"
+          :style="{ left: `${PAD_POSITIONS[index]?.x ?? 50}%`, top: `${PAD_POSITIONS[index]?.y ?? 50}%` }"
         >
-          {{ btn.label }}
+          {{ buttonLabel(index) }}
         </div>
       </div>
 

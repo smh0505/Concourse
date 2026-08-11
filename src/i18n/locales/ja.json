@@ -222,6 +222,35 @@
     "removeControllerMapping": "削除",
     "removeControllerMappingFailed": "マッピングの削除に失敗しました: {error}"
   },
+  "gamepadRemap": {
+    "settingsTrigger": "リマップ",
+    "title": "コントローラーボタン割り当て",
+    "listen": "待機",
+    "listening": "ボタンを押すかスティックを動かしてください...",
+    "unmapped": "未割り当て",
+    "axis": "軸",
+    "actions": {
+      "dpadUp": "上",
+      "dpadDown": "下",
+      "dpadLeft": "左",
+      "dpadRight": "右",
+      "buttonConfirm": "決定",
+      "buttonCancel": "キャンセル"
+    },
+    "axisThreshold": "軸のしきい値",
+    "repeatDelayMs": "リピート遅延(ms)",
+    "repeatIntervalMs": "リピート間隔(ms)",
+    "reset": "デフォルトに戻す",
+    "buttonNames": {
+      "back": "戻る",
+      "start": "スタート",
+      "home": "ホーム",
+      "dUp": "十字キー上",
+      "dDown": "十字キー下",
+      "dLeft": "十字キー左",
+      "dRight": "十字キー右"
+    }
+  },
   "library": {
     "emptyMessage": "ライブラリが空です。ゲームを追加するか、ソースプラグインをスキャンしてください。",
     "noMatchMessage": "検索/フィルターに一致するゲームがありません。",

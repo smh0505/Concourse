@@ -222,6 +222,35 @@
     "removeControllerMapping": "移除",
     "removeControllerMappingFailed": "移除映射方案失败:{error}"
   },
+  "gamepadRemap": {
+    "settingsTrigger": "重新映射",
+    "title": "手柄按钮映射",
+    "listen": "监听",
+    "listening": "请按下按钮或移动摇杆...",
+    "unmapped": "未分配",
+    "axis": "轴",
+    "actions": {
+      "dpadUp": "上",
+      "dpadDown": "下",
+      "dpadLeft": "左",
+      "dpadRight": "右",
+      "buttonConfirm": "确认",
+      "buttonCancel": "取消"
+    },
+    "axisThreshold": "轴阈值",
+    "repeatDelayMs": "重复延迟(毫秒)",
+    "repeatIntervalMs": "重复间隔(毫秒)",
+    "reset": "恢复默认",
+    "buttonNames": {
+      "back": "返回",
+      "start": "开始",
+      "home": "主页",
+      "dUp": "方向键上",
+      "dDown": "方向键下",
+      "dLeft": "方向键左",
+      "dRight": "方向键右"
+    }
+  },
   "library": {
     "emptyMessage": "您的库是空的。添加一个游戏,或扫描一个来源插件以开始使用。",
     "noMatchMessage": "没有游戏匹配您的搜索/筛选条件。",

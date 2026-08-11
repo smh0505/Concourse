@@ -222,6 +222,35 @@
     "removeControllerMapping": "Rimuovi",
     "removeControllerMappingFailed": "Impossibile rimuovere la mappatura: {error}"
   },
+  "gamepadRemap": {
+    "settingsTrigger": "Riassegna",
+    "title": "Mappatura dei pulsanti del controller",
+    "listen": "Ascolta",
+    "listening": "Premi un pulsante o muovi una levetta...",
+    "unmapped": "Non assegnato",
+    "axis": "Asse",
+    "actions": {
+      "dpadUp": "Su",
+      "dpadDown": "Giù",
+      "dpadLeft": "Sinistra",
+      "dpadRight": "Destra",
+      "buttonConfirm": "Conferma",
+      "buttonCancel": "Annulla"
+    },
+    "axisThreshold": "Soglia asse",
+    "repeatDelayMs": "Ritardo di ripetizione (ms)",
+    "repeatIntervalMs": "Intervallo di ripetizione (ms)",
+    "reset": "Ripristina predefiniti",
+    "buttonNames": {
+      "back": "Indietro",
+      "start": "Start",
+      "home": "Home",
+      "dUp": "D-pad su",
+      "dDown": "D-pad giù",
+      "dLeft": "D-pad sinistra",
+      "dRight": "D-pad destra"
+    }
+  },
   "library": {
     "emptyMessage": "La tua libreria è vuota. Aggiungi un gioco o esegui la scansione di un plugin sorgente per iniziare.",
     "noMatchMessage": "Nessun gioco corrisponde alla tua ricerca/ai tuoi filtri.",

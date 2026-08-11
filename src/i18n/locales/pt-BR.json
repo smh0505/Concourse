@@ -222,6 +222,35 @@
     "removeControllerMapping": "Remover",
     "removeControllerMappingFailed": "Falha ao remover o mapeamento: {error}"
   },
+  "gamepadRemap": {
+    "settingsTrigger": "Remapear",
+    "title": "Mapeamento de botões do controle",
+    "listen": "Ouvir",
+    "listening": "Pressione um botão ou mova um analógico...",
+    "unmapped": "Não atribuído",
+    "axis": "Eixo",
+    "actions": {
+      "dpadUp": "Cima",
+      "dpadDown": "Baixo",
+      "dpadLeft": "Esquerda",
+      "dpadRight": "Direita",
+      "buttonConfirm": "Confirmar",
+      "buttonCancel": "Cancelar"
+    },
+    "axisThreshold": "Limite do eixo",
+    "repeatDelayMs": "Atraso de repetição (ms)",
+    "repeatIntervalMs": "Intervalo de repetição (ms)",
+    "reset": "Restaurar padrão",
+    "buttonNames": {
+      "back": "Voltar",
+      "start": "Start",
+      "home": "Início",
+      "dUp": "D-pad cima",
+      "dDown": "D-pad baixo",
+      "dLeft": "D-pad esquerda",
+      "dRight": "D-pad direita"
+    }
+  },
   "library": {
     "emptyMessage": "Sua biblioteca está vazia. Adicione um jogo ou escaneie um plugin de fonte para começar.",
     "noMatchMessage": "Nenhum jogo corresponde à sua busca/filtros.",

@@ -222,6 +222,35 @@
     "removeControllerMapping": "삭제",
     "removeControllerMappingFailed": "매핑 제거 실패: {error}"
   },
+  "gamepadRemap": {
+    "settingsTrigger": "다시 매핑",
+    "title": "컨트롤러 버튼 매핑",
+    "listen": "듣기",
+    "listening": "버튼을 누르거나 스틱을 움직이세요...",
+    "unmapped": "할당되지 않음",
+    "axis": "축",
+    "actions": {
+      "dpadUp": "위",
+      "dpadDown": "아래",
+      "dpadLeft": "왼쪽",
+      "dpadRight": "오른쪽",
+      "buttonConfirm": "확인",
+      "buttonCancel": "취소"
+    },
+    "axisThreshold": "축 임계값",
+    "repeatDelayMs": "반복 지연(ms)",
+    "repeatIntervalMs": "반복 간격(ms)",
+    "reset": "기본값으로 재설정",
+    "buttonNames": {
+      "back": "뒤로",
+      "start": "시작",
+      "home": "홈",
+      "dUp": "십자키 위",
+      "dDown": "십자키 아래",
+      "dLeft": "십자키 왼쪽",
+      "dRight": "십자키 오른쪽"
+    }
+  },
   "library": {
     "emptyMessage": "라이브러리가 비어 있습니다. 게임을 추가하거나 소스 플러그인을 스캔해 보세요.",
     "noMatchMessage": "검색어/필터와 일치하는 게임이 없습니다.",

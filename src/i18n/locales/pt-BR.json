@@ -240,16 +240,7 @@
     "axisThreshold": "Limite do eixo",
     "repeatDelayMs": "Atraso de repetição (ms)",
     "repeatIntervalMs": "Intervalo de repetição (ms)",
-    "reset": "Restaurar padrão",
-    "buttonNames": {
-      "back": "Voltar",
-      "start": "Start",
-      "home": "Início",
-      "dUp": "D-pad cima",
-      "dDown": "D-pad baixo",
-      "dLeft": "D-pad esquerda",
-      "dRight": "D-pad direita"
-    }
+    "reset": "Restaurar padrão"
   },
   "library": {
     "emptyMessage": "Sua biblioteca está vazia. Adicione um jogo ou escaneie um plugin de fonte para começar.",

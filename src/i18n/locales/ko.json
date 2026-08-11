@@ -240,16 +240,7 @@
     "axisThreshold": "축 임계값",
     "repeatDelayMs": "반복 지연(ms)",
     "repeatIntervalMs": "반복 간격(ms)",
-    "reset": "기본값으로 재설정",
-    "buttonNames": {
-      "back": "뒤로",
-      "start": "시작",
-      "home": "홈",
-      "dUp": "십자키 위",
-      "dDown": "십자키 아래",
-      "dLeft": "십자키 왼쪽",
-      "dRight": "십자키 오른쪽"
-    }
+    "reset": "기본값으로 재설정"
   },
   "library": {
     "emptyMessage": "라이브러리가 비어 있습니다. 게임을 추가하거나 소스 플러그인을 스캔해 보세요.",

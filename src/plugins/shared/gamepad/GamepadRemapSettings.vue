@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { IconArrowDown, IconArrowLeft, IconArrowRight, IconArrowUp } from "@tabler/icons-vue";
 
 import { useControllerMappingStore } from "@/stores/controllerMapping";
 import type { GamepadDirectionBinding, GamepadMapping } from "@/plugins/types";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
-import {
-  gamepadButtonLiteral,
-  gamepadButtonTranslationKey,
-  STANDARD_GAMEPAD_LAYOUT_INDICES,
-} from "./buttonNames";
+import { gamepadButtonLabel, STANDARD_GAMEPAD_LAYOUT_INDICES } from "./buttonNames";
+
+// The live diagram shows an arrow icon instead of "D-Up"/"D-Down"/"D-Left"/"D-Right" text for
+// these four - `directionBindingLabel` below still uses the plain text form (via
+// gamepadButtonLabel) for the remap-fields list, only the on-shape label swaps to an icon.
+const DPAD_ARROW_ICONS: Record<number, typeof IconArrowUp> = {
+  12: IconArrowUp,
+  13: IconArrowDown,
+  14: IconArrowLeft,
+  15: IconArrowRight,
+};
 
 // Reusable across every ControllerMappingPlugin, not just Standard Gamepad - each plugin passes
 // its own id/default mapping in, so this component owns none of the plugin-specific data itself.
@@ -55,19 +62,8 @@ const axisValues = reactive<Record<number, number>>({});
 const axisWasCrossed: Record<string, boolean> = {};
 let frameHandle: number | undefined;
 
-// Reactive to the active locale (unlike buttonNames.ts's own plain-data exports) since it goes
-// through this component's own `t()` - used both for directionBindingLabel below and for each
-// silhouette button's on-shape label in the template.
-function buttonLabel(index: number): string {
-  const literal = gamepadButtonLiteral(index);
-  if (literal) return literal;
-  const key = gamepadButtonTranslationKey(index);
-  if (key) return t(`gamepadRemap.buttonNames.${key}`);
-  return `#${index}`;
-}
-
 function directionBindingLabel(binding: GamepadDirectionBinding): string {
-  if (binding?.kind === "button") return buttonLabel(binding.index);
+  if (binding?.kind === "button") return gamepadButtonLabel(binding.index);
   if (binding?.kind === "axis") {
     return `${t("gamepadRemap.axis")} ${binding.axis} ${binding.sign > 0 ? "+" : "-"}`;
   }
@@ -176,26 +172,26 @@ const layoutIndices = computed(() =>
 const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pill" | "stick" }> =
   {
     // Shoulders/triggers - top edge.
-    6: { x: 15, y: 5, shape: "pill" }, // LT
-    4: { x: 15, y: 18, shape: "pill" }, // LB
-    7: { x: 85, y: 5, shape: "pill" }, // RT
-    5: { x: 85, y: 18, shape: "pill" }, // RB
+    6: { x: 15, y: 8, shape: "pill" }, // LT
+    4: { x: 15, y: 20, shape: "pill" }, // LB
+    7: { x: 85, y: 8, shape: "pill" }, // RT
+    5: { x: 85, y: 20, shape: "pill" }, // RB
     // Back/Home/Start - center.
-    8: { x: 42, y: 29, shape: "round" }, // Back
-    16: { x: 50, y: 23, shape: "round" }, // Home
-    9: { x: 58, y: 29, shape: "round" }, // Start
+    8: { x: 42, y: 30, shape: "round" }, // Back
+    16: { x: 50, y: 25, shape: "round" }, // Home
+    9: { x: 58, y: 30, shape: "round" }, // Start
     // Left stick, d-pad below it.
     10: { x: 29, y: 44, shape: "stick" }, // LS
-    12: { x: 29, y: 65, shape: "round" }, // D-Up
-    14: { x: 22, y: 74, shape: "round" }, // D-Left
-    15: { x: 36, y: 74, shape: "round" }, // D-Right
-    13: { x: 29, y: 83, shape: "round" }, // D-Down
+    12: { x: 29, y: 63, shape: "round" }, // D-Up
+    14: { x: 22, y: 72, shape: "round" }, // D-Left
+    15: { x: 36, y: 72, shape: "round" }, // D-Right
+    13: { x: 29, y: 80, shape: "round" }, // D-Down
     // Face buttons diamond, right stick below it.
     3: { x: 71, y: 44, shape: "round" }, // Y
-    2: { x: 64, y: 56, shape: "round" }, // X
-    1: { x: 78, y: 56, shape: "round" }, // B
-    0: { x: 71, y: 68, shape: "round" }, // A
-    11: { x: 71, y: 89, shape: "stick" }, // RS
+    2: { x: 64, y: 55, shape: "round" }, // X
+    1: { x: 78, y: 55, shape: "round" }, // B
+    0: { x: 71, y: 66, shape: "round" }, // A
+    11: { x: 71, y: 85, shape: "stick" }, // RS
   };
 
 onBeforeUnmount(stopPolling);
@@ -208,7 +204,7 @@ onBeforeUnmount(stopPolling);
   <BaseModal :open="open" :title="t('gamepadRemap.title')" max-width="460px" @close="onClose">
     <template #body>
       <div class="pad-silhouette">
-        <svg class="pad-shape" viewBox="0.5 3.6 23 16.6" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="pad-shape" viewBox="0 3 24 18" preserveAspectRatio="none" aria-hidden="true">
           <!-- The outer body outline from @tabler/icons-vue's "device-gamepad-2" filled icon
                (MIT, already a dependency of this project - see other components' own
                `simple-icons`/`@tabler/icons-vue` platform-icon usage), with its decorative
@@ -227,7 +223,8 @@ onBeforeUnmount(stopPolling);
           :class="[`pad-btn-${PAD_POSITIONS[index]?.shape ?? 'round'}`, { pressed: pressed[index] }]"
           :style="{ left: `${PAD_POSITIONS[index]?.x ?? 50}%`, top: `${PAD_POSITIONS[index]?.y ?? 50}%` }"
         >
-          {{ buttonLabel(index) }}
+          <component :is="DPAD_ARROW_ICONS[index]" v-if="DPAD_ARROW_ICONS[index]" :size="12" />
+          <template v-else>{{ gamepadButtonLabel(index) }}</template>
         </div>
       </div>
 
@@ -300,10 +297,12 @@ onBeforeUnmount(stopPolling);
 .pad-silhouette {
   position: relative;
   width: 100%;
-  /* Matches the SVG's own viewBox (0.5 3.6 23 16.6) - cropped to the silhouette's real
-     bounding box (see the viewBox comment above) rather than the icon's native 24x24 square
-     canvas, so there's no empty top/bottom margin around the shape. */
-  aspect-ratio: 23 / 16.6;
+  /* Matches the SVG's own viewBox (0 3 24 18) - cropped to the silhouette's real bounding box
+     (see the viewBox comment above) rather than the icon's native 24x24 square canvas, so
+     there's no empty top/bottom margin around the shape. Padded a bit past the shape's exact
+     y4-~20.3 extent (rather than cropping tight to it) since the bottom-corner arcs bulge
+     slightly past their nominal endpoints - a tight crop clipped the grips' bottom edge. */
+  aspect-ratio: 24 / 18;
   margin-bottom: var(--space-3);
   font-size: 0.6rem;
 }

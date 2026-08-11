@@ -240,16 +240,7 @@
     "axisThreshold": "Umbral del eje",
     "repeatDelayMs": "Retraso de repetición (ms)",
     "repeatIntervalMs": "Intervalo de repetición (ms)",
-    "reset": "Restablecer valores predeterminados",
-    "buttonNames": {
-      "back": "Atrás",
-      "start": "Start",
-      "home": "Inicio",
-      "dUp": "D-pad arriba",
-      "dDown": "D-pad abajo",
-      "dLeft": "D-pad izquierda",
-      "dRight": "D-pad derecha"
-    }
+    "reset": "Restablecer valores predeterminados"
   },
   "library": {
     "emptyMessage": "Tu biblioteca está vacía. Añade un juego o escanea un plugin de fuente para empezar.",

@@ -240,16 +240,7 @@
     "axisThreshold": "Achsen-Schwellenwert",
     "repeatDelayMs": "Wiederholverzögerung (ms)",
     "repeatIntervalMs": "Wiederholintervall (ms)",
-    "reset": "Auf Standard zurücksetzen",
-    "buttonNames": {
-      "back": "Zurück",
-      "start": "Start",
-      "home": "Home",
-      "dUp": "D-Pad hoch",
-      "dDown": "D-Pad runter",
-      "dLeft": "D-Pad links",
-      "dRight": "D-Pad rechts"
-    }
+    "reset": "Auf Standard zurücksetzen"
   },
   "library": {
     "emptyMessage": "Deine Bibliothek ist leer. Füge ein Spiel hinzu oder scanne ein Quell-Plugin, um loszulegen.",

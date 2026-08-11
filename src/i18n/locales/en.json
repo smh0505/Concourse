@@ -240,16 +240,7 @@
     "axisThreshold": "Axis threshold",
     "repeatDelayMs": "Repeat delay (ms)",
     "repeatIntervalMs": "Repeat interval (ms)",
-    "reset": "Reset to Default",
-    "buttonNames": {
-      "back": "Back",
-      "start": "Start",
-      "home": "Home",
-      "dUp": "D-Up",
-      "dDown": "D-Down",
-      "dLeft": "D-Left",
-      "dRight": "D-Right"
-    }
+    "reset": "Reset to Default"
   },
   "library": {
     "emptyMessage": "Your library is empty. Add a game or scan a source plugin to get started.",

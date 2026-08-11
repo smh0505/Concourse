@@ -240,16 +240,7 @@
     "axisThreshold": "Soglia asse",
     "repeatDelayMs": "Ritardo di ripetizione (ms)",
     "repeatIntervalMs": "Intervallo di ripetizione (ms)",
-    "reset": "Ripristina predefiniti",
-    "buttonNames": {
-      "back": "Indietro",
-      "start": "Start",
-      "home": "Home",
-      "dUp": "D-pad su",
-      "dDown": "D-pad giù",
-      "dLeft": "D-pad sinistra",
-      "dRight": "D-pad destra"
-    }
+    "reset": "Ripristina predefiniti"
   },
   "library": {
     "emptyMessage": "La tua libreria è vuota. Aggiungi un gioco o esegui la scansione di un plugin sorgente per iniziare.",

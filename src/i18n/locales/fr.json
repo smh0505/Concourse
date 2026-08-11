@@ -240,16 +240,7 @@
     "axisThreshold": "Seuil d'axe",
     "repeatDelayMs": "Délai de répétition (ms)",
     "repeatIntervalMs": "Intervalle de répétition (ms)",
-    "reset": "Réinitialiser",
-    "buttonNames": {
-      "back": "Retour",
-      "start": "Start",
-      "home": "Accueil",
-      "dUp": "D-pad haut",
-      "dDown": "D-pad bas",
-      "dLeft": "D-pad gauche",
-      "dRight": "D-pad droite"
-    }
+    "reset": "Réinitialiser"
   },
   "library": {
     "emptyMessage": "Votre bibliothèque est vide. Ajoutez un jeu ou analysez un plugin source pour commencer.",

@@ -240,16 +240,7 @@
     "axisThreshold": "轴阈值",
     "repeatDelayMs": "重复延迟(毫秒)",
     "repeatIntervalMs": "重复间隔(毫秒)",
-    "reset": "恢复默认",
-    "buttonNames": {
-      "back": "返回",
-      "start": "开始",
-      "home": "主页",
-      "dUp": "方向键上",
-      "dDown": "方向键下",
-      "dLeft": "方向键左",
-      "dRight": "方向键右"
-    }
+    "reset": "恢复默认"
   },
   "library": {
     "emptyMessage": "您的库是空的。添加一个游戏,或扫描一个来源插件以开始使用。",

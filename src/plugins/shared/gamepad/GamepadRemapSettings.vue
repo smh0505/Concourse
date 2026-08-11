@@ -6,10 +6,10 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconArrowUp,
-  IconChevronDown,
-  IconChevronLeft,
-  IconChevronRight,
-  IconChevronUp,
+  IconChevronCompactDown,
+  IconChevronCompactLeft,
+  IconChevronCompactRight,
+  IconChevronCompactUp,
 } from "@tabler/icons-vue";
 
 import { useControllerMappingStore } from "@/stores/controllerMapping";
@@ -28,13 +28,14 @@ const DPAD_ARROW_ICONS: Record<number, typeof IconArrowUp> = {
 };
 
 type StickDirection = "up" | "down" | "left" | "right";
-// Chevrons (open carets), not full arrows - each points outward away from the stick's own
-// circle, matching a reference image of chunky directional brackets ringing a center dot.
-const STICK_LIGHT_ICONS: Record<StickDirection, typeof IconChevronUp> = {
-  up: IconChevronUp,
-  down: IconChevronDown,
-  left: IconChevronLeft,
-  right: IconChevronRight,
+// Compact chevrons (flatter open carets), not full arrows - each points outward away from the
+// stick's own circle, matching a reference image of chunky directional brackets ringing a
+// center dot.
+const STICK_LIGHT_ICONS: Record<StickDirection, typeof IconChevronCompactUp> = {
+  up: IconChevronCompactUp,
+  down: IconChevronCompactDown,
+  left: IconChevronCompactLeft,
+  right: IconChevronCompactRight,
 };
 const STICK_DIRECTIONS: StickDirection[] = ["up", "down", "left", "right"];
 // Per the Gamepad API's "standard" mapping, axes 0/1 are the left stick's x/y and 2/3 are the
@@ -43,9 +44,15 @@ const STICK_AXES: Record<"left" | "right", { x: number; y: number }> = {
   left: { x: 0, y: 1 },
   right: { x: 2, y: 3 },
 };
-// How far from the stick's own hitzone (in the same % units as PAD_POSITIONS) each direction
-// light sits.
-const STICK_LIGHT_OFFSET = 9;
+// How far from the stick's own hitzone each direction light sits. Left/right offsets are in %
+// of the container's width, up/down in % of its height - since the silhouette's viewBox (and
+// thus .pad-silhouette's aspect-ratio, see the style block below) is 24x18, not square, an
+// equal *percentage* on both axes would NOT be an equal physical gap: 1% of width is a bigger
+// pixel span than 1% of height by the same 24/18 ratio. Scaling the vertical offset by that
+// ratio keeps the up/down gap visually equal to the left/right one.
+const PAD_SHAPE_ASPECT = 24 / 18;
+const STICK_LIGHT_OFFSET_X = 9;
+const STICK_LIGHT_OFFSET_Y = STICK_LIGHT_OFFSET_X * PAD_SHAPE_ASPECT;
 
 // Reusable across every ControllerMappingPlugin, not just Standard Gamepad - each plugin passes
 // its own id/default mapping in, so this component owns none of the plugin-specific data itself.
@@ -112,8 +119,8 @@ function stickDirectionActive(stick: "left" | "right", direction: StickDirection
 function stickLightStyle(stickButtonIndex: number, direction: StickDirection) {
   const pos = PAD_POSITIONS[stickButtonIndex];
   if (!pos) return {};
-  const dx = direction === "left" ? -STICK_LIGHT_OFFSET : direction === "right" ? STICK_LIGHT_OFFSET : 0;
-  const dy = direction === "up" ? -STICK_LIGHT_OFFSET : direction === "down" ? STICK_LIGHT_OFFSET : 0;
+  const dx = direction === "left" ? -STICK_LIGHT_OFFSET_X : direction === "right" ? STICK_LIGHT_OFFSET_X : 0;
+  const dy = direction === "up" ? -STICK_LIGHT_OFFSET_Y : direction === "down" ? STICK_LIGHT_OFFSET_Y : 0;
   return { left: `${pos.x + dx}%`, top: `${pos.y + dy}%` };
 }
 

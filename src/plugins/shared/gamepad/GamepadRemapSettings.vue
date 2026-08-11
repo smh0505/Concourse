@@ -15,6 +15,7 @@ import {
 import { useControllerMappingStore } from "@/stores/controllerMapping";
 import type { GamepadDirectionBinding, GamepadMapping } from "@/plugins/types";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
+import DropdownMenu from "@/components/desktop/common/DropdownMenu.vue";
 import { gamepadButtonLabel, STANDARD_GAMEPAD_LAYOUT_INDICES } from "./buttonNames";
 
 // The live diagram shows an arrow icon instead of "D-Up"/"D-Down"/"D-Left"/"D-Right" text for
@@ -270,14 +271,23 @@ onBeforeUnmount(stopPolling);
     <template #header>
       <div class="modal-header-row">
         <h2>{{ t("gamepadRemap.title") }}</h2>
-        <button
+        <DropdownMenu
           v-if="Object.keys(axisValues).length > 0"
-          type="button"
-          class="compact-button"
-          @click="showAxisDetails = !showAxisDetails"
+          v-model:open="showAxisDetails"
+          wrap-class="axis-menu-wrap"
+          panel-class="axis-menu-panel"
         >
-          {{ showAxisDetails ? t("gamepadRemap.seeLessAxes") : t("gamepadRemap.seeMoreAxes") }}
-        </button>
+          <template #trigger="{ open: menuOpen }">
+            <button type="button" class="compact-button" @click="showAxisDetails = !menuOpen">
+              {{ menuOpen ? t("gamepadRemap.seeLessAxes") : t("gamepadRemap.seeMoreAxes") }}
+            </button>
+          </template>
+          <div class="axis-readout-list">
+            <span v-for="(value, axis) in axisValues" :key="axis">
+              {{ t("gamepadRemap.axis") }} {{ axis }}: {{ value.toFixed(2) }}
+            </span>
+          </div>
+        </DropdownMenu>
       </div>
     </template>
     <template #body>
@@ -324,14 +334,6 @@ onBeforeUnmount(stopPolling);
             <component :is="STICK_LIGHT_ICONS[direction]" :size="13" :stroke-width="3.5" />
           </div>
         </template>
-      </div>
-
-      <div class="axis-readout" v-if="Object.keys(axisValues).length > 0 && showAxisDetails">
-        <div class="axis-readout-list">
-          <span v-for="(value, axis) in axisValues" :key="axis">
-            {{ t("gamepadRemap.axis") }} {{ axis }}: {{ value.toFixed(2) }}
-          </span>
-        </div>
       </div>
 
       <div class="remap-fields">
@@ -508,17 +510,21 @@ onBeforeUnmount(stopPolling);
   transform: translate(-50%, -50%) scaleX(2.4);
 }
 
-.axis-readout {
-  margin-bottom: var(--space-2);
+/* Popup panel content (rendered inside DropdownMenu's own absolute-positioned panel, anchored
+   below the "See more" trigger) rather than an inline expansion under the silhouette - stacked
+   vertically since it's now a narrow popup, not a full-width row. */
+.axis-menu-wrap {
+  position: relative;
 }
 
 .axis-readout-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
   font-size: 0.75rem;
   opacity: 0.7;
-  margin-top: var(--space-1);
+  white-space: nowrap;
 }
 
 .remap-fields {

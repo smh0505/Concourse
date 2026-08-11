@@ -9,9 +9,10 @@
 *Translations other than English are machine-translated (same disclosed approach as the app's
 own UI locales - see [Localization](#features) below), not yet native-speaker reviewed.*
 
-A desktop app that aggregates games from multiple sources (Steam, Epic, GOG, manual entries,
-and more via plugins) into one unified library, with a console-like controller-first "Big
-Picture" mode - similar in spirit to Playnite or Steam's own library.
+A desktop app that aggregates games from multiple sources (Steam, Epic, GOG, Xbox, EA app,
+Ubisoft Connect, manual entries, and more via plugins) into one unified library, with a
+console-like controller-first "Big Picture" mode - similar in spirit to Playnite or Steam's own
+library.
 
 The core app stays lean; almost everything beyond the base library (source scanners, themes,
 metadata providers, controller mappings, compatibility wrappers) is a plugin.
@@ -155,12 +156,15 @@ implementation history/rationale behind each milestone item.
 As of now: core library, metadata/playtime tracking, Big Picture mode, the plugin system
 (including the WebAssembly runtime-plugin pipeline and managed install for the compatibility
 wrappers), WASM plugin capability sandboxing (Milestone 12), a plugin trust/signing model
-(Milestone 13), an ongoing desktop UI polish pass (Milestone 14), the JSON-AST theme tier
-replacing component-swap theming (Milestones 17/19), a shared-styles convention pass
-(Milestone 18), app + plugin/theme auto-update (Milestone 20), 10-language localization plus
-offline on-device translation of game titles/descriptions (Milestone 21), and this documentation
-site (Milestone 22) are all done. All official plugins listed above are live. Open work includes
-an emulator/ROM scanner plugin and additional source plugins (Xbox/EA/Ubisoft, Milestone 16).
+(Milestone 13), an ongoing desktop UI polish pass (Milestone 14), Xbox/EA/Ubisoft Connect source
+plugins (Milestone 15), the JSON-AST theme tier replacing component-swap theming (Milestones
+16/18), a shared-styles convention pass (Milestone 17), app + plugin/theme auto-update
+(Milestone 19), 10-language localization plus offline on-device translation of game titles/
+descriptions (Milestone 20), a plugin-developer documentation site (Milestone 21), and that
+site's own localization into all 10 app languages (Milestone 22) are all done. All official
+plugins listed above are live. Currently **2.0.0**. Open work: see
+[`.claude/milestones.md`](.claude/milestones.md)'s Post-1.0 Roadmap and Icebox sections (the
+latter holds an emulator/ROM scanner plugin, parked pending a real setup to verify it against).
 
 ## License
 
@@ -169,7 +173,7 @@ MIT - see [`LICENSE`](LICENSE).
 ### Third-party notices
 
 Concourse's own source is MIT-licensed; nothing third-party is bundled into the repo or the
-built binary. The offline translation feature (Milestone 21) downloads two kinds of third-party
+built binary. The offline translation feature (Milestone 20) downloads two kinds of third-party
 content directly to your machine at runtime, under their own separate terms - covered here for
 transparency, not because Concourse redistributes any of it:
 

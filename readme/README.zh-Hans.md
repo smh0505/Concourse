@@ -7,9 +7,9 @@
 *本翻译为机器翻译(与应用自身 UI 语言的处理方式相同 - 参见下方 [Localization](#功能)),
 尚未经过母语者审校。*
 
-一款将来自多个来源(Steam、Epic、GOG、手动添加,以及通过插件支持的更多来源)的游戏聚合到
-统一游戏库的桌面应用,配有主机风格、以手柄为先的 "Big Picture" 模式 - 精神上与 Playnite 或
-Steam 自带的游戏库相似。
+一款将来自多个来源(Steam、Epic、GOG、Xbox、EA app、Ubisoft Connect、手动添加,以及通过
+插件支持的更多来源)的游戏聚合到统一游戏库的桌面应用,配有主机风格、以手柄为先的 "Big
+Picture" 模式 - 精神上与 Playnite 或 Steam 自带的游戏库相似。
 
 核心应用保持精简;基础游戏库之外的几乎所有功能(来源扫描器、主题、元数据提供方、手柄映射、
 兼容性包装器)都是插件。
@@ -135,11 +135,14 @@ bunx tauri build        # 生产环境桌面二进制文件
 
 截至目前:核心游戏库、元数据/游玩时长追踪、Big Picture 模式、插件系统(包括 WebAssembly
 运行时插件管线及兼容性包装器的托管安装)、WASM 插件权限沙箱化(Milestone 12)、插件信任/
-签名模型(Milestone 13)、持续进行中的桌面 UI 打磨工作(Milestone 14)、取代组件替换式
-主题的 JSON-AST 主题层(Milestone 17/19)、共享样式规范整理(Milestone 18)、应用 + 插件/
-主题自动更新(Milestone 20)、10 语言本地化以及游戏标题/简介的离线本地翻译
-(Milestone 21),以及本文档站点(Milestone 22)均已完成。上面列出的所有官方插件均已上线。
-未完成的工作包括模拟器/ROM 扫描器插件以及更多来源插件(Xbox/EA/Ubisoft,Milestone 16)。
+签名模型(Milestone 13)、持续进行中的桌面 UI 打磨工作(Milestone 14)、Xbox/EA/Ubisoft
+Connect 来源插件(Milestone 15)、取代组件替换式主题的 JSON-AST 主题层
+(Milestone 16/18)、共享样式规范整理(Milestone 17)、应用 + 插件/主题自动更新
+(Milestone 19)、10 语言本地化以及游戏标题/简介的离线本地翻译(Milestone 20)、插件开发者
+文档站点(Milestone 21),以及该站点自身向全部 10 种应用语言的本地化(Milestone 22)均已
+完成。上面列出的所有官方插件均已上线。当前版本为 **2.0.0**。未完成的工作请参见
+[`.claude/milestones.md`](../.claude/milestones.md)的 Post-1.0 Roadmap 与 Icebox 部分
+(后者存放着一个模拟器/ROM 扫描器插件,处于搁置状态,等待有真实环境可供验证)。
 
 ## 许可证
 
@@ -148,7 +151,7 @@ MIT - 详见 [`LICENSE`](../LICENSE)。
 ### 第三方声明
 
 Concourse 自身的源代码采用 MIT 许可证;仓库或已构建的二进制文件中不包含任何第三方内容。
-离线翻译功能(Milestone 21)会在运行时将两类第三方内容直接下载到你的设备上,各自遵循其自身
+离线翻译功能(Milestone 20)会在运行时将两类第三方内容直接下载到你的设备上,各自遵循其自身
 独立的条款 - 此处列出仅为透明起见,并非因为 Concourse 对其进行了再分发:
 
 - **[llama.cpp](https://github.com/ggml-org/llama.cpp)**(MIT) - 翻译引擎本身。Concourse

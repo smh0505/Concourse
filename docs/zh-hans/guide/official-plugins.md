@@ -8,6 +8,9 @@
 | Steam | source | [steam-source-wasm-plugin](https://github.com/smh0505/steam-source-wasm-plugin) | [下载](https://github.com/smh0505/steam-source-wasm-plugin/releases/latest) |
 | GOG | source | [gog-source-wasm-plugin](https://github.com/smh0505/gog-source-wasm-plugin) | [下载](https://github.com/smh0505/gog-source-wasm-plugin/releases/latest) |
 | Epic Games | source | [epic-source-wasm-plugin](https://github.com/smh0505/epic-source-wasm-plugin) | [下载](https://github.com/smh0505/epic-source-wasm-plugin/releases/latest) |
+| Xbox | source | [xbox-source-wasm-plugin](https://github.com/smh0505/xbox-source-wasm-plugin) | [下载](https://github.com/smh0505/xbox-source-wasm-plugin/releases/latest) |
+| EA app | source | [ea-source-wasm-plugin](https://github.com/smh0505/ea-source-wasm-plugin) | [下载](https://github.com/smh0505/ea-source-wasm-plugin/releases/latest) |
+| Ubisoft Connect | source | [ubisoft-source-wasm-plugin](https://github.com/smh0505/ubisoft-source-wasm-plugin) | [下载](https://github.com/smh0505/ubisoft-source-wasm-plugin/releases/latest) |
 | SteamGridDB | metadata | [sgdb-metadata-wasm-plugin](https://github.com/smh0505/sgdb-metadata-wasm-plugin) | [下载](https://github.com/smh0505/sgdb-metadata-wasm-plugin/releases/latest) |
 | IGDB | metadata | [igdb-metadata-wasm-plugin](https://github.com/smh0505/igdb-metadata-wasm-plugin) | [下载](https://github.com/smh0505/igdb-metadata-wasm-plugin/releases/latest) |
 | RAWG | metadata | [rawg-metadata-wasm-plugin](https://github.com/smh0505/rawg-metadata-wasm-plugin) | [下载](https://github.com/smh0505/rawg-metadata-wasm-plugin/releases/latest) |

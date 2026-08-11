@@ -8,8 +8,9 @@
 eigenen UI-Sprachen der App - siehe [Localization](#funktionen) unten), noch nicht von
 Muttersprachlern geprüft.*
 
-Eine Desktop-App, die Spiele aus mehreren Quellen (Steam, Epic, GOG, manuelle Einträge und über
-Plugins noch mehr) in einer einzigen, vereinheitlichten Bibliothek zusammenführt, mit einem
+Eine Desktop-App, die Spiele aus mehreren Quellen (Steam, Epic, GOG, Xbox, EA app, Ubisoft
+Connect, manuelle Einträge und über Plugins noch mehr) in einer einzigen, vereinheitlichten
+Bibliothek zusammenführt, mit einem
 konsolenartigen, controller-first "Big Picture"-Modus - vom Geist her ähnlich wie Playnite oder
 Steams eigene Bibliothek.
 
@@ -177,13 +178,16 @@ Stand jetzt: Kernbibliothek, Metadaten-/Spielzeiterfassung, Big-Picture-Modus, d
 (einschließlich der WebAssembly-Laufzeit-Plugin-Pipeline und der verwalteten Installation der
 Kompatibilitäts-Wrapper), WASM-Plugin-Berechtigungs-Sandboxing (Milestone 12), ein
 Plugin-Vertrauens-/Signiermodell (Milestone 13), ein fortlaufender Politur-Durchgang der
-Desktop-UI (Milestone 14), die JSON-AST-Theme-Stufe, die das Component-Swap-Theming ersetzt
-(Milestones 17/19), ein Durchgang zur gemeinsamen Style-Konvention (Milestone 18), automatische
-Updates für App + Plugins/Themes (Milestone 20), 10-sprachige Lokalisierung sowie
-Offline-Übersetzung von Spieltiteln/-beschreibungen auf dem Gerät (Milestone 21), und diese
-Dokumentationsseite (Milestone 22) sind alle abgeschlossen. Alle oben aufgeführten offiziellen
-Plugins sind live. Zu den offenen Arbeiten gehören ein Emulator-/ROM-Scanner-Plugin und
-weitere Quell-Plugins (Xbox/EA/Ubisoft, Milestone 16).
+Desktop-UI (Milestone 14), die Xbox-/EA-/Ubisoft-Connect-Quell-Plugins (Milestone 15), die
+JSON-AST-Theme-Stufe, die das Component-Swap-Theming ersetzt (Milestones 16/18), ein Durchgang
+zur gemeinsamen Style-Konvention (Milestone 17), automatische Updates für App +
+Plugins/Themes (Milestone 19), 10-sprachige Lokalisierung sowie Offline-Übersetzung von
+Spieltiteln/-beschreibungen auf dem Gerät (Milestone 20), eine Dokumentationsseite für
+Plugin-Entwickler (Milestone 21) und die eigene Lokalisierung dieser Seite in alle 10
+App-Sprachen (Milestone 22) sind alle abgeschlossen. Alle oben aufgeführten offiziellen
+Plugins sind live. Aktuell **2.0.0**. Offene Arbeiten: siehe die Abschnitte "Post-1.0 Roadmap"
+und "Icebox" in `.claude/milestones.md` (Letzterer enthält ein Emulator-/ROM-Scanner-Plugin,
+das geparkt ist, bis ein echtes Setup zur Verifizierung vorhanden ist).
 
 ## Lizenz
 
@@ -193,7 +197,7 @@ MIT - siehe [`LICENSE`](../LICENSE).
 
 Der eigene Quellcode von Concourse ist MIT-lizenziert; im Repository oder in der gebauten
 Binärdatei ist nichts von Drittanbietern gebündelt. Die Offline-Übersetzungsfunktion
-(Milestone 21) lädt zur Laufzeit zwei Arten von Drittanbieter-Inhalten direkt auf Ihren
+(Milestone 20) lädt zur Laufzeit zwei Arten von Drittanbieter-Inhalten direkt auf Ihren
 Rechner herunter, jeweils unter deren eigenen, separaten Bedingungen - hier aus Gründen der
 Transparenz aufgeführt, nicht weil Concourse irgendetwas davon weiterverbreitet:
 

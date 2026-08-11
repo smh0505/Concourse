@@ -9,7 +9,8 @@ locales de l'interface de l'appli elle-même - voir [Localization](#fonctionnali
 ci-dessous), pas encore relue par des locuteurs natifs.*
 
 Une application de bureau qui agrège des jeux provenant de plusieurs sources (Steam, Epic,
-GOG, ajouts manuels, et bien d'autres via des plugins) en une bibliothèque unifiée, avec un
+GOG, Xbox, EA app, Ubisoft Connect, ajouts manuels, et bien d'autres via des plugins) en une
+bibliothèque unifiée, avec un
 mode "Big Picture" façon console, pensé pour la manette - dans le même esprit que Playnite ou
 la bibliothèque de Steam elle-même.
 
@@ -176,14 +177,18 @@ d'implémentation/le raisonnement derrière chaque élément de jalon.
 Picture, le système de plugins (y compris le pipeline de plugins à l'exécution WebAssembly et
 l'installation gérée des wrappers de compatibilité), le sandboxing des permissions des plugins
 WASM (Milestone 12), un modèle de confiance/signature des plugins (Milestone 13), un travail
-continu de polissage de l'interface bureau (Milestone 14), le niveau de thème JSON-AST
-remplaçant le theming par échange de composants (Milestones 17/19), un travail de convention
-de styles partagés (Milestone 18), la mise à jour automatique de l'application + des
-plugins/thèmes (Milestone 20), la localisation en 10 langues ainsi que la traduction hors
-ligne sur l'appareil des titres/descriptions de jeux (Milestone 21), et ce site de
-documentation (Milestone 22) sont tous terminés. Tous les plugins officiels listés ci-dessus
-sont en production. Le travail restant comprend un plugin de scanner d'émulateurs/ROM et des
-plugins de source supplémentaires (Xbox/EA/Ubisoft, Milestone 16).
+continu de polissage de l'interface bureau (Milestone 14), les plugins de source Xbox/EA
+app/Ubisoft Connect (Milestone 15), le niveau de thème JSON-AST remplaçant le theming par
+échange de composants (Milestones 16/18), un travail de convention de styles partagés
+(Milestone 17), la mise à jour automatique de l'application + des plugins/thèmes
+(Milestone 19), la localisation en 10 langues ainsi que la traduction hors ligne sur
+l'appareil des titres/descriptions de jeux (Milestone 20), un site de documentation pour les
+développeurs de plugins (Milestone 21), et la localisation de ce site lui-même dans les 10
+langues de l'application (Milestone 22) sont tous terminés. Tous les plugins officiels listés
+ci-dessus sont en production. Actuellement en version **2.0.0**. Travail restant : voir les
+sections Post-1.0 Roadmap et Icebox de `.claude/milestones.md` (cette dernière contient un
+plugin de scanner d'émulateurs/ROM, mis de côté en attendant une véritable configuration pour
+le vérifier).
 
 ## Licence
 
@@ -192,7 +197,7 @@ MIT - voir [`LICENSE`](../LICENSE).
 ### Mentions tierces
 
 Le code source de Concourse lui-même est sous licence MIT ; aucun contenu tiers n'est embarqué
-dans le dépôt ou le binaire compilé. La fonctionnalité de traduction hors ligne (Milestone 21)
+dans le dépôt ou le binaire compilé. La fonctionnalité de traduction hors ligne (Milestone 20)
 télécharge deux types de contenu tiers directement sur votre machine à l'exécution, chacun
 sous ses propres conditions séparées - mentionné ici par souci de transparence, non parce que
 Concourse redistribue quoi que ce soit :

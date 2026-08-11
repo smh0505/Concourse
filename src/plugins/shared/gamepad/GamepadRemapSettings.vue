@@ -296,7 +296,7 @@ onBeforeUnmount(stopPolling);
             v-for="direction in STICK_DIRECTIONS"
             :key="`ls-${direction}`"
             class="stick-light"
-            :class="{ active: stickDirectionActive('left', direction) }"
+            :class="[`stick-light-${direction}`, { active: stickDirectionActive('left', direction) }]"
             :style="stickLightStyle(10, direction)"
           >
             <component :is="STICK_LIGHT_ICONS[direction]" :size="13" :stroke-width="3.5" />
@@ -305,7 +305,7 @@ onBeforeUnmount(stopPolling);
             v-for="direction in STICK_DIRECTIONS"
             :key="`rs-${direction}`"
             class="stick-light"
-            :class="{ active: stickDirectionActive('right', direction) }"
+            :class="[`stick-light-${direction}`, { active: stickDirectionActive('right', direction) }]"
             :style="stickLightStyle(11, direction)"
           >
             <component :is="STICK_LIGHT_ICONS[direction]" :size="13" :stroke-width="3.5" />
@@ -469,6 +469,18 @@ onBeforeUnmount(stopPolling);
 .stick-light.active {
   opacity: 1;
   color: var(--color-accent);
+}
+
+/* Stretched perpendicular to each chevron's own point direction - left/right taller, up/down
+   wider - so they read as brackets hugging the stick's circle rather than plain small carets. */
+.stick-light-left,
+.stick-light-right {
+  transform: translate(-50%, -50%) scaleY(1.6);
+}
+
+.stick-light-up,
+.stick-light-down {
+  transform: translate(-50%, -50%) scaleX(1.6);
 }
 
 .axis-readout {

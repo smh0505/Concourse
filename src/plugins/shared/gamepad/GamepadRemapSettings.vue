@@ -170,32 +170,32 @@ const layoutIndices = computed(() =>
 // shape at any render size) - an approximate Xbox-style asymmetric layout (left stick above the
 // d-pad, face buttons above the right stick), not pixel-accurate to any real controller. `shape`
 // picks the CSS treatment below: round buttons for face/stick clusters, wide pills for the
-// shoulder/trigger row. Y range kept inside the Tabler silhouette's own real bounding box
-// (roughly 17%-83% of the 24x24 viewBox - the flat top edge sits at y=4, the bottom grips
-// bottom out around y=20) rather than assuming the shape fills the full box edge to edge.
+// shoulder/trigger row. The viewBox itself is cropped to the Tabler silhouette's real bounding
+// box (see the SVG's own viewBox attribute below), so Y here spans the shape's own extent
+// directly (0% = flat top edge, 100% = bottom of the grips) rather than an inset subrange.
 const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pill" | "stick" }> =
   {
     // Shoulders/triggers - top edge.
-    6: { x: 15, y: 20, shape: "pill" }, // LT
-    4: { x: 15, y: 29, shape: "pill" }, // LB
-    7: { x: 85, y: 20, shape: "pill" }, // RT
-    5: { x: 85, y: 29, shape: "pill" }, // RB
+    6: { x: 15, y: 5, shape: "pill" }, // LT
+    4: { x: 15, y: 18, shape: "pill" }, // LB
+    7: { x: 85, y: 5, shape: "pill" }, // RT
+    5: { x: 85, y: 18, shape: "pill" }, // RB
     // Back/Home/Start - center.
-    8: { x: 42, y: 36, shape: "round" }, // Back
-    16: { x: 50, y: 32, shape: "round" }, // Home
-    9: { x: 58, y: 36, shape: "round" }, // Start
+    8: { x: 42, y: 29, shape: "round" }, // Back
+    16: { x: 50, y: 23, shape: "round" }, // Home
+    9: { x: 58, y: 29, shape: "round" }, // Start
     // Left stick, d-pad below it.
-    10: { x: 29, y: 46, shape: "stick" }, // LS
-    12: { x: 29, y: 60, shape: "round" }, // D-Up
-    14: { x: 22, y: 66, shape: "round" }, // D-Left
-    15: { x: 36, y: 66, shape: "round" }, // D-Right
-    13: { x: 29, y: 72, shape: "round" }, // D-Down
+    10: { x: 29, y: 44, shape: "stick" }, // LS
+    12: { x: 29, y: 65, shape: "round" }, // D-Up
+    14: { x: 22, y: 74, shape: "round" }, // D-Left
+    15: { x: 36, y: 74, shape: "round" }, // D-Right
+    13: { x: 29, y: 83, shape: "round" }, // D-Down
     // Face buttons diamond, right stick below it.
-    3: { x: 71, y: 46, shape: "round" }, // Y
-    2: { x: 64, y: 54, shape: "round" }, // X
-    1: { x: 78, y: 54, shape: "round" }, // B
-    0: { x: 71, y: 62, shape: "round" }, // A
-    11: { x: 71, y: 76, shape: "stick" }, // RS
+    3: { x: 71, y: 44, shape: "round" }, // Y
+    2: { x: 64, y: 56, shape: "round" }, // X
+    1: { x: 78, y: 56, shape: "round" }, // B
+    0: { x: 71, y: 68, shape: "round" }, // A
+    11: { x: 71, y: 89, shape: "stick" }, // RS
   };
 
 onBeforeUnmount(stopPolling);
@@ -208,7 +208,7 @@ onBeforeUnmount(stopPolling);
   <BaseModal :open="open" :title="t('gamepadRemap.title')" max-width="460px" @close="onClose">
     <template #body>
       <div class="pad-silhouette">
-        <svg class="pad-shape" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="pad-shape" viewBox="0.5 3.6 23 16.6" preserveAspectRatio="none" aria-hidden="true">
           <!-- The outer body outline from @tabler/icons-vue's "device-gamepad-2" filled icon
                (MIT, already a dependency of this project - see other components' own
                `simple-icons`/`@tabler/icons-vue` platform-icon usage), with its decorative
@@ -300,7 +300,10 @@ onBeforeUnmount(stopPolling);
 .pad-silhouette {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  /* Matches the SVG's own viewBox (0.5 3.6 23 16.6) - cropped to the silhouette's real
+     bounding box (see the viewBox comment above) rather than the icon's native 24x24 square
+     canvas, so there's no empty top/bottom margin around the shape. */
+  aspect-ratio: 23 / 16.6;
   margin-bottom: var(--space-3);
   font-size: 0.6rem;
 }

@@ -182,18 +182,19 @@ const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pi
     9: { x: 58, y: 14, shape: "round" }, // Start
     // Left stick; the face-button diamond (below) is recentered on this same y.
     10: { x: 29, y: 38, shape: "stick" }, // LS
-    // D-pad; recentered on the right stick's y (below).
-    12: { x: 29, y: 68, shape: "round" }, // D-Up
-    14: { x: 22, y: 77, shape: "round" }, // D-Left
-    15: { x: 36, y: 77, shape: "round" }, // D-Right
-    13: { x: 29, y: 85, shape: "round" }, // D-Down
-    // Face buttons diamond, vertically centered on LS's y (38) above.
-    3: { x: 71, y: 27, shape: "round" }, // Y
+    // D-pad; recentered on the right stick's y (below), same 17-unit Up-Down span as before.
+    12: { x: 29, y: 52, shape: "round" }, // D-Up
+    14: { x: 22, y: 60, shape: "round" }, // D-Left
+    15: { x: 36, y: 60, shape: "round" }, // D-Right
+    13: { x: 29, y: 69, shape: "round" }, // D-Down
+    // Face buttons diamond, vertically centered on LS's y (38); Y-to-A span narrowed to match
+    // the d-pad's own Up-to-Down span (17) instead of the wider 22 it had before.
+    3: { x: 71, y: 30, shape: "round" }, // Y
     2: { x: 64, y: 38, shape: "round" }, // X
     1: { x: 78, y: 38, shape: "round" }, // B
-    0: { x: 71, y: 49, shape: "round" }, // A
-    // Right stick; the d-pad (above) is recentered on this same y.
-    11: { x: 71, y: 76, shape: "stick" }, // RS
+    0: { x: 71, y: 47, shape: "round" }, // A
+    // Right stick, moved up to 60 (the d-pad above is recentered on this same y).
+    11: { x: 71, y: 60, shape: "stick" }, // RS
   };
 
 onBeforeUnmount(stopPolling);

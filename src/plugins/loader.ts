@@ -23,10 +23,9 @@ import InstallableStatus from "@/components/desktop/common/InstallableStatus.vue
 import SettingsButton from "@/components/desktop/modalForms/SettingsButton.vue";
 import { useWrapperPluginStore } from "@/stores/wrapperPlugins";
 
-// Each plugin lives at src/plugins/<id>/plugin.json + an entry module (e.g. index.ts)
-// exporting a SourcePlugin or ThemePlugin (per manifest `kind`) as its default export.
-// Vite discovers both at build time; which plugins actually run is decided at runtime
-// via the enabled-id set passed to loadEnabledPlugins.
+// Each plugin lives at src/plugins/<id>/plugin.json + an entry module exporting a SourcePlugin
+// or ThemePlugin (per manifest `kind`). Vite discovers both at build time; which plugins run is
+// decided at runtime via loadEnabledPlugins' enabled-id set.
 const manifestModules = import.meta.glob("./*/plugin.json", { eager: true }) as Record<
   string,
   { default: unknown }
@@ -41,9 +40,7 @@ function folderOf(manifestPath: string): string {
   return manifestPath.replace(/\/plugin\.json$/, "");
 }
 
-/** WASM plugins are installed at runtime into the app-data dir (Milestone 8), not
- *  discovered by Vite at build time - only "source", "wrapper", and "metadata" are supported
- *  so far (the only kinds a WIT world exists for), so this is skipped for other kinds. */
+/** Runtime-installed WASM plugins (Milestone 8) - only kinds a WIT world exists for. */
 const WASM_SUPPORTED_KINDS: readonly PluginKind[] = ["source", "wrapper", "metadata"];
 
 async function getInstalledWasmManifests(kind?: PluginKind): Promise<PluginManifest[]> {
@@ -58,10 +55,8 @@ async function getInstalledWasmManifests(kind?: PluginKind): Promise<PluginManif
   }
 }
 
-/** Data-only theme manifests (Milestone 8.5) are installed at runtime the same way WASM
- *  plugins are (app-data dir), but have no compiled entry to load at all - the manifest's own
- *  `cssVariables` field is the entire plugin, so this is the only "installed" tier that isn't
- *  restricted by kind the way WASM_SUPPORTED_KINDS is (there's no WIT world to support). */
+/** Data-only theme manifests (Milestone 8.5) - no compiled entry, `cssVariables` is the whole
+ *  plugin. Not kind-restricted like WASM_SUPPORTED_KINDS since there's no WIT world involved. */
 async function getInstalledDataThemeManifests(kind?: PluginKind): Promise<PluginManifest[]> {
   if (kind && kind !== "theme") return [];
   try {
@@ -72,8 +67,7 @@ async function getInstalledDataThemeManifests(kind?: PluginKind): Promise<Plugin
   }
 }
 
-/** Data-only controller-mapping manifests (Milestone 24) - same "no compiled entry, the
- *  manifest's own data field is the whole plugin" shape as data themes, just a `mapping` field
+/** Data-only controller-mapping manifests (Milestone 24) - same shape as data themes, `mapping`
  *  instead of `cssVariables`. */
 async function getInstalledDataControllerManifests(kind?: PluginKind): Promise<PluginManifest[]> {
   if (kind && kind !== "controller") return [];
@@ -102,8 +96,8 @@ export async function getAvailablePluginManifests(kind?: PluginKind): Promise<Pl
   return manifests;
 }
 
-/** Thin wrapper implementing SourcePlugin over the wasm_plugin_runtime.rs Tauri commands -
- *  the frontend never talks to WASM plugin code directly, only through these. */
+/** Thin wrapper over wasm_plugin_runtime.rs's Tauri commands - the frontend never talks to WASM
+ *  plugin code directly. */
 function createWasmSourcePlugin(manifest: PluginManifest): SourcePlugin {
   return {
     id: manifest.id,
@@ -116,9 +110,8 @@ function createWasmSourcePlugin(manifest: PluginManifest): SourcePlugin {
   };
 }
 
-/** Attaches the generic SettingsButton.vue for any WASM plugin that declares a non-empty
- *  settingsSchema and doesn't already have its own settingsComponent - lets a WASM plugin
- *  collect user-typed config (e.g. an API key) without any custom UI code, on either side. */
+/** Attaches the generic SettingsButton.vue for a WASM plugin with a settingsSchema and no
+ *  settingsComponent of its own - lets it collect config (e.g. an API key) with no custom UI. */
 function attachSettingsSchemaForm(manifest: PluginManifest, plugin: PluginBase): void {
   if (!manifest.settingsSchema?.length || plugin.settingsComponent) return;
   const schema = manifest.settingsSchema;
@@ -128,11 +121,9 @@ function attachSettingsSchemaForm(manifest: PluginManifest, plugin: PluginBase):
   });
 }
 
-/** Thin wrapper implementing MetadataProviderPlugin over wasm_plugin_runtime.rs's
- *  wasm_plugin_search_candidates/wasm_plugin_fetch_metadata_by_id - config (API keys etc.) is
- *  collected via attachSettingsSchemaForm below, not passed as arguments here, since the plugin
- *  reads its own settings back via host::settings-get the same way it would if it had set them
- *  itself. */
+/** Thin wrapper over wasm_plugin_search_candidates/wasm_plugin_fetch_metadata_by_id - config is
+ *  collected via attachSettingsSchemaForm, not passed here; the plugin reads it back itself via
+ *  host::settings-get. */
 function createWasmMetadataProviderPlugin(manifest: PluginManifest): MetadataProviderPlugin {
   const plugin: MetadataProviderPlugin = {
     id: manifest.id,
@@ -146,11 +137,9 @@ function createWasmMetadataProviderPlugin(manifest: PluginManifest): MetadataPro
   return plugin;
 }
 
-/** Each wrapper plugin now fully owns its own install/found-status (install()/isInstalled()
- *  are its own exports, no host-side path to pass in). Uses the generic InstallableStatus.vue
- *  (see attachInstallableStatus below) but passes its own onInstalled hook, since a fresh
- *  install needs wrapperPlugins.profiles refreshed - kind-specific behavior the generic
- *  component deliberately doesn't know about. */
+/** A wrapper plugin owns its own install/found-status. Uses the generic InstallableStatus.vue
+ *  but with its own onInstallChanged hook, since a fresh install needs wrapperPlugins.profiles
+ *  refreshed - the generic component doesn't know about that. */
 function createWasmWrapperPlugin(manifest: PluginManifest): WrapperPlugin {
   const plugin: WrapperPlugin = {
     id: manifest.id,
@@ -182,11 +171,9 @@ function isInstallable(plugin: unknown): plugin is PluginBase & Installable {
   );
 }
 
-/** Auto-attaches the generic InstallableStatus.vue for any plugin tagged `installable` in its
- *  manifest that doesn't already provide its own settingsComponent - covers any future
- *  TS-authored plugin (of any kind) that implements `Installable` without needing its own
- *  settings UI. WASM plugin kinds with extra needs (e.g. wrapper's profile refresh) set their
- *  own settingsComponent explicitly instead, which takes precedence over this fallback. */
+/** Auto-attaches InstallableStatus.vue for any `installable`-tagged plugin without its own
+ *  settingsComponent - a fallback; kinds with extra needs (e.g. wrapper's profile refresh) set
+ *  their own explicitly instead. */
 function attachInstallableStatus(manifest: PluginManifest, plugin: PluginBase): void {
   if (!manifest.installable || plugin.settingsComponent || !isInstallable(plugin)) return;
   plugin.settingsComponent = defineComponent({
@@ -204,12 +191,9 @@ function createDataThemePlugin(manifest: PluginManifest): ThemePlugin {
   };
 }
 
-/** A remote controller manifest's `mapping` is untrusted, arbitrary JSON (Rust only checked
- *  "is this an object" before storing it) - narrows it into a real `GamepadMapping`, defaulting
- *  every direction to unassigned (`null`) rather than trusting a stray shape to already match.
- *  Mirrors `standard-gamepad`'s own real button indices being the *only* built-in plugin that
- *  assumes real hardware defaults - a remote/unknown pad gets the same "must be learned via
- *  Listen" treatment `8bitdo-micro` already uses for its own unknown-index bindings. */
+/** Narrows an untrusted remote `mapping` (Rust only checked "is this an object") into a real
+ *  `GamepadMapping`, defaulting unrecognized bindings to unassigned - same "must be learned via
+ *  Listen" treatment `8bitdo-micro` gives its own unknown indices. */
 function normalizeGamepadMapping(raw: unknown): GamepadMapping {
   const m = (raw && typeof raw === "object" ? raw : {}) as Partial<GamepadMapping>;
   const binding = (v: unknown) =>
@@ -227,11 +211,9 @@ function normalizeGamepadMapping(raw: unknown): GamepadMapping {
   };
 }
 
-/** A remote controller manifest's `layout` is untrusted, arbitrary JSON - narrows it into a
- *  real `GamepadLayoutButton[]`, silently dropping any entry missing a required numeric field
- *  rather than trusting a stray shape. `undefined` (not an empty array) when the manifest
- *  doesn't declare one at all, so `GamepadRemapSettings.vue` can tell "no layout given, use my
- *  own built-in default" apart from "layout given but empty." */
+/** Narrows an untrusted remote `layout` into `GamepadLayoutButton[]`, dropping malformed
+ *  entries. Returns `undefined` (not `[]`) when absent, so the component can tell "no layout,
+ *  use my default" apart from "layout given but empty." */
 function normalizeGamepadLayout(raw: unknown): GamepadLayoutButton[] | undefined {
   if (!Array.isArray(raw)) return undefined;
   const entries: GamepadLayoutButton[] = [];
@@ -249,10 +231,8 @@ function normalizeGamepadLayout(raw: unknown): GamepadLayoutButton[] | undefined
   return entries;
 }
 
-/** Same untrusted-JSON narrowing as `normalizeGamepadLayout` above - both `viewBox`/`path` are
- *  required together (a path's coordinates are meaningless without its own viewBox), so a
- *  manifest missing either falls back to `undefined` (built-in default) rather than a
- *  half-valid custom shape. */
+/** Same narrowing as `normalizeGamepadLayout` - `viewBox`/`path` required together, else falls
+ *  back to `undefined` rather than a half-valid shape. */
 function normalizeGamepadSilhouette(raw: unknown): GamepadSilhouette | undefined {
   if (typeof raw !== "object" || raw === null) return undefined;
   const { viewBox, path } = raw as Record<string, unknown>;
@@ -260,10 +240,8 @@ function normalizeGamepadSilhouette(raw: unknown): GamepadSilhouette | undefined
   return { viewBox, path };
 }
 
-/** Data-only controller mappings have no `index.ts` of their own to attach
- *  `GamepadRemapSettings.vue` the way `standard-gamepad`/`8bitdo-micro` do - this attaches the
- *  same shared component here instead, since it's the loader (not the manifest) that knows how
- *  to turn manifest data into a running plugin instance for every other data-only kind too. */
+/** Data-only controller mappings have no `index.ts` to attach `GamepadRemapSettings.vue` the
+ *  way `standard-gamepad`/`8bitdo-micro` do - the loader attaches it here instead. */
 function createDataControllerMappingPlugin(manifest: PluginManifest): ControllerMappingPlugin {
   const plugin: ControllerMappingPlugin = {
     id: manifest.id,
@@ -313,10 +291,8 @@ async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   return plugin as T;
 }
 
-/** Loads enabled plugins in enabledIds' own iteration order (not manifest-discovery order) -
- *  for kinds where sequence has real meaning (e.g. metadata providers' first-non-null-wins
- *  merge, source plugins' last-scan-wins field overwrite on a title collision), the caller
- *  controls priority by controlling what order it passes ids in. */
+/** Loads in enabledIds' own order, not discovery order - lets the caller control priority for
+ *  kinds where sequence matters (metadata's first-non-null-wins merge, source's last-scan-wins). */
 export async function loadEnabledPlugins<T>(
   kind: PluginKind,
   enabledIds: Iterable<string>,
@@ -330,9 +306,8 @@ export async function loadEnabledPlugins<T>(
   return plugins.filter((p): p is T => p !== null);
 }
 
-/** Loads every installed plugin of a kind, regardless of enabled/selected state - used
- *  by the settings panel, which needs each plugin's instance (for its optional
- *  settingsComponent) independent of whether it's currently active. */
+/** Loads every installed plugin of a kind regardless of enabled state - the settings panel
+ *  needs each instance (for its optional settingsComponent) independent of activity. */
 export async function loadAllPlugins<T>(kind: PluginKind): Promise<Map<string, T>> {
   const manifests = await getAvailablePluginManifests(kind);
   const entries = await Promise.all(

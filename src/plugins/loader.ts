@@ -40,8 +40,24 @@ function folderOf(manifestPath: string): string {
   return manifestPath.replace(/\/plugin\.json$/, "");
 }
 
-/** Runtime-installed WASM plugins (Milestone 8) - only kinds a WIT world exists for. */
-const WASM_SUPPORTED_KINDS: readonly PluginKind[] = ["source", "wrapper", "metadata"];
+// Per-kind factory lookup, grouped by runtime tier - replaces what used to be an if/else chain
+// in loadPlugin. Functions referenced here are `function` declarations further down this file
+// (hoisted, so the forward reference is fine); the tables themselves also double as each tier's
+// supported-kinds list (Object.keys) instead of a separately maintained array.
+const WASM_PLUGIN_FACTORIES: Partial<Record<PluginKind, (manifest: PluginManifest) => PluginBase>> = {
+  source: createWasmSourcePlugin,
+  wrapper: createWasmWrapperPlugin,
+  metadata: createWasmMetadataProviderPlugin,
+};
+
+const DATA_PLUGIN_FACTORIES: Partial<Record<PluginKind, (manifest: PluginManifest) => PluginBase>> = {
+  theme: createDataThemePlugin,
+  controller: createDataControllerMappingPlugin,
+};
+
+/** Runtime-installed WASM plugins (Milestone 8) - only kinds a WIT world exists for, i.e.
+ *  whatever WASM_PLUGIN_FACTORIES above actually implements. */
+const WASM_SUPPORTED_KINDS = Object.keys(WASM_PLUGIN_FACTORIES) as PluginKind[];
 
 async function getInstalledWasmManifests(kind?: PluginKind): Promise<PluginManifest[]> {
   if (kind && !WASM_SUPPORTED_KINDS.includes(kind)) return [];
@@ -263,16 +279,11 @@ function createDataControllerMappingPlugin(manifest: PluginManifest): Controller
 
 async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   if (manifest.runtime === "wasm") {
-    if (manifest.kind === "source") return createWasmSourcePlugin(manifest) as T;
-    if (manifest.kind === "wrapper") return createWasmWrapperPlugin(manifest) as T;
-    if (manifest.kind === "metadata") return createWasmMetadataProviderPlugin(manifest) as T;
-    return null;
+    return (WASM_PLUGIN_FACTORIES[manifest.kind]?.(manifest) as T | undefined) ?? null;
   }
 
   if (manifest.runtime === "data") {
-    if (manifest.kind === "theme") return createDataThemePlugin(manifest) as T;
-    if (manifest.kind === "controller") return createDataControllerMappingPlugin(manifest) as T;
-    return null;
+    return (DATA_PLUGIN_FACTORIES[manifest.kind]?.(manifest) as T | undefined) ?? null;
   }
 
   const manifestPath = Object.keys(manifestModules).find((path) => {

@@ -7,11 +7,12 @@ see `.claude/devlog.md`.
 real-world use. Further work continues under **Post-1.0 Roadmap** at the bottom of this file,
 numbered as a continuing milestone sequence for the same devlog cross-reference convention.
 
-**2.0.0**: user decision (no breaking change forcing it) - Milestone 22's close is the last
-one counted under the 1.x line (currently 1.6.0); Milestone 23's close bumps to 2.0.0 instead
-of 1.7.0. Milestones 15/16/24 (already scoped, unstarted) and 25-38 (brainstormed, unstarted)
-fall under the 2.x line along with 23 - not required to close before 2.0.0 ships, since 23 is
-the one that actually triggers it.
+**2.0.0**: user decision (no breaking change forcing it) - Milestone 21's close is the last
+one counted under the 1.x line (currently 1.7.0); Milestone 22's close bumps to 2.0.0. Milestone
+23 (DLsite, already scoped, unstarted) and 24-37 (brainstormed, unstarted) fall under the 2.x
+line along with 22 - not required to close before 2.0.0 ships, since 22 is the one that
+actually triggers it. The Icebox at the bottom of this file sits outside this numbering
+entirely, not counted toward either line.
 
 ## Milestone 1 — Core Library Foundation
 - [x] Pick stack (Tauri + Vue/TypeScript, SQLite)
@@ -86,7 +87,7 @@ Pivoted to WASM — see devlog.
 - [x] Rename `steam-wasm` → `steam` display name (id unchanged) across all 7 plugin repos
 - [x] External theme plugins: data-only tier (`cssVariables`, install-by-URL, no code/WASM)
 - [x] Review component-override tier (`slots`) for external feasibility — blocked at the time;
-  tracked separately as Milestone 17 (Post-1.0 Roadmap)
+  tracked separately as Milestone 16 (Post-1.0 Roadmap)
 - [x] Migrate SteamGridDB and IGDB metadata providers to WASM plugins, retire built-in
   `sgdb.rs`/`igdb.rs`
 
@@ -308,7 +309,7 @@ a distinct, larger feature.
 Second wave of milestones, opened after 1.0.0 shipped. Numbering continues the same
 sequence/heading convention as above for devlog cross-reference.
 
-## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
+## Milestone 15 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
 Originally a core-roadmap stretch goal, moved here unstarted - no reason to hold up 1.0 for a
 stretch goal nothing had been done on yet.
 - [x] Xbox/EA/Ubisoft install-detection and launch mechanisms researched (community-sourced
@@ -336,10 +337,10 @@ stretch goal nothing had been done on yet.
   semantics - see devlog
 - [x] Each ships as its own WASM plugin in a separate repo from day one
 
-Milestone 16 closed - Xbox, EA, and Ubisoft Connect source plugins all built, published,
+Milestone 15 closed - Xbox, EA, and Ubisoft Connect source plugins all built, published,
 registered, and verified end-to-end in-app.
 
-## Milestone 17 — External Theme Plugins: JSON-AST Rendering Tier
+## Milestone 16 — External Theme Plugins: JSON-AST Rendering Tier
 Supersedes the original component-override design (blocked - see devlog legacy record). Ships
 a constrained declarative template tier instead, measured against Brick Block's real gap.
 - [x] Measure Brick Block's real gap against a template tier - small (a glyph swap, one wrapper
@@ -377,7 +378,7 @@ struct; several card/placeholder values still had no variable hooks), added
 added a new `fontFaces` capability (real `@font-face` loading, strictly validated,
 commit-pinned-URL only) since `cssVariables` can only select a font, never load one.
 
-## Milestone 18 — Shared Styles Convention
+## Milestone 17 — Shared Styles Convention
 Style-convention shift: less `<style scoped>` per component, more centralized shared CSS
 (`src/styles.css`), prompted by Brick Block work repeatedly hitting hardcoded, unoverridable
 values in individual components' scoped blocks.
@@ -396,8 +397,8 @@ now-empty local classes removed; `.hint` converted to primitive `<small>`; `.err
 one tier, and the `.active` accent-swap idiom, all folded into shared classes). `TitleBar.vue`'s
 chromeless buttons and a `--space-*` tokenization pass remain open, deliberately unscoped.
 
-## Milestone 19 — Retire Component-Swap Theming
-Milestone 17's JSON-AST/token mechanism was built to replace `slots`/component-swap theming;
+## Milestone 18 — Retire Component-Swap Theming
+Milestone 16's JSON-AST/token mechanism was built to replace `slots`/component-swap theming;
 this milestone finishes that job (`slotRegistry.ts`/`ThemeSlotName` had exactly one real
 consumer - the built-in `brick-block-theme` plugin).
 - [x] Opt-in `--button-radius`/`--button-border-color`/`--tile-*` hooks added, closing the
@@ -415,7 +416,7 @@ consumer - the built-in `brick-block-theme` plugin).
 Component-swap theming is retired; `cardVisual` AST + CSS-variable hooks is now the only
 theming mechanism for both desktop and Big Picture, for every theme kind.
 
-## Milestone 20 — Auto-Update: App + Plugins/Themes
+## Milestone 19 — Auto-Update: App + Plugins/Themes
 Two genuinely separate mechanisms, both checked at the same three moments (app start, app
 focus, install-plugin modal open) via one orchestrating call. See devlog for the design
 tradeoffs behind the split.
@@ -445,7 +446,7 @@ tradeoffs behind the split.
 - [x] Wired `pluginUpdates.checkAll` into the same trigger moments as `appUpdate`, plus
   `PluginSettings.vue`'s own mount as a fourth, genuinely distinct moment
 
-Milestone 20 fully closed - app self-update verified end to end; plugin/theme self-update
+Milestone 19 fully closed - app self-update verified end to end; plugin/theme self-update
 built and wired in, though not GUI-tested the same way (no real newer-version plugin/theme
 available to test against).
 
@@ -460,7 +461,7 @@ available to test against).
   session can reopen this modal many times without `PluginSettings.vue` ever remounting, so
   its own mount-time check doesn't cover repeat opens the way it first seemed to
 
-## Milestone 21 — Internationalization & Offline Translation
+## Milestone 20 — Internationalization & Offline Translation
 - [x] UI string localization via `vue-i18n`, 10 locales, exact key parity verified
 - [x] `translation` host-native Rust module - downloads llama.cpp's own prebuilt server binary,
   runs it as a subprocess over HTTP (not a Rust ML crate dependency)
@@ -487,11 +488,11 @@ available to test against).
 - [x] Engine research: `llama-cpp-2` (Windows CMake bugs) → `mistralrs` (can't load `gemma3`
   GGUF) → llama.cpp prebuilt binary - see devlog for the full comparison
 
-Milestone 21 fully closed. See devlog for full rationale on every decision above. Deliberately
+Milestone 20 fully closed. See devlog for full rationale on every decision above. Deliberately
 deferred: translating other fields (release date, tags), canceling an in-progress download,
 detecting already-installed Ollama/LM Studio.
 
-## Milestone 22 — Plugin-Developer Documentation Site
+## Milestone 21 — Plugin-Developer Documentation Site
 - [x] New `docs/` VitePress project (own `package.json`, decoupled from the app's own frontend
   build) - architecture overview, getting-started walkthrough, manifest reference, WIT interface
   reference, security model, and publishing pages for third-party plugin authors
@@ -506,9 +507,9 @@ detecting already-installed Ollama/LM Studio.
   `%APPDATA%\com.bloppy.concourse\library.db*` for a throwaway/fake-data copy first (real
   library has NSFW entries not meant for public docs), screenshot, then restore the originals
 
-## Milestone 23 — Docs Site Internationalization (scoped, not started)
-User asked whether the VitePress docs site (Milestone 22) could be localized like the app's own
-UI (Milestone 21's 10 languages). Confirmed feasible - VitePress 1.6.4 (this project's pinned
+## Milestone 22 — Docs Site Internationalization (scoped, not started)
+User asked whether the VitePress docs site (Milestone 21) could be localized like the app's own
+UI (Milestone 20's 10 languages). Confirmed feasible - VitePress 1.6.4 (this project's pinned
 version) supports i18n natively via a `locales` config key plus per-locale content
 subdirectories, with its own built-in locale switcher in the default theme. Scoped as its own
 milestone rather than folded into 21/22, since translating ~12 prose-heavy pages (guide +
@@ -529,7 +530,7 @@ short UI-string localization - not a quick follow-on.
 - [ ] Verify `.github/workflows/docs.yml` builds/deploys the localized site correctly (multi-
   locale VitePress output structure, still under the same Pages deployment)
 
-## Milestone 24 — DLsite Metadata Provider (unofficial, stretch)
+## Milestone 23 — DLsite Metadata Provider (unofficial, stretch)
 No official public API - unlike every other metadata provider plugin (IGDB/SteamGridDB/RAWG/
 TheGamesDB/VNDB, all built against a real sanctioned API). Would depend on an unofficial/
 undocumented access path instead. Deliberately not detailed further here - see
@@ -537,11 +538,11 @@ undocumented access path instead. Deliberately not detailed further here - see
 questions before this gets started.
 - [ ] Not started - research/scoping only exists in the private notes file above
 
-## Milestone 25 — Detachable Controller Mapping Plugins (data tier, not started)
+## Milestone 24 — Detachable Controller Mapping Plugins (data tier, not started)
 User asked whether `standard-gamepad`/`8bitdo-micro` (currently build-time-only TS plugins, see
 Milestone 7) could be detached into separately-installed plugins like source/metadata/theme
 already are. A controller mapping is pure data (`GamepadMapping` - button/axis bindings, no
-`scan()`/`launch()` behavior), so it fits the existing data-only tier Milestone 17 built for
+`scan()`/`launch()` behavior), so it fits the existing data-only tier Milestone 16 built for
 themes (`DataThemeManifest`, install-by-URL, no WASM/code execution) rather than the WASM tier -
 that infra is theme-shaped today, not generic, so this is real new work, not a flag flip.
 - [ ] Generalize or duplicate the data-plugin Rust commands (`plugin_installer.rs`'s
@@ -556,10 +557,10 @@ that infra is theme-shaped today, not generic, so this is real new work, not a f
   accept a data-controller manifest, same as the Theme tab already does
 - [ ] New repo (`data-controller-plugins`, mirrors `data-theme-plugins`) once the above lands -
   migrate `standard-gamepad` and/or `8bitdo-micro` out as the first real entries
-- [ ] Extend `concourse-plugin-registry` to `kind: "controller"` (same precedent as Milestone 17's
+- [ ] Extend `concourse-plugin-registry` to `kind: "controller"` (same precedent as Milestone 16's
   `kind: "theme"` extension)
 
-## Milestone 26 — Library Functions Update: Batch Ops + Filter/Sort (in progress)
+## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort (in progress)
 `GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s
 `filteredGames` filters on search text and the active tag/collection, no sort at all) - one
 game at a time is the only way to tag/remove/collection-assign. Two workstreams, scoped
@@ -585,7 +586,7 @@ together since both touch the same filter-bar area and library selection state.
 - [ ] Persist chosen sort/filter state the same way `viewMode` already persists via
   `settingsRepo`
 
-## Milestone 27 — Quick-Launch Search (not started)
+## Milestone 26 — Quick-Launch Search (not started)
 Spotlight/Alfred-style overlay: global hotkey opens a search box, type to filter the library,
 launch directly - faster than opening the app to the desktop UI for a single launch.
 - [ ] Global hotkey registration (Tauri global-shortcut plugin) - decide default binding,
@@ -597,7 +598,7 @@ launch directly - faster than opening the app to the desktop UI for a single lau
   then closes the overlay
 - [ ] Decide behavior when the main window isn't running/is minimized
 
-## Milestone 28 — Library Backup/Export (not started)
+## Milestone 27 — Library Backup/Export (not started)
 Export/import games, tags, collections, and settings as a portable file - covers reinstall/
 migration without re-scanning every source plugin and redoing manual metadata edits.
 - [ ] Export command - serialize `games`/`tags`/`game_tags`/`collections`/`settings` tables
@@ -609,7 +610,7 @@ migration without re-scanning every source plugin and redoing manual metadata ed
   (different install locations) - flag rather than silently break
 - [ ] Version the export format (so a future schema migration can still read an older export)
 
-## Milestone 29 — Discord Rich Presence Plugin (not started)
+## Milestone 28 — Discord Rich Presence Plugin (not started)
 Shows "Playing <game>" on the user's Discord status while a game is running - fits the existing
 plugin architecture, though Rich Presence is behavior tied to *any* running game, not one
 specific source/theme/metadata/controller, so it likely needs a new plugin kind (or a non-
@@ -625,7 +626,7 @@ plugin, always-on feature) rather than forcing it into one of the four existing 
 - [ ] Handle Discord not running / IPC connection failure gracefully (feature quietly no-ops,
   not a hard error)
 
-## Milestone 30 — Multi-Library / Profile Support (not started)
+## Milestone 29 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a
 filtered "kids mode" view. Real schema/architecture question, not just a UI toggle - today
 there's exactly one SQLite DB (`library.db`) and no concept of "whose library this is."
@@ -638,7 +639,7 @@ there's exactly one SQLite DB (`library.db`) and no concept of "whose library th
 - [ ] "Kids mode" as a filtered view of one profile (age-rating/tag-based hide-list) vs. a real
   separate profile - decide which before building
 
-## Milestone 31 — Custom Launch Arguments Per Game (not started)
+## Milestone 30 — Custom Launch Arguments Per Game (not started)
 `launcher.rs`'s `launch_game` spawns `executable_path` bare - some games need `-windowed`,
 mod-loader flags, or other CLI args that currently have no home.
 - [ ] New `launch_args` column on `games` (migration)
@@ -647,9 +648,9 @@ mod-loader flags, or other CLI args that currently have no home.
 - [ ] Decide handling for URI-launched entries (`steam://`, etc.) - args likely don't apply the
   same way there
 
-## Milestone 32 — Pre-Launch Scripts/Hooks (not started)
+## Milestone 31 — Pre-Launch Scripts/Hooks (not started)
 Run a script before/after launch (mount a virtual drive, kill a background app, apply a mod) -
-builds on Milestone 31's launch-args groundwork but is a materially bigger trust/security
+builds on Milestone 30's launch-args groundwork but is a materially bigger trust/security
 surface (arbitrary script execution, not just CLI flags).
 - [ ] Decide trust model first - this is arbitrary code execution tied to a game entry, a
   bigger surface than anything in the existing WASM capability-gating model (Milestone 12)
@@ -660,7 +661,7 @@ surface (arbitrary script execution, not just CLI flags).
 - [ ] Explicit user-facing warning given the security surface - this isn't sandboxed like a
   plugin is
 
-## Milestone 33 — Game Notes/Journal (not started)
+## Milestone 32 — Game Notes/Journal (not started)
 Free-text per-game notes (playthrough progress, build order, "where I left off").
 - [ ] New `notes` column on `games` (migration) or a separate `game_notes` table if history/
   timestamps per note entry matter (a journal, not just one overwritable field)
@@ -668,18 +669,18 @@ Free-text per-game notes (playthrough progress, build order, "where I left off")
   field (`marked` + `DOMPurify.sanitize`, already wired for descriptions)
 - [ ] Decide: one note per game (simple) vs. a dated log (more journal-like, more schema)
 
-## Milestone 34 — Random Game Picker (not started)
+## Milestone 33 — Random Game Picker (not started)
 "Surprise me" button for a big backlog - optionally filtered ("something under 2 hours", by
 tag/collection).
 - [ ] Picker button (sidebar or library toolbar) - random selection from `filteredGames`
-  (respects whatever search/tag/collection/sort filters, including Milestone 26's new ones, are
+  (respects whatever search/tag/collection/sort filters, including Milestone 25's new ones, are
   already active)
-- [ ] Optional playtime-range filter specific to the picker (distinct from Milestone 26's general
+- [ ] Optional playtime-range filter specific to the picker (distinct from Milestone 25's general
   filters, if that one doesn't already cover it)
 - [ ] Result presentation - jump straight to `GameDetail`, or a lightweight reveal
   animation/modal before committing to navigation
 
-## Milestone 35 — Recently-Removed / Trash Bin (not started)
+## Milestone 34 — Recently-Removed / Trash Bin (not started)
 Soft-delete with an undo window instead of immediate removal - more important once Milestone
 26's batch-remove ships (accidental mass-delete becomes much easier).
 - [ ] Soft-delete: `deleted_at` column on `games` (migration) instead of a hard `DELETE`,
@@ -688,10 +689,10 @@ Soft-delete with an undo window instead of immediate removal - more important on
   Restore/Delete Forever actions
 - [ ] Auto-purge policy - permanently delete after N days, or manual-only
 - [ ] Toast with an inline "Undo" action on removal (`stores/toasts.ts` already supports
-  `pushAction()`, added for Milestone 20's update banner) - immediate undo without needing to
+  `pushAction()`, added for Milestone 19's update banner) - immediate undo without needing to
   visit the trash view at all
 
-## Milestone 36 — Time-Played Goals/Reminders (not started)
+## Milestone 35 — Time-Played Goals/Reminders (not started)
 "Haven't played X in 3 months" surfacing, or backlog-clearing nudges - encourages using the
 library rather than just cataloging it.
 - [ ] Decide trigger model: computed from existing `playtime_sessions`/`total_playtime` (no new
@@ -701,7 +702,7 @@ library rather than just cataloging it.
 - [ ] Decide whether this needs OS-level notifications (app must be running vs. a true
   background nudge) - likely app-open-only for a first pass
 
-## Milestone 37 — Touch/Mouse-as-Gamepad Input for Big Picture (not started)
+## Milestone 36 — Touch/Mouse-as-Gamepad Input for Big Picture (not started)
 Second Big Picture input method for handheld/tablet Windows devices without a physical
 controller - `useGamepadNav` today reads only real Gamepad API input via the active
 `ControllerMappingPlugin`.
@@ -712,7 +713,7 @@ controller - `useGamepadNav` today reads only real Gamepad API input via the act
 - [ ] Decide auto-detection (no real gamepad connected -> show virtual overlay) vs. a manual
   toggle in settings
 
-## Milestone 38 — Bulk Cover Art Auto-Crop/Regen Tool (not started)
+## Milestone 37 — Bulk Cover Art Auto-Crop/Regen Tool (not started)
 Bulk re-fetch/fix missing or misformatted art after adding many manual games at once, or after
 enabling a new metadata provider retroactively.
 - [ ] "Fetch metadata for all missing" bulk action (library-wide, not per-game) - reuses the
@@ -735,9 +736,10 @@ right now. Revive by moving an entry back into the numbered sequence above (give
 milestone number reflecting whenever it's actually picked up, don't reuse the old one) if that
 ever changes.
 
-## Milestone 15 — Additional Source Plugins: Emulator/ROM Scanner
-Carried over from Milestone 7, then parked here - every other Post-1.0 source plugin
-(Milestone 16's Xbox/EA/Ubisoft) got built against something real: a real install, verified
+## Additional Source Plugins: Emulator/ROM Scanner
+Carried over from Milestone 7, then parked here (no milestone number - see this section's own
+intro) - every other Post-1.0 source plugin (Milestone 15's Xbox/EA/Ubisoft) got built against
+something real: a real install, verified
 directory/registry conventions, a real launch test. No emulator/ROM setup exists to verify
 against here (checked directly, not assumed - a PPSSPP config folder exists on this machine but
 is empty, no ROMs, no locatable executable), and the user doesn't currently play emulated games

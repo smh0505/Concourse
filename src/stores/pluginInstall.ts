@@ -8,7 +8,16 @@ import { useThemeStore } from "./theme";
 import { useControllerMappingStore } from "./controllerMapping";
 import { useToastStore } from "./toasts";
 import { i18n } from "@/i18n";
-import type { PluginPreview } from "@/plugins/manifest";
+import type { PluginKind, PluginPreview } from "@/plugins/manifest";
+
+// Which store owns each installable kind's manifest list - wrapper plugins are deliberately
+// absent, they install through their own Installable path, never this generic URL flow.
+const REFRESH_STORE_BY_KIND: Partial<Record<PluginKind, () => Promise<void>>> = {
+  source: () => usePluginStore().refreshManifests(),
+  metadata: () => useMetadataProviderStore().refreshManifests(),
+  theme: () => useThemeStore().refreshManifests(),
+  controller: () => useControllerMappingStore().refreshManifests(),
+};
 
 /** Mirrors the Rust `InstallResult` (`plugin_installer.rs`) - Milestone 14's provenance
  *  verification is advisory only, surfaced here rather than enforced (install always
@@ -93,10 +102,7 @@ export const usePluginInstallStore = defineStore("pluginInstall", () => {
         url: pendingUrl.value,
         expectedSha256: pendingExpectedSha256.value,
       });
-      if (kind === "source") await usePluginStore().refreshManifests();
-      else if (kind === "metadata") await useMetadataProviderStore().refreshManifests();
-      else if (kind === "theme") await useThemeStore().refreshManifests();
-      else if (kind === "controller") await useControllerMappingStore().refreshManifests();
+      if (kind) await REFRESH_STORE_BY_KIND[kind]?.();
       toasts.push(i18n.global.t("pluginInstall.installed"), "success");
       toasts.push(result.verificationNote, result.verified ? "success" : "info");
     } catch (e) {

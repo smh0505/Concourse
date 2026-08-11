@@ -5,10 +5,22 @@ import { invoke } from "@tauri-apps/api/core";
 import { usePluginStore } from "./plugins";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";
+import { useControllerMappingStore } from "./controllerMapping";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
 import { i18n } from "@/i18n";
-import type { PluginManifest } from "@/plugins/manifest";
+import type { PluginKind, PluginManifest } from "@/plugins/manifest";
+
+// Which store owns each kind's manifest list, for refreshing after an update applies. Unlike
+// pluginInstall.ts's table, wrapper *is* included here - a wrapper's version can still be
+// updated via install_plugin even though it never installs fresh through that generic flow.
+const REFRESH_STORE_BY_KIND: Partial<Record<PluginKind, () => Promise<void>>> = {
+  source: () => usePluginStore().refreshManifests(),
+  metadata: () => useMetadataProviderStore().refreshManifests(),
+  theme: () => useThemeStore().refreshManifests(),
+  wrapper: () => useWrapperPluginStore().refreshManifests(),
+  controller: () => useControllerMappingStore().refreshManifests(),
+};
 
 export interface UpdateCheckResult {
   id: string;
@@ -76,10 +88,7 @@ export const usePluginUpdatesStore = defineStore("pluginUpdates", () => {
         url: result.latestManifestUrl,
         expectedSha256: result.latestSha256,
       });
-      if (manifest.kind === "source") await usePluginStore().refreshManifests();
-      else if (manifest.kind === "metadata") await useMetadataProviderStore().refreshManifests();
-      else if (manifest.kind === "theme") await useThemeStore().refreshManifests();
-      else if (manifest.kind === "wrapper") await useWrapperPluginStore().refreshManifests();
+      await REFRESH_STORE_BY_KIND[manifest.kind]?.();
 
       const updated = { ...results.value };
       delete updated[manifest.id];

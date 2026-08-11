@@ -13,7 +13,12 @@ import {
 } from "@tabler/icons-vue";
 
 import { useControllerMappingStore } from "@/stores/controllerMapping";
-import type { GamepadDirectionBinding, GamepadMapping } from "@/plugins/types";
+import type {
+  GamepadDirectionBinding,
+  GamepadLayoutButton,
+  GamepadMapping,
+  GamepadSilhouette,
+} from "@/plugins/types";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
 import DropdownMenu from "@/components/desktop/common/DropdownMenu.vue";
 import { gamepadButtonLabel, STANDARD_GAMEPAD_LAYOUT_INDICES } from "./buttonNames";
@@ -47,13 +52,12 @@ const STICK_AXES: Record<"left" | "right", { x: number; y: number }> = {
 };
 // How far from the stick's own hitzone each direction light sits. Left/right offsets are in %
 // of the container's width, up/down in % of its height - since the silhouette's viewBox (and
-// thus .pad-silhouette's aspect-ratio, see the style block below) is 24x18, not square, an
-// equal *percentage* on both axes would NOT be an equal physical gap: 1% of width is a bigger
-// pixel span than 1% of height by the same 24/18 ratio. Scaling the vertical offset by that
-// ratio keeps the up/down gap visually equal to the left/right one.
-const PAD_SHAPE_ASPECT = 24 / 18;
+// thus .pad-silhouette's aspect-ratio) may not be square, an equal *percentage* on both axes
+// would NOT be an equal physical gap: 1% of width is a different pixel span than 1% of height
+// whenever the box itself isn't square. Scaling the vertical offset by the silhouette's own
+// aspect ratio (padShapeAspect, computed further down once the effective silhouette is known)
+// keeps the up/down gap visually equal to the left/right one regardless of shape.
 const STICK_LIGHT_OFFSET_X = 8;
-const STICK_LIGHT_OFFSET_Y = STICK_LIGHT_OFFSET_X * PAD_SHAPE_ASPECT;
 
 // Reusable across every ControllerMappingPlugin, not just Standard Gamepad - each plugin passes
 // its own id/default mapping in, so this component owns none of the plugin-specific data itself.
@@ -64,6 +68,13 @@ const props = withDefaults(
     /** False for a pad with no analog sticks (e.g. 8BitDo Micro) - hides the stick-sensitivity
      *  field, which is meaningless when the device has no axes to threshold. */
     hasSticks?: boolean;
+    /** Milestone 24 (post-close) - overrides which physical buttons the diagram draws and
+     *  where, instead of this component's own built-in default layout. `undefined` (the
+     *  default) keeps the built-in layout - a manifest opts in by declaring its own. */
+    layout?: GamepadLayoutButton[];
+    /** Milestone 24 (post-close) - overrides the diagram's controller-body outline instead of
+     *  this component's own built-in one. `undefined` (the default) keeps the built-in shape. */
+    silhouette?: GamepadSilhouette;
   }>(),
   { hasSticks: true },
 );
@@ -116,12 +127,13 @@ function stickDirectionActive(stick: "left" | "right", direction: StickDirection
 }
 
 // Positions a stick's direction light a fixed offset from that stick's own hitzone (10 = LS,
-// 11 = RS in PAD_POSITIONS below).
+// 11 = RS in padPositions below).
 function stickLightStyle(stickButtonIndex: number, direction: StickDirection) {
-  const pos = PAD_POSITIONS[stickButtonIndex];
+  const pos = padPositions.value[stickButtonIndex];
   if (!pos) return {};
+  const offsetY = STICK_LIGHT_OFFSET_X * padShapeAspect.value;
   const dx = direction === "left" ? -STICK_LIGHT_OFFSET_X : direction === "right" ? STICK_LIGHT_OFFSET_X : 0;
-  const dy = direction === "up" ? -STICK_LIGHT_OFFSET_Y : direction === "down" ? STICK_LIGHT_OFFSET_Y : 0;
+  const dy = direction === "up" ? -offsetY : direction === "down" ? offsetY : 0;
   return { left: `${pos.x + dx}%`, top: `${pos.y + dy}%` };
 }
 
@@ -218,22 +230,28 @@ function onClose() {
 }
 
 // Stick-click buttons (indices 10/11) don't exist on a stickless pad - omit them from the
-// diagram entirely rather than showing two boxes that can never light up.
-const layoutIndices = computed(() =>
-  props.hasSticks
+// built-in default layout entirely rather than showing two boxes that can never light up. A
+// custom `props.layout` is trusted as-is instead (the manifest presumably already omitted
+// whatever its own pad doesn't have), not filtered against hasSticks here.
+const layoutIndices = computed(() => {
+  if (props.layout) return props.layout.map((btn) => btn.index);
+  return props.hasSticks
     ? STANDARD_GAMEPAD_LAYOUT_INDICES
-    : STANDARD_GAMEPAD_LAYOUT_INDICES.filter((index) => index !== 10 && index !== 11),
-);
+    : STANDARD_GAMEPAD_LAYOUT_INDICES.filter((index) => index !== 10 && index !== 11);
+});
 
-// Silhouette placement, positioned as % of the SVG body's own viewBox (so hitzones track the
-// shape at any render size) - an approximate Xbox-style asymmetric layout (left stick above the
-// d-pad, face buttons above the right stick), not pixel-accurate to any real controller. `shape`
-// picks the CSS treatment below: round buttons for face/stick clusters, wide pills for the
-// shoulder/trigger row. The viewBox itself is cropped to the Tabler silhouette's real bounding
-// box (see the SVG's own viewBox attribute below), so Y here spans the shape's own extent
-// directly (0% = flat top edge, 100% = bottom of the grips) rather than an inset subrange.
-const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pill" | "stick" }> =
-  {
+// This component's own default placement, used whenever a plugin doesn't supply `props.layout`
+// (Milestone 24 post-close) - positioned as % of the SVG body's own viewBox (so hitzones track
+// the shape at any render size), an approximate Xbox-style asymmetric layout (left stick above
+// the d-pad, face buttons above the right stick), not pixel-accurate to any real controller.
+// `shape` picks the CSS treatment below: round buttons for face/stick clusters, wide pills for
+// the shoulder/trigger row. The default viewBox (see DEFAULT_SILHOUETTE below) is cropped to
+// the Tabler silhouette's real bounding box, so Y here spans the shape's own extent directly
+// (0% = flat top edge, 100% = bottom of the grips) rather than an inset subrange.
+const DEFAULT_PAD_POSITIONS: Record<
+  number,
+  { x: number; y: number; shape: "round" | "pill" | "stick" }
+> = {
     // Shoulders/triggers - top edge.
     6: { x: 15, y: 8, shape: "pill" }, // LT
     4: { x: 15, y: 20, shape: "pill" }, // LB
@@ -259,6 +277,35 @@ const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pi
     // Right stick, at y=66 (the d-pad above is recentered on this same y).
     11: { x: 71, y: 66, shape: "stick" }, // RS
   };
+
+// Effective per-button placement - a custom `props.layout` (Milestone 24 post-close) entirely
+// replaces the built-in default rather than merging with it, since a manifest declaring its own
+// layout is presumably placing every button it cares about.
+const padPositions = computed(() => {
+  if (!props.layout) return DEFAULT_PAD_POSITIONS;
+  const positions: typeof DEFAULT_PAD_POSITIONS = {};
+  for (const btn of props.layout) positions[btn.index] = btn;
+  return positions;
+});
+
+// This component's own default controller-body outline, used whenever a plugin doesn't supply
+// `props.silhouette` (Milestone 24 post-close) - see the SVG path's own template comment for
+// where this came from.
+const DEFAULT_SILHOUETTE: GamepadSilhouette = {
+  viewBox: "0 3 24 18",
+  path: "M15.5 4a6 6 0 0 1 5.945 5.187l1.532 7.883a3.3 3.3 0 0 1 -5.632 2.903l-3.776 -3.974l-3.14 .001l-3.719 3.916a3.3 3.3 0 0 1 -5.629 -2.92l1.634 -8.173a6 6 0 0 1 5.885 -4.823z",
+};
+const effectiveSilhouette = computed(() => props.silhouette ?? DEFAULT_SILHOUETTE);
+
+// Parses "minX minY width height" (the standard SVG viewBox attribute format) to derive the
+// silhouette's own aspect ratio - both the container's CSS aspect-ratio and the stick-light
+// offset scaling (see STICK_LIGHT_OFFSET_Y below) need this to stay correct for a custom
+// silhouette with a different box shape than the built-in default.
+const padShapeAspect = computed(() => {
+  const parts = effectiveSilhouette.value.viewBox.trim().split(/\s+/).map(Number);
+  const [, , width, height] = parts;
+  return width > 0 && height > 0 ? width / height : 24 / 18;
+});
 
 onBeforeUnmount(stopPolling);
 </script>
@@ -291,25 +338,30 @@ onBeforeUnmount(stopPolling);
       </div>
     </template>
     <template #body>
-      <div class="pad-silhouette">
-        <svg class="pad-shape" viewBox="0 3 24 18" preserveAspectRatio="none" aria-hidden="true">
-          <!-- The outer body outline from @tabler/icons-vue's "device-gamepad-2" filled icon
-               (MIT, already a dependency of this project - see other components' own
-               `simple-icons`/`@tabler/icons-vue` platform-icon usage), with its decorative
-               inner d-pad/button glyph subpaths dropped - this component draws its own
-               separate hitzones over the shape. Flat top edge, rounded shoulder corners,
-               flares into two rounded bottom grips with a center notch: a real,
-               professionally-drawn generic gamepad silhouette rather than a hand-traced one. -->
-          <path
-            d="M15.5 4a6 6 0 0 1 5.945 5.187l1.532 7.883a3.3 3.3 0 0 1 -5.632 2.903l-3.776 -3.974l-3.14 .001l-3.719 3.916a3.3 3.3 0 0 1 -5.629 -2.92l1.634 -8.173a6 6 0 0 1 5.885 -4.823z"
-          />
+      <div class="pad-silhouette" :style="{ aspectRatio: String(padShapeAspect) }">
+        <svg
+          class="pad-shape"
+          :viewBox="effectiveSilhouette.viewBox"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <!-- Default shape: the outer body outline from @tabler/icons-vue's "device-gamepad-2"
+               filled icon (MIT, already a dependency of this project - see other components'
+               own `simple-icons`/`@tabler/icons-vue` platform-icon usage), with its decorative
+               inner d-pad/button glyph subpaths dropped - this component draws its own separate
+               hitzones over the shape. Flat top edge, rounded shoulder corners, flares into two
+               rounded bottom grips with a center notch: a real, professionally-drawn generic
+               gamepad silhouette rather than a hand-traced one. A plugin manifest can override
+               both this path and its viewBox via `props.silhouette` (Milestone 24 post-close) -
+               see DEFAULT_SILHOUETTE in the script. -->
+          <path :d="effectiveSilhouette.path" />
         </svg>
         <div
           v-for="index in layoutIndices"
           :key="index"
           class="pad-btn"
-          :class="[`pad-btn-${PAD_POSITIONS[index]?.shape ?? 'round'}`, { pressed: pressed[index] }]"
-          :style="{ left: `${PAD_POSITIONS[index]?.x ?? 50}%`, top: `${PAD_POSITIONS[index]?.y ?? 50}%` }"
+          :class="[`pad-btn-${padPositions[index]?.shape ?? 'round'}`, { pressed: pressed[index] }]"
+          :style="{ left: `${padPositions[index]?.x ?? 50}%`, top: `${padPositions[index]?.y ?? 50}%` }"
         >
           <component :is="DPAD_ARROW_ICONS[index]" v-if="DPAD_ARROW_ICONS[index]" :size="12" />
           <template v-else>{{ gamepadButtonLabel(index) }}</template>
@@ -409,17 +461,15 @@ onBeforeUnmount(stopPolling);
 /* A gamepad silhouette (SVG body shape) with button hitzones positioned by percentage over it -
    not pixel-accurate to any specific real controller (deliberately generic, same reasoning as
    avoiding a brand-specific shape/logo elsewhere in this codebase), but reads as an actual pad
-   at a glance instead of a plain grid of boxes. `PAD_POSITIONS` in the script drives both the
-   shape's own viewBox coordinates and these percentage placements, so the two stay in sync. */
+   at a glance instead of a plain grid of boxes. `padPositions`/`effectiveSilhouette` in the
+   script drive both the shape's own viewBox coordinates and these percentage placements, so the
+   two stay in sync - for a custom manifest-supplied silhouette too, not just the built-in one. */
 .pad-silhouette {
   position: relative;
   width: 100%;
-  /* Matches the SVG's own viewBox (0 3 24 18) - cropped to the silhouette's real bounding box
-     (see the viewBox comment above) rather than the icon's native 24x24 square canvas, so
-     there's no empty top/bottom margin around the shape. Padded a bit past the shape's exact
-     y4-~20.3 extent (rather than cropping tight to it) since the bottom-corner arcs bulge
-     slightly past their nominal endpoints - a tight crop clipped the grips' bottom edge. */
-  aspect-ratio: 24 / 18;
+  /* aspect-ratio itself is set inline (:style, computed from the effective silhouette's own
+     viewBox) since it must track a custom manifest-supplied shape, not just the built-in
+     default's fixed 24x18 box. */
   margin-bottom: var(--space-3);
   font-size: 0.6rem;
 }

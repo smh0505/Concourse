@@ -99,6 +99,31 @@ export interface GamepadMapping {
   repeatIntervalMs?: number;
 }
 
+/** One physical button's placement on `GamepadRemapSettings.vue`'s live diagram - `index` is a
+ *  real Gamepad API standard-mapping index (same semantic space `GamepadButtonBinding.index`
+ *  and `buttonNames.ts` already use), `x`/`y` are % of the silhouette's own box. Lets a
+ *  manifest reposition, add, or omit diagram buttons instead of every plugin being stuck with
+ *  the component's own built-in `standard-gamepad`-shaped default layout - the *set* of buttons
+ *  this diagram draws is manifest-driven data, not a fixed assumption baked into the UI. Doesn't
+ *  redefine what an index *means* (still the same 17 real Gamepad API buttons `buttonNames.ts`
+ *  knows how to label) - just where, if anywhere, each one is drawn. */
+export interface GamepadLayoutButton {
+  index: number;
+  x: number;
+  y: number;
+  shape: "round" | "pill" | "stick";
+}
+
+/** A custom controller-body outline for the live diagram, replacing the component's own default
+ *  (`@tabler/icons-vue`'s `device-gamepad-2` outer path) - `viewBox` is the standard SVG
+ *  attribute value (e.g. `"0 3 24 18"`), `path` is a single `<path d="...">` string. Both
+ *  required together since a path's coordinates are only meaningful relative to its own
+ *  viewBox. */
+export interface GamepadSilhouette {
+  viewBox: string;
+  path: string;
+}
+
 export interface ControllerMappingPlugin extends PluginBase {
   mapping: GamepadMapping;
 }

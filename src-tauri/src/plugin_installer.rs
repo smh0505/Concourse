@@ -156,6 +156,18 @@ pub struct DataControllerManifest {
     /// controller plugin's own `hasSticks` prop would. Defaults true (most pads have sticks).
     #[serde(default = "default_true", rename = "hasSticks")]
     pub has_sticks: bool,
+    /// Milestone 24 (post-close) - optional per-button diagram placement, opaque here for the
+    /// same reason `mapping` above is: the host never interprets it, only stores/round-trips
+    /// it. `GamepadRemapSettings.vue` (via `GamepadLayoutButton[]` in `types.ts`) is the real
+    /// (and only) validation this ever goes through. Absent means "use the diagram's own
+    /// built-in default layout."
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub layout: Option<serde_json::Value>,
+    /// Milestone 24 (post-close) - optional custom controller-body outline, same opaque
+    /// treatment as `layout` above (see `GamepadSilhouette` in `types.ts`). Absent means "use
+    /// the diagram's own built-in default shape."
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub silhouette: Option<serde_json::Value>,
     /// Milestone 20 - see `WasmPluginManifest::source_url`'s doc comment.
     #[serde(default, rename = "sourceUrl", skip_serializing_if = "Option::is_none")]
     pub source_url: Option<String>,
@@ -1078,6 +1090,55 @@ mod tests {
             manifests_after.is_empty(),
             "expected controller mapping to be gone after uninstall"
         );
+    }
+
+    // Milestone 24 (post-close) - layout/silhouette are optional, opaque, host-never-interprets
+    // fields (same treatment as mapping itself), but they still need to actually round-trip
+    // through install -> disk -> list, not just parse without erroring.
+    #[test]
+    fn round_trips_optional_layout_and_silhouette_fields() {
+        let temp = TempDir::new("controller-layout-silhouette");
+        let url = serve_once(
+            r##"{"id":"custom-pad","name":"Custom Pad","version":"1.0.0","kind":"controller","mapping":{"dpadUp":null,"dpadDown":null,"dpadLeft":null,"dpadRight":null,"buttonConfirm":null,"buttonCancel":null},"layout":[{"index":0,"x":71,"y":66,"shape":"round"}],"silhouette":{"viewBox":"0 0 10 10","path":"M0,0 L10,0 L10,10 L0,10 Z"}}"##,
+        );
+
+        let bytes =
+            tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let result =
+            tauri::async_runtime::block_on(install_data_controller(&temp.0, &url, &bytes, None))
+                .expect("install should succeed");
+        assert_eq!(result.id, "custom-pad");
+
+        let manifests = list_data_controllers_from(&temp.0).expect("list should succeed");
+        assert_eq!(manifests.len(), 1);
+        let layout = manifests[0].layout.as_ref().expect("layout should round-trip");
+        assert_eq!(layout[0]["index"], 0);
+        assert_eq!(layout[0]["shape"], "round");
+        let silhouette = manifests[0]
+            .silhouette
+            .as_ref()
+            .expect("silhouette should round-trip");
+        assert_eq!(silhouette["viewBox"], "0 0 10 10");
+    }
+
+    // Confirms both stay genuinely optional - a manifest from before these fields existed (or
+    // one that just doesn't need them) still installs fine with neither.
+    #[test]
+    fn installs_a_controller_manifest_with_no_layout_or_silhouette() {
+        let temp = TempDir::new("controller-no-layout-silhouette");
+        let url = serve_once(
+            r##"{"id":"plain-pad","name":"Plain Pad","version":"1.0.0","kind":"controller","mapping":{"dpadUp":null,"dpadDown":null,"dpadLeft":null,"dpadRight":null,"buttonConfirm":null,"buttonCancel":null}}"##,
+        );
+
+        let bytes =
+            tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        tauri::async_runtime::block_on(install_data_controller(&temp.0, &url, &bytes, None))
+            .expect("install should succeed");
+
+        let manifests = list_data_controllers_from(&temp.0).expect("list should succeed");
+        assert_eq!(manifests.len(), 1);
+        assert!(manifests[0].layout.is_none());
+        assert!(manifests[0].silhouette.is_none());
     }
 
     #[test]

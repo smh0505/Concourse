@@ -5,7 +5,9 @@ import { isPluginManifest, type PluginKind, type PluginManifest } from "./manife
 import type {
   ControllerMappingPlugin,
   GameEntry,
+  GamepadLayoutButton,
   GamepadMapping,
+  GamepadSilhouette,
   Installable,
   LocaleProfile,
   MetadataCandidate,
@@ -225,6 +227,39 @@ function normalizeGamepadMapping(raw: unknown): GamepadMapping {
   };
 }
 
+/** A remote controller manifest's `layout` is untrusted, arbitrary JSON - narrows it into a
+ *  real `GamepadLayoutButton[]`, silently dropping any entry missing a required numeric field
+ *  rather than trusting a stray shape. `undefined` (not an empty array) when the manifest
+ *  doesn't declare one at all, so `GamepadRemapSettings.vue` can tell "no layout given, use my
+ *  own built-in default" apart from "layout given but empty." */
+function normalizeGamepadLayout(raw: unknown): GamepadLayoutButton[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const entries: GamepadLayoutButton[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null) continue;
+    const { index, x, y, shape } = item as Record<string, unknown>;
+    if (typeof index !== "number" || typeof x !== "number" || typeof y !== "number") continue;
+    entries.push({
+      index,
+      x,
+      y,
+      shape: shape === "pill" || shape === "stick" ? shape : "round",
+    });
+  }
+  return entries;
+}
+
+/** Same untrusted-JSON narrowing as `normalizeGamepadLayout` above - both `viewBox`/`path` are
+ *  required together (a path's coordinates are meaningless without its own viewBox), so a
+ *  manifest missing either falls back to `undefined` (built-in default) rather than a
+ *  half-valid custom shape. */
+function normalizeGamepadSilhouette(raw: unknown): GamepadSilhouette | undefined {
+  if (typeof raw !== "object" || raw === null) return undefined;
+  const { viewBox, path } = raw as Record<string, unknown>;
+  if (typeof viewBox !== "string" || typeof path !== "string") return undefined;
+  return { viewBox, path };
+}
+
 /** Data-only controller mappings have no `index.ts` of their own to attach
  *  `GamepadRemapSettings.vue` the way `standard-gamepad`/`8bitdo-micro` do - this attaches the
  *  same shared component here instead, since it's the loader (not the manifest) that knows how
@@ -241,6 +276,8 @@ function createDataControllerMappingPlugin(manifest: PluginManifest): Controller
         pluginId: manifest.id,
         defaultMapping: plugin.mapping,
         hasSticks: manifest.hasSticks ?? true,
+        layout: normalizeGamepadLayout(manifest.layout),
+        silhouette: normalizeGamepadSilhouette(manifest.silhouette),
       }),
   });
   return plugin;

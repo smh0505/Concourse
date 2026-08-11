@@ -42,6 +42,18 @@ export interface PluginManifest {
    *  pad with no analog sticks - see `GamepadRemapSettings.vue`'s identical prop. Defaults true
    *  when absent (most pads have sticks), matching the Rust-side manifest's own default. */
   hasSticks?: boolean;
+  /** Milestone 24 (post-close) - only present for `runtime: "data"` controller-mapping
+   *  manifests wanting to reposition the live diagram's buttons. Untyped here (not
+   *  `GamepadLayoutButton[]` from `types.ts`) since it's remote, untrusted data until actually
+   *  consumed - `createDataControllerMappingPlugin` (loader.ts) is what narrows it. Absent
+   *  falls back to `GamepadRemapSettings.vue`'s own built-in default layout. */
+  layout?: unknown;
+  /** Milestone 24 (post-close) - only present for `runtime: "data"` controller-mapping
+   *  manifests wanting a custom controller-body outline instead of the diagram's built-in one.
+   *  Untyped here (not `GamepadSilhouette` from `types.ts`) for the same reason `layout` above
+   *  is - narrowed by `createDataControllerMappingPlugin`, absent falls back to the built-in
+   *  shape. */
+  silhouette?: unknown;
   /** Declares user-configurable settings a WASM plugin needs (e.g. an API key) - the loader
    *  renders one generic form from this instead of every plugin needing its own custom
    *  settings UI, which WASM plugins have no other mechanism for (unlike TS-authored plugins'

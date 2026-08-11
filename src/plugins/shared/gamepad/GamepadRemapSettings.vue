@@ -312,7 +312,7 @@ onBeforeUnmount(stopPolling);
   height: 100%;
   fill: var(--color-surface0);
   stroke: var(--color-border, currentColor);
-  stroke-width: 2;
+  stroke-width: 0.4;
   stroke-opacity: 0.4;
 }
 

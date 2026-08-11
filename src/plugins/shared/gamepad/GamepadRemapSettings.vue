@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconArrowDown, IconArrowLeft, IconArrowRight, IconArrowUp } from "@tabler/icons-vue";
+import {
+  IconArrowDown,
+  IconArrowLeft,
+  IconArrowRight,
+  IconArrowUp,
+  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronUp,
+} from "@tabler/icons-vue";
 
 import { useControllerMappingStore } from "@/stores/controllerMapping";
 import type { GamepadDirectionBinding, GamepadMapping } from "@/plugins/types";
@@ -19,11 +28,13 @@ const DPAD_ARROW_ICONS: Record<number, typeof IconArrowUp> = {
 };
 
 type StickDirection = "up" | "down" | "left" | "right";
-const STICK_LIGHT_ICONS: Record<StickDirection, typeof IconArrowUp> = {
-  up: IconArrowUp,
-  down: IconArrowDown,
-  left: IconArrowLeft,
-  right: IconArrowRight,
+// Chevrons (open carets), not full arrows - each points outward away from the stick's own
+// circle, matching a reference image of chunky directional brackets ringing a center dot.
+const STICK_LIGHT_ICONS: Record<StickDirection, typeof IconChevronUp> = {
+  up: IconChevronUp,
+  down: IconChevronDown,
+  left: IconChevronLeft,
+  right: IconChevronRight,
 };
 const STICK_DIRECTIONS: StickDirection[] = ["up", "down", "left", "right"];
 // Per the Gamepad API's "standard" mapping, axes 0/1 are the left stick's x/y and 2/3 are the
@@ -281,7 +292,7 @@ onBeforeUnmount(stopPolling);
             :class="{ active: stickDirectionActive('left', direction) }"
             :style="stickLightStyle(10, direction)"
           >
-            <component :is="STICK_LIGHT_ICONS[direction]" :size="10" />
+            <component :is="STICK_LIGHT_ICONS[direction]" :size="13" :stroke-width="3.5" />
           </div>
           <div
             v-for="direction in STICK_DIRECTIONS"
@@ -290,7 +301,7 @@ onBeforeUnmount(stopPolling);
             :class="{ active: stickDirectionActive('right', direction) }"
             :style="stickLightStyle(11, direction)"
           >
-            <component :is="STICK_LIGHT_ICONS[direction]" :size="10" />
+            <component :is="STICK_LIGHT_ICONS[direction]" :size="13" :stroke-width="3.5" />
           </div>
         </template>
       </div>

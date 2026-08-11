@@ -176,22 +176,24 @@ const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pi
     4: { x: 15, y: 20, shape: "pill" }, // LB
     7: { x: 85, y: 8, shape: "pill" }, // RT
     5: { x: 85, y: 20, shape: "pill" }, // RB
-    // Back/Home/Start - center.
-    8: { x: 42, y: 30, shape: "round" }, // Back
-    16: { x: 50, y: 25, shape: "round" }, // Home
-    9: { x: 58, y: 30, shape: "round" }, // Start
-    // Left stick, d-pad below it.
-    10: { x: 29, y: 44, shape: "stick" }, // LS
-    12: { x: 29, y: 63, shape: "round" }, // D-Up
-    14: { x: 22, y: 72, shape: "round" }, // D-Left
-    15: { x: 36, y: 72, shape: "round" }, // D-Right
-    13: { x: 29, y: 80, shape: "round" }, // D-Down
-    // Face buttons diamond, right stick below it.
-    3: { x: 71, y: 44, shape: "round" }, // Y
-    2: { x: 64, y: 55, shape: "round" }, // X
-    1: { x: 78, y: 55, shape: "round" }, // B
-    0: { x: 71, y: 66, shape: "round" }, // A
-    11: { x: 71, y: 85, shape: "stick" }, // RS
+    // Back/Home/Start - midway between the shoulder pairs' own y (8 and 20).
+    8: { x: 42, y: 14, shape: "round" }, // Back
+    16: { x: 50, y: 14, shape: "round" }, // Home
+    9: { x: 58, y: 14, shape: "round" }, // Start
+    // Left stick; the face-button diamond (below) is recentered on this same y.
+    10: { x: 29, y: 38, shape: "stick" }, // LS
+    // D-pad; recentered on the right stick's y (below).
+    12: { x: 29, y: 68, shape: "round" }, // D-Up
+    14: { x: 22, y: 77, shape: "round" }, // D-Left
+    15: { x: 36, y: 77, shape: "round" }, // D-Right
+    13: { x: 29, y: 85, shape: "round" }, // D-Down
+    // Face buttons diamond, vertically centered on LS's y (38) above.
+    3: { x: 71, y: 27, shape: "round" }, // Y
+    2: { x: 64, y: 38, shape: "round" }, // X
+    1: { x: 78, y: 38, shape: "round" }, // B
+    0: { x: 71, y: 49, shape: "round" }, // A
+    // Right stick; the d-pad (above) is recentered on this same y.
+    11: { x: 71, y: 76, shape: "stick" }, // RS
   };
 
 onBeforeUnmount(stopPolling);

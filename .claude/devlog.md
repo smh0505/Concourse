@@ -5156,6 +5156,43 @@ per-iteration.
   this pass and confirmed byte-for-byte no capture logic had changed - turned out to be stale
   Vite HMR state in the dev server, fixed by a full restart, not a real code bug.
 
+**Post-close: manifest-configurable `layout`/`silhouette`.** After the diagram polish pass
+above, user asked to make the diagram's own button positions and body shape manifest-driven
+too, not just the remap *bindings* - specifically calling out that a manifest, not some future
+UI control, should own which physical gamepad button ids the diagram draws and where.
+
+Two new optional fields on `DataControllerManifest` (Rust) / `PluginManifest` (TS), both opaque
+passthrough exactly like `mapping` already is - the host never interprets them, only stores/
+round-trips them:
+- `layout: GamepadLayoutButton[]` - `{index, x, y, shape}` entries. `index` stays the same real
+  Gamepad API standard-mapping index `mapping`'s own bindings already use (doesn't invent a new
+  indexing scheme) - this only controls which of those indices get drawn on the diagram, and
+  where. Declaring `layout` at all replaces the component's own built-in default layout
+  entirely (not a merge), on the assumption a manifest author placing any buttons is placing all
+  the ones they care about.
+- `silhouette: {viewBox, path}` - a custom SVG controller-body outline replacing the diagram's
+  own built-in `@tabler/icons-vue` shape. Both fields required together, since a path's
+  coordinates are meaningless without knowing its own viewBox.
+
+`GamepadRemapSettings.vue` gained `normalizeGamepadLayout`/`normalizeGamepadSilhouette` in
+`loader.ts` (same untrusted-JSON narrowing pattern `normalizeGamepadMapping` already
+established - drop malformed entries rather than trusting a stray shape), and two new computed
+values (`padPositions`, `effectiveSilhouette`) that pick the manifest-supplied value when
+present, else the component's own existing built-in default (kept as `DEFAULT_PAD_POSITIONS`/
+`DEFAULT_SILHOUETTE`, the exact values from the polish pass above, so `standard-gamepad`/
+`8bitdo-micro` render identically to before with zero manifest changes needed). One real design
+wrinkle this surfaced: the stick-light Y-offset scaling and the container's own CSS
+`aspect-ratio` were both hardcoded against the built-in silhouette's fixed 24x18 box - a custom
+silhouette with a different box shape needed that scaling to track its *own* viewBox instead, so
+both now derive from a `padShapeAspect` computed that parses the effective silhouette's viewBox
+attribute at runtime rather than assuming a constant.
+
+Data-controller-plugins' own `scripts/validate.mjs` extended to shape-check both new optional
+fields (array/object structure, required sub-fields) the same way it already checks `mapping`'s
+bindings, and its README documents the new schema. 4 new Rust tests (both fields round-trip
+through install→list; both stay genuinely optional, a manifest with neither still installs
+fine) alongside the existing 9 `plugin_installer.rs` controller/theme tests, all passing.
+
 ## Milestone 15 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch) — research
 
 Ranged over several requests: brainstormed what else could go into `milestones.md` (M25-37

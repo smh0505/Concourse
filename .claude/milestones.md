@@ -464,6 +464,12 @@ install-by-URL, no WASM/code execution) rather than the WASM tier.
   turned into a popup (shared `DropdownMenu.vue`) instead of an inline expansion. Also found and
   fixed a real gap: `gamepadRemap`'s i18n strings only ever existed in `en.json` - every other
   locale silently fell back to English for the whole modal; translated across all 10
+- [x] Post-close: added two more optional data-controller-manifest fields, `layout`
+  (`GamepadLayoutButton[]` - repositions/adds/omits which physical buttons the diagram draws)
+  and `silhouette` (`{viewBox, path}` - a custom controller-body outline) - both opaque
+  passthrough data (Rust never interprets them), narrowed only at point of use in
+  `loader.ts`/`GamepadRemapSettings.vue`; absent falls back to the component's own built-in
+  default layout/shape, so `8bitdo-micro`'s existing manifest needed no changes
 
 ## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort (in progress)
 `GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s

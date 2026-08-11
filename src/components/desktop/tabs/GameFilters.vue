@@ -67,9 +67,9 @@ function toggleViewMode() {
   margin-bottom: 1.5rem;
   /* Pinned to the top of App.vue's scrolling `.content` - stays visible while GameGrid/GameList
      scroll underneath it. padding-top (not `.content`'s own top padding, which is now 0) keeps
-     the gap above this identical whether at rest or stuck; backdrop-filter's blur is what stops
-     scrolled game rows from reading clearly underneath it once it's pinned (see the shared
-     .sticky-header rule for why a redrawn --content-background copy doesn't work here). z-index
+     the gap above this identical whether at rest or stuck; background-attachment: fixed is what
+     stops scrolled game rows from reading clearly underneath it once pinned (see the shared
+     .sticky-header rule for why this, not a plain box-relative background, is needed). z-index
      has to clear not just GameCard.vue's own `.card:hover { z-index: 2 }` but also its
      Teleported-to-<body> balloon (`z-index: 100`) - both need to render *under* this pinned
      bar, not over it, when a top-row card's hover/balloon would otherwise overlap it. */
@@ -77,8 +77,7 @@ function toggleViewMode() {
   top: 0;
   z-index: 150;
   background: var(--background-sticky);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background-attachment: fixed;
   /* Matches GameGrid.vue's `.grid`/GameList.vue's `.list` own horizontal padding, so this
      spans .content's full width (needed so the search input isn't visibly narrower than the
      grid) while still lining up visually with the grid/list content below it. Bottom padding

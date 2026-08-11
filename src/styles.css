@@ -40,13 +40,16 @@
      too saturated to pair with its dark-navy --color-text (~3:1 contrast, fails normal-text AA;
      its own --color-button-text: #ffffff exists for the same underlying reason). */
   --color-tint: var(--color-crust);
-  /* Background for pinned/sticky bars (GameFilters.vue's .filters, the shared .sticky-header)
-     that sit above scrolling content - transparent by default, letting whatever .content
-     itself shows (its own --content-background, or nothing) show straight through instead of
-     a dedicated flat patch. A theme wanting an opaque pinned bar (so scrolled rows don't show
-     through underneath it) sets this explicitly - not automatic, since the "right" opaque
-     value depends entirely on what that theme's own content background actually looks like. */
-  --background-sticky: transparent;
+  /* Background for pinned/sticky bars (GameFilters.vue's .filters, the shared .sticky-header,
+     GameDetail.vue's .action-bar) that sit above scrolling content. Falls back to
+     --content-background (also transparent by default) rather than to plain transparent: paired
+     with background-attachment: fixed on both .content and these bars, an unset theme still
+     renders nothing extra (unchanged), while a theme that DOES set --content-background gets it
+     painted here too, anchored to the same viewport coordinates .content itself uses - one
+     continuous pattern across the pinned bars and the scrolling area behind them, opaque
+     wherever that pattern itself is opaque, no separate blur needed to hide scrolled rows. A
+     theme can still override this token directly for a bar-specific tint if it wants one. */
+  --background-sticky: var(--content-background, transparent);
 
   /* Spacing scale */
   --space-1: 0.25rem;
@@ -482,27 +485,17 @@ small {
   position: sticky;
   top: 0;
   z-index: 10;
-  /* --background-sticky stays transparent by default - a theme opts into a solid tint
-     explicitly if it wants one, same as before. backdrop-filter is what actually hides
-     scrolled content underneath: it blurs whatever's directly behind this element in real
-     time, so it always matches .content's actual current background (any theme's pattern,
-     not just a flat color) without this element needing to redraw a second copy of it - a
-     second copy is positioned/sized relative to *this* small box, not .content, so it never
-     lines up with the real one scrolling underneath (this is what broke ARC Raiders' stripes
-     when .sticky-header briefly drew --content-background itself). */
+  /* --background-sticky falls back to --content-background (both transparent by default) - a
+     theme opts into a distinct tint by overriding --background-sticky explicitly, otherwise it
+     just gets its own content pattern here too. background-attachment: fixed is what makes that
+     actually align: it anchors the background to the viewport instead of this element's own
+     box, the same coordinate space .content itself uses (also fixed - see App.vue), so this
+     renders as a continuous extension of the real pattern rather than a second, independently
+     -positioned copy (that's what broke ARC Raiders' stripes when .sticky-header drew
+     --content-background with normal, box-relative attachment). Opaque wherever the underlying
+     pattern is opaque, so scrolled rows are genuinely hidden, not just blurred. */
   background: var(--background-sticky);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  /* Breaks out of .settings-panel's own left/right padding (negative margin equal to it,
-     compensating padding added back on this element) so the blur/background box spans the
-     same full width .filters already gets for free (.content has no horizontal padding of its
-     own) - without this, the blur only covered the narrower inset area, leaving a visible
-     unblurred strip in the gutters right next to it. The h2/small/add-form children stay
-     visually inset via the padding added here, same position as before. */
-  margin-left: calc(-1 * var(--space-6));
-  margin-right: calc(-1 * var(--space-6));
-  padding-left: var(--space-6);
-  padding-right: var(--space-6);
+  background-attachment: fixed;
   padding-top: var(--space-5);
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-3);

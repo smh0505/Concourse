@@ -227,8 +227,13 @@ onUnmounted(() => {
   /* Opt-in hook for a theme wanting a patterned/gradient content background (e.g. diagonal
      stripes) instead of `body`'s own flat `--color-base` - transparent by default so every
      existing theme (which only ever sets `--color-base`, never this) renders identically to
-     before this hook existed, letting `body`'s solid color show through untouched. */
+     before this hook existed, letting `body`'s solid color show through untouched.
+     background-attachment: fixed anchors the pattern to the viewport instead of this element's
+     own scrolling box - same coordinate space the sticky bars below now share, so their
+     background (falling back to this same value) lines up as one continuous pattern instead of
+     each redrawing its own independently-positioned copy. */
   background: var(--content-background, transparent);
+  background-attachment: fixed;
 }
 
 /* While a source plugin scan is running, GameGrid/GameList hide already-loaded games behind

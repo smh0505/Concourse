@@ -5109,6 +5109,53 @@ and hashed a 404 response instead of the real manifest. Both scripts now treat `
 `controller` identically as data-only kinds (validate.sh's hash check; bump-entry.sh's
 content-dir selection, `themes/` vs `mappings/`).
 
+**Post-close: `GamepadRemapSettings.vue` diagram/UI polish pass**, requested right after M24
+closed, iterated over many small rounds - full history in git log, summarized here rather than
+per-iteration.
+- Replaced the plain CSS-grid box layout with an SVG gamepad silhouette. First attempt was a
+  hand-drawn bezier path (rejected, "ugly"); second attempt traced a user-provided reference
+  image by eye (still off); landed on reusing `@tabler/icons-vue`'s real `device-gamepad-2`
+  filled icon's own outer body path instead (MIT, already a project dependency) - a
+  professionally-drawn shape beats hand-tracing. Its native 24x24 viewBox was first cropped
+  tight to the shape's bounding box to kill empty top/bottom margin, then loosened slightly
+  after the tight crop clipped the grips' corner-rounding arcs (they bulge past their nominal
+  endpoints). `PAD_POSITIONS` (every button's %-placement) got rescaled twice to track each
+  viewBox change, then iterated further per direct feedback: Back/Home/Start centered between
+  the shoulder pairs; the face-button diamond recentered on the left stick's own y and its
+  Y-to-A span narrowed to match the d-pad's Up-to-Down span; the d-pad recentered on the right
+  stick's own y; both sticks' y raised/adjusted by feel across several rounds.
+- D-pad direction labels on the diagram swap to `IconArrowUp/Down/Left/Right` instead of text
+  ("D-Up" etc.) - sidesteps a translation question for that one case entirely. This followed a
+  brief detour: an i18n pass first added a `gamepadRemap.buttonNames` translation layer for all
+  word-based physical labels (Back/Start/Home/D-Up/...), then got partly reverted per feedback -
+  physical hardware legends read better as plain literals (same reasoning A/B/X/Y/LB/RB already
+  got), with the d-pad four specifically becoming icons rather than text of either kind.
+- Along the way, found a real, unrelated i18n gap while investigating: the entire
+  `gamepadRemap` i18n namespace only ever existed in `en.json` - every other locale silently
+  fell back to English for the whole modal (title, listen state, action labels, tuning fields,
+  reset button) since `fallbackLocale: "en"` masked the gap instead of erroring. Translated the
+  full section into all 9 other locales.
+- Added stick-tilt "lights": four `IconChevronCompactUp/Down/Left/Right` per stick, dim by
+  default, lighting up in `--color-accent` when that stick tilts past the remap threshold in
+  that direction - reads directly off the existing live `axisValues` (no polling-loop changes),
+  assuming the Gamepad API standard mapping's axes 0/1 = left stick, 2/3 = right stick. Their
+  offset-from-stick and stretch-scale were both tuned by feel across several rounds (final:
+  offset 8, scale 2.4, stretched perpendicular to each chevron's own point direction so
+  left/right read taller and up/down read wider). The offset itself needed an actual bug fix
+  along the way: `.pad-silhouette`'s box is 24x18, not square, so an equal *percentage* offset
+  on both axes was NOT an equal physical gap - the vertical offset now scales by the same 24/18
+  ratio the viewBox itself uses.
+- The raw per-axis numeric readout (debugging aid, not needed open by default) moved twice: first
+  collapsed behind a "See more"/"See less" toggle inline under the diagram, then per feedback
+  moved onto the modal's own title row (`BaseModal`'s `#header` slot), then finally turned into
+  an actual popup using the shared `DropdownMenu.vue` shell (same trigger+panel+backdrop-close
+  shape `GameDetail.vue`'s translate menu and `AppSettings.vue`'s model picker already use)
+  right-aligned to its trigger via `:deep(.axis-menu-panel)`, instead of an inline expansion.
+- One real regression scare mid-pass: gamepad input briefly stopped registering in the remap
+  modal. Diffed every script-logic line (`pollGamepad`/`onOpen`/`onClose`) across every commit in
+  this pass and confirmed byte-for-byte no capture logic had changed - turned out to be stale
+  Vite HMR state in the dev server, fixed by a full restart, not a real code bug.
+
 ## Milestone 15 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch) — research
 
 Ranged over several requests: brainstormed what else could go into `milestones.md` (M25-37

@@ -457,6 +457,14 @@ install-by-URL, no WASM/code execution) rather than the WASM tier.
   path: a controller entry fell into the WASM-artifact branch, tried to read a nonexistent
   `entry` field, and hashed a 404 - caught by the PR's own CI before merging, not shipped broken
 
+- [x] Post-close: `GamepadRemapSettings.vue`'s live diagram redrawn from plain CSS-grid boxes
+  into an SVG gamepad silhouette (`@tabler/icons-vue`'s `device-gamepad-2` outline), all button
+  hitzones repositioned to sit on it, stick-tilt direction lights added around LS/RS (reading
+  live off `axisValues`, axes 0/1 = left stick, 2/3 = right stick), and the axis-value readout
+  turned into a popup (shared `DropdownMenu.vue`) instead of an inline expansion. Also found and
+  fixed a real gap: `gamepadRemap`'s i18n strings only ever existed in `en.json` - every other
+  locale silently fell back to English for the whole modal; translated across all 10
+
 ## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort (in progress)
 `GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s
 `filteredGames` filters on search text and the active tag/collection, no sort at all) - one

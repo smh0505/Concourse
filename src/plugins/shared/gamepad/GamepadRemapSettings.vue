@@ -191,27 +191,34 @@ onBeforeUnmount(stopPolling);
   <BaseModal :open="open" :title="t('gamepadRemap.title')" max-width="460px" @close="onClose">
     <template #body>
       <div class="pad-silhouette">
-        <svg class="pad-shape" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
-          <!-- A generic top-down gamepad silhouette: a wide, gently-rounded trapezoid body
-               (holding the shoulders/triggers along its flat top edge) flaring at the bottom
-               into two large rounded grip lobes, with a shallow scalloped waist between them
-               where a real pad narrows toward the d-pad/face-button cluster. Not modeled on any
-               specific real controller - same reasoning as this codebase avoiding brand-specific
-               shapes/logos elsewhere. -->
+        <svg class="pad-shape" viewBox="0 0 240 150" preserveAspectRatio="none" aria-hidden="true">
+          <!-- Traced from a reference silhouette: flat top with two ear-tab bumps (shoulders
+               sit on them, with a shallow dip between), a wide rounded body, and a deep center
+               notch splitting two large rounded bottom feet (grips). Not modeled on any one
+               specific real controller brand - same reasoning as this codebase avoiding
+               brand-specific shapes/logos elsewhere. -->
           <path
-            d="M100,45
-               C100,22 122,17 145,17
-               L255,17
-               C278,17 300,22 300,45
-               L300,78
-               C300,100 322,99 344,112
-               C388,136 392,192 353,206
-               C320,220 298,193 275,165
-               C258,144 230,133 200,133
-               C170,133 142,144 125,165
-               C102,193 80,220 47,206
-               C8,192 12,136 56,112
-               C78,99 100,100 100,78
+            d="M58,8
+               L98,8
+               Q110,8 110,20
+               Q110,30 120,32
+               Q130,30 130,20
+               Q130,8 142,8
+               L182,8
+               Q198,8 202,22
+               Q208,40 222,58
+               Q232,74 226,92
+               Q222,106 218,112
+               Q208,132 188,140
+               Q168,148 152,132
+               Q140,118 120,112
+               Q100,118 88,132
+               Q72,148 52,140
+               Q32,132 22,112
+               Q18,106 14,92
+               Q8,74 18,58
+               Q32,40 38,22
+               Q42,8 58,8
                Z"
           />
         </svg>
@@ -295,7 +302,7 @@ onBeforeUnmount(stopPolling);
 .pad-silhouette {
   position: relative;
   width: 100%;
-  aspect-ratio: 400 / 220;
+  aspect-ratio: 240 / 150;
   margin-bottom: var(--space-3);
   font-size: 0.6rem;
 }

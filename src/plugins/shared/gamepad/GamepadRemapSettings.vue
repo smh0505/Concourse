@@ -517,6 +517,14 @@ onBeforeUnmount(stopPolling);
   position: relative;
 }
 
+/* Right-aligned to the trigger button instead of DropdownMenu's own default left:0 - the
+   trigger sits at the header row's right end already, so a left-aligned panel would overflow
+   past the modal's own edge. */
+.axis-menu-wrap :deep(.axis-menu-panel) {
+  left: auto;
+  right: 0;
+}
+
 .axis-readout-list {
   display: flex;
   flex-direction: column;

@@ -266,7 +266,20 @@ onBeforeUnmount(stopPolling);
   <button type="button" class="settings-trigger" @click="onOpen">
     {{ t("gamepadRemap.settingsTrigger") }}
   </button>
-  <BaseModal :open="open" :title="t('gamepadRemap.title')" max-width="460px" @close="onClose">
+  <BaseModal :open="open" max-width="460px" @close="onClose">
+    <template #header>
+      <div class="modal-header-row">
+        <h2>{{ t("gamepadRemap.title") }}</h2>
+        <button
+          v-if="Object.keys(axisValues).length > 0"
+          type="button"
+          class="compact-button"
+          @click="showAxisDetails = !showAxisDetails"
+        >
+          {{ showAxisDetails ? t("gamepadRemap.seeLessAxes") : t("gamepadRemap.seeMoreAxes") }}
+        </button>
+      </div>
+    </template>
     <template #body>
       <div class="pad-silhouette">
         <svg class="pad-shape" viewBox="0 3 24 18" preserveAspectRatio="none" aria-hidden="true">
@@ -313,11 +326,8 @@ onBeforeUnmount(stopPolling);
         </template>
       </div>
 
-      <div class="axis-readout" v-if="Object.keys(axisValues).length > 0">
-        <button type="button" class="compact-button" @click="showAxisDetails = !showAxisDetails">
-          {{ showAxisDetails ? t("gamepadRemap.seeLessAxes") : t("gamepadRemap.seeMoreAxes") }}
-        </button>
-        <div class="axis-readout-list" v-if="showAxisDetails">
+      <div class="axis-readout" v-if="Object.keys(axisValues).length > 0 && showAxisDetails">
+        <div class="axis-readout-list">
           <span v-for="(value, axis) in axisValues" :key="axis">
             {{ t("gamepadRemap.axis") }} {{ axis }}: {{ value.toFixed(2) }}
           </span>
@@ -375,6 +385,21 @@ onBeforeUnmount(stopPolling);
 </template>
 
 <style scoped>
+/* Puts the "See more"/"See less" axis toggle on the same row as the modal's own title, instead
+   of down by the readout it controls - BaseModal's #header slot replaces its default bare
+   <h2>{{title}}</h2>, so the h2 is rebuilt here alongside the button. */
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.modal-header-row h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
 .settings-trigger {
   font-size: 0.85rem;
 }

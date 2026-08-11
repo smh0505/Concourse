@@ -151,34 +151,36 @@ const layoutButtons = computed(() =>
     : STANDARD_GAMEPAD_LAYOUT_BUTTONS.filter((b) => b.index !== 10 && b.index !== 11),
 );
 
-// Silhouette placement, positioned as % of the SVG body's own 400x220 viewBox (so hitzones
-// track the shape at any render size) - an approximate Xbox-style asymmetric layout (left
-// stick above the d-pad, face buttons above the right stick), not pixel-accurate to any real
-// controller. `shape` picks the CSS treatment below: round buttons for face/stick clusters,
-// wide pills for the shoulder/trigger row, small pills for back/home/start.
+// Silhouette placement, positioned as % of the SVG body's own viewBox (so hitzones track the
+// shape at any render size) - an approximate Xbox-style asymmetric layout (left stick above the
+// d-pad, face buttons above the right stick), not pixel-accurate to any real controller. `shape`
+// picks the CSS treatment below: round buttons for face/stick clusters, wide pills for the
+// shoulder/trigger row. Y range kept inside the Tabler silhouette's own real bounding box
+// (roughly 17%-83% of the 24x24 viewBox - the flat top edge sits at y=4, the bottom grips
+// bottom out around y=20) rather than assuming the shape fills the full box edge to edge.
 const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pill" | "stick" }> =
   {
     // Shoulders/triggers - top edge.
-    6: { x: 15, y: 7, shape: "pill" }, // LT
-    4: { x: 15, y: 18, shape: "pill" }, // LB
-    7: { x: 85, y: 7, shape: "pill" }, // RT
-    5: { x: 85, y: 18, shape: "pill" }, // RB
+    6: { x: 15, y: 20, shape: "pill" }, // LT
+    4: { x: 15, y: 29, shape: "pill" }, // LB
+    7: { x: 85, y: 20, shape: "pill" }, // RT
+    5: { x: 85, y: 29, shape: "pill" }, // RB
     // Back/Home/Start - center.
-    8: { x: 42, y: 26, shape: "round" }, // Back
-    16: { x: 50, y: 21, shape: "round" }, // Home
-    9: { x: 58, y: 26, shape: "round" }, // Start
+    8: { x: 42, y: 36, shape: "round" }, // Back
+    16: { x: 50, y: 32, shape: "round" }, // Home
+    9: { x: 58, y: 36, shape: "round" }, // Start
     // Left stick, d-pad below it.
-    10: { x: 29, y: 34, shape: "stick" }, // LS
-    12: { x: 29, y: 52, shape: "round" }, // D-Up
-    14: { x: 24, y: 59, shape: "round" }, // D-Left
-    15: { x: 34, y: 59, shape: "round" }, // D-Right
-    13: { x: 29, y: 66, shape: "round" }, // D-Down
+    10: { x: 29, y: 46, shape: "stick" }, // LS
+    12: { x: 29, y: 60, shape: "round" }, // D-Up
+    14: { x: 22, y: 66, shape: "round" }, // D-Left
+    15: { x: 36, y: 66, shape: "round" }, // D-Right
+    13: { x: 29, y: 72, shape: "round" }, // D-Down
     // Face buttons diamond, right stick below it.
-    3: { x: 71, y: 34, shape: "round" }, // Y
-    2: { x: 66, y: 43, shape: "round" }, // X
-    1: { x: 76, y: 43, shape: "round" }, // B
-    0: { x: 71, y: 52, shape: "round" }, // A
-    11: { x: 71, y: 68, shape: "stick" }, // RS
+    3: { x: 71, y: 46, shape: "round" }, // Y
+    2: { x: 64, y: 54, shape: "round" }, // X
+    1: { x: 78, y: 54, shape: "round" }, // B
+    0: { x: 71, y: 62, shape: "round" }, // A
+    11: { x: 71, y: 76, shape: "stick" }, // RS
   };
 
 onBeforeUnmount(stopPolling);
@@ -191,35 +193,16 @@ onBeforeUnmount(stopPolling);
   <BaseModal :open="open" :title="t('gamepadRemap.title')" max-width="460px" @close="onClose">
     <template #body>
       <div class="pad-silhouette">
-        <svg class="pad-shape" viewBox="0 0 240 150" preserveAspectRatio="none" aria-hidden="true">
-          <!-- Traced from a reference silhouette: flat top with two ear-tab bumps (shoulders
-               sit on them, with a shallow dip between), a wide rounded body, and a deep center
-               notch splitting two large rounded bottom feet (grips). Not modeled on any one
-               specific real controller brand - same reasoning as this codebase avoiding
-               brand-specific shapes/logos elsewhere. -->
+        <svg class="pad-shape" viewBox="0 0 24 24" preserveAspectRatio="none" aria-hidden="true">
+          <!-- The outer body outline from @tabler/icons-vue's "device-gamepad-2" filled icon
+               (MIT, already a dependency of this project - see other components' own
+               `simple-icons`/`@tabler/icons-vue` platform-icon usage), with its decorative
+               inner d-pad/button glyph subpaths dropped - this component draws its own
+               separate hitzones over the shape. Flat top edge, rounded shoulder corners,
+               flares into two rounded bottom grips with a center notch: a real,
+               professionally-drawn generic gamepad silhouette rather than a hand-traced one. -->
           <path
-            d="M58,8
-               L98,8
-               Q110,8 110,20
-               Q110,30 120,32
-               Q130,30 130,20
-               Q130,8 142,8
-               L182,8
-               Q198,8 202,22
-               Q208,40 222,58
-               Q232,74 226,92
-               Q222,106 218,112
-               Q208,132 188,140
-               Q168,148 152,132
-               Q140,118 120,112
-               Q100,118 88,132
-               Q72,148 52,140
-               Q32,132 22,112
-               Q18,106 14,92
-               Q8,74 18,58
-               Q32,40 38,22
-               Q42,8 58,8
-               Z"
+            d="M15.5 4a6 6 0 0 1 5.945 5.187l1.532 7.883a3.3 3.3 0 0 1 -5.632 2.903l-3.776 -3.974l-3.14 .001l-3.719 3.916a3.3 3.3 0 0 1 -5.629 -2.92l1.634 -8.173a6 6 0 0 1 5.885 -4.823z"
           />
         </svg>
         <div
@@ -302,7 +285,7 @@ onBeforeUnmount(stopPolling);
 .pad-silhouette {
   position: relative;
   width: 100%;
-  aspect-ratio: 240 / 150;
+  aspect-ratio: 1;
   margin-bottom: var(--space-3);
   font-size: 0.6rem;
 }

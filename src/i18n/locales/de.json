@@ -229,6 +229,8 @@
     "listening": "Taste drücken oder Stick bewegen...",
     "unmapped": "Nicht zugewiesen",
     "axis": "Achse",
+    "seeMoreAxes": "Mehr anzeigen",
+    "seeLessAxes": "Weniger anzeigen",
     "actions": {
       "dpadUp": "Hoch",
       "dpadDown": "Runter",

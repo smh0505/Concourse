@@ -229,6 +229,8 @@
     "listening": "请按下按钮或移动摇杆...",
     "unmapped": "未分配",
     "axis": "轴",
+    "seeMoreAxes": "查看更多",
+    "seeLessAxes": "收起",
     "actions": {
       "dpadUp": "上",
       "dpadDown": "下",

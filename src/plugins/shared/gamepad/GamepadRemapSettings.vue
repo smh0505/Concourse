@@ -18,6 +18,24 @@ const DPAD_ARROW_ICONS: Record<number, typeof IconArrowUp> = {
   15: IconArrowRight,
 };
 
+type StickDirection = "up" | "down" | "left" | "right";
+const STICK_LIGHT_ICONS: Record<StickDirection, typeof IconArrowUp> = {
+  up: IconArrowUp,
+  down: IconArrowDown,
+  left: IconArrowLeft,
+  right: IconArrowRight,
+};
+const STICK_DIRECTIONS: StickDirection[] = ["up", "down", "left", "right"];
+// Per the Gamepad API's "standard" mapping, axes 0/1 are the left stick's x/y and 2/3 are the
+// right stick's - same layout this plugin's default mapping already assumes for buttons.
+const STICK_AXES: Record<"left" | "right", { x: number; y: number }> = {
+  left: { x: 0, y: 1 },
+  right: { x: 2, y: 3 },
+};
+// How far from the stick's own hitzone (in the same % units as PAD_POSITIONS) each direction
+// light sits.
+const STICK_LIGHT_OFFSET = 9;
+
 // Reusable across every ControllerMappingPlugin, not just Standard Gamepad - each plugin passes
 // its own id/default mapping in, so this component owns none of the plugin-specific data itself.
 const props = withDefaults(
@@ -61,6 +79,32 @@ const axisValues = reactive<Record<number, number>>({});
 // never needs to redraw anything, just remembers "was this axis already crossed last frame").
 const axisWasCrossed: Record<string, boolean> = {};
 let frameHandle: number | undefined;
+// Collapsed by default - the raw per-axis readout is a debugging aid (which axis number moves),
+// not something most users need open by default.
+const showAxisDetails = ref(false);
+
+// Drives the stick-direction "lights" - whether the given stick is currently tilted past the
+// threshold in that direction, straight from the same live axisValues the readout above shows.
+function stickDirectionActive(stick: "left" | "right", direction: StickDirection): boolean {
+  const threshold = mapping.value.axisThreshold ?? 0.5;
+  const axes = STICK_AXES[stick];
+  const xValue = axisValues[axes.x] ?? 0;
+  const yValue = axisValues[axes.y] ?? 0;
+  if (direction === "left") return xValue < -threshold;
+  if (direction === "right") return xValue > threshold;
+  if (direction === "up") return yValue < -threshold;
+  return yValue > threshold;
+}
+
+// Positions a stick's direction light a fixed offset from that stick's own hitzone (10 = LS,
+// 11 = RS in PAD_POSITIONS below).
+function stickLightStyle(stickButtonIndex: number, direction: StickDirection) {
+  const pos = PAD_POSITIONS[stickButtonIndex];
+  if (!pos) return {};
+  const dx = direction === "left" ? -STICK_LIGHT_OFFSET : direction === "right" ? STICK_LIGHT_OFFSET : 0;
+  const dy = direction === "up" ? -STICK_LIGHT_OFFSET : direction === "down" ? STICK_LIGHT_OFFSET : 0;
+  return { left: `${pos.x + dx}%`, top: `${pos.y + dy}%` };
+}
 
 function directionBindingLabel(binding: GamepadDirectionBinding): string {
   if (binding?.kind === "button") return gamepadButtonLabel(binding.index);
@@ -183,18 +227,18 @@ const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pi
     // Left stick; the face-button diamond (below) is recentered on this same y.
     10: { x: 29, y: 38, shape: "stick" }, // LS
     // D-pad; recentered on the right stick's y (below), same 17-unit Up-Down span as before.
-    12: { x: 29, y: 52, shape: "round" }, // D-Up
-    14: { x: 22, y: 60, shape: "round" }, // D-Left
-    15: { x: 36, y: 60, shape: "round" }, // D-Right
-    13: { x: 29, y: 69, shape: "round" }, // D-Down
+    12: { x: 29, y: 58, shape: "round" }, // D-Up
+    14: { x: 22, y: 66, shape: "round" }, // D-Left
+    15: { x: 36, y: 66, shape: "round" }, // D-Right
+    13: { x: 29, y: 75, shape: "round" }, // D-Down
     // Face buttons diamond, vertically centered on LS's y (38); Y-to-A span narrowed to match
     // the d-pad's own Up-to-Down span (17) instead of the wider 22 it had before.
     3: { x: 71, y: 30, shape: "round" }, // Y
     2: { x: 64, y: 38, shape: "round" }, // X
     1: { x: 78, y: 38, shape: "round" }, // B
     0: { x: 71, y: 47, shape: "round" }, // A
-    // Right stick, moved up to 60 (the d-pad above is recentered on this same y).
-    11: { x: 71, y: 60, shape: "stick" }, // RS
+    // Right stick, at y=66 (the d-pad above is recentered on this same y).
+    11: { x: 71, y: 66, shape: "stick" }, // RS
   };
 
 onBeforeUnmount(stopPolling);
@@ -229,12 +273,37 @@ onBeforeUnmount(stopPolling);
           <component :is="DPAD_ARROW_ICONS[index]" v-if="DPAD_ARROW_ICONS[index]" :size="12" />
           <template v-else>{{ gamepadButtonLabel(index) }}</template>
         </div>
+        <template v-if="hasSticks">
+          <div
+            v-for="direction in STICK_DIRECTIONS"
+            :key="`ls-${direction}`"
+            class="stick-light"
+            :class="{ active: stickDirectionActive('left', direction) }"
+            :style="stickLightStyle(10, direction)"
+          >
+            <component :is="STICK_LIGHT_ICONS[direction]" :size="10" />
+          </div>
+          <div
+            v-for="direction in STICK_DIRECTIONS"
+            :key="`rs-${direction}`"
+            class="stick-light"
+            :class="{ active: stickDirectionActive('right', direction) }"
+            :style="stickLightStyle(11, direction)"
+          >
+            <component :is="STICK_LIGHT_ICONS[direction]" :size="10" />
+          </div>
+        </template>
       </div>
 
       <div class="axis-readout" v-if="Object.keys(axisValues).length > 0">
-        <span v-for="(value, axis) in axisValues" :key="axis">
-          {{ t("gamepadRemap.axis") }} {{ axis }}: {{ value.toFixed(2) }}
-        </span>
+        <button type="button" class="compact-button" @click="showAxisDetails = !showAxisDetails">
+          {{ showAxisDetails ? t("gamepadRemap.seeLessAxes") : t("gamepadRemap.seeMoreAxes") }}
+        </button>
+        <div class="axis-readout-list" v-if="showAxisDetails">
+          <span v-for="(value, axis) in axisValues" :key="axis">
+            {{ t("gamepadRemap.axis") }} {{ axis }}: {{ value.toFixed(2) }}
+          </span>
+        </div>
       </div>
 
       <div class="remap-fields">
@@ -363,13 +432,38 @@ onBeforeUnmount(stopPolling);
   box-shadow: inset 0 0 0 3px var(--color-surface0);
 }
 
+/* Small direction indicators ringing each stick - dim by default, light up when that stick is
+   tilted past the threshold in that direction (see stickDirectionActive in the script). Placed
+   independently of .pad-btn since they're not remappable hitzones themselves, just a live tilt
+   readout. */
+.stick-light {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.25;
+  color: var(--color-text);
+  transition: opacity 0.05s, color 0.05s;
+  pointer-events: none;
+}
+
+.stick-light.active {
+  opacity: 1;
+  color: var(--color-accent);
+}
+
 .axis-readout {
+  margin-bottom: var(--space-2);
+}
+
+.axis-readout-list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
   font-size: 0.75rem;
   opacity: 0.7;
-  margin-bottom: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .remap-fields {

@@ -229,6 +229,8 @@
     "listening": "Нажмите кнопку или подвиньте стик...",
     "unmapped": "Не назначено",
     "axis": "Ось",
+    "seeMoreAxes": "Показать больше",
+    "seeLessAxes": "Показать меньше",
     "actions": {
       "dpadUp": "Вверх",
       "dpadDown": "Вниз",

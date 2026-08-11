@@ -229,6 +229,8 @@
     "listening": "ボタンを押すかスティックを動かしてください...",
     "unmapped": "未割り当て",
     "axis": "軸",
+    "seeMoreAxes": "もっと見る",
+    "seeLessAxes": "閉じる",
     "actions": {
       "dpadUp": "上",
       "dpadDown": "下",

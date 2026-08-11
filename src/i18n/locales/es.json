@@ -229,6 +229,8 @@
     "listening": "Presiona un botón o mueve un stick...",
     "unmapped": "Sin asignar",
     "axis": "Eje",
+    "seeMoreAxes": "Ver más",
+    "seeLessAxes": "Ver menos",
     "actions": {
       "dpadUp": "Arriba",
       "dpadDown": "Abajo",

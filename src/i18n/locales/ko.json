@@ -229,6 +229,8 @@
     "listening": "버튼을 누르거나 스틱을 움직이세요...",
     "unmapped": "할당되지 않음",
     "axis": "축",
+    "seeMoreAxes": "더 보기",
+    "seeLessAxes": "간략히",
     "actions": {
       "dpadUp": "위",
       "dpadDown": "아래",

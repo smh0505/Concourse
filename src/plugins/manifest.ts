@@ -4,76 +4,53 @@ export interface PluginManifest {
   id: string;
   name: string;
   version: string;
-  /** Which capability this plugin provides — determines what its entry module must export. */
+  /** Determines what this plugin's entry module must export. */
   kind: PluginKind;
-  /** Path to the entry module, relative to the plugin's own folder (e.g. "index.ts"). */
+  /** Entry module path, relative to the plugin's own folder (e.g. "index.ts"). */
   entry: string;
-  /** Absent/"ts" = build-time TS module discovered via Vite (the default, existing kind of
-   *  plugin). "wasm" = runtime-installed WASM component (Milestone 8) - `entry` is a
-   *  `.wasm` file loaded by the Rust host via wasm_plugin_runtime.rs, not a Vite module.
-   *  "data" = runtime-installed, code-free theme manifest (Milestone 8.5) - no `entry` to
-   *  load at all, the manifest's own `cssVariables` field *is* the whole plugin. */
+  /** Absent/"ts" = build-time TS module (Vite). "wasm" = runtime-installed WASM component
+   *  (Milestone 8), `entry` is a `.wasm` file loaded via wasm_plugin_runtime.rs. "data" =
+   *  runtime-installed, code-free manifest (Milestone 8.5) - no `entry`, the data fields below
+   *  *are* the plugin. */
   runtime?: "ts" | "wasm" | "data";
-  /** True if this plugin implements the `Installable` shape (`install()`/`isInstalled()` -
-   *  see src/plugins/types.ts). Not implied by `kind` - any plugin, of any kind, can opt in.
-   *  Drives whether the loader auto-attaches the generic InstallableStatus.vue settings UI
-   *  when the plugin doesn't already provide its own settingsComponent. */
+  /** True if this plugin implements `Installable` (types.ts). Not implied by `kind` - any kind
+   *  can opt in. Auto-attaches InstallableStatus.vue unless settingsComponent is already set. */
   installable?: boolean;
-  /** Only present for `runtime: "data"` theme manifests - the whole plugin's content, since
-   *  there's no separate compiled/bundled entry module to load it from. */
+  /** `runtime: "data"` theme manifests only - the whole plugin's content. */
   cssVariables?: Record<string, string>;
-  /** Milestone 17 - a closed-vocabulary JSON AST overriding GameCard's cover-visual region,
-   *  optionally present alongside `cssVariables` on a `runtime: "data"` theme manifest.
-   *  Untyped here deliberately (not `AstNode` from `theme/cardVisualAst`) - untrusted data
-   *  regardless of source, always goes through `validateCardVisualAst` before use (see
-   *  `theme/cardVisualRegistry.ts`), same as `ThemePlugin.cardVisual`. */
+  /** Milestone 17 - JSON AST overriding GameCard's cover-visual region, alongside
+   *  `cssVariables` on a data theme. Untyped here - untrusted until `validateCardVisualAst`
+   *  runs (`theme/cardVisualRegistry.ts`), same as `ThemePlugin.cardVisual`. */
   cardVisual?: unknown;
-  /** Only present for `runtime: "data"` theme manifests wanting a real loaded font - see
-   *  `ThemePlugin.fontFaces`'s doc comment (src/plugins/types.ts) for the validation this goes
-   *  through before ever being trusted. */
+  /** `runtime: "data"` theme manifests wanting a loaded font - see `ThemePlugin.fontFaces`. */
   fontFaces?: unknown;
-  /** Milestone 24 - only present for `runtime: "data"` controller-mapping manifests; the whole
-   *  plugin's content, mirroring `cssVariables`' role for data-only themes. Untyped here (not
-   *  `GamepadMapping` from `types.ts`) since it's remote, untrusted data until actually consumed -
-   *  `createDataControllerMappingPlugin` (loader.ts) is what narrows it, same arm's-length
-   *  treatment `cardVisual`/`fontFaces` already get. */
+  /** Milestone 24 - `runtime: "data"` controller manifests only, mirrors `cssVariables`' role.
+   *  Untyped - `createDataControllerMappingPlugin` (loader.ts) narrows it, same arm's-length
+   *  treatment as `cardVisual`/`fontFaces`. */
   mapping?: unknown;
-  /** Milestone 24 - only present for `runtime: "data"` controller-mapping manifests. False for a
-   *  pad with no analog sticks - see `GamepadRemapSettings.vue`'s identical prop. Defaults true
-   *  when absent (most pads have sticks), matching the Rust-side manifest's own default. */
+  /** Milestone 24 - `runtime: "data"` controller manifests only. False for a pad with no
+   *  sticks. Defaults true, matching the Rust-side default. */
   hasSticks?: boolean;
-  /** Milestone 24 (post-close) - only present for `runtime: "data"` controller-mapping
-   *  manifests wanting to reposition the live diagram's buttons. Untyped here (not
-   *  `GamepadLayoutButton[]` from `types.ts`) since it's remote, untrusted data until actually
-   *  consumed - `createDataControllerMappingPlugin` (loader.ts) is what narrows it. Absent
-   *  falls back to `GamepadRemapSettings.vue`'s own built-in default layout. */
+  /** Milestone 24 (post-close) - repositions the live diagram's buttons; untyped/narrowed same
+   *  as `mapping`. Absent falls back to the built-in default layout. */
   layout?: unknown;
-  /** Milestone 24 (post-close) - only present for `runtime: "data"` controller-mapping
-   *  manifests wanting a custom controller-body outline instead of the diagram's built-in one.
-   *  Untyped here (not `GamepadSilhouette` from `types.ts`) for the same reason `layout` above
-   *  is - narrowed by `createDataControllerMappingPlugin`, absent falls back to the built-in
-   *  shape. */
+  /** Milestone 24 (post-close) - custom controller-body outline; untyped/narrowed same as
+   *  `layout`. Absent falls back to the built-in shape. */
   silhouette?: unknown;
-  /** Declares user-configurable settings a WASM plugin needs (e.g. an API key) - the loader
-   *  renders one generic form from this instead of every plugin needing its own custom
-   *  settings UI, which WASM plugins have no other mechanism for (unlike TS-authored plugins'
-   *  `settingsComponent`). Absent for plugins that need no config. */
+  /** User-configurable settings a WASM plugin needs (e.g. an API key) - lets the loader render
+   *  one generic form instead of every plugin needing its own settings UI. */
   settingsSchema?: SettingsSchemaField[];
-  /** Declares which gated host capabilities (Milestone 13) this plugin actually calls - today
-   *  just "run-programs" (spawn-process/run-and-wait). Host-enforced regardless of what this
-   *  says (see `wasm_plugins.rs`'s `has_capability`) - this only drives whether the UI asks for
-   *  an explicit grant at all. Absent/empty for plugins that never need one. */
+  /** Gated host capabilities (Milestone 13) this plugin calls - today just "run-programs".
+   *  Host-enforced regardless (see `wasm_plugins.rs`'s `has_capability`); this only drives
+   *  whether the UI asks for an explicit grant. */
   capabilities?: string[];
-  /** Milestone 20 - host-added install provenance, not something the plugin/theme author's own
-   *  manifest declares. The exact URL this was installed from, so a later update-check can
-   *  re-fetch it and compare versions. Absent for build-time TS plugins (never "installed" this
-   *  way) and for anything installed by an app build older than this field. */
+  /** Milestone 20 - host-added install provenance, not author-declared. Lets a later
+   *  update-check re-fetch and compare versions. Absent for build-time TS plugins. */
   sourceUrl?: string;
-  /** True if installed via the curated registry's pinned-hash entry rather than a freeform
-   *  pasted URL - see `plugin_installer.rs`'s `WasmPluginManifest::installed_via_registry` doc
-   *  comment for why this changes the update-check strategy (a registry-pinned `sourceUrl` is
-   *  commit-SHA'd and frozen forever; checking for an update means re-fetching the registry's
-   *  *current* entry for this plugin's `id`, not re-fetching `sourceUrl` again). */
+  /** True if installed via the curated registry's pinned hash, not a freeform URL - changes
+   *  update-check strategy (see `WasmPluginManifest::installed_via_registry` in
+   *  plugin_installer.rs): a registry `sourceUrl` is commit-pinned and never itself shows a
+   *  newer version, so an update check re-fetches the registry's current entry instead. */
   installedViaRegistry?: boolean;
 }
 
@@ -84,10 +61,9 @@ export interface SettingsSchemaField {
   type?: "text" | "password";
 }
 
-/** Returned by the backend's `fetch_plugin_preview` - just enough to show a confirm-before-
- *  install dialog (id/name/version/kind) before actually downloading a plugin's real content
- *  (a `.wasm` binary, or a theme's `cssVariables`). Deliberately narrower than `PluginManifest`
- *  (no `entry`, no `runtime`) since a preview isn't a fully-loadable plugin yet. */
+/** From `fetch_plugin_preview` - just enough for a confirm-before-install dialog, before
+ *  downloading the real content. Narrower than `PluginManifest` (no `entry`/`runtime`) since
+ *  a preview isn't a loadable plugin yet. */
 export interface PluginPreview {
   id: string;
   name: string;
@@ -98,13 +74,12 @@ export interface PluginPreview {
   httpScopes: string[];
 }
 
-/** The one gated capability today (Milestone 13) - a plugin declaring this in its manifest
- *  needs an explicit user grant before spawn-process/run-and-wait will do anything. */
+/** The one gated capability today (Milestone 13) - needs an explicit user grant before
+ *  spawn-process/run-and-wait does anything. */
 export const RUN_PROGRAMS_CAPABILITY = "run-programs";
 
-/** Mirrors the Rust `PathScope` enum (`wasm_plugins.rs`) - a plugin's self-declared read
- *  scope beyond its own plugin-dir(). Shown in the install-confirmation dialog for visibility
- *  only; the host enforces it regardless of whether anyone ever looks at this. */
+/** Mirrors Rust's `PathScope` enum (`wasm_plugins.rs`) - a plugin's self-declared read scope
+ *  beyond its own plugin-dir(). Visibility only in the install dialog; host-enforced either way. */
 export type PathScope =
   | { type: "registry"; hive: string; prefix: string }
   | { type: "path"; prefix: string };

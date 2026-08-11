@@ -218,7 +218,9 @@
     "noPluginsEnabled": "활성화된 플러그인이 없습니다.",
     "scanComplete": "스캔 완료: {added}개 추가, {merged}개 병합.",
     "scanFailed": "스캔 실패: {error}",
-    "removeThemeFailed": "테마 제거 실패: {error}"
+    "removeThemeFailed": "테마 제거 실패: {error}",
+    "removeControllerMapping": "삭제",
+    "removeControllerMappingFailed": "매핑 제거 실패: {error}"
   },
   "library": {
     "emptyMessage": "라이브러리가 비어 있습니다. 게임을 추가하거나 소스 플러그인을 스캔해 보세요.",

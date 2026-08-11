@@ -426,27 +426,36 @@ undocumented access path instead. Deliberately not detailed further here - see
 questions before this gets started.
 - [ ] Not started - research/scoping only exists in the private notes file above
 
-## Milestone 24 — Detachable Controller Mapping Plugins (data tier, not started)
-User asked whether `standard-gamepad`/`8bitdo-micro` (currently build-time-only TS plugins, see
-Milestone 7) could be detached into separately-installed plugins like source/metadata/theme
-already are. A controller mapping is pure data (`GamepadMapping` - button/axis bindings, no
-`scan()`/`launch()` behavior), so it fits the existing data-only tier Milestone 16 built for
-themes (`DataThemeManifest`, install-by-URL, no WASM/code execution) rather than the WASM tier -
-that infra is theme-shaped today, not generic, so this is real new work, not a flag flip.
-- [ ] Generalize or duplicate the data-plugin Rust commands (`plugin_installer.rs`'s
-  `DataThemeManifest`/`list_data_themes`/`install_data_theme`/`uninstall_data_theme`) for
-  `kind: "controller"`
-- [ ] Decide manifest shape - a `GamepadMapping`'s fields embedded directly in `plugin.json`
-  (mirrors `cssVariables`' precedent), covering `dpadUp`/`dpadDown`/`dpadLeft`/`dpadRight`/
-  `buttonConfirm`/`buttonCancel`/`axisThreshold`/`repeatDelayMs`/`repeatIntervalMs`
-- [ ] `loader.ts` wiring - a controller-kind equivalent of `getInstalledDataThemeManifests`/
-  `createDataThemePlugin`
-- [ ] `PluginSettings.vue`/`AddPlugin.vue` - wire the Controller tab's install-by-URL flow to
-  accept a data-controller manifest, same as the Theme tab already does
-- [ ] New repo (`data-controller-plugins`, mirrors `data-theme-plugins`) once the above lands -
-  migrate `standard-gamepad` and/or `8bitdo-micro` out as the first real entries
-- [ ] Extend `concourse-plugin-registry` to `kind: "controller"` (same precedent as Milestone 16's
-  `kind: "theme"` extension)
+## Milestone 24 — Detachable Controller Mapping Plugins (data tier)
+User asked whether `standard-gamepad`/`8bitdo-micro` (build-time-only TS plugins, see Milestone
+7) could be detached into separately-installed plugins like source/metadata/theme already are. A
+controller mapping is pure data (`GamepadMapping` - button/axis bindings, no `scan()`/`launch()`
+behavior), so it fits the same data-only tier Milestone 16 built for themes (`DataThemeManifest`,
+install-by-URL, no WASM/code execution) rather than the WASM tier.
+- [x] `plugin_installer.rs`: added `DataControllerManifest` (`mapping` as opaque `serde_json::
+  Value`, never Rust-interpreted - same arm's-length treatment as `cardVisual`/`fontFaces`),
+  `data_controllers_dir`, `install_data_controller`, `list_data_controller_mappings`,
+  `uninstall_data_controller_mapping`; `detect_kind` and `install_plugin`'s branch both extended
+  to `"controller"`; 3 new Rust tests (install/list/uninstall round-trip, reject-no-mapping)
+- [x] Manifest shape decided - `mapping`/`hasSticks` fields embedded directly in `plugin.json`,
+  mirroring `cssVariables`' precedent exactly
+- [x] `loader.ts`: `getInstalledDataControllerManifests`/`createDataControllerMappingPlugin`
+  (attaches the shared `GamepadRemapSettings.vue` itself, since a data-only manifest has no
+  `index.ts` of its own to do it) + `normalizeGamepadMapping` narrowing untrusted remote JSON
+  into a real `GamepadMapping`, defaulting every binding to unassigned rather than trusting an
+  unexpected shape
+- [x] `PluginSettings.vue`/`pluginInstall.ts`/`controllerMapping.ts` wired - Controller tab gets
+  the same uninstall-button/refreshManifests/confirmInstall-branch treatment the Theme tab has
+- [x] New repo, [`data-controller-plugins`](https://github.com/smh0505/data-controller-plugins)
+  (mirrors `data-theme-plugins`' structure/CI exactly) - `8bitdo-micro` migrated out as the first
+  real entry and removed from `src/plugins/`; `standard-gamepad` stays built-in (it's the
+  documented Gamepad API baseline `controllerMapping.ts` falls back to by id, not a detachment
+  candidate)
+- [x] `concourse-plugin-registry` extended to `kind: "controller"` (`concourse-plugin-registry#31`)
+  - caught and fixed two real bugs along the way: `validate.sh` and `bump-entry.sh` both only
+  special-cased `kind == "theme"` for the "hash the manifest itself, no sibling .wasm" data-only
+  path: a controller entry fell into the WASM-artifact branch, tried to read a nonexistent
+  `entry` field, and hashed a 404 - caught by the PR's own CI before merging, not shipped broken
 
 ## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort (in progress)
 `GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s

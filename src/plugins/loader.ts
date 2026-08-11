@@ -3,7 +3,9 @@ import { defineComponent, h } from "vue";
 
 import { isPluginManifest, type PluginKind, type PluginManifest } from "./manifest";
 import type {
+  ControllerMappingPlugin,
   GameEntry,
+  GamepadMapping,
   Installable,
   LocaleProfile,
   MetadataCandidate,
@@ -14,6 +16,7 @@ import type {
   ThemePlugin,
   WrapperPlugin,
 } from "./types";
+import GamepadRemapSettings from "./shared/gamepad/GamepadRemapSettings.vue";
 import InstallableStatus from "@/components/desktop/common/InstallableStatus.vue";
 import SettingsButton from "@/components/desktop/modalForms/SettingsButton.vue";
 import { useWrapperPluginStore } from "@/stores/wrapperPlugins";
@@ -67,6 +70,24 @@ async function getInstalledDataThemeManifests(kind?: PluginKind): Promise<Plugin
   }
 }
 
+/** Data-only controller-mapping manifests (Milestone 24) - same "no compiled entry, the
+ *  manifest's own data field is the whole plugin" shape as data themes, just a `mapping` field
+ *  instead of `cssVariables`. */
+async function getInstalledDataControllerManifests(kind?: PluginKind): Promise<PluginManifest[]> {
+  if (kind && kind !== "controller") return [];
+  try {
+    const manifests = await invoke<PluginManifest[]>("list_data_controller_mappings");
+    return manifests.map((m) => ({
+      ...m,
+      kind: "controller" as const,
+      entry: "",
+      runtime: "data" as const,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export async function getAvailablePluginManifests(kind?: PluginKind): Promise<PluginManifest[]> {
   const manifests: PluginManifest[] = [];
   for (const mod of Object.values(manifestModules)) {
@@ -75,6 +96,7 @@ export async function getAvailablePluginManifests(kind?: PluginKind): Promise<Pl
   }
   manifests.push(...(await getInstalledWasmManifests(kind)));
   manifests.push(...(await getInstalledDataThemeManifests(kind)));
+  manifests.push(...(await getInstalledDataControllerManifests(kind)));
   return manifests;
 }
 
@@ -180,6 +202,50 @@ function createDataThemePlugin(manifest: PluginManifest): ThemePlugin {
   };
 }
 
+/** A remote controller manifest's `mapping` is untrusted, arbitrary JSON (Rust only checked
+ *  "is this an object" before storing it) - narrows it into a real `GamepadMapping`, defaulting
+ *  every direction to unassigned (`null`) rather than trusting a stray shape to already match.
+ *  Mirrors `standard-gamepad`'s own real button indices being the *only* built-in plugin that
+ *  assumes real hardware defaults - a remote/unknown pad gets the same "must be learned via
+ *  Listen" treatment `8bitdo-micro` already uses for its own unknown-index bindings. */
+function normalizeGamepadMapping(raw: unknown): GamepadMapping {
+  const m = (raw && typeof raw === "object" ? raw : {}) as Partial<GamepadMapping>;
+  const binding = (v: unknown) =>
+    v && typeof v === "object" && "kind" in v ? (v as GamepadMapping["dpadUp"]) : null;
+  return {
+    dpadUp: binding(m.dpadUp),
+    dpadDown: binding(m.dpadDown),
+    dpadLeft: binding(m.dpadLeft),
+    dpadRight: binding(m.dpadRight),
+    buttonConfirm: binding(m.buttonConfirm),
+    buttonCancel: binding(m.buttonCancel),
+    axisThreshold: typeof m.axisThreshold === "number" ? m.axisThreshold : 0.5,
+    repeatDelayMs: typeof m.repeatDelayMs === "number" ? m.repeatDelayMs : 350,
+    repeatIntervalMs: typeof m.repeatIntervalMs === "number" ? m.repeatIntervalMs : 130,
+  };
+}
+
+/** Data-only controller mappings have no `index.ts` of their own to attach
+ *  `GamepadRemapSettings.vue` the way `standard-gamepad`/`8bitdo-micro` do - this attaches the
+ *  same shared component here instead, since it's the loader (not the manifest) that knows how
+ *  to turn manifest data into a running plugin instance for every other data-only kind too. */
+function createDataControllerMappingPlugin(manifest: PluginManifest): ControllerMappingPlugin {
+  const plugin: ControllerMappingPlugin = {
+    id: manifest.id,
+    name: manifest.name,
+    mapping: normalizeGamepadMapping(manifest.mapping),
+  };
+  plugin.settingsComponent = defineComponent({
+    render: () =>
+      h(GamepadRemapSettings, {
+        pluginId: manifest.id,
+        defaultMapping: plugin.mapping,
+        hasSticks: manifest.hasSticks ?? true,
+      }),
+  });
+  return plugin;
+}
+
 async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
   if (manifest.runtime === "wasm") {
     if (manifest.kind === "source") return createWasmSourcePlugin(manifest) as T;
@@ -190,6 +256,7 @@ async function loadPlugin<T>(manifest: PluginManifest): Promise<T | null> {
 
   if (manifest.runtime === "data") {
     if (manifest.kind === "theme") return createDataThemePlugin(manifest) as T;
+    if (manifest.kind === "controller") return createDataControllerMappingPlugin(manifest) as T;
     return null;
   }
 

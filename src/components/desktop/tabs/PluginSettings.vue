@@ -123,8 +123,9 @@ onMounted(async () => {
   // A fourth check point beyond the three canonical ones (app start/focus live in App.vue,
   // install-plugin modal open lives in AddPlugin.vue) - opening the Settings view itself is a
   // real, distinct moment worth checking too, not just a stand-in for those three. checkOne
-  // no-ops for any manifest never installed through the runtime pipeline (controller mappings
-  // are always build-time TS), so passing every kind's manifests here is harmless.
+  // no-ops for any manifest never installed through the runtime pipeline (a build-time TS
+  // controller plugin like standard-gamepad, say), so passing every kind's manifests here is
+  // harmless regardless of which ones are actually data-installed.
   pluginUpdates.checkAll([
     ...plugins.manifests,
     ...theme.manifests,
@@ -258,7 +259,7 @@ onMounted(async () => {
           <button
             v-if="manifest.runtime === 'data'"
             type="button"
-            class="uninstall-theme"
+            class="uninstall-plugin"
             @click="theme.uninstallDataTheme(manifest.id)"
           >
             {{ t("pluginSettings.removeTheme") }}
@@ -346,6 +347,14 @@ onMounted(async () => {
               {{ t("pluginSettings.updateTo", { version: pluginUpdates.results[manifest.id]?.latestVersion }) }}
             </button>
           </label>
+          <button
+            v-if="manifest.runtime === 'data'"
+            type="button"
+            class="uninstall-plugin"
+            @click="controllerMapping.uninstallDataMapping(manifest.id)"
+          >
+            {{ t("pluginSettings.removeControllerMapping") }}
+          </button>
           <component
             :is="allControllerPlugins.get(manifest.id)?.settingsComponent"
             v-if="allControllerPlugins.get(manifest.id)?.settingsComponent"
@@ -489,7 +498,7 @@ small {
   font-size: 0.9rem;
 }
 
-.uninstall-theme {
+.uninstall-plugin {
   font-size: 0.75rem;
 }
 

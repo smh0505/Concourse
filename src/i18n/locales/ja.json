@@ -218,7 +218,9 @@
     "noPluginsEnabled": "有効なプラグインがありません。",
     "scanComplete": "スキャン完了: {added}件追加、{merged}件マージ。",
     "scanFailed": "スキャン失敗: {error}",
-    "removeThemeFailed": "テーマの削除に失敗しました: {error}"
+    "removeThemeFailed": "テーマの削除に失敗しました: {error}",
+    "removeControllerMapping": "削除",
+    "removeControllerMappingFailed": "マッピングの削除に失敗しました: {error}"
   },
   "library": {
     "emptyMessage": "ライブラリが空です。ゲームを追加するか、ソースプラグインをスキャンしてください。",

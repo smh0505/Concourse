@@ -1,8 +1,8 @@
-//! Install-by-URL for every plugin kind that supports it - WASM source plugins (Milestone 8)
-//! and data-only theme manifests (Milestone 8.5). Merged into one module since both kinds
-//! share the same "fetch a manifest, figure out what it is, install accordingly" shape, and
-//! the app's single "Add Plugin" UI (one button, one URL field, one confirm dialog for either
-//! kind) already treats them as one flow rather than two.
+//! Install-by-URL for every plugin kind that supports it - WASM source plugins (Milestone 8),
+//! data-only theme manifests (Milestone 8.5), and data-only controller-mapping manifests
+//! (Milestone 24). Merged into one module since all three share the same "fetch a manifest,
+//! figure out what it is, install accordingly" shape, and the app's single "Add Plugin" UI (one
+//! button, one URL field, one confirm dialog for any kind) already treats them as one flow.
 
 use crate::wasm_plugins::PathScope;
 use crate::zip_install::replace_dir;
@@ -19,6 +19,10 @@ const SUPPORTED_WASM_KINDS: &[&str] = &["source", "wrapper", "metadata"];
 
 fn default_theme_kind() -> String {
     "theme".to_string()
+}
+
+fn default_controller_kind() -> String {
+    "controller".to_string()
 }
 
 /// GitHub's API (and some CDNs) reject requests with no `User-Agent` at all - applied to every
@@ -133,11 +137,43 @@ pub struct DataThemeManifest {
     pub installed_via_registry: bool,
 }
 
+/// Milestone 24 - a controller mapping is pure data (button/axis bindings, no scan()/launch()
+/// behavior), so it fits this same data-only install tier rather than the WASM one. `mapping`
+/// is opaque here deliberately (not a Rust-side `GamepadMapping` shape) - the host never
+/// interprets it, only stores/round-trips it; the frontend's own `GamepadDirectionBinding` union
+/// is the real (and only) validation this ever goes through, same reasoning as
+/// `DataThemeManifest::card_visual`/`font_faces`.
+#[derive(Deserialize, Serialize, Clone)]
+pub struct DataControllerManifest {
+    pub id: String,
+    pub name: String,
+    pub version: String,
+    #[serde(default = "default_controller_kind")]
+    pub kind: String,
+    pub mapping: serde_json::Value,
+    /// False for a pad with no analog sticks (e.g. 8BitDo Micro) - lets the frontend's shared
+    /// `GamepadRemapSettings.vue` hide the stick-sensitivity field the same way a build-time
+    /// controller plugin's own `hasSticks` prop would. Defaults true (most pads have sticks).
+    #[serde(default = "default_true", rename = "hasSticks")]
+    pub has_sticks: bool,
+    /// Milestone 20 - see `WasmPluginManifest::source_url`'s doc comment.
+    #[serde(default, rename = "sourceUrl", skip_serializing_if = "Option::is_none")]
+    pub source_url: Option<String>,
+    /// Milestone 20 - see `WasmPluginManifest::installed_via_registry`'s doc comment.
+    #[serde(default, rename = "installedViaRegistry")]
+    pub installed_via_registry: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
 /// Loosely-typed probe used only to tell a WASM plugin's manifest apart from a data-only
-/// theme's before committing to parsing either shape fully. `kind` is present and explicit on
-/// both current manifest shapes ("source"/"wrapper"/"theme"), but theme manifests published
-/// before that field existed lack it entirely - `css_variables` is the fallback signal for
-/// those older, still-installable manifests.
+/// theme's or controller mapping's before committing to parsing any shape fully. `kind` is
+/// present and explicit on every current manifest shape ("source"/"wrapper"/"theme"/
+/// "controller"), but theme manifests published before that field existed lack it entirely -
+/// `css_variables` is the fallback signal for those older, still-installable manifests (no such
+/// legacy case exists for controller mappings, which are new as of Milestone 24).
 #[derive(Deserialize)]
 struct ManifestKindProbe {
     kind: Option<String>,
@@ -150,6 +186,7 @@ fn detect_kind(probe: &ManifestKindProbe) -> Result<String, String> {
         Some("source") => Ok("source".to_string()),
         Some("metadata") => Ok("metadata".to_string()),
         Some("theme") => Ok("theme".to_string()),
+        Some("controller") => Ok("controller".to_string()),
         Some(other) => Err(format!(
             "\"{}\" plugins can't be installed by URL yet.",
             other
@@ -200,6 +237,18 @@ pub async fn fetch_plugin_preview(url: String) -> Result<PluginPreview, String> 
             path_scopes: manifest.path_scopes,
             http_scopes: manifest.http_scopes,
         })
+    } else if kind == "controller" {
+        let manifest: DataControllerManifest = serde_json::from_slice(&bytes)
+            .map_err(|e| format!("Invalid controller-mapping manifest: {}", e))?;
+        Ok(PluginPreview {
+            id: manifest.id,
+            name: manifest.name,
+            version: manifest.version,
+            kind,
+            capabilities: Vec::new(),
+            path_scopes: Vec::new(),
+            http_scopes: Vec::new(),
+        })
     } else {
         let manifest: DataThemeManifest =
             serde_json::from_slice(&bytes).map_err(|e| format!("Invalid theme manifest: {}", e))?;
@@ -226,6 +275,13 @@ fn data_themes_dir(app: &AppHandle) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
         .map(|dir| dir.join("data-themes"))
+        .map_err(|e| format!("Failed to resolve app data dir: {}", e))
+}
+
+fn data_controllers_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|dir| dir.join("data-controllers"))
         .map_err(|e| format!("Failed to resolve app data dir: {}", e))
 }
 
@@ -432,6 +488,75 @@ async fn install_data_theme(
     })
 }
 
+/// Caches a controller-mapping manifest under `<app data>/data-controllers/<id>/controller.json`
+/// - same shape/reasoning as `install_data_theme`, just a different opaque data field
+/// (`mapping` instead of `cssVariables`/`cardVisual`).
+async fn install_data_controller(
+    dir: &Path,
+    manifest_url: &str,
+    manifest_bytes: &[u8],
+    expected_sha256: Option<&str>,
+) -> Result<InstallResult, String> {
+    let mut manifest: DataControllerManifest = serde_json::from_slice(manifest_bytes)
+        .map_err(|e| format!("Invalid controller-mapping manifest: {}", e))?;
+    if manifest.id.trim().is_empty() {
+        return Err("Controller-mapping manifest is missing an id".to_string());
+    }
+    if !manifest.mapping.is_object() {
+        return Err("Controller-mapping manifest has no mapping object".to_string());
+    }
+    manifest.source_url = Some(manifest_url.to_string());
+    manifest.installed_via_registry = expected_sha256.is_some();
+
+    if let Some(expected) = expected_sha256 {
+        use sha2::{Digest, Sha256};
+        let actual = format!("{:x}", Sha256::digest(manifest_bytes));
+        if !actual.eq_ignore_ascii_case(expected) {
+            return Err(format!(
+                "Pinned hash mismatch - this download doesn't match what was reviewed \
+                 (expected {}, got {}). Install aborted.",
+                expected, actual
+            ));
+        }
+    }
+
+    let (verified, verification_note) =
+        match crate::plugin_verification::parse_github_owner_repo(manifest_url) {
+            Some((owner, repo)) => {
+                match crate::plugin_verification::verify_plugin_provenance(
+                    manifest_bytes,
+                    &owner,
+                    &repo,
+                )
+                .await
+                {
+                    Ok(()) => (
+                        true,
+                        format!("Verified: built by {}/{}'s own CI.", owner, repo),
+                    ),
+                    Err(e) => (false, format!("Not verified: {}", e)),
+                }
+            }
+            None => (
+                false,
+                "Not verified: this controller mapping isn't hosted on github.com.".to_string(),
+            ),
+        };
+
+    let mapping_dir = dir.join(&manifest.id);
+    std::fs::create_dir_all(&mapping_dir)
+        .map_err(|e| format!("Failed to create {}: {}", mapping_dir.display(), e))?;
+    let manifest_json = serde_json::to_string_pretty(&manifest).map_err(|e| e.to_string())?;
+    std::fs::write(mapping_dir.join("controller.json"), manifest_json)
+        .map_err(|e| format!("Failed to write controller.json: {}", e))?;
+
+    Ok(InstallResult {
+        id: manifest.id,
+        verified,
+        verification_note,
+    })
+}
+
 /// Installs a plugin from a user-pasted manifest URL - re-fetches the manifest (cheap, a few
 /// KB) rather than reusing bytes from `fetch_plugin_preview`, keeping both commands simple and
 /// stateless. Branches on the manifest's own `kind` once fetched.
@@ -448,6 +573,14 @@ pub async fn install_plugin(
 
     if kind == "source" || kind == "metadata" {
         install_wasm_plugin(&app, &url, &bytes, expected_sha256.as_deref()).await
+    } else if kind == "controller" {
+        install_data_controller(
+            &data_controllers_dir(&app)?,
+            &url,
+            &bytes,
+            expected_sha256.as_deref(),
+        )
+        .await
     } else {
         install_data_theme(
             &data_themes_dir(&app)?,
@@ -541,6 +674,48 @@ fn uninstall_data_theme_from(dir: &Path, id: &str) -> Result<(), String> {
 #[tauri::command]
 pub fn uninstall_data_theme(app: AppHandle, id: String) -> Result<(), String> {
     uninstall_data_theme_from(&data_themes_dir(&app)?, &id)
+}
+
+fn list_data_controllers_from(dir: &Path) -> Result<Vec<DataControllerManifest>, String> {
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let entries =
+        std::fs::read_dir(dir).map_err(|e| format!("Failed to list {}: {}", dir.display(), e))?;
+
+    let mut manifests = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let manifest_path = entry.path().join("controller.json");
+        let Ok(content) = std::fs::read_to_string(&manifest_path) else {
+            continue;
+        };
+        if let Ok(manifest) = serde_json::from_str::<DataControllerManifest>(&content) {
+            manifests.push(manifest);
+        }
+    }
+
+    Ok(manifests)
+}
+
+#[tauri::command]
+pub fn list_data_controller_mappings(app: AppHandle) -> Result<Vec<DataControllerManifest>, String> {
+    list_data_controllers_from(&data_controllers_dir(&app)?)
+}
+
+fn uninstall_data_controller_from(dir: &Path, id: &str) -> Result<(), String> {
+    let mapping_dir = dir.join(id);
+    if !mapping_dir.exists() {
+        return Ok(());
+    }
+    std::fs::remove_dir_all(&mapping_dir)
+        .map_err(|e| format!("Failed to remove {}: {}", mapping_dir.display(), e))
+}
+
+#[tauri::command]
+pub fn uninstall_data_controller_mapping(app: AppHandle, id: String) -> Result<(), String> {
+    uninstall_data_controller_from(&data_controllers_dir(&app)?, &id)
 }
 
 /// Loosely-typed probe - only `version` is ever needed to compare against what's installed,
@@ -826,7 +1001,7 @@ mod tests {
     }
 
     #[test]
-    fn detects_source_theme_and_unsupported_kinds() {
+    fn detects_source_theme_controller_and_unsupported_kinds() {
         let source = ManifestKindProbe {
             kind: Some("source".to_string()),
             css_variables: None,
@@ -855,13 +1030,72 @@ mod tests {
             kind: Some("controller".to_string()),
             css_variables: None,
         };
-        assert!(detect_kind(&controller).is_err());
+        assert_eq!(detect_kind(&controller).unwrap(), "controller");
+
+        let unsupported = ManifestKindProbe {
+            kind: Some("wrapper".to_string()),
+            css_variables: None,
+        };
+        assert!(
+            detect_kind(&unsupported).is_err(),
+            "wrapper plugins aren't installable via this data/theme-shaped path (they're WASM-only)"
+        );
 
         let unknown = ManifestKindProbe {
             kind: None,
             css_variables: None,
         };
         assert!(detect_kind(&unknown).is_err());
+    }
+
+    // Real end-to-end against a real HTTP server, same discipline as the theme install tests -
+    // install, list, and uninstall all round-trip through a real HTTP request and the real
+    // filesystem, not mocked at any layer.
+    #[test]
+    fn installs_lists_and_uninstalls_a_real_controller_mapping() {
+        let temp = TempDir::new("install-controller");
+        let url = serve_once(
+            r##"{"id":"test-online-pad","name":"Test Online Pad","version":"1.0.0","kind":"controller","mapping":{"dpadUp":{"kind":"button","index":12},"dpadDown":{"kind":"button","index":13},"dpadLeft":{"kind":"button","index":14},"dpadRight":{"kind":"button","index":15},"buttonConfirm":{"kind":"button","index":0},"buttonCancel":{"kind":"button","index":1}}}"##,
+        );
+
+        let bytes =
+            tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let result =
+            tauri::async_runtime::block_on(install_data_controller(&temp.0, &url, &bytes, None))
+                .expect("install should succeed");
+        assert_eq!(result.id, "test-online-pad");
+
+        let manifests = list_data_controllers_from(&temp.0).expect("list should succeed");
+        assert_eq!(manifests.len(), 1);
+        assert_eq!(manifests[0].id, "test-online-pad");
+        assert_eq!(manifests[0].name, "Test Online Pad");
+        assert!(manifests[0].has_sticks, "defaults true when unset");
+        assert_eq!(manifests[0].source_url.as_deref(), Some(url.as_str()));
+
+        uninstall_data_controller_from(&temp.0, &result.id).expect("uninstall should succeed");
+        let manifests_after = list_data_controllers_from(&temp.0).expect("list should succeed");
+        assert!(
+            manifests_after.is_empty(),
+            "expected controller mapping to be gone after uninstall"
+        );
+    }
+
+    #[test]
+    fn rejects_a_controller_manifest_with_no_mapping_object() {
+        let temp = TempDir::new("controller-no-mapping");
+        let url = serve_once(
+            r##"{"id":"bad-pad","name":"Bad","version":"1.0.0","kind":"controller","mapping":null}"##,
+        );
+
+        let bytes =
+            tauri::async_runtime::block_on(download_bytes(&url)).expect("download should succeed");
+        let result =
+            tauri::async_runtime::block_on(install_data_controller(&temp.0, &url, &bytes, None));
+
+        match result {
+            Ok(_) => panic!("expected a null mapping to be rejected"),
+            Err(msg) => assert!(msg.contains("no mapping object")),
+        }
     }
 
     #[test]

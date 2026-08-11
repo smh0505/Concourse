@@ -5016,7 +5016,7 @@ Per `milestones.md`'s own preamble, this milestone's close is what triggers the 
 version bump - not done automatically as part of this pass (bump/tag/push stays a separate,
 explicitly-requested step per this project's standing convention).
 
-## Milestone 24 — Detachable Controller Mapping Plugins (scoped, not started)
+## Milestone 24 — Detachable Controller Mapping Plugins
 
 User asked, after the above work, whether `standard-gamepad`/`8bitdo-micro` - still build-time-
 bundled TS plugins - could be "detached" the way source/metadata/wrapper plugins already are
@@ -5039,6 +5039,75 @@ area (new Rust struct/commands, `loader.ts` wiring, `PluginSettings.vue`/`AddPlu
 flow support for the Controller tab, eventually a new `data-controller-plugins` repo mirroring
 `data-theme-plugins`, and a `concourse-plugin-registry` `kind: "controller"` extension - same
 precedent Milestone 16 set for `kind: "theme"`). Left unstarted pending the user's go-ahead.
+
+**Implementation**, same session as the ARC Raiders stripe-gap tweak and the sticky-background
+`background-attachment: fixed` switch above. First did an unrelated cosmetic ask -
+`GamepadRemapSettings.vue`'s live button diagram redrawn from plain CSS-grid boxes into an SVG
+gamepad silhouette with percentage-positioned round/pill/stick hitzones (`PAD_POSITIONS`,
+hand-placed Xbox-style asymmetric coordinates, not screenshot-verified in this environment) -
+then moved on to M24 itself.
+
+**Rust (`plugin_installer.rs`)**: `DataControllerManifest` mirrors `DataThemeManifest` exactly
+in shape/reasoning - `mapping` is `serde_json::Value` (opaque, never Rust-interpreted, same
+arm's-length treatment as `card_visual`/`font_faces`), `has_sticks` defaults `true`. `detect_kind`
+gained a `"controller"` arm (previously any manifest declaring it errored - the existing test
+`detects_source_theme_and_unsupported_kinds` explicitly asserted that rejection, renamed and
+flipped to assert acceptance instead). `install_data_controller`/`list_data_controller_mappings`/
+`uninstall_data_controller_mapping` are near-identical copies of the theme equivalents, storing
+under `<app data>/data-controllers/<id>/controller.json`. `install_plugin`'s branch extended
+with a `kind == "controller"` arm before the `theme` fallback. 3 new tests (real HTTP round-trip
+install/list/uninstall, a null-mapping rejection) all pass; full `cargo check`/`cargo test` clean
+(12 tests total including the pre-existing WASM one).
+
+**Frontend**: `PluginManifest` gained `mapping?: unknown`/`hasSticks?: boolean` (Milestone 24
+data fields, mirroring `cssVariables`'s doc-comment convention exactly). `loader.ts` gained
+`getInstalledDataControllerManifests` (merged into `getAvailablePluginManifests` alongside the
+WASM/data-theme tiers already there) and `createDataControllerMappingPlugin` - the one place this
+tier differs structurally from data-themes: a data-only *theme* manifest is inert data consumed
+directly by `theme.ts`, but a controller mapping's settings UI (`GamepadRemapSettings.vue`) is
+normally attached by the plugin's own `index.ts` (`standard-gamepad`/`8bitdo-micro` both do this
+today) - a manifest with no `index.ts` has nothing to do that attaching, so `loader.ts` itself
+attaches the shared component now, for every data-installed controller regardless of origin.
+Added `normalizeGamepadMapping` to narrow a remote manifest's untrusted `mapping` JSON into a
+real `GamepadMapping` - defaults every direction binding to `null` (unassigned) rather than
+trusting an unexpected shape, matching `8bitdo-micro`'s own "ship null, let Listen capture the
+real hardware value" philosophy rather than presenting a guess as fact.
+
+`controllerMapping.ts` gained `refreshManifests()` (extracted from `init()`, same shape as
+`theme.ts`'s) and `uninstallDataMapping(id)` (falls back to `standard-gamepad` if the uninstalled
+mapping was active, mirrors `uninstallDataTheme`'s fallback-to-default pattern).
+`pluginInstall.ts`'s `confirmInstall()` gained a `kind === "controller"` branch calling the new
+`refreshManifests()`. `PluginSettings.vue`'s Controller tab gained the same
+`v-if="manifest.runtime === 'data'"` uninstall button the Theme tab already had (previously
+entirely missing - a real gap, not by design) - renamed the shared CSS class from
+`.uninstall-theme` to `.uninstall-plugin` in the process, since it's no longer theme-specific.
+Also fixed a stale comment claiming "controller mappings are always build-time TS," no longer
+true. New i18n keys `pluginSettings.removeControllerMapping`/`removeControllerMappingFailed`
+added across all 10 locales, mirroring `removeTheme`/`removeThemeFailed`'s existing phrasing per
+language. `bun run build` (typecheck + production build) clean throughout.
+
+**New repo**: [`data-controller-plugins`](https://github.com/smh0505/data-controller-plugins),
+structure/CI copied from `data-theme-plugins` almost verbatim (`scripts/validate.mjs` adapted for
+the mapping/hasSticks shape instead of cssVariables; `publish.yml` identical mechanics - validate
+-> stage-renamed-manifests -> Sigstore attestation -> one stable `mappings` release tag ->
+registry dispatch). `8bitdo-micro` migrated out as the first real entry (all-null bindings,
+`hasSticks: false` - nothing hardware-specific was lost, since it never shipped real guessed
+indices to begin with) and removed from `src/plugins/8bitdo-micro/` entirely. `standard-gamepad`
+deliberately stays built-in - it's `controllerMapping.ts`'s own `DEFAULT_MAPPING_ID`/fallback
+baseline (the documented Gamepad API "standard" mapping), not a candidate for detachment the way
+a specific third-party pad's real-world quirks are.
+
+**Registry extension**: added a `kind: "controller"` entry for `8bitdo-micro`
+(`concourse-plugin-registry#31`) - hash independently verified against both the published GitHub
+Release asset and the commit-pinned raw.githubusercontent.com URL before pinning, same discipline
+every other registry addition this project has used. Caught two real bugs the new kind exposed
+immediately, via the PR's own CI rather than shipping broken: `validate.sh` and `bump-entry.sh`
+both special-cased `kind == "theme"` as the *only* data-only (no-sibling-.wasm) path - a
+`controller` entry fell through to the WASM-artifact branch, tried to read a manifest field
+(`entry`) that doesn't exist on a data-only manifest, built a URL to a nonexistent sibling file,
+and hashed a 404 response instead of the real manifest. Both scripts now treat `theme` and
+`controller` identically as data-only kinds (validate.sh's hash check; bump-entry.sh's
+content-dir selection, `themes/` vs `mappings/`).
 
 ## Milestone 15 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch) — research
 

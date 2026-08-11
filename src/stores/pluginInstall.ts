@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { usePluginStore } from "./plugins";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useThemeStore } from "./theme";
+import { useControllerMappingStore } from "./controllerMapping";
 import { useToastStore } from "./toasts";
 import { i18n } from "@/i18n";
 import type { PluginPreview } from "@/plugins/manifest";
@@ -95,6 +96,7 @@ export const usePluginInstallStore = defineStore("pluginInstall", () => {
       if (kind === "source") await usePluginStore().refreshManifests();
       else if (kind === "metadata") await useMetadataProviderStore().refreshManifests();
       else if (kind === "theme") await useThemeStore().refreshManifests();
+      else if (kind === "controller") await useControllerMappingStore().refreshManifests();
       toasts.push(i18n.global.t("pluginInstall.installed"), "success");
       toasts.push(result.verificationNote, result.verified ? "success" : "info");
     } catch (e) {

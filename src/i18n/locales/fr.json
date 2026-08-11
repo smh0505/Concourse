@@ -218,7 +218,9 @@
     "noPluginsEnabled": "Aucun plugin activé.",
     "scanComplete": "Analyse terminée : {added} ajoutés, {merged} fusionnés.",
     "scanFailed": "Échec de l'analyse : {error}",
-    "removeThemeFailed": "Échec de la suppression du thème : {error}"
+    "removeThemeFailed": "Échec de la suppression du thème : {error}",
+    "removeControllerMapping": "Supprimer",
+    "removeControllerMappingFailed": "Échec de la suppression du mappage : {error}"
   },
   "library": {
     "emptyMessage": "Votre bibliothèque est vide. Ajoutez un jeu ou analysez un plugin source pour commencer.",

@@ -1,10 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 
 import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { ControllerMappingPlugin, GamepadMapping } from "@/plugins/types";
+import { useToastStore } from "./toasts";
+import { i18n } from "@/i18n";
 
 const ACTIVE_MAPPING_SETTING = "active_controller_mapping_id";
 const DEFAULT_MAPPING_ID = "standard-gamepad";
@@ -68,8 +71,29 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
     await settingsRepo.set(ACTIVE_MAPPING_SETTING, id ?? "");
   }
 
-  async function init() {
+  async function refreshManifests() {
     manifests.value = await getAvailablePluginManifests("controller");
+  }
+
+  /** Milestone 24 - mirrors `theme.ts`'s `uninstallDataTheme`: removing the currently-active
+   *  mapping falls back to the built-in default rather than leaving `activeMapping` pointing at
+   *  a plugin that no longer exists. */
+  async function uninstallDataMapping(id: string) {
+    const toasts = useToastStore();
+    try {
+      await invoke("uninstall_data_controller_mapping", { id });
+      if (activeMappingId.value === id) await setActiveMapping(DEFAULT_MAPPING_ID);
+      await refreshManifests();
+    } catch (e) {
+      toasts.push(
+        i18n.global.t("pluginSettings.removeControllerMappingFailed", { error: String(e) }),
+        "error",
+      );
+    }
+  }
+
+  async function init() {
+    await refreshManifests();
 
     const stored = await settingsRepo.get(ACTIVE_MAPPING_SETTING);
     if (stored === null) {
@@ -87,6 +111,8 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
     getMappingOverride,
     setMappingOverride,
     resetMappingOverride,
+    refreshManifests,
+    uninstallDataMapping,
     init,
   };
 });

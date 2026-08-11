@@ -218,7 +218,9 @@
     "noPluginsEnabled": "Нет включённых плагинов.",
     "scanComplete": "Сканирование завершено: добавлено {added}, объединено {merged}.",
     "scanFailed": "Ошибка сканирования: {error}",
-    "removeThemeFailed": "Не удалось удалить тему: {error}"
+    "removeThemeFailed": "Не удалось удалить тему: {error}",
+    "removeControllerMapping": "Удалить",
+    "removeControllerMappingFailed": "Не удалось удалить раскладку: {error}"
   },
   "library": {
     "emptyMessage": "Ваша библиотека пуста. Добавьте игру или просканируйте плагин-источник, чтобы начать.",

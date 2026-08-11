@@ -32,6 +32,8 @@ pub fn run() {
             plugin_installer::install_plugin,
             plugin_installer::list_data_themes,
             plugin_installer::uninstall_data_theme,
+            plugin_installer::list_data_controller_mappings,
+            plugin_installer::uninstall_data_controller_mapping,
             plugin_installer::list_wasm_plugins,
             plugin_installer::check_plugin_update,
             plugin_registry::fetch_plugin_registry,

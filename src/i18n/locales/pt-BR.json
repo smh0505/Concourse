@@ -218,7 +218,9 @@
     "noPluginsEnabled": "Nenhum plugin habilitado.",
     "scanComplete": "Escaneamento concluído: {added} adicionados, {merged} mesclados.",
     "scanFailed": "Falha no escaneamento: {error}",
-    "removeThemeFailed": "Falha ao remover o tema: {error}"
+    "removeThemeFailed": "Falha ao remover o tema: {error}",
+    "removeControllerMapping": "Remover",
+    "removeControllerMappingFailed": "Falha ao remover o mapeamento: {error}"
   },
   "library": {
     "emptyMessage": "Sua biblioteca está vazia. Adicione um jogo ou escaneie um plugin de fonte para começar.",

@@ -218,7 +218,9 @@
     "noPluginsEnabled": "没有已启用的插件。",
     "scanComplete": "扫描完成:新增 {added} 个,合并 {merged} 个。",
     "scanFailed": "扫描失败:{error}",
-    "removeThemeFailed": "移除主题失败:{error}"
+    "removeThemeFailed": "移除主题失败:{error}",
+    "removeControllerMapping": "移除",
+    "removeControllerMappingFailed": "移除映射方案失败:{error}"
   },
   "library": {
     "emptyMessage": "您的库是空的。添加一个游戏,或扫描一个来源插件以开始使用。",

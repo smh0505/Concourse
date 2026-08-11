@@ -218,7 +218,9 @@
     "noPluginsEnabled": "No plugins enabled.",
     "scanComplete": "Scan complete: {added} added, {merged} merged.",
     "scanFailed": "Scan failed: {error}",
-    "removeThemeFailed": "Failed to remove theme: {error}"
+    "removeThemeFailed": "Failed to remove theme: {error}",
+    "removeControllerMapping": "Remove",
+    "removeControllerMappingFailed": "Failed to remove mapping: {error}"
   },
   "gamepadRemap": {
     "settingsTrigger": "Remap",

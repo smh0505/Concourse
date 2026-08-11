@@ -218,7 +218,9 @@
     "noPluginsEnabled": "No hay plugins habilitados.",
     "scanComplete": "Escaneo completo: {added} añadidos, {merged} fusionados.",
     "scanFailed": "Error en el escaneo: {error}",
-    "removeThemeFailed": "No se pudo eliminar el tema: {error}"
+    "removeThemeFailed": "No se pudo eliminar el tema: {error}",
+    "removeControllerMapping": "Eliminar",
+    "removeControllerMappingFailed": "No se pudo eliminar el mapeo: {error}"
   },
   "library": {
     "emptyMessage": "Tu biblioteca está vacía. Añade un juego o escanea un plugin de fuente para empezar.",

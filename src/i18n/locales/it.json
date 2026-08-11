@@ -218,7 +218,9 @@
     "noPluginsEnabled": "Nessun plugin abilitato.",
     "scanComplete": "Scansione completata: {added} aggiunti, {merged} uniti.",
     "scanFailed": "Scansione non riuscita: {error}",
-    "removeThemeFailed": "Impossibile rimuovere il tema: {error}"
+    "removeThemeFailed": "Impossibile rimuovere il tema: {error}",
+    "removeControllerMapping": "Rimuovi",
+    "removeControllerMappingFailed": "Impossibile rimuovere la mappatura: {error}"
   },
   "library": {
     "emptyMessage": "La tua libreria è vuota. Aggiungi un gioco o esegui la scansione di un plugin sorgente per iniziare.",

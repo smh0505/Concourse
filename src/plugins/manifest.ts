@@ -32,6 +32,16 @@ export interface PluginManifest {
    *  `ThemePlugin.fontFaces`'s doc comment (src/plugins/types.ts) for the validation this goes
    *  through before ever being trusted. */
   fontFaces?: unknown;
+  /** Milestone 24 - only present for `runtime: "data"` controller-mapping manifests; the whole
+   *  plugin's content, mirroring `cssVariables`' role for data-only themes. Untyped here (not
+   *  `GamepadMapping` from `types.ts`) since it's remote, untrusted data until actually consumed -
+   *  `createDataControllerMappingPlugin` (loader.ts) is what narrows it, same arm's-length
+   *  treatment `cardVisual`/`fontFaces` already get. */
+  mapping?: unknown;
+  /** Milestone 24 - only present for `runtime: "data"` controller-mapping manifests. False for a
+   *  pad with no analog sticks - see `GamepadRemapSettings.vue`'s identical prop. Defaults true
+   *  when absent (most pads have sticks), matching the Rust-side manifest's own default. */
+  hasSticks?: boolean;
   /** Declares user-configurable settings a WASM plugin needs (e.g. an API key) - the loader
    *  renders one generic form from this instead of every plugin needing its own custom
    *  settings UI, which WASM plugins have no other mechanism for (unlike TS-authored plugins'

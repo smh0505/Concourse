@@ -218,7 +218,9 @@
     "noPluginsEnabled": "Keine Plugins aktiviert.",
     "scanComplete": "Scan abgeschlossen: {added} hinzugefügt, {merged} zusammengeführt.",
     "scanFailed": "Scan fehlgeschlagen: {error}",
-    "removeThemeFailed": "Theme konnte nicht entfernt werden: {error}"
+    "removeThemeFailed": "Theme konnte nicht entfernt werden: {error}",
+    "removeControllerMapping": "Entfernen",
+    "removeControllerMappingFailed": "Zuordnung konnte nicht entfernt werden: {error}"
   },
   "library": {
     "emptyMessage": "Deine Bibliothek ist leer. Füge ein Spiel hinzu oder scanne ein Quell-Plugin, um loszulegen.",

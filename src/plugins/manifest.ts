@@ -1,4 +1,10 @@
-export type PluginKind = "source" | "theme" | "metadata" | "controller" | "wrapper";
+// Single source of truth for every valid plugin kind - PluginKind derives its literal union
+// from this array (typeof/[number]) instead of being hand-duplicated, and isPluginManifest
+// below checks membership against it (a Set) instead of an m.kind === "x" || ... chain.
+const PLUGIN_KINDS = ["source", "theme", "metadata", "controller", "wrapper"] as const;
+const PLUGIN_KIND_SET: ReadonlySet<string> = new Set(PLUGIN_KINDS);
+
+export type PluginKind = (typeof PLUGIN_KINDS)[number];
 
 export interface PluginManifest {
   id: string;
@@ -91,11 +97,8 @@ export function isPluginManifest(value: unknown): value is PluginManifest {
     typeof m.id === "string" &&
     typeof m.name === "string" &&
     typeof m.version === "string" &&
-    (m.kind === "source" ||
-      m.kind === "theme" ||
-      m.kind === "metadata" ||
-      m.kind === "controller" ||
-      m.kind === "wrapper") &&
+    typeof m.kind === "string" &&
+    PLUGIN_KIND_SET.has(m.kind) &&
     typeof m.entry === "string" &&
     (m.runtime === undefined || m.runtime === "ts" || m.runtime === "wasm" || m.runtime === "data") &&
     (m.installable === undefined || typeof m.installable === "boolean")

@@ -51,7 +51,7 @@ const STICK_AXES: Record<"left" | "right", { x: number; y: number }> = {
 // pixel span than 1% of height by the same 24/18 ratio. Scaling the vertical offset by that
 // ratio keeps the up/down gap visually equal to the left/right one.
 const PAD_SHAPE_ASPECT = 24 / 18;
-const STICK_LIGHT_OFFSET_X = 9;
+const STICK_LIGHT_OFFSET_X = 6;
 const STICK_LIGHT_OFFSET_Y = STICK_LIGHT_OFFSET_X * PAD_SHAPE_ASPECT;
 
 // Reusable across every ControllerMappingPlugin, not just Standard Gamepad - each plugin passes
@@ -475,12 +475,12 @@ onBeforeUnmount(stopPolling);
    wider - so they read as brackets hugging the stick's circle rather than plain small carets. */
 .stick-light-left,
 .stick-light-right {
-  transform: translate(-50%, -50%) scaleY(1.6);
+  transform: translate(-50%, -50%) scaleY(2.4);
 }
 
 .stick-light-up,
 .stick-light-down {
-  transform: translate(-50%, -50%) scaleX(1.6);
+  transform: translate(-50%, -50%) scaleX(2.4);
 }
 
 .axis-readout {

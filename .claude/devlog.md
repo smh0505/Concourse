@@ -4724,7 +4724,7 @@ same shared `.shimmer` class as the cover skeleton above, not a new animation. A
 re-triggers `useImageBrightness` and thus `textPending` the same way initial navigation does -
 no separate handling needed for that path. `bun run build` clean.
 
-## Milestone 22 — Docs Site Internationalization (scoped, not started)
+## Milestone 22 — Docs Site Internationalization
 
 User asked whether the docs site (Milestone 21) could get i18n like the app's own UI (Milestone
 21's 10 languages). Checked feasibility directly against this project's actual pinned VitePress
@@ -4957,6 +4957,64 @@ each surfacing a real gap the previous step didn't cover:
 Each step was verified with `bun run build` (typecheck + production build) before committing -
 no GUI/hardware testing possible in this environment, so the user validated steps 1-4 with
 their own real controllers between requests.
+
+**Implementation.** User picked up the scoped work: same 10 locales as the app, machine-
+translated (both confirmed via `AskUserQuestion` rather than assumed). `docs/.vitepress/config.ts`
+rewritten with a `locales` key - `root` (English) plus 9 entries keyed by lowercase URL segment
+(`ko`, `ja`, `zh-hans`, `es`, `fr`, `de`, `pt-br`, `ru`, `it` - lowercase per VitePress's own URL
+convention, even though `zh-Hans`/`pt-BR` keep their original casing in each entry's `lang`
+attribute, matching the app's own `messages` keys in `src/i18n/index.ts`), each with its own
+translated `nav`/`sidebar` `themeConfig` pointing at that locale's link-prefixed paths. Root's
+previous top-level `nav`/`sidebar` moved into `locales.root.themeConfig` unchanged; `socialLinks`/
+`search` stayed at the shared top-level `themeConfig` since they're identical across locales.
+
+**Translation execution**: spawned 9 parallel background `general-purpose` agents, one per
+locale, each translating the same 13 source files (`docs/index.md` + 5 under `docs/guide/` + 7
+under `docs/plugins/`) into its own `docs/<locale>/` tree - independent, non-overlapping file
+sets, so full parallelism was safe. Each agent's brief: translate prose/headings only, leave code
+fences/inline code/file paths/frontmatter keys untouched, and rewrite the two known absolute
+`/plugins/` links (in `guide/index.md` and `guide/plugins-and-themes.md`) to `/<locale>/plugins/`.
+117 files landed (13 × 9), all agents reporting back their own terminology judgment calls (mostly
+"which UI-label/technical nouns to leave in English for a dev audience that sees the literal
+string in the app or an API").
+
+**Two real bugs found post-generation, not covered by any agent's brief:**
+1. **Cross-page anchor links break once headings are translated.** VitePress's `markdown-it-
+   anchor` slugifies a heading's *own* rendered text into its anchor id - six sections
+   (`URI launches vs. direct executables`, `Playtime Tracking`, `Deduplication across sources`,
+   `Offline translation` in `guide/library.md`; `Versioning` in `plugins/manifest-reference.md`;
+   `Path scoping` in `plugins/security-model.md`) are linked *from other pages* by their English
+   slug (e.g. `./library#playtime-tracking`), but a translated heading generates a translated
+   slug instead, silently breaking the jump-to-anchor. Most agents left the *link fragments*
+   in English (correctly matching the untranslated-anchor assumption they weren't told was
+   false) while translating the *headings* themselves (invalidating that same assumption) - an
+   inherent contradiction the per-locale brief didn't anticipate, since it only called out the
+   two `/plugins/` link rewrites and said nothing about anchor stability. One agent (pt-BR)
+   independently noticed the mismatch and translated the fragments to match its own translated
+   slugs instead, which fixed pt-BR internally but left it inconsistent with every other locale's
+   convention. Fixed uniformly across all 9 locales post-generation: added an explicit
+   `{#english-slug}` id to each of the six headings (VitePress/markdown-it-anchor supports this
+   directly in the heading line), then reverted pt-BR's six fragment links back to the same
+   English ids every other locale already used - one stable id per section, independent of
+   translated heading text, matching what the untouched relative-link agents had already assumed.
+2. **Two locale index.md frontmatter files failed to parse.** `docs/ko/index.md` and
+   `docs/pt-br/index.md` each had one `details:` value containing a literal `:` inside translated
+   prose (Korean "예:", Portuguese "ex.:") - valid English YAML because the original text had no
+   inner colon, but the translated string turned a plain scalar into what YAML read as a second,
+   malformed mapping key. `bun run docs:build` caught it immediately (`incomplete explicit
+   mapping pair`) since VitePress fails outright on frontmatter parse errors rather than silently
+   dropping the field. Fixed by quoting both values.
+
+**Verification**: `bun run docs:build` (VitePress's own build, which fails on both frontmatter
+errors and dead links by default via `ignoreDeadLinks: false`) ran clean after both fixes above -
+confirms the full 10-locale, ~130-page site builds, and that no internal link (including the
+anchor-id fixes) is dead. `.github/workflows/docs.yml` needed no changes - it already just runs
+`bun run docs:build` and uploads `docs/.vitepress/dist` as a Pages artifact, agnostic to how many
+locale subdirectories exist inside it.
+
+Per `milestones.md`'s own preamble, this milestone's close is what triggers the 1.x → 2.0.0
+version bump - not done automatically as part of this pass (bump/tag/push stays a separate,
+explicitly-requested step per this project's standing convention).
 
 ## Milestone 24 — Detachable Controller Mapping Plugins (scoped, not started)
 

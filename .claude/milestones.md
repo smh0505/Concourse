@@ -507,28 +507,27 @@ detecting already-installed Ollama/LM Studio.
   `%APPDATA%\com.bloppy.concourse\library.db*` for a throwaway/fake-data copy first (real
   library has NSFW entries not meant for public docs), screenshot, then restore the originals
 
-## Milestone 22 — Docs Site Internationalization (scoped, not started)
+## Milestone 22 — Docs Site Internationalization
 User asked whether the VitePress docs site (Milestone 21) could be localized like the app's own
 UI (Milestone 20's 10 languages). Confirmed feasible - VitePress 1.6.4 (this project's pinned
 version) supports i18n natively via a `locales` config key plus per-locale content
 subdirectories, with its own built-in locale switcher in the default theme. Scoped as its own
-milestone rather than folded into 21/22, since translating ~12 prose-heavy pages (guide +
+milestone rather than folded into 21/22, since translating ~13 prose-heavy pages (guide +
 plugin-developer reference, including code samples) is a materially bigger task than the app's
 short UI-string localization - not a quick follow-on.
-- [ ] Decide scope before starting: same 10 languages as the app, or a smaller subset first -
-  108 translated files (12 pages × 9 non-English locales) is a lot of content to keep in sync
-  with the English source as it evolves, unlike short UI strings
-- [ ] Decide translation approach: machine-translated (same disclosed approach as the app's own
-  9 non-English locales) vs. holding out for native-speaker review given this is technical/
-  developer-facing content, where mistranslation risk is higher than UI button labels
-- [ ] `docs/.vitepress/config.ts`: add `locales` config, per-locale `themeConfig` overrides (nav/
-  sidebar labels), decide URL structure (VitePress default: `/ko/`, `/ja/`, ... subpaths)
-- [ ] Translate all pages under `docs/guide/` and `docs/plugins/` per the scope/approach decided
-  above
-- [ ] Add a locale switcher to the nav (VitePress's built-in one, or custom) - confirm it works
-  correctly under this project's `base: "/Concourse/"` GitHub Pages path
-- [ ] Verify `.github/workflows/docs.yml` builds/deploys the localized site correctly (multi-
-  locale VitePress output structure, still under the same Pages deployment)
+- [x] Scope: same 10 languages as the app (all 9 non-English locales)
+- [x] Translation approach: machine-translated, same disclosed approach as the app's own 9
+  non-English UI locales
+- [x] `docs/.vitepress/config.ts`: `locales` config added, per-locale `themeConfig` (translated
+  nav/sidebar labels and links), lowercase URL subpaths (`/ko/`, `/ja/`, `/zh-hans/`, `/es/`,
+  `/fr/`, `/de/`, `/pt-br/`, `/ru/`, `/it/`)
+- [x] Translated all 13 pages under `docs/guide/` and `docs/plugins/` (plus `docs/index.md`) into
+  all 9 locales - 117 translated files total, mirrored under `docs/<locale>/`
+- [x] Locale switcher: VitePress's built-in one, enabled automatically once 2+ locales are
+  declared in `locales` - no custom nav needed
+- [x] Verified `bun run docs:build` (VitePress's own dead-link checker, on by default) builds the
+  full multi-locale site clean - `.github/workflows/docs.yml` needs no changes, same
+  `docs:build`/Pages-artifact steps work unmodified for a multi-locale output tree
 
 ## Milestone 23 — DLsite Metadata Provider (unofficial, stretch)
 No official public API - unlike every other metadata provider plugin (IGDB/SteamGridDB/RAWG/

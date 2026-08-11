@@ -308,13 +308,6 @@ a distinct, larger feature.
 Second wave of milestones, opened after 1.0.0 shipped. Numbering continues the same
 sequence/heading convention as above for devlog cross-reference.
 
-## Milestone 15 — Additional Source Plugins: Emulator/ROM Scanner
-Carried over from Milestone 7 unstarted.
-- [ ] Research emulator/ROM directory conventions worth supporting first
-- [ ] Scan configured ROM directories, map entries into core `GameEntry` format
-- [ ] Launch mechanism (emulator + ROM path)
-- [ ] Dedup against manually-added / other source-plugin entries
-
 ## Milestone 16 — Additional Source Plugins: Xbox/EA/Ubisoft (stretch)
 Originally a core-roadmap stretch goal, moved here unstarted - no reason to hold up 1.0 for a
 stretch goal nothing had been done on yet.
@@ -730,3 +723,28 @@ enabling a new metadata provider retroactively.
   likely the same event-based progress pattern `wasm_plugin_installer.rs`'s download flow uses
 - [ ] Rate-limit awareness - bulk-fetching against SGDB/IGDB/RAWG/etc. for every game at once
   risks hitting per-provider API rate limits
+
+---
+
+# Icebox
+
+Not part of the active numbered sequence - unlike a milestone still queued in the roadmap
+above, nothing here is planned to start soon. Distinct from "not started" (every unstarted
+milestone above is still an active intent); an icebox item lacks a real reason to start it
+right now. Revive by moving an entry back into the numbered sequence above (give it a fresh
+milestone number reflecting whenever it's actually picked up, don't reuse the old one) if that
+ever changes.
+
+## Milestone 15 — Additional Source Plugins: Emulator/ROM Scanner
+Carried over from Milestone 7, then parked here - every other Post-1.0 source plugin
+(Milestone 16's Xbox/EA/Ubisoft) got built against something real: a real install, verified
+directory/registry conventions, a real launch test. No emulator/ROM setup exists to verify
+against here (checked directly, not assumed - a PPSSPP config folder exists on this machine but
+is empty, no ROMs, no locatable executable), and the user doesn't currently play emulated games
+at all. Building this against documentation alone, with nothing real to check it against, would
+break the "verify before shipping" discipline every other source plugin this project has used -
+better left icebound than built blind.
+- [ ] Research emulator/ROM directory conventions worth supporting first
+- [ ] Scan configured ROM directories, map entries into core `GameEntry` format
+- [ ] Launch mechanism (emulator + ROM path)
+- [ ] Dedup against manually-added / other source-plugin entries

@@ -183,6 +183,8 @@ own definition.
 - [x] `src-tauri/` cleanup: `cargo fmt`, stray BOM stripped, dead `greet` scaffold command removed
 - [x] `GameDetail.vue` cover thumbnail skeleton shimmer while metadata is fetching
 - [x] `.info`'s invisible-text loading hack replaced with real skeleton bars
+- [x] `GamepadRemapSettings.vue`'s live button diagram redrawn as an SVG gamepad silhouette with
+  percentage-positioned round/pill/stick hitzones, replacing the plain CSS-grid box layout
 
 Note: Milestone 3 (Big Picture) is sequenced before the plugin system to validate the
 controller UX early. Milestone 4's loader only discovers plugins bundled into the app at

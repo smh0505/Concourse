@@ -151,6 +151,36 @@ const layoutButtons = computed(() =>
     : STANDARD_GAMEPAD_LAYOUT_BUTTONS.filter((b) => b.index !== 10 && b.index !== 11),
 );
 
+// Silhouette placement, positioned as % of the SVG body's own 400x220 viewBox (so hitzones
+// track the shape at any render size) - an approximate Xbox-style asymmetric layout (left
+// stick above the d-pad, face buttons above the right stick), not pixel-accurate to any real
+// controller. `shape` picks the CSS treatment below: round buttons for face/stick clusters,
+// wide pills for the shoulder/trigger row, small pills for back/home/start.
+const PAD_POSITIONS: Record<number, { x: number; y: number; shape: "round" | "pill" | "stick" }> =
+  {
+    // Shoulders/triggers - top edge.
+    6: { x: 15, y: 7, shape: "pill" }, // LT
+    4: { x: 15, y: 18, shape: "pill" }, // LB
+    7: { x: 85, y: 7, shape: "pill" }, // RT
+    5: { x: 85, y: 18, shape: "pill" }, // RB
+    // Back/Home/Start - center.
+    8: { x: 42, y: 26, shape: "round" }, // Back
+    16: { x: 50, y: 21, shape: "round" }, // Home
+    9: { x: 58, y: 26, shape: "round" }, // Start
+    // Left stick, d-pad below it.
+    10: { x: 29, y: 34, shape: "stick" }, // LS
+    12: { x: 29, y: 52, shape: "round" }, // D-Up
+    14: { x: 24, y: 59, shape: "round" }, // D-Left
+    15: { x: 34, y: 59, shape: "round" }, // D-Right
+    13: { x: 29, y: 66, shape: "round" }, // D-Down
+    // Face buttons diamond, right stick below it.
+    3: { x: 71, y: 34, shape: "round" }, // Y
+    2: { x: 66, y: 43, shape: "round" }, // X
+    1: { x: 76, y: 43, shape: "round" }, // B
+    0: { x: 71, y: 52, shape: "round" }, // A
+    11: { x: 71, y: 68, shape: "stick" }, // RS
+  };
+
 onBeforeUnmount(stopPolling);
 </script>
 
@@ -160,12 +190,21 @@ onBeforeUnmount(stopPolling);
   </button>
   <BaseModal :open="open" :title="t('gamepadRemap.title')" max-width="460px" @close="onClose">
     <template #body>
-      <div class="pad-layout">
+      <div class="pad-silhouette">
+        <svg class="pad-shape" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+          <path
+            d="M50,40 Q50,10 90,10 L310,10 Q350,10 350,40 L350,90 Q350,130 380,150
+               Q400,165 385,195 Q370,220 340,205 Q300,185 270,170 Q240,158 200,158
+               Q160,158 130,170 Q100,185 60,205 Q30,220 15,195 Q0,165 20,150
+               Q50,130 50,90 Z"
+          />
+        </svg>
         <div
           v-for="btn in layoutButtons"
           :key="btn.index"
           class="pad-btn"
-          :class="[`pad-btn-${btn.index}`, { pressed: pressed[btn.index] }]"
+          :class="[`pad-btn-${PAD_POSITIONS[btn.index]?.shape ?? 'round'}`, { pressed: pressed[btn.index] }]"
+          :style="{ left: `${PAD_POSITIONS[btn.index]?.x ?? 50}%`, top: `${PAD_POSITIONS[btn.index]?.y ?? 50}%` }"
         >
           {{ btn.label }}
         </div>
@@ -232,60 +271,71 @@ onBeforeUnmount(stopPolling);
   font-size: 0.85rem;
 }
 
-/* A rough top-down physical layout (not pixel-accurate to any specific controller) - each
-   button is placed by grid-column/row on a shared 12-column grid, purely so the live diagram
-   reads as "left side / right side / shoulders / center" at a glance while pressing buttons. */
-.pad-layout {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: 1.8rem;
-  gap: 0.3rem;
+/* A gamepad silhouette (SVG body shape) with button hitzones positioned by percentage over it -
+   not pixel-accurate to any specific real controller (deliberately generic, same reasoning as
+   avoiding a brand-specific shape/logo elsewhere in this codebase), but reads as an actual pad
+   at a glance instead of a plain grid of boxes. `PAD_POSITIONS` in the script drives both the
+   shape's own viewBox coordinates and these percentage placements, so the two stay in sync. */
+.pad-silhouette {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 400 / 220;
   margin-bottom: var(--space-3);
-  font-size: 0.75rem;
+  font-size: 0.6rem;
+}
+
+.pad-shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--color-surface0);
+  stroke: var(--color-border, currentColor);
+  stroke-width: 2;
+  stroke-opacity: 0.4;
 }
 
 .pad-btn {
+  position: absolute;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--color-border, currentColor);
-  border-radius: var(--radius-sm);
-  opacity: 0.6;
-  transition: background-color 0.05s, opacity 0.05s;
+  background: var(--color-surface1);
+  opacity: 0.75;
+  transition: background-color 0.05s, opacity 0.05s, transform 0.05s;
+  line-height: 1;
 }
 
 .pad-btn.pressed {
   opacity: 1;
   background: var(--color-accent);
   color: var(--color-on-accent);
+  transform: translate(-50%, -50%) scale(1.08);
 }
 
-/* Shoulders/triggers - top row, far left and far right. */
-.pad-btn-6 { grid-column: 1 / 3; grid-row: 1; } /* LT */
-.pad-btn-4 { grid-column: 1 / 3; grid-row: 2; } /* LB */
-.pad-btn-7 { grid-column: 11 / 13; grid-row: 1; } /* RT */
-.pad-btn-5 { grid-column: 11 / 13; grid-row: 2; } /* RB */
+/* Face/d-pad/back-home-start buttons - small round pads. */
+.pad-btn-round {
+  width: 9%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
 
-/* D-pad diamond - left side. */
-.pad-btn-12 { grid-column: 3 / 5; grid-row: 3; } /* D-Up */
-.pad-btn-14 { grid-column: 2 / 4; grid-row: 4; } /* D-Left */
-.pad-btn-15 { grid-column: 4 / 6; grid-row: 4; } /* D-Right */
-.pad-btn-13 { grid-column: 3 / 5; grid-row: 5; } /* D-Down */
+/* Shoulders/triggers - wide flat pills along the top edge. */
+.pad-btn-pill {
+  width: 16%;
+  aspect-ratio: 3.2;
+  border-radius: var(--radius-lg);
+}
 
-/* Back/Home/Start - center. */
-.pad-btn-8 { grid-column: 5 / 6; grid-row: 3; } /* Back */
-.pad-btn-16 { grid-column: 6 / 7; grid-row: 3; } /* Home */
-.pad-btn-9 { grid-column: 7 / 8; grid-row: 3; } /* Start */
-
-/* Face buttons diamond - right side. */
-.pad-btn-3 { grid-column: 9 / 11; grid-row: 3; } /* Y */
-.pad-btn-2 { grid-column: 8 / 10; grid-row: 4; } /* X */
-.pad-btn-1 { grid-column: 10 / 12; grid-row: 4; } /* B */
-.pad-btn-0 { grid-column: 9 / 11; grid-row: 5; } /* A */
-
-/* Stick clicks - bottom row. */
-.pad-btn-10 { grid-column: 4 / 6; grid-row: 6; } /* LS */
-.pad-btn-11 { grid-column: 8 / 10; grid-row: 6; } /* RS */
+/* Analog stick clicks - the largest circles, with an inner dot suggesting a stick's own cap. */
+.pad-btn-stick {
+  width: 13%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--color-surface0);
+}
 
 .axis-readout {
   display: flex;

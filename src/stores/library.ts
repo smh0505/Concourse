@@ -32,6 +32,12 @@ function parentDir(executablePath: string): string | null {
 export type ViewMode = "grid" | "list";
 export type SortOption = "title" | "recentlyPlayed" | "mostPlayed" | "recentlyAdded";
 
+/** Strips a single pair of wrapping double-quotes, if present - `filteredGames`' tag:/
+ *  collection: tokens use this for multi-word values (`tag:"Final Fantasy"`). */
+function stripQuotes(value: string): string {
+  return value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value;
+}
+
 interface GameSessionEnded {
   game_id: number;
   start_time: string;
@@ -70,7 +76,16 @@ export const useLibraryStore = defineStore("library", () => {
     // are additive AND-filters independent of the Tags/Collections panel's own pill-based
     // activeFilter (below) - typing a token doesn't highlight a pill, and a pill selection
     // doesn't populate the search box; both simply narrow the result together.
-    const tokens = search.value.trim().split(/\s+/).filter(Boolean);
+    //
+    // Tag/collection names can contain spaces ("Co-op" is fine unquoted, but "Final Fantasy"
+    // isn't) - a plain \s+ split would break those into two tokens. Quoted values
+    // (tag:"Final Fantasy") are pulled out first as their own tokens before falling back to a
+    // whitespace split for everything else.
+    const tokens: string[] = [];
+    const tokenPattern = /(\w+:"[^"]*")|\S+/g;
+    for (const match of search.value.trim().matchAll(tokenPattern)) {
+      tokens.push(match[0]);
+    }
     let platformFilter: string | null = null;
     let tagFilter: string | null = null;
     let collectionFilter: string | null = null;
@@ -78,11 +93,11 @@ export const useLibraryStore = defineStore("library", () => {
     for (const token of tokens) {
       const lower = token.toLowerCase();
       if (lower.startsWith("platform:")) {
-        platformFilter = token.slice("platform:".length).toLowerCase();
+        platformFilter = stripQuotes(token.slice("platform:".length)).toLowerCase();
       } else if (lower.startsWith("tag:")) {
-        tagFilter = token.slice("tag:".length).toLowerCase();
+        tagFilter = stripQuotes(token.slice("tag:".length)).toLowerCase();
       } else if (lower.startsWith("collection:")) {
-        collectionFilter = token.slice("collection:".length).toLowerCase();
+        collectionFilter = stripQuotes(token.slice("collection:".length)).toLowerCase();
       } else {
         titleTokens.push(token);
       }

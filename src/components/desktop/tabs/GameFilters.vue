@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   IconAdjustmentsHorizontal,
@@ -61,37 +61,41 @@ async function removeSelectionFromLibrary() {
 
 const PILL_ROW_LIMIT = 8;
 
-/** Capped preview per pill row (platform/tags/collections) - a row past PILL_ROW_LIMIT shows a
- *  "+N more" pill that opens pillModalOpen (below) instead of expanding in place, since the
- *  modal already lists every pill uncapped. Selected pills sort to the front of the row before
- *  the cap is applied, so toggling a pill outside the visible cap still surfaces it (and keeps
- *  it visible) rather than leaving an active filter's pill hidden behind "+N more". Plain
- *  function (not a class - project convention) called once per row, wrapped in `reactive()` so
- *  its computed properties auto-unwrap in the template (`row.visible` instead of
- *  `row.visible.value`). */
-function usePillRow(items: () => string[], isActive: (item: string) => boolean) {
-  const list = computed(items);
-  const visible = computed(() => {
-    const active = list.value.filter((item) => isActive(item));
-    const inactive = list.value.filter((item) => !isActive(item));
-    return [...active, ...inactive].slice(0, PILL_ROW_LIMIT);
-  });
-  const hiddenCount = computed(() => Math.max(0, list.value.length - PILL_ROW_LIMIT));
-  return reactive({ visible, hiddenCount });
+interface PillEntry {
+  kind: "platform" | "tag" | "collection";
+  value: string;
 }
 
-const platformRow = usePillRow(
-  () => library.allPlatforms,
-  (platform) => library.activePlatformFilters.has(platform),
-);
-const tagRow = usePillRow(
-  () => tags.allTags,
-  (tag) => tags.activeFilters.has(tag),
-);
-const collectionRow = usePillRow(
-  () => collections.allCollections,
-  (name) => collections.activeFilters.has(name),
-);
+/** All platform/tag/collection pills merged into one flat list, in that kind order - the row
+ *  under the search bar shows a single unsegmented row now (kind-grouping is what the "browse
+ *  all filters" modal is for), while the modal itself still sections them separately. */
+const allPillEntries = computed<PillEntry[]>(() => [
+  ...library.allPlatforms.map((value) => ({ kind: "platform" as const, value })),
+  ...tags.allTags.map((value) => ({ kind: "tag" as const, value })),
+  ...collections.allCollections.map((value) => ({ kind: "collection" as const, value })),
+]);
+
+function isPillActive(entry: PillEntry): boolean {
+  if (entry.kind === "platform") return library.activePlatformFilters.has(entry.value);
+  if (entry.kind === "tag") return tags.activeFilters.has(entry.value);
+  return collections.activeFilters.has(entry.value);
+}
+
+/** Capped preview of the merged pill list - past PILL_ROW_LIMIT, a "+N more" pill opens
+ *  pillModalOpen (below) instead of expanding in place, since the modal already lists every
+ *  pill uncapped. Selected pills sort to the front before the cap is applied, so toggling a
+ *  pill outside the visible cap still surfaces it (and keeps it visible) rather than leaving an
+ *  active filter's pill hidden behind "+N more". */
+const pillRow = computed(() => {
+  const active = allPillEntries.value.filter(isPillActive);
+  const inactive = allPillEntries.value.filter((entry) => !isPillActive(entry));
+  return [...active, ...inactive].slice(0, PILL_ROW_LIMIT);
+});
+const hiddenPillCount = computed(() => Math.max(0, allPillEntries.value.length - PILL_ROW_LIMIT));
+
+function togglePill(entry: PillEntry) {
+  library.setSearchToken(entry.kind, entry.value);
+}
 
 const pillModalOpen = ref(false);
 
@@ -240,46 +244,18 @@ function selectSortOption(option: SortOption) {
     </div>
     </div>
     </Transition>
-    <div class="tags" v-if="library.allPlatforms.length">
+    <div class="tags" v-if="allPillEntries.length">
       <span
         class="tag-pill filter-tag"
-        :class="{ 'accent-active': library.activePlatformFilters.has(platform) }"
-        v-for="platform in platformRow.visible"
-        :key="platform"
-        @click="library.setSearchToken('platform', platform)"
+        :class="{ 'accent-active': isPillActive(entry) }"
+        v-for="entry in pillRow"
+        :key="`${entry.kind}:${entry.value}`"
+        @click="togglePill(entry)"
       >
-        {{ platform }}
+        {{ entry.value }}
       </span>
-      <span v-if="platformRow.hiddenCount" class="tag-pill more-pill" @click="pillModalOpen = true">
-        {{ t("filters.showMore", { count: platformRow.hiddenCount }) }}
-      </span>
-    </div>
-    <div class="tags" v-if="tags.allTags.length">
-      <span
-        class="tag-pill filter-tag"
-        :class="{ 'accent-active': tags.activeFilters.has(tag) }"
-        v-for="tag in tagRow.visible"
-        :key="tag"
-        @click="library.setSearchToken('tag', tag)"
-      >
-        {{ tag }}
-      </span>
-      <span v-if="tagRow.hiddenCount" class="tag-pill more-pill" @click="pillModalOpen = true">
-        {{ t("filters.showMore", { count: tagRow.hiddenCount }) }}
-      </span>
-    </div>
-    <div class="tags" v-if="collections.allCollections.length">
-      <span
-        class="tag-pill filter-tag"
-        :class="{ 'accent-active': collections.activeFilters.has(name) }"
-        v-for="name in collectionRow.visible"
-        :key="name"
-        @click="library.setSearchToken('collection', name)"
-      >
-        {{ name }}
-      </span>
-      <span v-if="collectionRow.hiddenCount" class="tag-pill more-pill" @click="pillModalOpen = true">
-        {{ t("filters.showMore", { count: collectionRow.hiddenCount }) }}
+      <span v-if="hiddenPillCount" class="tag-pill more-pill" @click="pillModalOpen = true">
+        {{ t("filters.showMore", { count: hiddenPillCount }) }}
       </span>
     </div>
 

@@ -66,9 +66,8 @@ interface PillEntry {
   value: string;
 }
 
-/** All platform/tag/collection pills merged into one flat list, in that kind order - the row
- *  under the search bar shows a single unsegmented row now (kind-grouping is what the "browse
- *  all filters" modal is for), while the modal itself still sections them separately. */
+/** All platform/tag/collection pills merged into one flat list - the row under the search bar
+ *  is unsegmented (kind-grouping is what the "browse all filters" modal is for). */
 const allPillEntries = computed<PillEntry[]>(() => [
   ...library.allPlatforms.map((value) => ({ kind: "platform" as const, value })),
   ...tags.allTags.map((value) => ({ kind: "tag" as const, value })),
@@ -81,11 +80,9 @@ function isPillActive(entry: PillEntry): boolean {
   return collections.activeFilters.has(entry.value);
 }
 
-/** Capped preview of the merged pill list - past PILL_ROW_LIMIT, a "+N more" pill opens
- *  pillModalOpen (below) instead of expanding in place, since the modal already lists every
- *  pill uncapped. Selected pills sort to the front before the cap is applied, so toggling a
- *  pill outside the visible cap still surfaces it (and keeps it visible) rather than leaving an
- *  active filter's pill hidden behind "+N more". */
+/** Capped preview of the merged pill list - past PILL_ROW_LIMIT, "+N more" opens pillModalOpen
+ *  instead of expanding in place. Selected pills sort to the front first, so a pill toggled
+ *  outside the cap stays visible instead of hiding behind "+N more". */
 const pillRow = computed(() => {
   const active = allPillEntries.value.filter(isPillActive);
   const inactive = allPillEntries.value.filter((entry) => !isPillActive(entry));

@@ -27,7 +27,31 @@ added the game.
 - **Collections** group a series/franchise ("Final Fantasy") - a distinct concept from tags,
   managed the same way from their own sidebar tab.
 
-Both support search/filtering the library view alongside plain title search.
+## Searching, filtering & sorting
+
+The search bar accepts plain title text plus three special tokens, all combinable in one query:
+`platform:steam`, `tag:coop`, `collection:"final fantasy"` (quote a value that contains spaces).
+Typing `platform:steam zelda` searches titles for "zelda" within Steam games only.
+
+Below the search bar, clickable pills mirror the same platforms/tags/collections - clicking one
+adds or removes its token from the search box, so the search bar and the pills always agree with
+each other. Multiple pills of the same kind combine with either **OR** (any selected value
+matches - the default) or **AND** (must match every selected value); toggle which one a
+category uses from the "browse all filters" pill (the row is capped, and that pill opens a modal
+listing everything uncapped, grouped by platform/tags/collections). A game added manually
+without a source plugin's platform shows up under a `manual` platform pill.
+
+A separate sort dropdown next to the view-mode toggle offers Title (A-Z), Recently Played, Most
+Played, and Recently Added - your choice persists across restarts, same as grid/list view mode.
+
+## Batch operations
+
+Click the checkbox-style toggle next to the sort dropdown to enter selection mode: every
+card/row becomes a single click-to-select target, with a small checkbox badge showing what's
+currently selected. A "N selected" bar appears with Select All (respects whatever filter/search
+is currently active) and Clear buttons, plus batch actions: add a tag, add to a collection, or
+remove the whole selection from your library. Exit selection mode with the X button to return to
+normal browsing.
 
 ## Deduplication across sources
 

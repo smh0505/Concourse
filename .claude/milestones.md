@@ -472,42 +472,26 @@ install-by-URL, no WASM/code execution) rather than the WASM tier.
   default layout/shape, so `8bitdo-micro`'s existing manifest needed no changes
 
 ## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort
-`GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s
-`filteredGames` filters on search text and the active tag/collection, no sort at all) - one
-game at a time is the only way to tag/remove/collection-assign. Two workstreams, scoped
-together since both touch the same filter-bar area and library selection state.
+Two workstreams, scoped together since both touch the same filter-bar area and library
+selection state. See devlog for full rationale/design evolution.
 
 **Batch operations.**
-- [x] Multi-select mode for the grid/list view (whole-card/row click-to-toggle while active) -
-  new `stores/librarySelection.ts` (`active`/`selectedIds`), toggle button + checkbox UI in
-  `GameCard.vue`/`GameListRow.vue`
+- [x] Multi-select mode for the grid/list view (`stores/librarySelection.ts`, checkbox UI in
+  `GameCard.vue`/`GameListRow.vue`)
 - [x] Batch actions on a selection: add tag, add to collection, remove from library
-  (`tags.addToGames`/`collections.addToGames`/`library.deleteGames`, all loop-the-repo-call-
-  then-refresh-once). Remove-specific-tag/remove-from-specific-collection deliberately deferred
-  to a follow-up pass - see devlog
-- [x] Selection UI affordance (a "N selected" bar, Select All/Clear) in `GameFilters.vue`
+  (remove-specific-tag/collection deferred - see devlog)
+- [x] Selection UI affordance ("N selected" bar, Select All/Clear) in `GameFilters.vue`
 
 **Filter/sort expansion.**
-- [x] Platform filter shipped early, via a `platform:steam` search-box token (`filteredGames`
-  pulls it out of the normal title-search tokens) rather than the expandable panel below -
-  simpler, ships now instead of waiting on the panel; covers the "platform" filter this section
-  originally scoped for the panel. Grew substantially past that first pass: clickable
-  platform/tag/collection pills (one merged row under the search bar, capped at 8 with selected
-  pills sorted first, "+N more" opening a "browse all filters" modal grouped by kind), all
-  multi-selectable with a per-kind OR/AND match-mode toggle, plus a `manual` pseudo-platform pill
-  for games with no source-plugin platform (`AddGame.vue`-added games). The search box stays the
-  single source of truth throughout - pills only ever add/remove their own token in it, never
-  filter independently. See devlog for the full design evolution
-- [x] Sort options (title A-Z, recently played, most played, recently added) - `filteredGames`
-  gained a sort step after the existing filter step; new `PlaytimeRepository.getAllLastPlayed()`
-  (unlimited version of the existing top-N `getRecentlyPlayed`) backs the recently-played sort,
-  fetched alongside `games` in `refresh()`
-- [x] Expandable panel under `GameFilters.vue`'s existing bar (collapsed by default, toggle
-  button) - currently houses just the sort dropdown; playtime-range/install-status filters
-  remain open, deliberately deferred (no data hooks decided for those yet)
-- [x] Persist chosen sort the same way `viewMode` already persists via `settingsRepo`
-  (`sort_option` key); filter persistence (tag/collection/platform) stays session-only, matching
-  existing behavior - not part of this item's original scope
+- [x] Platform/tag/collection filtering via search-box tokens (`platform:`/`tag:`/
+  `collection:`), the search box being the single source of truth
+- [x] Multi-selectable, clickable pills for all three kinds - one merged row under the search
+  bar (capped, "+N more" opens a "browse all filters" modal), per-kind OR/AND match mode, plus a
+  `manual` pseudo-platform pill for games with no source-plugin platform
+- [x] Sort options (title A-Z, recently played, most played, recently added), persisted like
+  `viewMode`
+- [x] Expandable sort dropdown under `GameFilters.vue`'s bar; playtime-range/install-status
+  filters remain deliberately deferred (no data hooks decided yet)
 
 ## Milestone 26 — Quick-Launch Search (not started)
 Spotlight/Alfred-style overlay: global hotkey opens a search box, type to filter the library,

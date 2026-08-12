@@ -29,8 +29,32 @@ aggiunto il gioco.
 - Le **Collezioni** raggruppano una serie/franchise ("Final Fantasy") - un concetto distinto dai
   tag, gestito allo stesso modo dalla propria scheda nella barra laterale.
 
-Entrambi supportano la ricerca/filtraggio della vista libreria insieme alla normale ricerca per
-titolo.
+## Ricerca, filtri e ordinamento
+
+La barra di ricerca accetta testo di titolo semplice più tre token speciali, tutti combinabili in un'unica
+query: `platform:steam`, `tag:coop`, `collection:"final fantasy"` (racchiudi tra virgolette un valore che
+contiene spazi). Digitare `platform:steam zelda` cerca "zelda" nei titoli solo tra i giochi Steam.
+
+Sotto la barra di ricerca, dei pill cliccabili rispecchiano le stesse piattaforme/tag/collezioni -
+cliccandone uno si aggiunge o rimuove il relativo token dalla barra di ricerca, così che barra di ricerca e
+pill siano sempre coerenti tra loro. Più pill dello stesso tipo si combinano con **OR** (corrisponde
+qualsiasi valore selezionato - predefinito) oppure **AND** (deve corrispondere a ogni valore selezionato);
+cambia quale modalità usa una categoria dal pill "browse all filters" (la riga ha un limite, e quel pill apre
+una modale che elenca tutto senza limiti, raggruppato per piattaforma/tag/collezioni). Un gioco aggiunto
+manualmente senza la piattaforma di un plugin sorgente compare sotto un pill piattaforma `manual`.
+
+Un menu a tendina di ordinamento separato, accanto al selettore di modalità di visualizzazione, offre Titolo
+(A-Z), Giocato di recente, Più giocato e Aggiunto di recente - la tua scelta persiste tra i riavvii, come la
+modalità griglia/elenco.
+
+## Operazioni collettive
+
+Clicca sull'interruttore in stile checkbox accanto al menu di ordinamento per entrare in modalità selezione:
+ogni scheda/riga diventa un bersaglio selezionabile con un solo clic, con un piccolo badge a forma di
+checkbox che mostra cosa è attualmente selezionato. Appare una barra "N selezionati" con i pulsanti Seleziona
+tutto (rispetta qualsiasi filtro/ricerca attualmente attivo) e Cancella, oltre ad azioni collettive:
+aggiungere un tag, aggiungere a una collezione, oppure rimuovere l'intera selezione dalla tua libreria. Esci
+dalla modalità selezione con il pulsante X per tornare alla navigazione normale.
 
 ## Deduplicazione tra fonti {#deduplication-across-sources}
 

@@ -35,10 +35,9 @@ const cardEl = ref<HTMLElement | null>(null);
 const balloonEl = ref<HTMLElement | null>(null);
 const { anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(cardEl, balloonEl);
 
-/** Milestone 25 batch ops - the whole card becomes one big toggle target while selection mode
- *  is active, instead of leaving the play/edit/remove footer reachable (which would make a
- *  bulk-select session too easy to derail with an accidental single-game action - the footer
- *  is hidden entirely below while selection.active, see the template). */
+/** Whole card is one toggle target in selection mode - the footer (play/edit/remove) is hidden
+ *  entirely below rather than left reachable, so a bulk session can't be derailed by an
+ *  accidental single-game action. */
 function onCardClick() {
   if (selection.active) selection.toggle(props.game.id);
 }
@@ -119,9 +118,8 @@ function onCardClick() {
   z-index: 2;
 }
 
-/* Milestone 25 batch ops - a ring instead of the pill-style .accent-active fill, since a fill
-   would obscure the cover art underneath; box-shadow (not border) so it doesn't shift layout
-   or get clipped by .card-visual's own border-radius the way an inset border sometimes can. */
+/* A ring (box-shadow, not border/fill) - a filled highlight would obscure the cover art, and
+   box-shadow avoids shifting layout or clipping against .card-visual's own radius. */
 .card.selected {
   box-shadow: 0 0 0 3px var(--color-accent);
   border-radius: var(--card-radius, var(--radius-md));
@@ -144,8 +142,8 @@ function onCardClick() {
   align-items: center;
   justify-content: center;
   color: #fff;
-  /* Always visible while selection mode is active (not hover-revealed like .footer) - the
-     whole point is being able to see selection state across every card at a glance. */
+  /* Always visible (not hover-revealed like .footer) - selection state should be scannable at
+     a glance across every card. */
 }
 
 .select-check.checked {

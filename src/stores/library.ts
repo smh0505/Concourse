@@ -46,16 +46,12 @@ interface ParsedSearchTokens {
 }
 
 /** Pulls platform:/tag:/collection: tokens out of the raw search string, lowercased, leaving
- *  whatever's left as the plain title query - shared by `filteredGames` (the actual filtering)
- *  and the tag/collection-pill sync watcher below (so a typed token also highlights its pill),
- *  so the two never drift out of sync on what counts as a token. Each kind collects *every*
- *  occurrence (not just the last one) - multiple pills of the same kind can be active at once,
- *  OR'd together within that kind (see tags.ts's activeFilters doc comment). */
+ *  whatever's left as the plain title query - shared by `filteredGames` and the pill sync
+ *  watcher below so both agree on what counts as a token. Each kind collects every occurrence
+ *  (not just the last) - multiple same-kind pills OR together (see tags.ts's activeFilters). */
 function parseSearchTokens(raw: string): ParsedSearchTokens {
-  // Tag/collection names can contain spaces ("Co-op" is fine unquoted, but "Final Fantasy"
-  // isn't) - a plain \s+ split would break those into two tokens. Quoted values
-  // (tag:"Final Fantasy") are pulled out first as their own tokens before falling back to a
-  // whitespace split for everything else.
+  // Quoted values (tag:"Final Fantasy") are pulled out as one token first - a plain \s+ split
+  // would break multi-word names in two.
   const tokens: string[] = [];
   const tokenPattern = /(\w+:"[^"]*")|\S+/g;
   for (const match of raw.trim().matchAll(tokenPattern)) {
@@ -65,9 +61,8 @@ function parseSearchTokens(raw: string): ParsedSearchTokens {
   const platformFilters: string[] = [];
   const tagFilters: string[] = [];
   const collectionFilters: string[] = [];
-  // Lookup table (prefix -> setter) instead of an if/else-if chain per prefix - same dispatch
-  // shape as loader.ts's WASM_PLUGIN_FACTORIES/DATA_PLUGIN_FACTORIES, adding a fourth token
-  // prefix here is a new entry, not a new branch.
+  // Lookup table (prefix -> setter), same dispatch shape as loader.ts's plugin-kind factories -
+  // a new token prefix is a new entry, not a new branch.
   const TOKEN_PREFIXES: Record<string, (value: string) => void> = {
     "platform:": (value) => platformFilters.push(value),
     "tag:": (value) => tagFilters.push(value),
@@ -116,15 +111,9 @@ export const useLibraryStore = defineStore("library", () => {
 
   let unlistenSessionEnded: UnlistenFn | undefined;
 
-  // The search box is the single source of truth for the tag/collection filter - GameFilters.vue's
-  // pills no longer call any toggle method on tags.ts/collections.ts directly; clicking one
-  // instead adds/removes a tag:"name"/collection:"name" token from `search` (see
-  // setSearchToken below), and this watcher is the only place that ever writes
-  // tags.activeFilters/collections.activeFilters - always mirroring every present token exactly
-  // (multiple tokens of the same kind all apply at once, none present clears the set entirely)
-  // rather than a pill-click path that could drift out of sync with what's actually typed. One
-  // mechanism computing the filter instead of two was the whole point - a pill's highlighted
-  // state always matches what's literally sitting in the search box, nothing to reconcile.
+  // The search box is the single source of truth for the tag/collection filter - pills (see
+  // setSearchToken below) only ever edit `search`; this watcher is the only writer of
+  // tags.activeFilters/collections.activeFilters, always mirroring whatever tokens are present.
   watch(
     search,
     (raw) => {
@@ -141,36 +130,26 @@ export const useLibraryStore = defineStore("library", () => {
     { immediate: true },
   );
 
-  // Sentinel platform value for games with no real platform - source plugins always set
-  // `platform` (steam/gog/xbox/...), but a manually-added game (AddGame.vue -> gameRepo.add(),
-  // which never touches the platform column) leaves it null. Without this, those games had no
-  // platform pill at all and were silently unreachable by any platform: token.
+  // Sentinel for games with no real platform - a manually-added game (AddGame.vue ->
+  // gameRepo.add()) never touches the platform column, so without this they'd have no pill and
+  // be unreachable by any platform: token.
   const MANUAL_PLATFORM = "manual";
 
-  // Unique platform values actually present in the library, for GameFilters.vue's platform pill
-  // row - platform has no dedicated store (unlike tags/collections) since `Game.platform` is
-  // already first-class data, not a separate many-to-many table, so this lives here rather than
-  // a new store just to hold one derived list.
+  // Platform has no dedicated store (unlike tags/collections) - `Game.platform` is already
+  // first-class data, not a separate many-to-many table - so its derived pill list/filter/mode
+  // all live here instead.
   const allPlatforms = computed(() => {
     const platforms = new Set(games.value.map((g) => g.platform).filter((p): p is string => !!p));
     if (games.value.some((g) => !g.platform)) platforms.add(MANUAL_PLATFORM);
     return [...platforms].sort();
   });
-  // The active platform: tokens, if any - GameFilters.vue's platform pills read this the same
-  // way tags.activeFilters/collections.activeFilters drive the tag/collection pills, even
-  // though platform has no dedicated store to hold it. A Set (like those two) for O(1)
-  // membership checks, canonicalized against allPlatforms the same way the watcher above
-  // canonicalizes tag/collection casing.
   const activePlatformFilters = computed(() => {
     const { platformFilters } = parseSearchTokens(search.value);
     return new Set(allPlatforms.value.filter((p) => platformFilters.includes(p.toLowerCase())));
   });
-  // Same or/and toggle as tags.ts/collections.ts's matchMode, plain local state here since
-  // platform has no dedicated store. Note "and" is honest but not very useful for platform
-  // specifically - Game.platform is a single value, not an array like tags/collections, so
-  // selecting more than one platform under "and" can never match anything (a game can't be
-  // "steam" and "gog" at once). Still offered for consistency across all three pill kinds
-  // rather than special-casing platform's UI to be the odd one out.
+  // "and" is honest but not very useful here specifically - Game.platform is a single value, so
+  // 2+ selected platforms under "and" can never match a real game - offered anyway so platform
+  // isn't the one pill kind missing the toggle the other two have.
   const platformMatchMode = ref<PillMatchMode>("or");
   function setPlatformMatchMode(mode: PillMatchMode) {
     platformMatchMode.value = mode;
@@ -179,11 +158,6 @@ export const useLibraryStore = defineStore("library", () => {
   const filteredGames = computed(() => {
     const tags = useTagsStore();
     const collections = useCollectionsStore();
-    // tag:/collection:/platform: tokens all drive their matching pill's highlighted state (see
-    // the sync watcher above for tag/collection, activePlatformFilters above for platform), so
-    // filtering here just means going through tags.matches()/collections.matches()/
-    // platformFilters membership like a pill click would - one mechanism, not a token-based
-    // AND-filter running independently alongside pill state.
     const { platformFilters, titleQuery } = parseSearchTokens(search.value);
 
     const filtered = games.value.filter((game) => {
@@ -239,14 +213,10 @@ export const useLibraryStore = defineStore("library", () => {
     await settingsRepo.set(SORT_OPTION_SETTING, option);
   }
 
-  /** Toggles one tag:/collection:/platform: token in `search` - the write half of the search
-   *  box being the single source of truth for these filters (see the sync watcher above).
-   *  GameFilters.vue's pills call this instead of touching tags.ts/collections.ts's filter
-   *  state directly, so a pill click is really just editing the search string; the watcher
-   *  picks the change up and updates activeFilters from there, same as if the user had typed
-   *  the token by hand. Only ever touches the one token for `value` - any other same-kind
-   *  tokens already present are left alone, which is what makes multiple pills of the same
-   *  kind (e.g. two tags) stackable rather than mutually exclusive. */
+  /** Toggles one tag:/collection:/platform: token in `search` - a pill click is really just
+   *  editing the search string, and the watcher above picks it up from there. Only touches the
+   *  one token for `value`; other same-kind tokens are left alone, so pills of the same kind
+   *  stack instead of replacing each other. */
   function setSearchToken(kind: "tag" | "collection" | "platform", value: string) {
     const prefix = `${kind}:`;
     const targetToken = `${prefix}"${value}"`.toLowerCase();

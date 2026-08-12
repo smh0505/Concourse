@@ -12,10 +12,9 @@ export type PillMatchMode = "or" | "and";
 export const useTagsStore = defineStore("tags", () => {
   const gameTags = ref<Record<number, string[]>>({});
   const allTags = ref<string[]>([]);
-  // A Set (not a single value) - multiple tag pills can be active at once. Combined per
-  // matchMode: "or" (default - a game matches if it carries *any* selected tag) or "and" (must
-  // carry every selected tag). Different kinds (tag vs. collection vs. platform) always AND
-  // together regardless of this - matchMode only governs multiple pills within this one kind.
+  // Multiple tag pills can be active at once, combined per matchMode ("or": any selected tag
+  // matches; "and": must carry every one). Different kinds always AND together regardless -
+  // matchMode only governs multiple pills within this one kind.
   const activeFilters = ref<Set<string>>(new Set());
   const matchMode = ref<PillMatchMode>("or");
 

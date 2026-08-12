@@ -27,7 +27,32 @@ provedor mudaram desde que você adicionou o jogo pela primeira vez.
 - **Collections** agrupam uma série/franquia ("Final Fantasy") - um conceito distinto de tags,
   gerenciado da mesma forma a partir de sua própria aba na barra lateral.
 
-Ambos suportam busca/filtragem da visão da biblioteca junto com a busca simples por título.
+## Busca, filtragem e ordenação
+
+A barra de busca aceita texto de título simples mais três tokens especiais, todos combináveis em uma única
+consulta: `platform:steam`, `tag:coop`, `collection:"final fantasy"` (coloque entre aspas um valor que
+contenha espaços). Digitar `platform:steam zelda` busca "zelda" nos títulos apenas entre os jogos do Steam.
+
+Abaixo da barra de busca, pills clicáveis espelham as mesmas plataformas/tags/collections - clicar em uma
+adiciona ou remove seu token da caixa de busca, de modo que a barra de busca e os pills sempre concordam
+entre si. Vários pills do mesmo tipo se combinam com **OR** (qualquer valor selecionado corresponde - o
+padrão) ou **AND** (deve corresponder a todos os valores selecionados); alterne qual modo cada categoria usa
+a partir do pill "browse all filters" (a linha tem um limite, e esse pill abre um modal listando tudo sem
+limite, agrupado por plataforma/tags/collections). Um jogo adicionado manualmente sem a plataforma de um
+plugin de fonte aparece sob um pill de plataforma `manual`.
+
+Um menu suspenso de ordenação separado, ao lado do alternador de modo de visualização, oferece Título (A-Z),
+Jogado recentemente, Mais jogado e Adicionado recentemente - sua escolha persiste entre reinicializações,
+assim como o modo de visualização em grade/lista.
+
+## Operações em lote
+
+Clique no alternador estilo caixa de seleção ao lado do menu de ordenação para entrar no modo de seleção:
+cada card/linha se torna um alvo selecionável com um único clique, com um pequeno badge de caixa de seleção
+mostrando o que está selecionado no momento. Uma barra "N selecionados" aparece com os botões Selecionar tudo
+(respeita qualquer filtro/busca atualmente ativo) e Limpar, além de ações em lote: adicionar uma tag,
+adicionar a uma collection, ou remover toda a seleção da sua biblioteca. Saia do modo de seleção com o botão
+X para voltar à navegação normal.
 
 ## Deduplicação entre fontes {#deduplication-across-sources}
 

@@ -29,8 +29,34 @@ ou si les données d'un fournisseur ont changé depuis l'ajout initial du jeu.
 - Les **Collections** regroupent une série/franchise (« Final Fantasy ») - une notion distincte
   des tags, gérée de la même façon depuis son propre onglet de la barre latérale.
 
-Les deux prennent en charge la recherche/le filtrage de la vue bibliothèque, en plus de la
-recherche par titre.
+## Recherche, filtrage & tri
+
+La barre de recherche accepte du texte de titre simple plus trois tokens spéciaux, tous combinables dans une
+seule requête : `platform:steam`, `tag:coop`, `collection:"final fantasy"` (mettez entre guillemets une valeur
+contenant des espaces). Saisir `platform:steam zelda` recherche « zelda » dans les titres uniquement parmi
+les jeux Steam.
+
+Sous la barre de recherche, des pastilles cliquables reflètent les mêmes plateformes/tags/collections -
+cliquer sur l'une d'elles ajoute ou retire son token de la barre de recherche, de sorte que la barre de
+recherche et les pastilles concordent toujours entre elles. Plusieurs pastilles de même type se combinent
+soit en **OR** (n'importe quelle valeur sélectionnée correspond - par défaut), soit en **AND** (doit
+correspondre à chaque valeur sélectionnée) ; basculez le mode utilisé par une catégorie depuis la pastille
+« browse all filters » (la ligne est plafonnée, et cette pastille ouvre une fenêtre modale listant tout sans
+plafond, groupé par plateforme/tags/collections). Un jeu ajouté manuellement sans plateforme d'un plugin de
+source apparaît sous une pastille de plateforme `manual`.
+
+Un menu déroulant de tri séparé, à côté du bouton de bascule du mode d'affichage, propose Titre (A-Z), Joué
+récemment, Le plus joué et Ajouté récemment - votre choix persiste entre les redémarrages, comme le mode
+d'affichage grille/liste.
+
+## Opérations en lot
+
+Cliquez sur le bouton de type case à cocher à côté du menu déroulant de tri pour entrer en mode sélection :
+chaque carte/ligne devient une cible sélectionnable en un clic, avec un petit badge case à cocher indiquant ce
+qui est actuellement sélectionné. Une barre « N sélectionné(s) » apparaît avec les boutons Tout sélectionner
+(respecte le filtre/la recherche actuellement actifs) et Effacer, ainsi que des actions en lot : ajouter un
+tag, ajouter à une collection, ou retirer toute la sélection de votre bibliothèque. Quittez le mode sélection
+avec le bouton X pour revenir à la navigation normale.
 
 ## Dédoublonnage entre sources {#deduplication-across-sources}
 

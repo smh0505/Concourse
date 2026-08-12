@@ -26,9 +26,8 @@ const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.ga
 const title = computed(() => displayTitle(props.game, appSettings.locale));
 const selected = computed(() => selection.isSelected(props.game.id));
 
-/** Milestone 25 batch ops - same reasoning as GameCard.vue's identical handler: the whole row
- *  becomes one toggle target in selection mode, .actions hidden entirely below rather than
- *  left reachable alongside it. */
+/** Same reasoning as GameCard.vue's identical handler - whole row is one toggle target in
+ *  selection mode, .actions hidden entirely below rather than left reachable. */
 function onRowClick() {
   if (selection.active) selection.toggle(props.game.id);
 }
@@ -104,8 +103,7 @@ function onRowClick() {
   min-height: 6rem;
 }
 
-/* Milestone 25 batch ops - box-shadow ring (not border) so it doesn't shift the row's own
-   padding/box, same reasoning as GameCard.vue's identical .selected rule. */
+/* box-shadow ring, not border - same reasoning as GameCard.vue's identical .selected rule. */
 .list-row-shell.selected {
   box-shadow: 0 0 0 2px var(--color-accent);
 }
@@ -137,12 +135,9 @@ function onRowClick() {
   color: var(--color-on-accent);
 }
 
-/* Width/margin (not just opacity/transform) so this collapsing to nothing pushes .info/.title
-   over smoothly instead of it snapping sideways the instant the badge unmounts - box-sizing:
-   border-box above is required so the border collapses along with width rather than poking out
-   past a 0-width box. margin-right cancels .list-row-shell's own flex `gap` (a fixed
-   var(--space-3) regardless of this item's own width, so width alone wouldn't fully close the
-   gap) - negative by that same amount at the collapsed end. */
+/* Width/margin (not just opacity/transform) so collapsing pushes .info/.title over smoothly
+   instead of snapping. box-sizing: border-box above lets the border collapse with the width;
+   margin-right cancels .list-row-shell's fixed flex `gap`, which width alone wouldn't close. */
 .select-check-enter-active,
 .select-check-leave-active {
   transition:

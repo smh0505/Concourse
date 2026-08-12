@@ -29,7 +29,33 @@ du das Spiel hinzugefügt hast.
 - **Collections** gruppieren eine Serie/ein Franchise ("Final Fantasy") - ein von Tags getrenntes
   Konzept, verwaltet auf dieselbe Weise über ihren eigenen Tab in der Seitenleiste.
 
-Beide unterstützen Suche/Filterung der Bibliotheksansicht zusätzlich zur einfachen Titelsuche.
+## Suche, Filter & Sortierung
+
+Die Suchleiste akzeptiert einfachen Titeltext sowie drei spezielle Token, die alle in einer Abfrage kombiniert
+werden können: `platform:steam`, `tag:coop`, `collection:"final fantasy"` (einen Wert mit Leerzeichen in
+Anführungszeichen setzen). Die Eingabe von `platform:steam zelda` durchsucht Titel nach "zelda" nur innerhalb
+von Steam-Spielen.
+
+Unterhalb der Suchleiste spiegeln klickbare Pills dieselben Plattformen/Tags/Collections wider - ein Klick auf
+eine fügt deren Token zur Suchleiste hinzu oder entfernt es, sodass Suchleiste und Pills immer übereinstimmen.
+Mehrere Pills derselben Art werden entweder mit **OR** (ein beliebiger ausgewählter Wert passt - Standard)
+oder **AND** (muss jeden ausgewählten Wert erfüllen) kombiniert; wechsle, welchen Modus eine Kategorie
+verwendet, über die Pill "browse all filters" (die Zeile ist begrenzt, und diese Pill öffnet ein Modal, das
+alles unbegrenzt auflistet, gruppiert nach Plattform/Tags/Collections). Ein manuell hinzugefügtes Spiel ohne
+die Plattform eines Source-Plugins erscheint unter einer `manual`-Plattform-Pill.
+
+Ein separates Sortier-Dropdown neben dem Ansichtsmodus-Umschalter bietet Titel (A-Z), Zuletzt gespielt,
+Meistgespielt und Zuletzt hinzugefügt - deine Wahl bleibt über Neustarts hinweg erhalten, genau wie
+Grid-/Listenansicht.
+
+## Batch-Operationen
+
+Klicke auf den Checkbox-Umschalter neben dem Sortier-Dropdown, um in den Auswahlmodus zu wechseln: jede
+Karte/Zeile wird zu einem einzelnen anklickbaren Auswahlziel, mit einem kleinen Checkbox-Badge, das anzeigt,
+was gerade ausgewählt ist. Eine "N ausgewählt"-Leiste erscheint mit den Schaltflächen Alle auswählen
+(berücksichtigt den aktuell aktiven Filter/die aktuelle Suche) und Leeren, sowie Batch-Aktionen: einen Tag
+hinzufügen, zu einer Collection hinzufügen oder die gesamte Auswahl aus deiner Bibliothek entfernen. Verlasse
+den Auswahlmodus mit dem X-Button, um zur normalen Ansicht zurückzukehren.
 
 ## Deduplizierung über Quellen hinweg {#deduplication-across-sources}
 

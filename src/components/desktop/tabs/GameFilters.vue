@@ -67,7 +67,7 @@ function selectSortOption(option: SortOption) {
             :key="option"
             type="button"
             class="sort-option"
-            :class="{ 'accent-active': library.sortOption === option }"
+            :class="{ active: library.sortOption === option }"
             @click="selectSortOption(option)"
           >
             <component :is="SORT_OPTION_ICONS[option]" :size="20" :stroke-width="1.75" />
@@ -197,14 +197,13 @@ function selectSortOption(option: SortOption) {
   background: var(--color-surface0);
 }
 
-/* Compound selector, not relying on .accent-active alone - .sort-option's own `background:
-   none`/`color: inherit` above tie with .accent-active's specificity (both one class), so
-   whichever landed later in the actual bundled stylesheet could silently win and cancel the
-   highlight. This selector's higher specificity wins unconditionally regardless of source
-   order. */
-.sort-option.accent-active {
-  background: var(--accent-active-background, var(--color-accent));
-  color: var(--accent-active-color, var(--color-on-accent));
+/* Own local .active highlight instead of the shared .accent-active utility - same
+   color-mix(currentColor) approach AppSettings.vue's .model-menu-item.active/
+   .language-menu-item.active already use for their own dropdown items, so every custom
+   dropdown's selected-item look is consistent with each other rather than borrowing the
+   --color-accent-based indicator used for tab/nav-style "active" state elsewhere. */
+.sort-option.active {
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .sort-option-label {

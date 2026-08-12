@@ -129,7 +129,8 @@ function selectSortOption(option: SortOption) {
       </button>
     </div>
     <Transition name="selection-bar">
-    <div class="selection-bar" v-if="selection.active">
+    <div class="selection-bar-wrap" v-if="selection.active">
+    <div class="selection-bar">
       <span class="selection-count">{{ t("filters.selectionCount", { count: selection.count }) }}</span>
       <button type="button" class="link-button" @click="selectAll">{{ t("filters.selectAll") }}</button>
       <button type="button" class="link-button" @click="selection.clear()">{{ t("filters.clearSelection") }}</button>
@@ -199,6 +200,7 @@ function selectSortOption(option: SortOption) {
           <IconX :size="18" :stroke-width="1.75" />
         </button>
       </div>
+    </div>
     </div>
     </Transition>
     <div class="tags" v-if="tags.allTags.length">
@@ -330,27 +332,36 @@ function selectSortOption(option: SortOption) {
 
 /* .accent-active (shared, styles.css) supplies the selected option's own highlight. */
 
+/* grid-template-rows 1fr/0fr (not max-height) drives the height animation - unlike max-height
+   this animates to/from the content's own real height with no guessed cap, standard trick for
+   animating an intrinsically-sized block. .selection-bar itself (the grid's single row/child)
+   needs min-height: 0 - grid children default to min-height: auto, which would keep it from
+   ever shrinking below its content height as the row track collapses toward 0fr. */
+.selection-bar-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
 .selection-bar {
+  overflow: hidden;
+  min-height: 0;
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) 0;
 }
 
-/* Same opacity+transform fade GameDetail's own transitions use elsewhere - height isn't
-   animated (no max-height/grid-rows trick) since .selection-bar's own height never changes
-   while mounted, only whether it's mounted at all. */
 .selection-bar-enter-active,
 .selection-bar-leave-active {
   transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
+    grid-template-rows 0.2s ease,
+    opacity 0.15s ease;
 }
 
 .selection-bar-enter-from,
 .selection-bar-leave-to {
+  grid-template-rows: 0fr;
   opacity: 0;
-  transform: translateY(-4px);
 }
 
 .selection-count {

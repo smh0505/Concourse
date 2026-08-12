@@ -2,13 +2,13 @@ use std::sync::Mutex;
 
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 
-/// TODO: replace with the real Discord Application ID (create one at
-/// discord.com/developers/applications). Safe to hardcode once obtained - unlike a metadata
-/// provider's API key/secret, this is a public identifier with no attached permission; Discord
-/// Rich Presence works entirely over local IPC against whichever Discord client is already
-/// logged in on this machine, no network auth or per-user credential involved. One shared ID
-/// for every Concourse install, same as how every other app with Rich Presence does this.
-const DISCORD_CLIENT_ID: &str = "REPLACE_WITH_DISCORD_APPLICATION_ID";
+/// Concourse's own Discord Application ID (discord.com/developers/applications). Safe to
+/// hardcode - unlike a metadata provider's API key/secret, this is a public identifier with no
+/// attached permission; Discord Rich Presence works entirely over local IPC against whichever
+/// Discord client is already logged in on this machine, no network auth or per-user credential
+/// involved. One shared ID for every Concourse install, same as how every other app with Rich
+/// Presence does this.
+const DISCORD_CLIENT_ID: &str = "1537210323474452512";
 
 /// Lazily connected on first use and reused across launches rather than reconnecting every
 /// time - `None` both before the first attempt and after any failed/dropped connection (Discord

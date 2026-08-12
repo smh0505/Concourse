@@ -491,7 +491,7 @@ migration without re-scanning every source plugin and redoing manual metadata ed
   (different install locations) - flag rather than silently break
 - [ ] Version the export format (so a future schema migration can still read an older export)
 
-## Milestone 28 — Discord Rich Presence (implemented, blocked on a real client_id)
+## Milestone 28 — Discord Rich Presence (implemented, pending manual verification)
 Shows "Playing <game>" on the user's Discord status while a game is running - a built-in
 feature, not a plugin: there's only ever one Discord client to report to, unlike source/
 metadata's multi-enable model. See Milestone 29 for generalizing this into a real presence
@@ -505,9 +505,9 @@ metadata provider's API key/secret).
 - [x] Settings toggle (on/off) plus a per-game opt-out checkbox in `GameDetail.vue`'s edit mode
 - [x] Discord not running / IPC connection failure handled gracefully (quiet no-op, connection
   state cleared and retried fresh next launch rather than erroring)
-- [ ] **Blocking**: `discord_presence.rs`'s `DISCORD_CLIENT_ID` is still a placeholder - create a
-  real Discord Application at discord.com/developers/applications and swap it in before this
-  milestone can actually close (code is otherwise complete and build-verified)
+- [x] Real `DISCORD_CLIENT_ID` supplied (`discord_presence.rs`), `cargo check` clean
+- [ ] Manual end-to-end verification still needed - `bunx tauri dev`, launch a real game, confirm
+  Discord actually shows "Playing <title>" and clears on exit, before this milestone closes
 
 ## Milestone 29 — Presence Plugin Type (not started)
 Generalizes Milestone 28's Discord-only integration into a real multi-enable plugin kind, if a

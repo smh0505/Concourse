@@ -197,10 +197,13 @@ small {
 }
 
 /* Themed scrollbars for desktop mode - Big Picture hides its own entirely (console
-   aesthetic) via its own scoped rules, which win over this global one on specificity. */
+   aesthetic) via its own scoped rules, which win over this global one on specificity.
+   --background-sticky (not --color-base) for the track - same token .content's own sticky bars
+   use, so the scrollbar track blends into a themed content pattern (e.g. Arc Raiders) instead of
+   showing a flat, disconnected --color-base rectangle next to it. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-surface1) var(--color-base);
+  scrollbar-color: var(--color-surface1) var(--background-sticky);
 }
 
 ::-webkit-scrollbar {
@@ -209,13 +212,13 @@ small {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-base);
+  background: var(--background-sticky);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-surface1);
   border-radius: var(--radius-md);
-  border: 2px solid var(--color-base);
+  border: 2px solid var(--background-sticky);
 }
 
 ::-webkit-scrollbar-thumb:hover {

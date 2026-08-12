@@ -42,14 +42,14 @@
   --color-tint: var(--color-crust);
   /* Background for pinned/sticky bars (GameFilters.vue's .filters, the shared .sticky-header,
      GameDetail.vue's .action-bar) that sit above scrolling content. Falls back to
-     --content-background (also transparent by default) rather than to plain transparent: paired
-     with background-attachment: fixed on both .content and these bars, an unset theme still
-     renders nothing extra (unchanged), while a theme that DOES set --content-background gets it
-     painted here too, anchored to the same viewport coordinates .content itself uses - one
-     continuous pattern across the pinned bars and the scrolling area behind them, opaque
-     wherever that pattern itself is opaque, no separate blur needed to hide scrolled rows. A
-     theme can still override this token directly for a bar-specific tint if it wants one. */
-  --background-sticky: var(--content-background, transparent);
+     --content-background so a theme that sets one (paired with background-attachment: fixed on
+     both .content and these bars) gets it painted here too, anchored to the same viewport
+     coordinates .content itself uses - one continuous pattern across the pinned bars and the
+     scrolling area behind them. --content-background itself falls back to --color-base (not
+     transparent) - a theme that sets neither still gets an opaque bar matching the page's own
+     background, instead of scrolled rows showing through underneath it. A theme can still
+     override --background-sticky directly for a bar-specific tint if it wants one. */
+  --background-sticky: var(--content-background, var(--color-base));
 
   /* Spacing scale */
   --space-1: 0.25rem;

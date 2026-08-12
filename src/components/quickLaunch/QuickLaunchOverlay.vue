@@ -10,7 +10,10 @@ import { useAppSettingsStore } from "@/stores/appSettings";
 import { displayTitle, type Game } from "@/db";
 import { fuzzyFilter } from "@/utils/fuzzyMatch";
 
-const RESULT_LIMIT = 8;
+const BATCH_SIZE = 8;
+// How close to the bottom (in px) the results list has to be scrolled before the next batch
+// loads - loading a little before the true end avoids a visible pause right as the user hits it.
+const LOAD_MORE_THRESHOLD_PX = 80;
 
 const { t } = useI18n();
 const library = useLibraryStore();
@@ -19,13 +22,27 @@ const appSettings = useAppSettingsStore();
 const search = ref("");
 const selectedIndex = ref(0);
 const inputEl = ref<HTMLInputElement | null>(null);
+const resultsEl = ref<HTMLElement | null>(null);
+// How many of `allMatches` are actually rendered - grows by BATCH_SIZE as the list scrolls
+// toward its bottom, rather than rendering every match up front. Already-rendered rows never
+// get removed on scroll-back-up, so "previous" batches stay exactly where they were.
+const visibleCount = ref(BATCH_SIZE);
 
-const results = computed<Game[]>(() => {
-  if (!search.value.trim()) return library.games.slice(0, RESULT_LIMIT);
-  return fuzzyFilter(library.games, search.value.trim(), (g) => g.title)
-    .slice(0, RESULT_LIMIT)
-    .map((m) => m.item);
+const allMatches = computed<Game[]>(() => {
+  if (!search.value.trim()) return library.games;
+  return fuzzyFilter(library.games, search.value.trim(), (g) => g.title).map((m) => m.item);
 });
+
+const results = computed<Game[]>(() => allMatches.value.slice(0, visibleCount.value));
+
+function loadMoreIfNeeded() {
+  const el = resultsEl.value;
+  if (!el) return;
+  const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - LOAD_MORE_THRESHOLD_PX;
+  if (nearBottom && visibleCount.value < allMatches.value.length) {
+    visibleCount.value = Math.min(visibleCount.value + BATCH_SIZE, allMatches.value.length);
+  }
+}
 
 function titleFor(game: Game): string {
   return displayTitle(game, appSettings.locale);
@@ -34,9 +51,14 @@ function titleFor(game: Game): string {
 async function resetAndFocus() {
   search.value = "";
   selectedIndex.value = 0;
+  visibleCount.value = BATCH_SIZE;
   await library.refresh();
   await nextTick();
   inputEl.value?.focus();
+  // The first batch might not actually overflow the results container (a short list, or a
+  // tall window) - without this, there'd be no scrollbar to trigger loadMoreIfNeeded via the
+  // @scroll handler at all, silently stranding the rest of the matches unreachable.
+  loadMoreIfNeeded();
 }
 
 async function launchSelected() {
@@ -49,6 +71,11 @@ async function launchSelected() {
 function onKeydown(e: KeyboardEvent) {
   if (e.key === "ArrowDown") {
     e.preventDefault();
+    // Reaching the last rendered row while more matches exist loads the next batch immediately,
+    // so arrow-key navigation isn't capped at whatever's happened to scroll into view yet.
+    if (selectedIndex.value >= results.value.length - 1 && visibleCount.value < allMatches.value.length) {
+      visibleCount.value = Math.min(visibleCount.value + BATCH_SIZE, allMatches.value.length);
+    }
     selectedIndex.value = Math.min(selectedIndex.value + 1, results.value.length - 1);
   } else if (e.key === "ArrowUp") {
     e.preventDefault();
@@ -82,10 +109,13 @@ onBeforeUnmount(() => unlistenShown?.());
         v-model="search"
         class="search-input"
         :placeholder="t('quickLaunch.searchPlaceholder')"
-        @input="selectedIndex = 0"
+        @input="
+          selectedIndex = 0;
+          visibleCount = BATCH_SIZE;
+        "
       />
     </div>
-    <div class="results">
+    <div ref="resultsEl" class="results" @scroll="loadMoreIfNeeded">
       <button
         v-for="(game, index) in results"
         :key="game.id"

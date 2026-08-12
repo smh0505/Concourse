@@ -64,15 +64,25 @@ export const useLibraryStore = defineStore("library", () => {
   const filteredGames = computed(() => {
     const tags = useTagsStore();
     const collections = useCollectionsStore();
-    // "platform:steam" is a special token, not part of the title search - pulled out of
-    // whatever else was typed (e.g. "platform:steam zelda" still title-searches "zelda"
-    // within Steam games only) rather than requiring it alone.
+    // "platform:steam"/"tag:coop"/"collection:zelda" are special tokens, not part of the title
+    // search - pulled out of whatever else was typed (e.g. "platform:steam zelda" still
+    // title-searches "zelda" within Steam games only) rather than requiring one alone. These
+    // are additive AND-filters independent of the Tags/Collections panel's own pill-based
+    // activeFilter (below) - typing a token doesn't highlight a pill, and a pill selection
+    // doesn't populate the search box; both simply narrow the result together.
     const tokens = search.value.trim().split(/\s+/).filter(Boolean);
     let platformFilter: string | null = null;
+    let tagFilter: string | null = null;
+    let collectionFilter: string | null = null;
     const titleTokens: string[] = [];
     for (const token of tokens) {
-      if (token.toLowerCase().startsWith("platform:")) {
+      const lower = token.toLowerCase();
+      if (lower.startsWith("platform:")) {
         platformFilter = token.slice("platform:".length).toLowerCase();
+      } else if (lower.startsWith("tag:")) {
+        tagFilter = token.slice("tag:".length).toLowerCase();
+      } else if (lower.startsWith("collection:")) {
+        collectionFilter = token.slice("collection:".length).toLowerCase();
       } else {
         titleTokens.push(token);
       }
@@ -83,7 +93,21 @@ export const useLibraryStore = defineStore("library", () => {
       const matchesPlatform =
         !platformFilter || (game.platform ?? "").toLowerCase() === platformFilter;
       const matchesSearch = !titleQuery || game.title.toLowerCase().includes(titleQuery);
-      return matchesPlatform && matchesSearch && tags.matches(game.id) && collections.matches(game.id);
+      const matchesTagToken =
+        !tagFilter ||
+        (tags.gameTags[game.id]?.some((t) => t.toLowerCase() === tagFilter) ?? false);
+      const matchesCollectionToken =
+        !collectionFilter ||
+        (collections.gameCollections[game.id]?.some((c) => c.toLowerCase() === collectionFilter) ??
+          false);
+      return (
+        matchesPlatform &&
+        matchesSearch &&
+        matchesTagToken &&
+        matchesCollectionToken &&
+        tags.matches(game.id) &&
+        collections.matches(game.id)
+      );
     });
 
     // gameRepo.list() itself already returns title-A-Z order, so "title" needs no re-sort here

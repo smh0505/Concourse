@@ -128,6 +128,7 @@ function selectSortOption(option: SortOption) {
         <IconSquareCheck :size="18" :stroke-width="1.75" />
       </button>
     </div>
+    <Transition name="selection-bar">
     <div class="selection-bar" v-if="selection.active">
       <span class="selection-count">{{ t("filters.selectionCount", { count: selection.count }) }}</span>
       <button type="button" class="link-button" @click="selectAll">{{ t("filters.selectAll") }}</button>
@@ -199,6 +200,7 @@ function selectSortOption(option: SortOption) {
         </button>
       </div>
     </div>
+    </Transition>
     <div class="tags" v-if="tags.allTags.length">
       <span
         class="tag-pill filter-tag"
@@ -333,6 +335,22 @@ function selectSortOption(option: SortOption) {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) 0;
+}
+
+/* Same opacity+transform fade GameDetail's own transitions use elsewhere - height isn't
+   animated (no max-height/grid-rows trick) since .selection-bar's own height never changes
+   while mounted, only whether it's mounted at all. */
+.selection-bar-enter-active,
+.selection-bar-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.selection-bar-enter-from,
+.selection-bar-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .selection-count {

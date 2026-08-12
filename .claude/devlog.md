@@ -5745,3 +5745,66 @@ an explicit follow-up rather than guessing at that design call silently.
 New `filters.toggleSelectionMode`/`selectionCount`/`selectAll`/`clearSelection`/`addTag`/
 `addToCollection`/`noTagsYet`/`noCollectionsYet`/`removeFromLibrary`/`exitSelectionMode` i18n
 keys across all 10 locales.
+
+**Pill filters, second pass.** After the first `platform:steam`-token pass above shipped, this
+grew through several rounds of direct feedback into a considerably more capable filter surface
+than the milestone originally scoped - documented here as one connected design, not the order
+each increment landed in, since the intermediate states aren't the interesting part.
+
+*Search box as the single source of truth.* Tags/Collections already had pill rows
+(`tags.activeFilter`/`collections.activeFilter`, exclusive single-select, set by clicking a
+pill). Adding `tag:`/`collection:` tokens alongside `platform:` initially ran as a fully
+separate AND-filter in `filteredGames`, independent of pill state - typing a token didn't
+highlight anything, and pill clicks didn't touch the search box. Two follow-up requests
+collapsed this into one mechanism: first, typed tokens started syncing into
+`activeFilter`/`setFilter()` (a `watch(search, ...)` in `library.ts`, looking up the token's
+canonical casing against `allTags`/`allCollections` since tokens are lowercased but stored names
+aren't); then pill clicks were flipped to go the other direction too - `toggleFilter()` was
+removed entirely, replaced by `library.setSearchToken(kind, value)`, which just adds/removes the
+token text in `search`. The watcher is now the *only* writer of `activeFilter`, always mirroring
+whatever's literally in the box. This was worth the churn: two independent code paths computing
+"is this tag active" could disagree with each other (a token typed by hand vs. a pill clicked),
+and merging them removed an entire class of possible bug rather than just the ones found so far.
+
+*Multi-select.* `activeFilter: string | null` (exclusive - clicking a second tag pill replaced
+the first) became `activeFilters: Set<string>` on `tags.ts`/`collections.ts`, with a parallel
+`activePlatformFilters` computed directly on `library.ts` (platform still has no dedicated
+store). `matches(gameId)` defaults to OR within a kind (any selected tag matches); different
+kinds still always AND together, unchanged from the original single-select design.
+`parseSearchTokens` had to change from last-write-wins (`platformFilter = value`) to collecting
+every occurrence (`platformFilters.push(value)`), and `setSearchToken` changed from "replace the
+kind's one token" to "toggle just this one value's token, leaving sibling tokens of the same
+kind alone" - the difference between `tag:"X"` overwriting to `tag:"Y"` vs. both coexisting.
+
+*OR/AND per kind.* A `matchMode: "or" | "and"` (new `PillMatchMode` type, defined once on
+`tags.ts` and reused by `collections.ts`/`library.ts`) sits alongside each kind's
+`activeFilters`, toggled via a small button next to that kind's heading in the browse-all-pills
+modal (below). `matches()` branches `every()` vs. `some()` on it. Platform's "and" is honestly
+close to useless - `Game.platform` is a single value, not an array, so 2+ selected platforms
+under "and" can never match a real game - but it's offered anyway rather than making platform's
+UI the one kind missing the toggle other two have.
+
+*Overflow: capped row + modal, not per-row inline expansion.* The first attempt at handling
+"what if there are 40 tags" was a per-row `usePillRow()` with its own `expanded` ref and a
+"+N more"/"Show less" pill that expanded that one row in place. Replaced almost immediately by a
+single `BaseModal` (reused, not a new modal component) listing every pill uncapped, grouped by
+heading (Platforms/Tags/Collections) - clicking inside it calls the same `setSearchToken()` the
+inline pills do, live, no save step, just a Close button. `usePillRow()` lost its `expanded`
+state at that point (the row itself no longer expands, just opens the modal). Selected pills
+were then made to sort to the front of the capped row (`usePillRow` gained an `isActive` check,
+partitions active/inactive before slicing to `PILL_ROW_LIMIT`) so a pill toggled from the modal
+doesn't vanish behind "+N more" the moment it's selected. Finally, the three separate per-kind
+rows under the search bar were merged into one flat row (`allPillEntries`/`pillRow` -
+`{kind, value}` tuples from all three sources combined before the cap is applied) - kind
+grouping stays exclusively in the modal now, which is what it exists for; the row under the
+search bar doesn't need to repeat that structure.
+
+*Manual platform pill.* Manually-added games (`AddGame.vue` -> `gameRepo.add()`, which never
+sets the `platform` column) had `platform === null` and were invisible to platform filtering
+entirely - no pill, and no `platform:` token could ever match them. A `MANUAL_PLATFORM = "manual"`
+sentinel gets added to `allPlatforms` whenever such a game exists, and `filteredGames` treats a
+null platform as that sentinel for matching purposes, so "manual" behaves as a normal pill.
+
+New `filters.showMore`/`browseFilters`/`platformsHeading`/`tagsHeading`/`collectionsHeading`/
+`matchAny`/`matchAll`/`matchModeHint` i18n keys across all 10 locales (`showLess` added then
+removed once per-row inline expansion was replaced by the modal).

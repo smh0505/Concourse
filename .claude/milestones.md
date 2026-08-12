@@ -491,9 +491,13 @@ together since both touch the same filter-bar area and library selection state.
 - [x] Platform filter shipped early, via a `platform:steam` search-box token (`filteredGames`
   pulls it out of the normal title-search tokens) rather than the expandable panel below -
   simpler, ships now instead of waiting on the panel; covers the "platform" filter this section
-  originally scoped for the panel. Later joined by clickable platform pills (same row style as
-  Tags/Collections), plus matching `tag:`/`collection:` tokens - the search box is the single
-  source of truth for all three, pills just add/remove their own token in it
+  originally scoped for the panel. Grew substantially past that first pass: clickable
+  platform/tag/collection pills (one merged row under the search bar, capped at 8 with selected
+  pills sorted first, "+N more" opening a "browse all filters" modal grouped by kind), all
+  multi-selectable with a per-kind OR/AND match-mode toggle, plus a `manual` pseudo-platform pill
+  for games with no source-plugin platform (`AddGame.vue`-added games). The search box stays the
+  single source of truth throughout - pills only ever add/remove their own token in it, never
+  filter independently. See devlog for the full design evolution
 - [x] Sort options (title A-Z, recently played, most played, recently added) - `filteredGames`
   gained a sort step after the existing filter step; new `PlaytimeRepository.getAllLastPlayed()`
   (unlimited version of the existing top-N `getRecentlyPlayed`) backs the recently-played sort,

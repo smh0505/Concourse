@@ -227,10 +227,10 @@ function selectSortOption(option: SortOption) {
     <div class="tags" v-if="library.allPlatforms.length">
       <span
         class="tag-pill filter-tag"
-        :class="{ 'accent-active': library.activePlatformFilter === platform }"
+        :class="{ 'accent-active': library.activePlatformFilters.has(platform) }"
         v-for="platform in platformRow.visible"
         :key="platform"
-        @click="library.setSearchToken('platform', library.activePlatformFilter === platform ? null : platform)"
+        @click="library.setSearchToken('platform', platform)"
       >
         {{ platform }}
       </span>
@@ -241,10 +241,10 @@ function selectSortOption(option: SortOption) {
     <div class="tags" v-if="tags.allTags.length">
       <span
         class="tag-pill filter-tag"
-        :class="{ 'accent-active': tags.activeFilter === tag }"
+        :class="{ 'accent-active': tags.activeFilters.has(tag) }"
         v-for="tag in tagRow.visible"
         :key="tag"
-        @click="library.setSearchToken('tag', tags.activeFilter === tag ? null : tag)"
+        @click="library.setSearchToken('tag', tag)"
       >
         {{ tag }}
       </span>
@@ -255,10 +255,10 @@ function selectSortOption(option: SortOption) {
     <div class="tags" v-if="collections.allCollections.length">
       <span
         class="tag-pill filter-tag"
-        :class="{ 'accent-active': collections.activeFilter === name }"
+        :class="{ 'accent-active': collections.activeFilters.has(name) }"
         v-for="name in collectionRow.visible"
         :key="name"
-        @click="library.setSearchToken('collection', collections.activeFilter === name ? null : name)"
+        @click="library.setSearchToken('collection', name)"
       >
         {{ name }}
       </span>
@@ -274,10 +274,10 @@ function selectSortOption(option: SortOption) {
           <div class="tags">
             <span
               class="tag-pill filter-tag"
-              :class="{ 'accent-active': library.activePlatformFilter === platform }"
+              :class="{ 'accent-active': library.activePlatformFilters.has(platform) }"
               v-for="platform in library.allPlatforms"
               :key="platform"
-              @click="library.setSearchToken('platform', library.activePlatformFilter === platform ? null : platform)"
+              @click="library.setSearchToken('platform', platform)"
             >
               {{ platform }}
             </span>
@@ -288,10 +288,10 @@ function selectSortOption(option: SortOption) {
           <div class="tags">
             <span
               class="tag-pill filter-tag"
-              :class="{ 'accent-active': tags.activeFilter === tag }"
+              :class="{ 'accent-active': tags.activeFilters.has(tag) }"
               v-for="tag in tags.allTags"
               :key="tag"
-              @click="library.setSearchToken('tag', tags.activeFilter === tag ? null : tag)"
+              @click="library.setSearchToken('tag', tag)"
             >
               {{ tag }}
             </span>
@@ -302,10 +302,10 @@ function selectSortOption(option: SortOption) {
           <div class="tags">
             <span
               class="tag-pill filter-tag"
-              :class="{ 'accent-active': collections.activeFilter === name }"
+              :class="{ 'accent-active': collections.activeFilters.has(name) }"
               v-for="name in collections.allCollections"
               :key="name"
-              @click="library.setSearchToken('collection', collections.activeFilter === name ? null : name)"
+              @click="library.setSearchToken('collection', name)"
             >
               {{ name }}
             </span>

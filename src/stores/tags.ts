@@ -10,7 +10,10 @@ import { useLibraryStore } from "./library";
 export const useTagsStore = defineStore("tags", () => {
   const gameTags = ref<Record<number, string[]>>({});
   const allTags = ref<string[]>([]);
-  const activeFilter = ref<string | null>(null);
+  // A Set (not a single value) - multiple tag pills can be active at once, OR'd together (a
+  // game matches if it carries *any* selected tag, not all of them - narrowing further than
+  // that is what stacking a second facet, like a collection filter, is for).
+  const activeFilters = ref<Set<string>>(new Set());
 
   /** Takes the current game list from `useLibraryStore` rather than owning it - tags don't
    *  know which games exist, only which tags each one carries. */
@@ -22,19 +25,17 @@ export const useTagsStore = defineStore("tags", () => {
     allTags.value = await tagRepo.getAll();
   }
 
-  function toggleFilter(tag: string) {
-    activeFilter.value = activeFilter.value === tag ? null : tag;
-  }
-
-  /** Direct (non-toggling) assignment, unlike toggleFilter - used by library.ts's search-token
-   *  sync watcher, which needs to set the exact tag a typed `tag:` token names rather than
-   *  flip-flopping it on every keystroke. */
-  function setFilter(tag: string | null) {
-    activeFilter.value = tag;
+  /** Replaces the whole active set - used by library.ts's search-token sync watcher, which
+   *  recomputes every active tag: token on each search change rather than diffing one at a
+   *  time. */
+  function setFilters(tags: string[]) {
+    activeFilters.value = new Set(tags);
   }
 
   function matches(gameId: number): boolean {
-    return !activeFilter.value || (gameTags.value[gameId]?.includes(activeFilter.value) ?? false);
+    if (activeFilters.value.size === 0) return true;
+    const gTags = gameTags.value[gameId] ?? [];
+    return gTags.some((t) => activeFilters.value.has(t));
   }
 
   /** Re-runs just this store's own refresh - a tag mutation never changes which games exist,
@@ -92,10 +93,9 @@ export const useTagsStore = defineStore("tags", () => {
   return {
     gameTags,
     allTags,
-    activeFilter,
+    activeFilters,
     refresh,
-    toggleFilter,
-    setFilter,
+    setFilters,
     matches,
     addToGame,
     removeFromGame,

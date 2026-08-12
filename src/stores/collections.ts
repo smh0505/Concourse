@@ -9,7 +9,9 @@ import { useLibraryStore } from "./library";
 export const useCollectionsStore = defineStore("collections", () => {
   const gameCollections = ref<Record<number, string[]>>({});
   const allCollections = ref<string[]>([]);
-  const activeFilter = ref<string | null>(null);
+  // See tags.ts's identical activeFilters for why this is a Set (multi-select, OR'd within
+  // this facet) rather than a single value.
+  const activeFilters = ref<Set<string>>(new Set());
 
   async function refresh(games: Game[]) {
     const entries = await Promise.all(
@@ -19,19 +21,15 @@ export const useCollectionsStore = defineStore("collections", () => {
     allCollections.value = await collectionRepo.getAll();
   }
 
-  function toggleFilter(name: string) {
-    activeFilter.value = activeFilter.value === name ? null : name;
-  }
-
-  /** Direct (non-toggling) assignment - see tags.ts's identical setFilter for why. */
-  function setFilter(name: string | null) {
-    activeFilter.value = name;
+  /** See tags.ts's identical setFilters for why this replaces the whole set. */
+  function setFilters(names: string[]) {
+    activeFilters.value = new Set(names);
   }
 
   function matches(gameId: number): boolean {
-    return (
-      !activeFilter.value || (gameCollections.value[gameId]?.includes(activeFilter.value) ?? false)
-    );
+    if (activeFilters.value.size === 0) return true;
+    const gCollections = gameCollections.value[gameId] ?? [];
+    return gCollections.some((c) => activeFilters.value.has(c));
   }
 
   /** Re-runs just this store's own refresh - a collection mutation never changes which games
@@ -85,10 +83,9 @@ export const useCollectionsStore = defineStore("collections", () => {
   return {
     gameCollections,
     allCollections,
-    activeFilter,
+    activeFilters,
     refresh,
-    toggleFilter,
-    setFilter,
+    setFilters,
     matches,
     addToGame,
     removeFromGame,

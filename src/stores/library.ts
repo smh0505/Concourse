@@ -39,16 +39,18 @@ function stripQuotes(value: string): string {
 }
 
 interface ParsedSearchTokens {
-  platformFilter: string | null;
-  tagFilter: string | null;
-  collectionFilter: string | null;
+  platformFilters: string[];
+  tagFilters: string[];
+  collectionFilters: string[];
   titleQuery: string;
 }
 
 /** Pulls platform:/tag:/collection: tokens out of the raw search string, lowercased, leaving
  *  whatever's left as the plain title query - shared by `filteredGames` (the actual filtering)
  *  and the tag/collection-pill sync watcher below (so a typed token also highlights its pill),
- *  so the two never drift out of sync on what counts as a token. */
+ *  so the two never drift out of sync on what counts as a token. Each kind collects *every*
+ *  occurrence (not just the last one) - multiple pills of the same kind can be active at once,
+ *  OR'd together within that kind (see tags.ts's activeFilters doc comment). */
 function parseSearchTokens(raw: string): ParsedSearchTokens {
   // Tag/collection names can contain spaces ("Co-op" is fine unquoted, but "Final Fantasy"
   // isn't) - a plain \s+ split would break those into two tokens. Quoted values
@@ -60,16 +62,16 @@ function parseSearchTokens(raw: string): ParsedSearchTokens {
     tokens.push(match[0]);
   }
 
-  let platformFilter: string | null = null;
-  let tagFilter: string | null = null;
-  let collectionFilter: string | null = null;
+  const platformFilters: string[] = [];
+  const tagFilters: string[] = [];
+  const collectionFilters: string[] = [];
   // Lookup table (prefix -> setter) instead of an if/else-if chain per prefix - same dispatch
   // shape as loader.ts's WASM_PLUGIN_FACTORIES/DATA_PLUGIN_FACTORIES, adding a fourth token
   // prefix here is a new entry, not a new branch.
   const TOKEN_PREFIXES: Record<string, (value: string) => void> = {
-    "platform:": (value) => (platformFilter = value),
-    "tag:": (value) => (tagFilter = value),
-    "collection:": (value) => (collectionFilter = value),
+    "platform:": (value) => platformFilters.push(value),
+    "tag:": (value) => tagFilters.push(value),
+    "collection:": (value) => collectionFilters.push(value),
   };
   const titleTokens: string[] = [];
   for (const token of tokens) {
@@ -82,7 +84,7 @@ function parseSearchTokens(raw: string): ParsedSearchTokens {
     }
   }
 
-  return { platformFilter, tagFilter, collectionFilter, titleQuery: titleTokens.join(" ").toLowerCase() };
+  return { platformFilters, tagFilters, collectionFilters, titleQuery: titleTokens.join(" ").toLowerCase() };
 }
 
 interface GameSessionEnded {
@@ -115,26 +117,26 @@ export const useLibraryStore = defineStore("library", () => {
   let unlistenSessionEnded: UnlistenFn | undefined;
 
   // The search box is the single source of truth for the tag/collection filter - GameFilters.vue's
-  // pills no longer call tags.toggleFilter()/collections.toggleFilter() directly; clicking one
+  // pills no longer call any toggle method on tags.ts/collections.ts directly; clicking one
   // instead adds/removes a tag:"name"/collection:"name" token from `search` (see
-  // GameFilters.vue's togglePillToken), and this watcher is the only place that ever writes
-  // tags.activeFilter/collections.activeFilter - always mirroring the token exactly (set when
-  // present, cleared when absent) rather than the old additive-only "clicking a pill never
-  // touches the box" split. One mechanism computing the filter instead of two that could drift
-  // out of sync with each other was the whole point - a pill's highlighted state now always
-  // matches what's literally sitting in the search box, nothing to reconcile.
+  // setSearchToken below), and this watcher is the only place that ever writes
+  // tags.activeFilters/collections.activeFilters - always mirroring every present token exactly
+  // (multiple tokens of the same kind all apply at once, none present clears the set entirely)
+  // rather than a pill-click path that could drift out of sync with what's actually typed. One
+  // mechanism computing the filter instead of two was the whole point - a pill's highlighted
+  // state always matches what's literally sitting in the search box, nothing to reconcile.
   watch(
     search,
     (raw) => {
-      const { tagFilter, collectionFilter } = parseSearchTokens(raw);
+      const { tagFilters, collectionFilters } = parseSearchTokens(raw);
       const tags = useTagsStore();
       const collections = useCollectionsStore();
-      const canonicalTag = tagFilter ? tags.allTags.find((t) => t.toLowerCase() === tagFilter) : null;
-      tags.setFilter(canonicalTag ?? null);
-      const canonicalCollection = collectionFilter
-        ? collections.allCollections.find((c) => c.toLowerCase() === collectionFilter)
-        : null;
-      collections.setFilter(canonicalCollection ?? null);
+      const canonicalTags = tags.allTags.filter((t) => tagFilters.includes(t.toLowerCase()));
+      tags.setFilters(canonicalTags);
+      const canonicalCollections = collections.allCollections.filter((c) =>
+        collectionFilters.includes(c.toLowerCase()),
+      );
+      collections.setFilters(canonicalCollections);
     },
     { immediate: true },
   );
@@ -146,24 +148,29 @@ export const useLibraryStore = defineStore("library", () => {
   const allPlatforms = computed(() =>
     [...new Set(games.value.map((g) => g.platform).filter((p): p is string => !!p))].sort(),
   );
-  // The active platform: token, if any - GameFilters.vue's platform pills read this the same
-  // way tags.activeFilter/collections.activeFilter drive the tag/collection pills, even though
-  // platform has no dedicated store to hold it.
-  const activePlatformFilter = computed(() => parseSearchTokens(search.value).platformFilter);
+  // The active platform: tokens, if any - GameFilters.vue's platform pills read this the same
+  // way tags.activeFilters/collections.activeFilters drive the tag/collection pills, even
+  // though platform has no dedicated store to hold it. A Set (like those two) for O(1)
+  // membership checks and OR-within-kind semantics, canonicalized against allPlatforms the same
+  // way the watcher above canonicalizes tag/collection casing.
+  const activePlatformFilters = computed(() => {
+    const { platformFilters } = parseSearchTokens(search.value);
+    return new Set(allPlatforms.value.filter((p) => platformFilters.includes(p.toLowerCase())));
+  });
 
   const filteredGames = computed(() => {
     const tags = useTagsStore();
     const collections = useCollectionsStore();
     // tag:/collection:/platform: tokens all drive their matching pill's highlighted state (see
-    // the sync watcher below for tag/collection, activePlatformFilter above for platform), so
+    // the sync watcher above for tag/collection, activePlatformFilters above for platform), so
     // filtering here just means going through tags.matches()/collections.matches()/
-    // platformFilter comparison like a pill click would - one mechanism, not a token-based
+    // platformFilters membership like a pill click would - one mechanism, not a token-based
     // AND-filter running independently alongside pill state.
-    const { platformFilter, titleQuery } = parseSearchTokens(search.value);
+    const { platformFilters, titleQuery } = parseSearchTokens(search.value);
 
     const filtered = games.value.filter((game) => {
       const matchesPlatform =
-        !platformFilter || (game.platform ?? "").toLowerCase() === platformFilter;
+        platformFilters.length === 0 || platformFilters.includes((game.platform ?? "").toLowerCase());
       const matchesSearch = !titleQuery || game.title.toLowerCase().includes(titleQuery);
       return matchesPlatform && matchesSearch && tags.matches(game.id) && collections.matches(game.id);
     });
@@ -210,19 +217,23 @@ export const useLibraryStore = defineStore("library", () => {
     await settingsRepo.set(SORT_OPTION_SETTING, option);
   }
 
-  /** Adds/replaces/removes a tag:/collection: token in `search` - the write half of the search
-   *  box being the single source of truth for the tag/collection filter (see the sync watcher
-   *  above). GameFilters.vue's pills call this instead of tags.toggleFilter()/
-   *  collections.toggleFilter() directly, so a pill click is really just editing the search
-   *  string; the watcher picks the change up and updates activeFilter from there, same as if
-   *  the user had typed the token by hand. `value: null` removes the token (drops it from the
-   *  search string entirely) rather than leaving an empty tag:"" behind. */
-  function setSearchToken(kind: "tag" | "collection" | "platform", value: string | null) {
+  /** Toggles one tag:/collection:/platform: token in `search` - the write half of the search
+   *  box being the single source of truth for these filters (see the sync watcher above).
+   *  GameFilters.vue's pills call this instead of touching tags.ts/collections.ts's filter
+   *  state directly, so a pill click is really just editing the search string; the watcher
+   *  picks the change up and updates activeFilters from there, same as if the user had typed
+   *  the token by hand. Only ever touches the one token for `value` - any other same-kind
+   *  tokens already present are left alone, which is what makes multiple pills of the same
+   *  kind (e.g. two tags) stackable rather than mutually exclusive. */
+  function setSearchToken(kind: "tag" | "collection" | "platform", value: string) {
     const prefix = `${kind}:`;
+    const targetToken = `${prefix}"${value}"`.toLowerCase();
     const tokens = Array.from(search.value.matchAll(/(\w+:"[^"]*")|\S+/g), (m) => m[0]);
-    const kept = tokens.filter((token) => !token.toLowerCase().startsWith(prefix));
-    if (value) kept.push(`${prefix}"${value}"`);
-    search.value = kept.join(" ");
+    const alreadyPresent = tokens.some((token) => token.toLowerCase() === targetToken);
+    const next = alreadyPresent
+      ? tokens.filter((token) => token.toLowerCase() !== targetToken)
+      : [...tokens, `${prefix}"${value}"`];
+    search.value = next.join(" ");
   }
 
   /** One button, every enabled metadata provider - a provider can contribute text
@@ -486,7 +497,7 @@ export const useLibraryStore = defineStore("library", () => {
     sortOption,
     filteredGames,
     allPlatforms,
-    activePlatformFilter,
+    activePlatformFilters,
     refresh,
     setViewMode,
     setSortOption,

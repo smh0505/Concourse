@@ -141,13 +141,21 @@ export const useLibraryStore = defineStore("library", () => {
     { immediate: true },
   );
 
+  // Sentinel platform value for games with no real platform - source plugins always set
+  // `platform` (steam/gog/xbox/...), but a manually-added game (AddGame.vue -> gameRepo.add(),
+  // which never touches the platform column) leaves it null. Without this, those games had no
+  // platform pill at all and were silently unreachable by any platform: token.
+  const MANUAL_PLATFORM = "manual";
+
   // Unique platform values actually present in the library, for GameFilters.vue's platform pill
   // row - platform has no dedicated store (unlike tags/collections) since `Game.platform` is
   // already first-class data, not a separate many-to-many table, so this lives here rather than
   // a new store just to hold one derived list.
-  const allPlatforms = computed(() =>
-    [...new Set(games.value.map((g) => g.platform).filter((p): p is string => !!p))].sort(),
-  );
+  const allPlatforms = computed(() => {
+    const platforms = new Set(games.value.map((g) => g.platform).filter((p): p is string => !!p));
+    if (games.value.some((g) => !g.platform)) platforms.add(MANUAL_PLATFORM);
+    return [...platforms].sort();
+  });
   // The active platform: tokens, if any - GameFilters.vue's platform pills read this the same
   // way tags.activeFilters/collections.activeFilters drive the tag/collection pills, even
   // though platform has no dedicated store to hold it. A Set (like those two) for O(1)
@@ -179,7 +187,7 @@ export const useLibraryStore = defineStore("library", () => {
     const { platformFilters, titleQuery } = parseSearchTokens(search.value);
 
     const filtered = games.value.filter((game) => {
-      const gamePlatform = (game.platform ?? "").toLowerCase();
+      const gamePlatform = (game.platform ?? MANUAL_PLATFORM).toLowerCase();
       const matchesPlatform =
         platformFilters.length === 0 ||
         (platformMatchMode.value === "and"

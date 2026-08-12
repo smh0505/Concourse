@@ -118,8 +118,10 @@ function onRowClick() {
   position: relative;
   z-index: 3;
   flex-shrink: 0;
+  box-sizing: border-box;
   width: 1.1rem;
   height: 1.1rem;
+  margin-right: 0;
   border-radius: 50%;
   border: 2px solid #fff;
   background: rgba(0, 0, 0, 0.35);
@@ -135,16 +137,27 @@ function onRowClick() {
   color: var(--color-on-accent);
 }
 
-/* Same pop-in/out as GameCard.vue's identical badge. */
+/* Width/margin (not just opacity/transform) so this collapsing to nothing pushes .info/.title
+   over smoothly instead of it snapping sideways the instant the badge unmounts - box-sizing:
+   border-box above is required so the border collapses along with width rather than poking out
+   past a 0-width box. margin-right cancels .list-row-shell's own flex `gap` (a fixed
+   var(--space-3) regardless of this item's own width, so width alone wouldn't fully close the
+   gap) - negative by that same amount at the collapsed end. */
 .select-check-enter-active,
 .select-check-leave-active {
   transition:
-    transform 0.15s ease-in-out,
-    opacity 0.15s ease-in-out;
+    width 0.2s ease-in-out,
+    margin-right 0.2s ease-in-out,
+    border-width 0.2s ease-in-out,
+    transform 0.2s ease-in-out,
+    opacity 0.2s ease-in-out;
 }
 
 .select-check-enter-from,
 .select-check-leave-to {
+  width: 0;
+  margin-right: calc(-1 * var(--space-3));
+  border-width: 0;
   transform: scale(0.5);
   opacity: 0;
 }

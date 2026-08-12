@@ -158,7 +158,6 @@
     "switchToListView": "Переключить на список",
     "switchToGridView": "Переключить на сетку",
     "toggleSortFilter": "Сортировка и фильтры",
-    "sortLabel": "Сортировать по",
     "sortOptions": {
       "title": "Название (А-Я)",
       "recentlyPlayed": "Недавно сыграно",

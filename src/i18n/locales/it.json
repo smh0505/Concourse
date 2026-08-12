@@ -158,7 +158,6 @@
     "switchToListView": "Passa alla visualizzazione elenco",
     "switchToGridView": "Passa alla visualizzazione griglia",
     "toggleSortFilter": "Ordina e filtra",
-    "sortLabel": "Ordina per",
     "sortOptions": {
       "title": "Titolo (A-Z)",
       "recentlyPlayed": "Giocati di recente",

@@ -158,7 +158,6 @@
     "switchToListView": "Mudar para visualização em lista",
     "switchToGridView": "Mudar para visualização em grade",
     "toggleSortFilter": "Ordenar e filtrar",
-    "sortLabel": "Ordenar por",
     "sortOptions": {
       "title": "Título (A-Z)",
       "recentlyPlayed": "Jogados recentemente",

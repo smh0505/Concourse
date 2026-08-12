@@ -1,30 +1,43 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconAdjustmentsHorizontal, IconLayoutGrid, IconList } from "@tabler/icons-vue";
+import {
+  IconAdjustmentsHorizontal,
+  IconChartBar,
+  IconClock,
+  IconClockPlus,
+  IconLayoutGrid,
+  IconList,
+  IconSortAscendingLetters,
+} from "@tabler/icons-vue";
 
 import { useLibraryStore, type SortOption } from "@/stores/library";
 import { useTagsStore } from "@/stores/tags";
 import { useCollectionsStore } from "@/stores/collections";
+import DropdownMenu from "@/components/desktop/common/DropdownMenu.vue";
 
 const { t } = useI18n();
 const library = useLibraryStore();
 const tags = useTagsStore();
 const collections = useCollectionsStore();
 
-// Collapsed by default - houses sort (and, eventually, further filters like playtime range/
-// install status) without permanently taking up space in the pinned bar for every user who
-// never touches it.
-const panelOpen = ref(false);
+const sortMenuOpen = ref(false);
 
+const SORT_OPTION_ICONS: Record<SortOption, typeof IconClock> = {
+  title: IconSortAscendingLetters,
+  recentlyPlayed: IconClock,
+  mostPlayed: IconChartBar,
+  recentlyAdded: IconClockPlus,
+};
 const SORT_OPTIONS: SortOption[] = ["title", "recentlyPlayed", "mostPlayed", "recentlyAdded"];
 
 function toggleViewMode() {
   library.setViewMode(library.viewMode === "grid" ? "list" : "grid");
 }
 
-function onSortChange(event: Event) {
-  library.setSortOption((event.target as HTMLSelectElement).value as SortOption);
+function selectSortOption(option: SortOption) {
+  library.setSortOption(option);
+  sortMenuOpen.value = false;
 }
 </script>
 
@@ -36,14 +49,32 @@ function onSortChange(event: Event) {
   <div class="filters" data-scroll-header>
     <div class="search-row">
       <input v-model="library.search" class="search" :placeholder="t('filters.searchPlaceholder')" />
-      <button
-        class="view-toggle-button"
-        :class="{ 'accent-active': panelOpen }"
-        :title="t('filters.toggleSortFilter')"
-        @click="panelOpen = !panelOpen"
-      >
-        <IconAdjustmentsHorizontal :size="18" :stroke-width="1.75" />
-      </button>
+      <DropdownMenu v-model:open="sortMenuOpen" wrap-class="sort-menu-wrap" panel-class="sort-menu-panel">
+        <template #trigger="{ open: menuOpen }">
+          <button
+            type="button"
+            class="view-toggle-button"
+            :class="{ 'accent-active': menuOpen }"
+            :title="t('filters.toggleSortFilter')"
+            @click="sortMenuOpen = !menuOpen"
+          >
+            <IconAdjustmentsHorizontal :size="18" :stroke-width="1.75" />
+          </button>
+        </template>
+        <div class="sort-options">
+          <button
+            v-for="option in SORT_OPTIONS"
+            :key="option"
+            type="button"
+            class="sort-option"
+            :class="{ 'accent-active': library.sortOption === option }"
+            @click="selectSortOption(option)"
+          >
+            <component :is="SORT_OPTION_ICONS[option]" :size="20" :stroke-width="1.75" />
+            <span class="sort-option-label">{{ t(`filters.sortOptions.${option}`) }}</span>
+          </button>
+        </div>
+      </DropdownMenu>
       <button
         class="view-toggle-button"
         :title="library.viewMode === 'grid' ? t('filters.switchToListView') : t('filters.switchToGridView')"
@@ -52,16 +83,6 @@ function onSortChange(event: Event) {
         <IconList v-if="library.viewMode === 'grid'" :size="18" :stroke-width="1.75" />
         <IconLayoutGrid v-else :size="18" :stroke-width="1.75" />
       </button>
-    </div>
-    <div class="sort-panel" v-if="panelOpen">
-      <label class="sort-row">
-        {{ t("filters.sortLabel") }}
-        <select :value="library.sortOption" @change="onSortChange">
-          <option v-for="option in SORT_OPTIONS" :key="option" :value="option">
-            {{ t(`filters.sortOptions.${option}`) }}
-          </option>
-        </select>
-      </label>
     </div>
     <div class="tags" v-if="tags.allTags.length">
       <span
@@ -130,18 +151,52 @@ function onSortChange(event: Event) {
 
 /* .view-toggle-button (shared, styles.css) supplies this rule's entire look. */
 
-.sort-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.sort-menu-wrap {
+  position: relative;
 }
 
-.sort-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 0.85rem;
+/* Right-aligned to the trigger instead of DropdownMenu's own default left:0 - the trigger sits
+   next to the search input, not at the bar's own left edge, so a left-aligned panel would drift
+   past the visible content area. Same override pattern GamepadRemapSettings.vue's axis popup
+   uses. */
+.sort-menu-wrap :deep(.sort-menu-panel) {
+  left: auto;
+  right: 0;
 }
+
+.sort-options {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-1);
+  padding: var(--space-2);
+}
+
+/* Icon on top, translated label caption underneath - a small square button per option rather
+   than a native <select>, consistent with this app's other custom dropdowns. */
+.sort-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sort-option:hover {
+  background: var(--color-surface0);
+}
+
+.sort-option-label {
+  font-size: 0.65rem;
+  opacity: 0.8;
+}
+
+/* .accent-active (shared, styles.css) supplies the selected option's own highlight. */
 
 .tags {
   display: flex;

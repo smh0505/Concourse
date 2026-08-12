@@ -5685,12 +5685,19 @@ comparison. Never-played games sort after any played game regardless of directio
 Sort choice persists via `settingsRepo` (`sort_option` key), identical pattern to `viewMode`'s
 existing `view_mode` key - loaded in `init()`, written in a new `setSortOption()` action.
 
-UI: `GameFilters.vue` gained a collapsed-by-default panel (new toggle button,
-`IconAdjustmentsHorizontal`, next to the view-mode toggle) housing just the sort `<select>` for
-now - the milestone's own scope also calls for playtime-range/install-status filters in this
-same panel eventually, deliberately deferred since neither has a decided data shape yet (unlike
-sort, which had an obvious source in existing `Game`/`playtime_sessions` fields). New
-`filters.toggleSortFilter`/`sortLabel`/`sortOptions.*` i18n keys across all 10 locales.
+UI: first pass was a collapsed-by-default panel with a native `<select>`; replaced per direct
+feedback with the shared `DropdownMenu.vue` shell instead (same trigger+panel+backdrop-close
+shape `GameDetail.vue`'s translate menu and `GamepadRemapSettings.vue`'s axis popup already
+use) - `IconAdjustmentsHorizontal` trigger next to the view-mode toggle, opening a right-aligned
+panel (`:deep(.sort-menu-panel) { left: auto; right: 0 }`, same override pattern the gamepad
+axis popup uses) with one button per sort option, each a small icon-on-top/translated-label-
+underneath square (`IconSortAscendingLetters`/`IconClock`/`IconChartBar`/`IconClockPlus`) laid
+out in a horizontal row instead of a dropdown list. The milestone's own scope also calls for
+playtime-range/install-status filters in this same menu eventually, deliberately deferred since
+neither has a decided data shape yet (unlike sort, which had an obvious source in existing
+`Game`/`playtime_sessions` fields). New `filters.toggleSortFilter`/`sortOptions.*` i18n keys
+across all 10 locales (`sortLabel` added then removed in the same pass - the icon+select UI
+never ended up needing a text label).
 
 Batch operations (multi-select, batch tag/collection/remove actions, selection UI) remain
 unstarted - a separable, larger workstream from filter/sort, left for a following pass.

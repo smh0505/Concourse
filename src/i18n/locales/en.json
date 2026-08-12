@@ -158,7 +158,6 @@
     "switchToListView": "Switch to list view",
     "switchToGridView": "Switch to grid view",
     "toggleSortFilter": "Sort & filter",
-    "sortLabel": "Sort by",
     "sortOptions": {
       "title": "Title (A-Z)",
       "recentlyPlayed": "Recently Played",

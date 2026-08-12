@@ -158,7 +158,6 @@
     "switchToListView": "リスト表示に切り替え",
     "switchToGridView": "グリッド表示に切り替え",
     "toggleSortFilter": "並べ替えとフィルター",
-    "sortLabel": "並べ替え",
     "sortOptions": {
       "title": "タイトル(A-Z)",
       "recentlyPlayed": "最近プレイしたゲーム",

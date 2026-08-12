@@ -48,6 +48,30 @@ const bigPictureViewMode = ref<"grid" | "slideshow">("grid");
 const activeView = ref<AppView>("library");
 const sidebarCollapsed = ref(false);
 const showAddGameModal = ref(false);
+// Mirrors library.viewingGame's truthiness, except *removed* a beat later than it would be -
+// on close, viewingGame flips to null instantly, but GameDetail (and its sticky .action-bar)
+// is still visibly playing its 150ms leave-fade at that moment. Toggling .content's
+// no-bottom-inset class in lockstep with viewingGame instead would snap .content's real bottom
+// padding back immediately, shifting .action-bar's sticky anchor point out from under it while
+// it's still on screen - the visible "jump" in its background-attachment: fixed pattern this
+// was reported against. Set true immediately on open (matches viewingGame, no lag needed since
+// GameDetail hasn't rendered yet at that instant); cleared only once the leave transition
+// actually finishes (@after-leave below), not when viewingGame itself changes.
+const detailPaddingActive = ref(false);
+watch(
+  () => library.viewingGame,
+  (game) => {
+    if (game) detailPaddingActive.value = true;
+  },
+);
+// @after-leave fires for *either* side of the out-in swap - the browse view leaving (opening
+// detail) just as much as GameDetail leaving (closing it). Only the closing case should ever
+// clear the flag; on open, viewingGame is already truthy again by the time this fires (the
+// watcher above already set detailPaddingActive true before the browse-view leave even began),
+// so guard on that instead of assuming every after-leave means "detail just closed."
+function onDetailAfterLeave() {
+  if (!library.viewingGame) detailPaddingActive.value = false;
+}
 const { connected: gamepadConnected, gamepadName } = useGamepadStatus();
 // Dynamic import gated by a literal `import.meta.env.DEV` check, not a plain v-if in the
 // template - Vue's compiled render function reads state through a proxy, so a v-if there
@@ -136,11 +160,11 @@ onUnmounted(() => {
         class="content"
         :class="{
           'scroll-locked': activeView === 'library' && plugins.scanning,
-          'no-bottom-inset': activeView === 'library' && library.viewingGame,
+          'no-bottom-inset': activeView === 'library' && detailPaddingActive,
         }"
       >
         <template v-if="activeView === 'library'">
-          <Transition name="detail" mode="out-in">
+          <Transition name="detail" mode="out-in" @after-leave="onDetailAfterLeave">
             <GameDetail v-if="library.viewingGame" key="detail" />
             <div v-else key="browse" class="library-browse">
               <GameFilters />
@@ -261,15 +285,12 @@ onUnmounted(() => {
 
 /* Cross-fade between GameDetail and the browse view - out-in waits for the old view to fade
    out before the new one fades in, so they never both occupy .content's scroll position at once.
-   will-change: opacity promotes GameDetail to its own compositing layer up front, before the
-   transition starts - without it, GameDetail.vue's .action-bar (background-attachment: fixed)
-   visibly re-renders/"redraws" partway through the fade, since the browser only decides to
-   promote a fixed-background descendant to a stable layer reactively once the opacity animation
-   is already underway, not from frame one. */
+   (The real fix for .action-bar's fixed-background "jump" on close lives in detailPaddingActive/
+   onDetailAfterLeave above, not here - an earlier will-change: opacity attempt on this rule
+   didn't actually address the real cause and was removed.) */
 .detail-enter-active,
 .detail-leave-active {
   transition: opacity 0.15s ease;
-  will-change: opacity;
 }
 
 .detail-enter-from,

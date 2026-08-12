@@ -114,26 +114,30 @@ export const useLibraryStore = defineStore("library", () => {
 
   let unlistenSessionEnded: UnlistenFn | undefined;
 
-  // Typing a tag:/collection: token highlights its matching pill in the Tags/Collections panel,
-  // rather than filtering independently of it - a token found value is looked up
-  // case-insensitively against the real tag/collection list to recover its actual stored
-  // casing (activeFilter/matches() both compare exact strings). Deliberately one-directional and
-  // additive-only: clicking a pill never populates the search box, and clearing/editing the
-  // token away doesn't reset the pill back to null - the token is a shortcut for setting the
-  // filter, not a leash on it once set.
-  watch(search, (raw) => {
-    const { tagFilter, collectionFilter } = parseSearchTokens(raw);
-    if (tagFilter) {
+  // The search box is the single source of truth for the tag/collection filter - GameFilters.vue's
+  // pills no longer call tags.toggleFilter()/collections.toggleFilter() directly; clicking one
+  // instead adds/removes a tag:"name"/collection:"name" token from `search` (see
+  // GameFilters.vue's togglePillToken), and this watcher is the only place that ever writes
+  // tags.activeFilter/collections.activeFilter - always mirroring the token exactly (set when
+  // present, cleared when absent) rather than the old additive-only "clicking a pill never
+  // touches the box" split. One mechanism computing the filter instead of two that could drift
+  // out of sync with each other was the whole point - a pill's highlighted state now always
+  // matches what's literally sitting in the search box, nothing to reconcile.
+  watch(
+    search,
+    (raw) => {
+      const { tagFilter, collectionFilter } = parseSearchTokens(raw);
       const tags = useTagsStore();
-      const canonical = tags.allTags.find((t) => t.toLowerCase() === tagFilter);
-      if (canonical) tags.setFilter(canonical);
-    }
-    if (collectionFilter) {
       const collections = useCollectionsStore();
-      const canonical = collections.allCollections.find((c) => c.toLowerCase() === collectionFilter);
-      if (canonical) collections.setFilter(canonical);
-    }
-  });
+      const canonicalTag = tagFilter ? tags.allTags.find((t) => t.toLowerCase() === tagFilter) : null;
+      tags.setFilter(canonicalTag ?? null);
+      const canonicalCollection = collectionFilter
+        ? collections.allCollections.find((c) => c.toLowerCase() === collectionFilter)
+        : null;
+      collections.setFilter(canonicalCollection ?? null);
+    },
+    { immediate: true },
+  );
 
   const filteredGames = computed(() => {
     const tags = useTagsStore();
@@ -192,6 +196,21 @@ export const useLibraryStore = defineStore("library", () => {
   async function setSortOption(option: SortOption) {
     sortOption.value = option;
     await settingsRepo.set(SORT_OPTION_SETTING, option);
+  }
+
+  /** Adds/replaces/removes a tag:/collection: token in `search` - the write half of the search
+   *  box being the single source of truth for the tag/collection filter (see the sync watcher
+   *  above). GameFilters.vue's pills call this instead of tags.toggleFilter()/
+   *  collections.toggleFilter() directly, so a pill click is really just editing the search
+   *  string; the watcher picks the change up and updates activeFilter from there, same as if
+   *  the user had typed the token by hand. `value: null` removes the token (drops it from the
+   *  search string entirely) rather than leaving an empty tag:"" behind. */
+  function setSearchToken(kind: "tag" | "collection", value: string | null) {
+    const prefix = `${kind}:`;
+    const tokens = Array.from(search.value.matchAll(/(\w+:"[^"]*")|\S+/g), (m) => m[0]);
+    const kept = tokens.filter((token) => !token.toLowerCase().startsWith(prefix));
+    if (value) kept.push(`${prefix}"${value}"`);
+    search.value = kept.join(" ");
   }
 
   /** One button, every enabled metadata provider - a provider can contribute text
@@ -457,6 +476,7 @@ export const useLibraryStore = defineStore("library", () => {
     refresh,
     setViewMode,
     setSortOption,
+    setSearchToken,
     fetchMetadata,
     fetchBackgroundArt,
     addGame,

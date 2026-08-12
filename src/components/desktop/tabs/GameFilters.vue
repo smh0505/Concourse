@@ -209,7 +209,7 @@ function selectSortOption(option: SortOption) {
         :class="{ 'accent-active': tags.activeFilter === tag }"
         v-for="tag in tags.allTags"
         :key="tag"
-        @click="tags.toggleFilter(tag)"
+        @click="library.setSearchToken('tag', tags.activeFilter === tag ? null : tag)"
       >
         {{ tag }}
       </span>
@@ -220,7 +220,7 @@ function selectSortOption(option: SortOption) {
         :class="{ 'accent-active': collections.activeFilter === name }"
         v-for="name in collections.allCollections"
         :key="name"
-        @click="collections.toggleFilter(name)"
+        @click="library.setSearchToken('collection', collections.activeFilter === name ? null : name)"
       >
         {{ name }}
       </span>

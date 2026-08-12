@@ -197,6 +197,16 @@ function selectSortOption(option: SortOption) {
   background: var(--color-surface0);
 }
 
+/* Compound selector, not relying on .accent-active alone - .sort-option's own `background:
+   none`/`color: inherit` above tie with .accent-active's specificity (both one class), so
+   whichever landed later in the actual bundled stylesheet could silently win and cancel the
+   highlight. This selector's higher specificity wins unconditionally regardless of source
+   order. */
+.sort-option.accent-active {
+  background: var(--accent-active-background, var(--color-accent));
+  color: var(--accent-active-color, var(--color-on-accent));
+}
+
 .sort-option-label {
   font-size: 0.65rem;
   opacity: 0.8;

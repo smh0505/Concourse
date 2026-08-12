@@ -14,6 +14,10 @@ line along with 22 - none of them were required to close before 2.0.0 shipped, s
 one that actually triggered it. The Icebox at the bottom of this file sits outside this numbering
 entirely, not counted toward either line.
 
+**Milestone 31 is the last one counted under the 2.x line** - Milestone 32's close (whenever it
+happens) bumps to 3.0.0, the same pattern 22 set for 2.0.0. This is a user decision, not tied to
+any breaking change; Milestones 32-37 fall under the 3.x line once it opens.
+
 ## Milestone 1 — Core Library Foundation
 - [x] Pick stack (Tauri + Vue/TypeScript, SQLite)
 - [x] Set up SQLite schema (games, tags, playtime sessions)
@@ -397,26 +401,12 @@ detecting already-installed Ollama/LM Studio.
   library has NSFW entries not meant for public docs), screenshot, then restore the originals
 
 ## Milestone 22 — Docs Site Internationalization
-User asked whether the VitePress docs site (Milestone 21) could be localized like the app's own
-UI (Milestone 20's 10 languages). Confirmed feasible - VitePress 1.6.4 (this project's pinned
-version) supports i18n natively via a `locales` config key plus per-locale content
-subdirectories, with its own built-in locale switcher in the default theme. Scoped as its own
-milestone rather than folded into 21/22, since translating ~13 prose-heavy pages (guide +
-plugin-developer reference, including code samples) is a materially bigger task than the app's
-short UI-string localization - not a quick follow-on.
-- [x] Scope: same 10 languages as the app (all 9 non-English locales)
-- [x] Translation approach: machine-translated, same disclosed approach as the app's own 9
-  non-English UI locales
-- [x] `docs/.vitepress/config.ts`: `locales` config added, per-locale `themeConfig` (translated
-  nav/sidebar labels and links), lowercase URL subpaths (`/ko/`, `/ja/`, `/zh-hans/`, `/es/`,
-  `/fr/`, `/de/`, `/pt-br/`, `/ru/`, `/it/`)
-- [x] Translated all 13 pages under `docs/guide/` and `docs/plugins/` (plus `docs/index.md`) into
-  all 9 locales - 117 translated files total, mirrored under `docs/<locale>/`
-- [x] Locale switcher: VitePress's built-in one, enabled automatically once 2+ locales are
-  declared in `locales` - no custom nav needed
-- [x] Verified `bun run docs:build` (VitePress's own dead-link checker, on by default) builds the
-  full multi-locale site clean - `.github/workflows/docs.yml` needs no changes, same
-  `docs:build`/Pages-artifact steps work unmodified for a multi-locale output tree
+Same 10 languages as the app's own UI (Milestone 20). See devlog for rationale/detail.
+- [x] `docs/.vitepress/config.ts` `locales` config, per-locale `themeConfig`, lowercase URL
+  subpaths, built-in VitePress locale switcher
+- [x] All 13 pages under `docs/guide/`/`docs/plugins/` (+ `docs/index.md`) translated into all 9
+  non-English locales (117 files, mirrored under `docs/<locale>/`)
+- [x] `bun run docs:build` verified clean for the full multi-locale site; CI unchanged
 
 ## Milestone 23 — DLsite Metadata Provider (unofficial, stretch)
 No official public API - unlike every other metadata provider plugin (IGDB/SteamGridDB/RAWG/
@@ -427,49 +417,24 @@ questions before this gets started.
 - [ ] Not started - research/scoping only exists in the private notes file above
 
 ## Milestone 24 — Detachable Controller Mapping Plugins (data tier)
-User asked whether `standard-gamepad`/`8bitdo-micro` (build-time-only TS plugins, see Milestone
-7) could be detached into separately-installed plugins like source/metadata/theme already are. A
-controller mapping is pure data (`GamepadMapping` - button/axis bindings, no `scan()`/`launch()`
-behavior), so it fits the same data-only tier Milestone 16 built for themes (`DataThemeManifest`,
-install-by-URL, no WASM/code execution) rather than the WASM tier.
-- [x] `plugin_installer.rs`: added `DataControllerManifest` (`mapping` as opaque `serde_json::
-  Value`, never Rust-interpreted - same arm's-length treatment as `cardVisual`/`fontFaces`),
-  `data_controllers_dir`, `install_data_controller`, `list_data_controller_mappings`,
-  `uninstall_data_controller_mapping`; `detect_kind` and `install_plugin`'s branch both extended
-  to `"controller"`; 3 new Rust tests (install/list/uninstall round-trip, reject-no-mapping)
-- [x] Manifest shape decided - `mapping`/`hasSticks` fields embedded directly in `plugin.json`,
-  mirroring `cssVariables`' precedent exactly
-- [x] `loader.ts`: `getInstalledDataControllerManifests`/`createDataControllerMappingPlugin`
-  (attaches the shared `GamepadRemapSettings.vue` itself, since a data-only manifest has no
-  `index.ts` of its own to do it) + `normalizeGamepadMapping` narrowing untrusted remote JSON
-  into a real `GamepadMapping`, defaulting every binding to unassigned rather than trusting an
-  unexpected shape
-- [x] `PluginSettings.vue`/`pluginInstall.ts`/`controllerMapping.ts` wired - Controller tab gets
-  the same uninstall-button/refreshManifests/confirmInstall-branch treatment the Theme tab has
-- [x] New repo, [`data-controller-plugins`](https://github.com/smh0505/data-controller-plugins)
-  (mirrors `data-theme-plugins`' structure/CI exactly) - `8bitdo-micro` migrated out as the first
-  real entry and removed from `src/plugins/`; `standard-gamepad` stays built-in (it's the
-  documented Gamepad API baseline `controllerMapping.ts` falls back to by id, not a detachment
-  candidate)
-- [x] `concourse-plugin-registry` extended to `kind: "controller"` (`concourse-plugin-registry#31`)
-  - caught and fixed two real bugs along the way: `validate.sh` and `bump-entry.sh` both only
-  special-cased `kind == "theme"` for the "hash the manifest itself, no sibling .wasm" data-only
-  path: a controller entry fell into the WASM-artifact branch, tried to read a nonexistent
-  `entry` field, and hashed a 404 - caught by the PR's own CI before merging, not shipped broken
-
-- [x] Post-close: `GamepadRemapSettings.vue`'s live diagram redrawn from plain CSS-grid boxes
-  into an SVG gamepad silhouette (`@tabler/icons-vue`'s `device-gamepad-2` outline), all button
-  hitzones repositioned to sit on it, stick-tilt direction lights added around LS/RS (reading
-  live off `axisValues`, axes 0/1 = left stick, 2/3 = right stick), and the axis-value readout
-  turned into a popup (shared `DropdownMenu.vue`) instead of an inline expansion. Also found and
-  fixed a real gap: `gamepadRemap`'s i18n strings only ever existed in `en.json` - every other
-  locale silently fell back to English for the whole modal; translated across all 10
-- [x] Post-close: added two more optional data-controller-manifest fields, `layout`
-  (`GamepadLayoutButton[]` - repositions/adds/omits which physical buttons the diagram draws)
-  and `silhouette` (`{viewBox, path}` - a custom controller-body outline) - both opaque
-  passthrough data (Rust never interprets them), narrowed only at point of use in
-  `loader.ts`/`GamepadRemapSettings.vue`; absent falls back to the component's own built-in
-  default layout/shape, so `8bitdo-micro`'s existing manifest needed no changes
+`standard-gamepad`/`8bitdo-micro` detached into separately-installed data-only plugins (same
+tier Milestone 16 built for themes), not the WASM tier - a controller mapping is pure data, no
+`scan()`/`launch()` behavior. See devlog for rationale/detail.
+- [x] `plugin_installer.rs`: `DataControllerManifest` (opaque `mapping`), install/list/uninstall
+  commands, `detect_kind`/`install_plugin` extended to `"controller"`
+- [x] `loader.ts`: `createDataControllerMappingPlugin` + `normalizeGamepadMapping` narrowing
+  untrusted remote JSON
+- [x] `PluginSettings.vue`/`pluginInstall.ts`/`controllerMapping.ts` wired, same treatment the
+  Theme tab has
+- [x] New repo [`data-controller-plugins`](https://github.com/smh0505/data-controller-plugins) -
+  `8bitdo-micro` migrated out; `standard-gamepad` stays built-in (Gamepad API baseline fallback)
+- [x] `concourse-plugin-registry` extended to `kind: "controller"`, fixing two real bugs in
+  `validate.sh`/`bump-entry.sh`'s data-only-vs-WASM branching along the way
+- [x] Post-close: `GamepadRemapSettings.vue`'s diagram redrawn as an SVG gamepad silhouette with
+  stick-tilt direction lights and a popup axis readout; fixed `gamepadRemap` i18n strings only
+  ever existing in `en.json`
+- [x] Post-close: manifest gained optional `layout`/`silhouette` fields for a fully custom
+  diagram, opaque passthrough narrowed only at point of use
 
 ## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort
 Two workstreams, scoped together since both touch the same filter-bar area and library

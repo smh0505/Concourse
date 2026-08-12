@@ -14,9 +14,11 @@ line along with 22 - none of them were required to close before 2.0.0 shipped, s
 one that actually triggered it. The Icebox at the bottom of this file sits outside this numbering
 entirely, not counted toward either line.
 
-**Milestone 31 is the last one counted under the 2.x line** - Milestone 32's close (whenever it
-happens) bumps to 3.0.0, the same pattern 22 set for 2.0.0. This is a user decision, not tied to
-any breaking change; Milestones 32-37 fall under the 3.x line once it opens.
+**3.0.0**: user decision (no breaking change forcing it, same as 2.0.0) - Milestone 31 is the
+last one counted under the 2.x line; Milestone 32's close will bump the app to 3.0.0, not yet
+shipped. Milestones 33-37 (brainstormed, unstarted) fall under the 3.x line along with 32 - none
+of them are required to close before 3.0.0 ships, since 32 is the one that will actually trigger
+it.
 
 ## Milestone 1 — Core Library Foundation
 - [x] Pick stack (Tauri + Vue/TypeScript, SQLite)

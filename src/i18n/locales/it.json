@@ -156,7 +156,15 @@
   "filters": {
     "searchPlaceholder": "Cerca per titolo... (prova platform:steam)",
     "switchToListView": "Passa alla visualizzazione elenco",
-    "switchToGridView": "Passa alla visualizzazione griglia"
+    "switchToGridView": "Passa alla visualizzazione griglia",
+    "toggleSortFilter": "Ordina e filtra",
+    "sortLabel": "Ordina per",
+    "sortOptions": {
+      "title": "Titolo (A-Z)",
+      "recentlyPlayed": "Giocati di recente",
+      "mostPlayed": "Più giocati",
+      "recentlyAdded": "Aggiunti di recente"
+    }
   },
   "stats": {
     "gamesInLibrary": "Giochi in libreria",

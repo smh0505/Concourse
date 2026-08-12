@@ -20,6 +20,7 @@ import { useTagsStore } from "./tags";
 import { useCollectionsStore } from "./collections";
 
 const VIEW_MODE_SETTING = "view_mode";
+const SORT_OPTION_SETTING = "sort_option";
 
 /** Parent folder of a real filesystem executable path; null for URIs, which have none. */
 function parentDir(executablePath: string): string | null {
@@ -29,6 +30,7 @@ function parentDir(executablePath: string): string | null {
 }
 
 export type ViewMode = "grid" | "list";
+export type SortOption = "title" | "recentlyPlayed" | "mostPlayed" | "recentlyAdded";
 
 interface GameSessionEnded {
   game_id: number;
@@ -51,6 +53,11 @@ export const useLibraryStore = defineStore("library", () => {
     viewingGameId.value !== null ? games.value.find((g) => g.id === viewingGameId.value) ?? null : null,
   );
   const viewMode = ref<ViewMode>("grid");
+  const sortOption = ref<SortOption>("title");
+  // game_id -> last playtime_sessions.end_time, for the "recently played" sort - not on `Game`
+  // itself (see PlaytimeRepository.getAllLastPlayed's own doc comment), so it's fetched
+  // alongside `games` in refresh() and looked up by id here rather than re-queried per sort.
+  const lastPlayedByGameId = ref<Map<number, string>>(new Map());
 
   let unlistenSessionEnded: UnlistenFn | undefined;
 
@@ -72,16 +79,41 @@ export const useLibraryStore = defineStore("library", () => {
     }
     const titleQuery = titleTokens.join(" ").toLowerCase();
 
-    return games.value.filter((game) => {
+    const filtered = games.value.filter((game) => {
       const matchesPlatform =
         !platformFilter || (game.platform ?? "").toLowerCase() === platformFilter;
       const matchesSearch = !titleQuery || game.title.toLowerCase().includes(titleQuery);
       return matchesPlatform && matchesSearch && tags.matches(game.id) && collections.matches(game.id);
     });
+
+    // gameRepo.list() itself already returns title-A-Z order, so "title" needs no re-sort here
+    // (and skipping it keeps the default, most-common case cheapest) - the other three all need
+    // a real comparator. "recentlyAdded" uses id as a proxy for insertion order (autoincrement,
+    // no separate created-at column) rather than adding one just for this.
+    if (sortOption.value === "title") return filtered;
+    const sorted = [...filtered];
+    if (sortOption.value === "mostPlayed") {
+      sorted.sort((a, b) => b.total_playtime - a.total_playtime);
+    } else if (sortOption.value === "recentlyAdded") {
+      sorted.sort((a, b) => b.id - a.id);
+    } else if (sortOption.value === "recentlyPlayed") {
+      sorted.sort((a, b) => {
+        const aPlayed = lastPlayedByGameId.value.get(a.id);
+        const bPlayed = lastPlayedByGameId.value.get(b.id);
+        if (!aPlayed && !bPlayed) return 0;
+        if (!aPlayed) return 1; // never-played games sort after any played game
+        if (!bPlayed) return -1;
+        return bPlayed.localeCompare(aPlayed);
+      });
+    }
+    return sorted;
   });
 
   async function refresh() {
     games.value = await gameRepo.list();
+    lastPlayedByGameId.value = new Map(
+      (await playtimeRepo.getAllLastPlayed()).map((row) => [row.game_id, row.last_played]),
+    );
     await useTagsStore().refresh(games.value);
     await useCollectionsStore().refresh(games.value);
   }
@@ -89,6 +121,11 @@ export const useLibraryStore = defineStore("library", () => {
   async function setViewMode(mode: ViewMode) {
     viewMode.value = mode;
     await settingsRepo.set(VIEW_MODE_SETTING, mode);
+  }
+
+  async function setSortOption(option: SortOption) {
+    sortOption.value = option;
+    await settingsRepo.set(SORT_OPTION_SETTING, option);
   }
 
   /** One button, every enabled metadata provider - a provider can contribute text
@@ -312,6 +349,15 @@ export const useLibraryStore = defineStore("library", () => {
   async function init() {
     const storedViewMode = await settingsRepo.get(VIEW_MODE_SETTING);
     if (storedViewMode === "grid" || storedViewMode === "list") viewMode.value = storedViewMode;
+    const storedSortOption = await settingsRepo.get(SORT_OPTION_SETTING);
+    if (
+      storedSortOption === "title" ||
+      storedSortOption === "recentlyPlayed" ||
+      storedSortOption === "mostPlayed" ||
+      storedSortOption === "recentlyAdded"
+    ) {
+      sortOption.value = storedSortOption;
+    }
     await refresh();
 
     unlistenSessionEnded = await listen<GameSessionEnded>("game-session-ended", async (event) => {
@@ -332,9 +378,11 @@ export const useLibraryStore = defineStore("library", () => {
     fetchingBackgroundFor,
     viewingGame,
     viewMode,
+    sortOption,
     filteredGames,
     refresh,
     setViewMode,
+    setSortOption,
     fetchMetadata,
     fetchBackgroundArt,
     addGame,

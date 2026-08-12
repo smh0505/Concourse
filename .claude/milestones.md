@@ -489,13 +489,16 @@ together since both touch the same filter-bar area and library selection state.
   pulls it out of the normal title-search tokens) rather than the expandable panel below -
   simpler, ships now instead of waiting on the panel; covers the "platform" filter this section
   originally scoped for the panel
-- [ ] Sort options (title A-Z, recently played, most played, recently added) - `filteredGames`
-  currently has no sort step at all
-- [ ] Expandable panel under `GameFilters.vue`'s existing bar (collapsed by default) housing sort
-  + any remaining filters (playtime range, install status) beyond tag/collection pills and the
-  platform token above
-- [ ] Persist chosen sort/filter state the same way `viewMode` already persists via
-  `settingsRepo`
+- [x] Sort options (title A-Z, recently played, most played, recently added) - `filteredGames`
+  gained a sort step after the existing filter step; new `PlaytimeRepository.getAllLastPlayed()`
+  (unlimited version of the existing top-N `getRecentlyPlayed`) backs the recently-played sort,
+  fetched alongside `games` in `refresh()`
+- [x] Expandable panel under `GameFilters.vue`'s existing bar (collapsed by default, toggle
+  button) - currently houses just the sort dropdown; playtime-range/install-status filters
+  remain open, deliberately deferred (no data hooks decided for those yet)
+- [x] Persist chosen sort the same way `viewMode` already persists via `settingsRepo`
+  (`sort_option` key); filter persistence (tag/collection/platform) stays session-only, matching
+  existing behavior - not part of this item's original scope
 
 ## Milestone 26 — Quick-Launch Search (not started)
 Spotlight/Alfred-style overlay: global hotkey opens a search box, type to filter the library,

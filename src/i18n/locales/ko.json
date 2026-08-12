@@ -156,7 +156,15 @@
   "filters": {
     "searchPlaceholder": "제목으로 검색... (예: platform:steam)",
     "switchToListView": "목록 보기로 전환",
-    "switchToGridView": "그리드 보기로 전환"
+    "switchToGridView": "그리드 보기로 전환",
+    "toggleSortFilter": "정렬 및 필터",
+    "sortLabel": "정렬 기준",
+    "sortOptions": {
+      "title": "제목(A-Z)",
+      "recentlyPlayed": "최근 플레이함",
+      "mostPlayed": "가장 많이 플레이함",
+      "recentlyAdded": "최근 추가됨"
+    }
   },
   "stats": {
     "gamesInLibrary": "라이브러리의 게임 수",

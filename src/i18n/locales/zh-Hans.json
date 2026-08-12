@@ -156,7 +156,15 @@
   "filters": {
     "searchPlaceholder": "按标题搜索...（例如 platform:steam）",
     "switchToListView": "切换到列表视图",
-    "switchToGridView": "切换到网格视图"
+    "switchToGridView": "切换到网格视图",
+    "toggleSortFilter": "排序与筛选",
+    "sortLabel": "排序方式",
+    "sortOptions": {
+      "title": "标题(A-Z)",
+      "recentlyPlayed": "最近游玩",
+      "mostPlayed": "最多游玩",
+      "recentlyAdded": "最近添加"
+    }
   },
   "stats": {
     "gamesInLibrary": "库中游戏数",

@@ -5665,3 +5665,32 @@ to teal and shift orange toward a yellowish lemon" instead. Implemented: yellow 
 (~12% -> ~5%), and the stripe layer's `background-size` bumped `55%` -> `140%` (same
 bottom-right position) so the pattern now bleeds past the content area's actual edges instead
 of visibly terminating within the visible corner patch. `1.0.2` -> `1.0.3`.
+
+## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort
+
+Started the filter/sort workstream (batch ops still open). Sort options: `filteredGames`
+(`library.ts`) gained a sort step applied after the existing filter step - `"title"` is left
+un-re-sorted since `gameRepo.list()`'s own query is already `ORDER BY title COLLATE NOCASE`
+(keeps the current default cheapest and behavior-identical for anyone who never touches sort),
+`"mostPlayed"` sorts on `total_playtime` (already on `Game`), `"recentlyAdded"` sorts on `id`
+descending (a proxy for insertion order - autoincrement, no separate created-at column, not
+worth a migration just for this), `"recentlyPlayed"` needed real new data: `total_playtime` is
+an aggregate on `Game` but "when was this last played" only exists in the `playtime_sessions`
+log, and the only existing query for it (`PlaytimeRepository.getRecentlyPlayed`, built for
+`StatsPanel.vue`'s widget) is `LIMIT`-based - top-N, not every game. Added
+`getAllLastPlayed()` (same query, no `LIMIT`), fetched into a `Map<gameId, lastPlayed>` in
+`refresh()` alongside `games` itself, looked up during sort rather than re-queried per
+comparison. Never-played games sort after any played game regardless of direction.
+
+Sort choice persists via `settingsRepo` (`sort_option` key), identical pattern to `viewMode`'s
+existing `view_mode` key - loaded in `init()`, written in a new `setSortOption()` action.
+
+UI: `GameFilters.vue` gained a collapsed-by-default panel (new toggle button,
+`IconAdjustmentsHorizontal`, next to the view-mode toggle) housing just the sort `<select>` for
+now - the milestone's own scope also calls for playtime-range/install-status filters in this
+same panel eventually, deliberately deferred since neither has a decided data shape yet (unlike
+sort, which had an obvious source in existing `Game`/`playtime_sessions` fields). New
+`filters.toggleSortFilter`/`sortLabel`/`sortOptions.*` i18n keys across all 10 locales.
+
+Batch operations (multi-select, batch tag/collection/remove actions, selection UI) remain
+unstarted - a separable, larger workstream from filter/sort, left for a following pass.

@@ -37,4 +37,16 @@ export class PlaytimeRepository {
       [limit],
     );
   }
+
+  /** Same query as getRecentlyPlayed, unlimited - library.ts's "recently played" sort needs
+   *  every game's last-played time (games with none sort last), not just a top-N list for a
+   *  stats widget. */
+  async getAllLastPlayed(): Promise<RecentlyPlayedEntry[]> {
+    const db = await getDb();
+    return db.select<RecentlyPlayedEntry[]>(
+      `SELECT game_id, MAX(end_time) as last_played
+       FROM playtime_sessions
+       GROUP BY game_id`,
+    );
+  }
 }

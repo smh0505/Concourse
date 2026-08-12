@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconLayoutGrid, IconList } from "@tabler/icons-vue";
+import { IconAdjustmentsHorizontal, IconLayoutGrid, IconList } from "@tabler/icons-vue";
 
-import { useLibraryStore } from "@/stores/library";
+import { useLibraryStore, type SortOption } from "@/stores/library";
 import { useTagsStore } from "@/stores/tags";
 import { useCollectionsStore } from "@/stores/collections";
 
@@ -11,8 +12,19 @@ const library = useLibraryStore();
 const tags = useTagsStore();
 const collections = useCollectionsStore();
 
+// Collapsed by default - houses sort (and, eventually, further filters like playtime range/
+// install status) without permanently taking up space in the pinned bar for every user who
+// never touches it.
+const panelOpen = ref(false);
+
+const SORT_OPTIONS: SortOption[] = ["title", "recentlyPlayed", "mostPlayed", "recentlyAdded"];
+
 function toggleViewMode() {
   library.setViewMode(library.viewMode === "grid" ? "list" : "grid");
+}
+
+function onSortChange(event: Event) {
+  library.setSortOption((event.target as HTMLSelectElement).value as SortOption);
 }
 </script>
 
@@ -26,12 +38,30 @@ function toggleViewMode() {
       <input v-model="library.search" class="search" :placeholder="t('filters.searchPlaceholder')" />
       <button
         class="view-toggle-button"
+        :class="{ 'accent-active': panelOpen }"
+        :title="t('filters.toggleSortFilter')"
+        @click="panelOpen = !panelOpen"
+      >
+        <IconAdjustmentsHorizontal :size="18" :stroke-width="1.75" />
+      </button>
+      <button
+        class="view-toggle-button"
         :title="library.viewMode === 'grid' ? t('filters.switchToListView') : t('filters.switchToGridView')"
         @click="toggleViewMode"
       >
         <IconList v-if="library.viewMode === 'grid'" :size="18" :stroke-width="1.75" />
         <IconLayoutGrid v-else :size="18" :stroke-width="1.75" />
       </button>
+    </div>
+    <div class="sort-panel" v-if="panelOpen">
+      <label class="sort-row">
+        {{ t("filters.sortLabel") }}
+        <select :value="library.sortOption" @change="onSortChange">
+          <option v-for="option in SORT_OPTIONS" :key="option" :value="option">
+            {{ t(`filters.sortOptions.${option}`) }}
+          </option>
+        </select>
+      </label>
     </div>
     <div class="tags" v-if="tags.allTags.length">
       <span
@@ -99,6 +129,19 @@ function toggleViewMode() {
 }
 
 /* .view-toggle-button (shared, styles.css) supplies this rule's entire look. */
+
+.sort-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+}
 
 .tags {
   display: flex;

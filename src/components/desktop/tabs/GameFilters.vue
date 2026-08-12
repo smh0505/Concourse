@@ -351,11 +351,14 @@ function selectSortOption(option: SortOption) {
   padding: var(--space-2) 0;
 }
 
+/* Same duration/easing on both properties - a mismatch (rows finishing after opacity, or vice
+   versa) reads as a jerk right at the start/end of the animation, even though the middle looks
+   smooth, since one property is still moving after the other has already settled. */
 .selection-bar-enter-active,
 .selection-bar-leave-active {
   transition:
-    grid-template-rows 0.2s ease,
-    opacity 0.15s ease;
+    grid-template-rows 0.2s ease-in-out,
+    opacity 0.2s ease-in-out;
 }
 
 .selection-bar-enter-from,

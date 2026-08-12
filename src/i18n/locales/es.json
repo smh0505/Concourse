@@ -23,7 +23,8 @@
     "quickLaunch": "Inicio rápido",
     "quickLaunchHotkey": "Atajo global",
     "pressKeys": "Pulsa las teclas...",
-    "closeToTray": "Minimizar a la bandeja en lugar de cerrar"
+    "closeToTray": "Minimizar a la bandeja en lugar de cerrar",
+    "discordPresence": "Mostrar el juego actual en Discord"
   },
   "app": {
     "switchToSlideshow": "Cambiar a vista de presentación",
@@ -68,7 +69,8 @@
     "translateTitleAndContent": "Traducir título y contenido",
     "revokeTitleOnly": "Revocar traducción del título",
     "revokeContentOnly": "Revocar traducción del contenido",
-    "revokeBoth": "Revocar traducción de título y contenido"
+    "revokeBoth": "Revocar traducción de título y contenido",
+    "skipDiscordPresence": "Ocultar este juego del estado de Discord"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

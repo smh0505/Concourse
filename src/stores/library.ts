@@ -18,6 +18,7 @@ import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
 import { useTagsStore, type PillMatchMode } from "./tags";
 import { useCollectionsStore } from "./collections";
+import { useAppSettingsStore } from "./appSettings";
 
 const VIEW_MODE_SETTING = "view_mode";
 const SORT_OPTION_SETTING = "sort_option";
@@ -394,6 +395,11 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function launchGame(game: Game) {
     const toasts = useToastStore();
+    // Computed once per launch, passed into whichever of launch_game/track_folder_playtime
+    // actually ends up handling this game below - both are the two places Discord presence
+    // (Milestone 28) is set/cleared, the same lifecycle hook playtime tracking already uses.
+    const discordPresenceEnabled =
+      useAppSettingsStore().discordPresenceEnabled && game.skip_discord_presence !== 1;
     try {
       // A URI (e.g. "steam://rungameid/730") can't be spawned as a process - hand it to the
       // OS's protocol handler instead. GOG has no registered URI scheme that launches a
@@ -439,7 +445,12 @@ export const useLibraryStore = defineStore("library", () => {
       } else if (isUri) {
         await openUrl(game.executable_path);
       } else {
-        await invoke("launch_game", { gameId: game.id, executablePath: game.executable_path });
+        await invoke("launch_game", {
+          gameId: game.id,
+          executablePath: game.executable_path,
+          title: game.title,
+          discordPresenceEnabled,
+        });
         return;
       }
 
@@ -447,7 +458,12 @@ export const useLibraryStore = defineStore("library", () => {
       // install folder instead. See launcher.rs::track_folder_playtime.
       const installDir = game.install_dir ?? parentDir(game.executable_path);
       if (installDir) {
-        await invoke("track_folder_playtime", { gameId: game.id, installDir });
+        await invoke("track_folder_playtime", {
+          gameId: game.id,
+          installDir,
+          title: game.title,
+          discordPresenceEnabled,
+        });
       }
     } catch (e) {
       toasts.push(String(e), "error");

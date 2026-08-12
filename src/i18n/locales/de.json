@@ -23,7 +23,8 @@
     "quickLaunch": "Schnellstart",
     "quickLaunchHotkey": "Globale Tastenkombination",
     "pressKeys": "Tasten drücken...",
-    "closeToTray": "In die Taskleiste minimieren statt beenden"
+    "closeToTray": "In die Taskleiste minimieren statt beenden",
+    "discordPresence": "Aktuell gespieltes Spiel auf Discord anzeigen"
   },
   "app": {
     "switchToSlideshow": "Zur Diashow-Ansicht wechseln",
@@ -68,7 +69,8 @@
     "translateTitleAndContent": "Titel und Inhalt übersetzen",
     "revokeTitleOnly": "Titelübersetzung widerrufen",
     "revokeContentOnly": "Inhaltsübersetzung widerrufen",
-    "revokeBoth": "Titel- und Inhaltsübersetzung widerrufen"
+    "revokeBoth": "Titel- und Inhaltsübersetzung widerrufen",
+    "skipDiscordPresence": "Dieses Spiel im Discord-Status ausblenden"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

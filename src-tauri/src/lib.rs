@@ -2,6 +2,7 @@
 use tauri::Manager;
 
 mod db;
+mod discord_presence;
 mod image_utils;
 mod launcher;
 mod plugin_installer;
@@ -27,6 +28,7 @@ pub fn run() {
         )
         .manage(translation::TranslationState::new())
         .manage(tray::CloseToTrayState(std::sync::Mutex::new(true)))
+        .manage(discord_presence::DiscordPresenceState::new())
         .setup(|app| {
             tray::build_tray(app.handle())?;
             quick_launch::init(app, quick_launch::DEFAULT_HOTKEY)?;

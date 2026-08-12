@@ -52,6 +52,7 @@ const form = ref<GameEditFields>({
   skip_dedup: 0,
   locale_profile_guid: "",
   locale_wrapper: null,
+  skip_discord_presence: 0,
 });
 
 function resetForm() {
@@ -66,6 +67,7 @@ function resetForm() {
     skip_dedup: game.value.skip_dedup,
     locale_profile_guid: game.value.locale_profile_guid ?? "",
     locale_wrapper: game.value.locale_wrapper,
+    skip_discord_presence: game.value.skip_discord_presence,
   };
 }
 
@@ -428,6 +430,7 @@ async function onSave() {
     skip_dedup: form.value.skip_dedup,
     locale_profile_guid: form.value.locale_profile_guid?.trim() || null,
     locale_wrapper: form.value.locale_wrapper,
+    skip_discord_presence: form.value.skip_discord_presence,
   });
   editing.value = false;
 }
@@ -678,6 +681,16 @@ async function onDelete() {
                 @change="form.skip_dedup = ($event.target as HTMLInputElement).checked ? 1 : 0"
               />
               {{ t("gameDetail.skipDedup") }}
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                :checked="form.skip_discord_presence === 1"
+                @change="
+                  form.skip_discord_presence = ($event.target as HTMLInputElement).checked ? 1 : 0
+                "
+              />
+              {{ t("gameDetail.skipDiscordPresence") }}
             </label>
             <label>
               {{ t("gameDetail.wrapperProfile") }}

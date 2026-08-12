@@ -491,18 +491,23 @@ migration without re-scanning every source plugin and redoing manual metadata ed
   (different install locations) - flag rather than silently break
 - [ ] Version the export format (so a future schema migration can still read an older export)
 
-## Milestone 28 — Discord Rich Presence (not started)
+## Milestone 28 — Discord Rich Presence (implemented, blocked on a real client_id)
 Shows "Playing <game>" on the user's Discord status while a game is running - a built-in
 feature, not a plugin: there's only ever one Discord client to report to, unlike source/
 metadata's multi-enable model. See Milestone 29 for generalizing this into a real presence
-plugin kind, if a second real target (Twitch/Slack/OBS webhook) is ever actually wanted.
-- [ ] Discord IPC/RPC integration (local Discord client, not a bot/webhook - no server-side
-  component) - likely the `discord-rich-presence` crate
-- [ ] Wire into `launcher.rs`'s existing launch/session-end lifecycle (same hook playtime
+plugin kind, if a second real target (Twitch/Slack/OBS webhook) is ever actually wanted. See
+devlog for full rationale (including why Discord's client_id is safe to hardcode, unlike a
+metadata provider's API key/secret).
+- [x] Discord IPC/RPC integration via the `discord-rich-presence` crate (local Discord client,
+  not a bot/webhook - no server-side component)
+- [x] Wired into `launcher.rs`'s existing launch/session-end lifecycle (same hook playtime
   tracking already uses) to set/clear presence
-- [ ] Settings toggle (on/off, and per-game opt-out for privacy)
-- [ ] Handle Discord not running / IPC connection failure gracefully (feature quietly no-ops,
-  not a hard error)
+- [x] Settings toggle (on/off) plus a per-game opt-out checkbox in `GameDetail.vue`'s edit mode
+- [x] Discord not running / IPC connection failure handled gracefully (quiet no-op, connection
+  state cleared and retried fresh next launch rather than erroring)
+- [ ] **Blocking**: `discord_presence.rs`'s `DISCORD_CLIENT_ID` is still a placeholder - create a
+  real Discord Application at discord.com/developers/applications and swap it in before this
+  milestone can actually close (code is otherwise complete and build-verified)
 
 ## Milestone 29 — Presence Plugin Type (not started)
 Generalizes Milestone 28's Discord-only integration into a real multi-enable plugin kind, if a

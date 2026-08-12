@@ -23,7 +23,8 @@
     "quickLaunch": "クイックランチ",
     "quickLaunchHotkey": "グローバルホットキー",
     "pressKeys": "キーを押してください...",
-    "closeToTray": "終了せずにトレイに格納する"
+    "closeToTray": "終了せずにトレイに格納する",
+    "discordPresence": "プレイ中のゲームをDiscordに表示する"
   },
   "app": {
     "switchToSlideshow": "スライドショー表示に切り替え",
@@ -68,7 +69,8 @@
     "translateTitleAndContent": "タイトルと内容を翻訳",
     "revokeTitleOnly": "タイトルの翻訳を取り消す",
     "revokeContentOnly": "内容の翻訳を取り消す",
-    "revokeBoth": "タイトルと内容の翻訳を取り消す"
+    "revokeBoth": "タイトルと内容の翻訳を取り消す",
+    "skipDiscordPresence": "このゲームをDiscordのステータスから非表示にする"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

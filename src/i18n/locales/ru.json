@@ -23,7 +23,8 @@
     "quickLaunch": "Быстрый запуск",
     "quickLaunchHotkey": "Глобальная горячая клавиша",
     "pressKeys": "Нажмите клавиши...",
-    "closeToTray": "Сворачивать в трей вместо закрытия"
+    "closeToTray": "Сворачивать в трей вместо закрытия",
+    "discordPresence": "Показывать текущую игру в Discord"
   },
   "app": {
     "switchToSlideshow": "Переключить на слайд-шоу",
@@ -68,7 +69,8 @@
     "translateTitleAndContent": "Перевести название и описание",
     "revokeTitleOnly": "Отменить перевод названия",
     "revokeContentOnly": "Отменить перевод описания",
-    "revokeBoth": "Отменить перевод названия и описания"
+    "revokeBoth": "Отменить перевод названия и описания",
+    "skipDiscordPresence": "Скрыть эту игру из статуса Discord"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

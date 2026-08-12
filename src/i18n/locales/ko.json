@@ -23,7 +23,8 @@
     "quickLaunch": "퀵 런치",
     "quickLaunchHotkey": "전역 단축키",
     "pressKeys": "키를 누르세요...",
-    "closeToTray": "종료 대신 트레이로 최소화"
+    "closeToTray": "종료 대신 트레이로 최소화",
+    "discordPresence": "현재 플레이 중인 게임을 디스코드에 표시"
   },
   "app": {
     "switchToSlideshow": "슬라이드쇼 보기로 전환",
@@ -68,7 +69,8 @@
     "translateTitleAndContent": "제목과 내용 번역",
     "revokeTitleOnly": "제목 번역 취소",
     "revokeContentOnly": "내용 번역 취소",
-    "revokeBoth": "제목과 내용 번역 취소"
+    "revokeBoth": "제목과 내용 번역 취소",
+    "skipDiscordPresence": "이 게임을 디스코드 상태에서 숨기기"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

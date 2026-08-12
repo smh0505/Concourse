@@ -87,12 +87,13 @@ export class GameRepository {
          skip_dedup = $8,
          locale_profile_guid = $9,
          locale_wrapper = $10,
+         skip_discord_presence = $11,
          translated_title = NULL,
          translated_description = NULL,
          translated_locale = NULL,
          show_translated_title = 0,
          show_translated_description = 0
-       WHERE id = $11`,
+       WHERE id = $12`,
       [
         fields.title,
         fields.executable_path,
@@ -104,6 +105,7 @@ export class GameRepository {
         fields.skip_dedup,
         fields.locale_profile_guid,
         fields.locale_wrapper,
+        fields.skip_discord_presence,
         id,
       ],
     );

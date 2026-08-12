@@ -5911,3 +5911,89 @@ testing it, fixed `--background-sticky`'s own fallback in `styles.css`: it fell 
 `transparent` instead of `--color-base`, so every theme except Arc Raiders (the only one that
 actually sets `--content-background`) left the main window's sticky bars fully transparent,
 showing scrolled rows through underneath instead of an opaque bar matching the page.
+
+Two more post-ship fixes, found via user testing after tagging v2.1.0:
+- Exiting the app via the tray's Quit item printed a benign but noisy Windows console warning
+  ("Failed to unregister class Chrome_WidgetWin_0. Error = 1412") - `app.exit(0)` alone races
+  WebView2's own teardown for windows that are merely hidden rather than destroyed (the main
+  window when closed-to-tray, and the quick-launch overlay itself, created once and left alive
+  on hide rather than torn down each toggle). Fixed by explicitly `.destroy()`-ing every open
+  window (not `.close()`, which the main window's own close-to-tray handler would just intercept
+  and re-hide) before calling `app.exit(0)`.
+- `.result` rows in the overlay weren't reliably left-aligned - a plain `<button>`'s UA default
+  and implicit flex-item sizing weren't enough; added explicit `justify-content: flex-start` +
+  `width: 100%`.
+
+## Milestone 28 — Discord Rich Presence
+
+Scoped as a built-in feature, not a plugin, after directly discussing the tradeoff with the user
+mid-implementation. The milestone's own text had left "new plugin kind vs. built-in feature" as
+an open question; walked through why: Discord Rich Presence has exactly one real target (there's
+only ever one Discord client to report to), unlike source/metadata-provider's genuine multi-enable
+need. A `presence` plugin kind only becomes worth building once a second real target exists
+(Slack custom status, Twitch stream title/category, a generic "now playing" webhook for OBS
+overlays, or Steam's own custom rich-presence string) - captured as its own Milestone 29 rather
+than built speculatively now, and the milestone numbering from the old 29 onward shifted by one
+to make room for it.
+
+**The client_id question, worked through with the user in real time.** The user asked whether a
+single hardcoded Discord Application `client_id` (created once by the maintainer) has the same
+"safe to share" property IGDB's Twitch `client_id` seems to, given the metadata providers
+already require per-user API keys/secrets. Walked through the actual distinction rather than
+assuming it: Discord Rich Presence is pure local IPC to whatever Discord client is already
+logged in on the *same machine* - no network round-trip, no authentication step at all in the
+traditional sense, since being a local process able to open the named pipe *is* the trust
+boundary. `client_id` there is just a label (which app's name/icon to show), carries no
+authority, and is transmitted openly on every normal use anyway - leaking it changes nothing.
+IGDB's flow (Twitch OAuth Client Credentials grant) is server-to-server: Concourse has to prove
+"I am this registered application" to Twitch's servers over the open internet, and
+`client_secret` is exactly what proves that - anyone holding it can mint tokens and act as the
+app from anywhere, consuming its rate limit, indefinitely. That's why IGDB's secret can't be
+shared but Discord's `client_id` can - the security model, not the field name, is what differs.
+(Aside, also discussed: a hypothetical future Twitch presence plugin *could* get the same
+"safe to hardcode" property Discord has, if built on Twitch's Authorization Code + PKCE flow
+instead of Client Credentials - PKCE is specifically designed for public/native clients that
+can't protect a secret, authenticates each user against their *own* account/rate limit rather
+than the app's shared one, same shape as Discord's "local session already belongs to the real
+user" trust model just achieved differently. Not implemented - noted for Milestone 29 if a
+Twitch presence target is ever actually built.)
+
+Conclusion: one shared `client_id`, hardcoded by the maintainer once, same as literally every
+other real app with Discord Rich Presence (Spotify, VS Code, Steam-integrated games) - asking
+every Concourse user to create their own Discord Application would be pure friction with zero
+corresponding benefit, since there's no shared-quota resource being protected the way there is
+for IGDB. `discord_presence.rs`'s `DISCORD_CLIENT_ID` constant is a placeholder pending the user
+actually registering one - the whole feature is otherwise fully implemented and build-verified,
+but genuinely inert (every `connect()` call fails, silently, exactly as designed) until that's
+swapped in. Milestone stays open until then.
+
+**Rust (`src-tauri/src/discord_presence.rs`, new module).** `discord-rich-presence` crate
+(`DiscordIpc` trait: `connect`/`set_activity`/`clear_activity`/`close`). `DiscordPresenceState`
+(Tauri-managed, `Mutex<Option<DiscordIpcClient>>`) is lazily connected on first use and reused
+across launches rather than reconnecting every time - `None` both before the first attempt and
+after any failed/dropped connection, so every call site quietly no-ops (the milestone's own
+"Discord not running" requirement) instead of erroring. If a `set_activity`/`clear_activity` call
+itself fails (a live connection gone stale - e.g. Discord was closed mid-session), the state is
+cleared back to `None` so the *next* call attempts a fresh reconnect instead of failing silently
+forever against a dead client - simple self-healing without any explicit reconnect-retry loop.
+
+**Lifecycle wiring, launcher.rs.** Both `launch_game` (direct executables) and
+`track_folder_playtime` (URI/wrapper-launched games, which fall through to the same folder-based
+tracking regardless of which of the four other `launchGame()` branches got there - GOG/Xbox
+pseudo-URI, real URI, or compatibility wrapper all funnel into this one call already) gained
+`title: String`/`discord_presence_enabled: bool` parameters. Set on confirmed launch (immediately
+after spawn for `launch_game`; after Phase 1's "game actually started" detection for
+`track_folder_playtime`, not immediately on command call, since URI launches invoke it right
+after `openUrl()` fires - before the game window necessarily even exists), cleared alongside the
+existing `game-session-ended` emit in both. This is the same integration point playtime tracking
+itself already uses - two commands, not scattered across every launch branch individually.
+
+**Frontend.** `library.ts`'s `launchGame()` computes `discordPresenceEnabled` once per call
+(`appSettings.discordPresenceEnabled && game.skip_discord_presence !== 1`) and passes it plus
+`game.title` into whichever of the two invoke calls actually ends up firing - single source of
+truth, no duplicated enablement logic per branch. New `skip_discord_presence` column (migration
+v6) mirrors `skip_dedup`'s exact existing shape (SQLite boolean, `GameEditFields`, `games.ts`'s
+`update()`, `GameDetail.vue`'s edit-mode checkbox) - a per-game opt-out alongside the global
+Settings toggle (`appSettings.ts`'s `discordPresenceEnabled`, default `true` - opt-out model,
+matching how Rich Presence itself normally defaults on for supporting apps). New
+`settings.discordPresence`/`gameDetail.skipDiscordPresence` i18n keys across all 10 locales.

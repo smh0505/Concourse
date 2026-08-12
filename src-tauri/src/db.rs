@@ -150,5 +150,16 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "add_skip_discord_presence",
+            sql: r#"
+            -- Milestone 28's per-game opt-out - the global Discord Rich Presence toggle
+            -- (appSettings.ts) defaults on, this lets a specific game (e.g. something the user
+            -- doesn't want visible on their status) stay hidden regardless.
+            ALTER TABLE games ADD COLUMN skip_discord_presence INTEGER NOT NULL DEFAULT 0;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

@@ -7,13 +7,10 @@
   --color-mantle: #e6e9ef;
   --color-crust: #dce0e8;
   --color-text: #4c4f69;
-  /* The opposite-brightness endpoint of --color-text - readable text color for placement over
-     an unpredictably-bright image (GameDetail.vue's backdrop) instead of the theme's own
-     normal body-text color, which assumes a light/dark neutral background it can't guarantee
-     there. NOT defaulted to --color-base: a long description scrolls text past the backdrop
-     onto the flat page background, which IS --color-base, so a reverse color equal to it goes
-     invisible there. Needs its own dedicated, per-theme value instead - every theme below sets
-     this explicitly. */
+  /* Readable text over an unpredictably-bright image (GameDetail.vue's backdrop), not the
+     theme's normal body-text color. NOT defaulted to --color-base: text scrolls past the
+     backdrop onto the flat --color-base page background, where a reverse color equal to it
+     would go invisible - every theme sets this explicitly instead. */
   --color-text-reverse: #ffffff;
   --color-subtext: #5c5f77;
   --color-surface0: #ccd0da;
@@ -21,34 +18,24 @@
   --color-accent: #1e66f5;
   --color-accent-alt: #8839ef;
   --color-danger: #d20f39;
-  /* Separate from --color-text so a theme with saturated/dark button backgrounds (e.g.
-     Brick Block) can override just this one, without also recoloring body text that sits on
-     lighter backgrounds where --color-text already reads fine. */
+  /* Separate from --color-text so a theme with saturated/dark button backgrounds (Brick Block)
+     can override just this one, without recoloring body text on lighter backgrounds too. */
   --color-button-text: var(--color-text);
-  /* Text/icon color for anything rendered on top of --color-accent (submit buttons, active
-     tabs/nav items/filter tags, toasts) - separate from --color-base itself since a theme can
-     repurpose --color-base for something that isn't a light neutral (e.g. Brick Block uses it
-     as a saturated sky-blue background color, not a "text on accent" color). Defaults to
-     --color-base, matching every existing theme's actual light base color exactly. */
+  /* Text/icon color over --color-accent (submit buttons, active nav/tabs, toasts) - separate
+     from --color-base since a theme can repurpose --color-base as something non-neutral (Brick
+     Block's saturated sky-blue). Defaults to --color-base, matching every theme's actual base. */
   --color-on-accent: var(--color-base);
-  /* Background tint for a cover-art scrim (GameListRow.vue/StatsPanel.vue's stat rows) - needs
-     to be darker/more saturated than --color-base for real contrast against --color-text once
-     mixed with transparent (see color-mix() call sites), so it defaults to --color-crust rather
-     than --color-base. Separate token (not just "use --color-crust directly") since a theme can
-     override just this one if --color-crust itself isn't the right pairing for --color-text -
-     Brick Block does exactly that below, since its crust (#0058f8, same as its own accent) is
-     too saturated to pair with its dark-navy --color-text (~3:1 contrast, fails normal-text AA;
-     its own --color-button-text: #ffffff exists for the same underlying reason). */
+  /* Cover-art scrim tint (GameListRow.vue/StatsPanel.vue) - defaults to --color-crust (darker/
+     more saturated than --color-base) for contrast once mixed with transparent. Separate token
+     since a theme can override it alone when --color-crust itself doesn't pair with
+     --color-text - Brick Block does, since its crust (#0058f8) is too saturated against its
+     dark-navy text. */
   --color-tint: var(--color-crust);
-  /* Background for pinned/sticky bars (GameFilters.vue's .filters, the shared .sticky-header,
-     GameDetail.vue's .action-bar) that sit above scrolling content. Falls back to
-     --content-background so a theme that sets one (paired with background-attachment: fixed on
-     both .content and these bars) gets it painted here too, anchored to the same viewport
-     coordinates .content itself uses - one continuous pattern across the pinned bars and the
-     scrolling area behind them. --content-background itself falls back to --color-base (not
-     transparent) - a theme that sets neither still gets an opaque bar matching the page's own
-     background, instead of scrolled rows showing through underneath it. A theme can still
-     override --background-sticky directly for a bar-specific tint if it wants one. */
+  /* Background for pinned/sticky bars (.filters, .sticky-header, .action-bar) above scrolling
+     content - falls back through --content-background to --color-base (not transparent), so a
+     theme with a pattern gets it painted here too (paired with background-attachment: fixed on
+     both .content and these bars, one continuous pattern instead of a second copy), and a theme
+     with neither still gets an opaque bar instead of scrolled rows showing through. */
   --background-sticky: var(--content-background, var(--color-base));
 
   /* Spacing scale */
@@ -122,17 +109,12 @@ button {
   justify-content: center;
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
-  /* --button-border-color isn't part of the base design-token scale - opt-in per-element hook,
-     same reasoning as --button-radius below: undeclared by default so most themes never think
-     about it, since --color-surface0 already reads fine as a border on itself. Only a theme
-     whose card frame border uses a different color token (e.g. Brick Block's card frame uses
-     --color-surface1, a darker shade than its --color-surface0 button background) needs to set
-     this to keep its buttons' frame color consistent with its card frame. */
+  /* --button-border-color: opt-in hook, undeclared by default since --color-surface0 already
+     reads fine as a border on itself - only needed when a theme's card frame border uses a
+     different color (Brick Block's --color-surface1) and buttons should match it. */
   border: var(--button-border-width) solid var(--button-border-color, var(--color-surface0));
-  /* --button-radius isn't part of the base design-token scale - opt-in per-element hook, same
-     pattern as --card-radius/--balloon-radius, undeclared by default so most themes never think
-     about it - only a theme wanting sharp-cornered buttons (to match a sharp-cornered card
-     frame, e.g. Brick Block) needs to set it. */
+  /* --button-radius: same opt-in reasoning, only set by a theme wanting sharp-cornered buttons
+     to match a sharp-cornered card frame (Brick Block). */
   border-radius: var(--button-radius, var(--radius-md));
   background: var(--color-surface0);
   color: var(--color-button-text);
@@ -184,13 +166,11 @@ select:focus {
   border-color: var(--color-accent);
 }
 
-/* Secondary/muted "hint" text - a real HTML primitive already exists for this (<small>), so
-   no class is needed anywhere at all, unlike a scoped class which can't be reused across
-   components. Components needing extra spacing add it locally via their own scoped
-   `small { margin: ...; }` rule (and `display: block` too, if their container isn't already
-   flex - flex always blockifies its children regardless of their own inline/block default,
-   but a plain block container doesn't, so an inline <small> there could wrap narrower than a
-   <p> would have). */
+/* Secondary/muted "hint" text - a real HTML primitive (<small>) instead of a scoped class, so
+   it's reusable across components without one. Components needing extra spacing add it locally
+   via their own scoped `small { margin: ...; }` (plus `display: block` if their container isn't
+   already flex, since a plain block container won't blockify an inline <small> the way flex
+   would). */
 small {
   font-size: 0.8rem;
   opacity: 0.7;
@@ -250,28 +230,21 @@ small {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  /* --card-border-width/--card-radius (GameCard.vue's `.card-visual` opt-in hooks) instead of
-     --button-border-width/--radius-lg - these rows are cards-as-rows, so they should pick up a
-     theme's card frame (e.g. Brick Block's chunkier 3px/square-corner look), not the button
-     frame. Same fallbacks as `.card-visual` for themes that don't set either. */
+  /* --card-border-width/--card-radius (GameCard.vue's opt-in hooks), not --button-border-width/
+     --radius-lg - these rows are cards-as-rows, so they pick up a theme's card frame (Brick
+     Block's chunkier square-corner look) instead of the button frame. */
   border: var(--card-border-width, 1px) solid var(--color-surface1);
   border-radius: var(--card-radius, var(--radius-lg));
   padding: var(--space-2) var(--space-3);
 }
 
-/* Tags/Collections rows (TagsPanel.vue/CollectionsPanel.vue's `.item-row.list-row-shell`) -
-   subtle --color-tint wash for visual consistency with GameListRow/StatsPanel's cover-art rows,
-   which use the same token. No cover art here to scrim, so this is a light background tint
-   over the panel's own background rather than a gradient - --color-text (untouched, default)
-   already reads fine against --color-tint on every theme, same guarantee the scrim fix relies
-   on. */
+/* Tags/Collections rows (`.item-row.list-row-shell`) - subtle --color-tint wash for visual
+   consistency with GameListRow/StatsPanel's cover-art rows, which use the same token. No cover
+   art to scrim here, so it's a light tint over the panel background rather than a gradient. */
 .item-row {
   /* Same gradient tint StatsPanel.vue's .scrim uses, layered over --cover-placeholder-background
-     (GameCard.vue's no-cover fallback token - e.g. Brick Block's brick/stripe pattern) instead
-     of a plain color, so a theme's dedicated placeholder art shows through here too. Falls back
-     to --color-surface0 for themes that don't set the pattern, same as every other placeholder
-     consumer. The tint gradient is a real <image> layer (last-layer color rule only applies
-     when a var() fallback resolves to a plain color at the very end of the list). */
+     (GameCard.vue's no-cover token) instead of a plain color, so a theme's placeholder art shows
+     through here too - falls back to --color-surface0 like every other placeholder consumer. */
   background: linear-gradient(
       to right,
       color-mix(in srgb, var(--color-tint) 75%, transparent) 40%,
@@ -350,36 +323,26 @@ small {
 /* Tile/cover frame base - BigPictureTile.vue's .tile, BigPictureSlideshow.vue's .strip-cover.
    Each keeps its own extra layout/transition-timing properties locally. */
 .bp-cover-frame {
-  /* --tile-background/--tile-border-width/--tile-border-color aren't part of the base
-     design-token scale - opt-in per-element hooks, same pattern as --card-border-width/
-     --card-radius on GameCard.vue's own frame. Undeclared by default (invisible border, no
-     background) so most themes never think about them - only a theme wanting a permanently
-     visible tile frame (not just on focus) needs to set them, e.g. to match a card frame that
-     has its own always-visible border/pattern (Brick Block's chunky border + diagonal stripe). */
+  /* --tile-background/--tile-border-*: opt-in hooks, same pattern as GameCard.vue's --card-*
+     frame - undeclared by default (invisible border, no background), only set by a theme
+     wanting a permanently visible tile frame (Brick Block's chunky border + stripe). */
   background: var(--tile-background, none);
   border: var(--tile-border-width, 3px) solid var(--tile-border-color, transparent);
-  /* --tile-radius, same opt-in reasoning as above - undeclared by default (falls back to the
-     base --radius-xl scale step) so most themes never think about it, only one wanting a
-     sharper/blockier tile than the default rounded corners needs to set it. */
+  /* --tile-radius, same opt-in reasoning - only set by a theme wanting a sharper/blockier tile. */
   border-radius: var(--tile-radius, var(--radius-xl, 10px));
-  /* Clips whatever renders inside (the built-in cover img/placeholder, or a theme's
-     cardVisual-AST output) to this frame's own radius - same reasoning as GameCard.vue's
-     `.card-visual` wrapper, since AST-rendered `.cover`/`.cover-placeholder` carry no radius
-     of their own (that global rule is unscoped and radius-less by design). */
+  /* Clips the built-in cover img/placeholder or a theme's cardVisual-AST output to this frame's
+     radius - same reasoning as GameCard.vue's .card-visual wrapper. */
   overflow: hidden;
   padding: 0;
   cursor: pointer;
 }
 
-/* Focused/centered cover state - identical border-color/box-shadow in both files. Applied via
-   a template class binding alongside .bp-cover-frame, not a compound selector, so either
-   component can still layer its own extra behavior (e.g. .tile's added scale transform) via
-   its own local `.tile.bp-cover-focused` rule. */
+/* Focused/centered cover state - applied as a class binding alongside .bp-cover-frame, not a
+   compound selector, so either component can still layer its own extra behavior locally. */
 .bp-cover-focused {
   border-color: var(--color-accent);
-  /* --tile-focus-shadow, same opt-in reasoning as --tile-radius above - undeclared by default
-     (falls back to the base --shadow-lg elevation) so most themes never think about it, only
-     one wanting a solid accent-colored ring (instead of a soft drop shadow) needs to set it. */
+  /* --tile-focus-shadow, same opt-in reasoning as --tile-radius - only set by a theme wanting a
+     solid accent-colored ring instead of a soft drop shadow. */
   box-shadow: var(--tile-focus-shadow, var(--shadow-lg));
 }
 
@@ -411,11 +374,9 @@ small {
   color: var(--color-danger);
 }
 
-/* Icon-only square toggle button - App.vue's Big Picture grid/slideshow toggle,
-   GameFilters.vue's grid/list toggle. Both used this exact class name already, but only
-   GameFilters had gotten the real square treatment (fixed width, zero padding) - App.vue's
-   was a real inconsistency (a wider, padded button that just happened to share a name),
-   not a duplicate to remove. Promoted the correct version here for both to share. */
+/* Icon-only square toggle button - App.vue's Big Picture grid/slideshow toggle, GameFilters.vue's
+   grid/list toggle. Both used this class name already, but only GameFilters had the real square
+   treatment (fixed width, zero padding) - promoted the correct version here for both. */
 .view-toggle-button {
   display: flex;
   align-items: center;
@@ -425,54 +386,45 @@ small {
   padding: 0;
 }
 
-/* Icon-action button row - GameCard.vue's .footer (play/fetch-metadata/edit/remove) and
-   GameListRow.vue's .actions (the same 4 buttons, same handlers). Only GameCard had gotten
-   this tighter icon-button treatment - GameListRow's identical button set was inconsistently
-   left at the default button padding, a real visual mismatch between two renderings of the
-   same concept, not a deliberate difference. Applied as a second class on the row container
-   (not on each button individually) since both already use a `button` descendant selector. */
+/* Icon-action button row - GameCard.vue's .footer and GameListRow.vue's .actions (same 4
+   buttons/handlers). Only GameCard had this tighter treatment; GameListRow's identical set was
+   inconsistently left at default padding. Applied to the row container, not each button, since
+   both already use a `button` descendant selector. */
 .icon-action-row button {
   flex: 1;
   min-width: 0;
   padding: 0.35rem 0;
 }
 
-/* Compact inline button - AddPlugin.vue's `.registry-list button` (install-from-registry),
-   PluginSettings.vue's `.permission-needed button` (grant-permission prompt). Byte-identical,
-   no design decision needed unlike the two button-audit findings above. */
+/* Compact inline button - AddPlugin.vue's registry-install button, PluginSettings.vue's
+   grant-permission prompt. Byte-identical. */
 .compact-button {
   font-size: 0.75rem;
   padding: 0.2rem 0.6rem;
 }
 
-/* Accent-swap "active" state - NavSidebar.vue's `.nav-item.active`, GameFilters.vue's
-   `.filter-tag.active`, PluginSettings.vue's `.tabs button.active`. Byte-identical across all
-   three; applied alongside each component's own base selector (`.nav-item.accent-active`, etc.)
-   rather than replacing it, since `.active` itself is still each component's own state-toggle
-   class bound via `:class`. */
+/* Accent-swap "active" state - NavSidebar/GameFilters/PluginSettings' active nav/tab/pill,
+   applied alongside each component's own state-toggle class (`.nav-item.accent-active`, etc.),
+   not replacing it. */
 .accent-active {
-  /* Opt-in hooks, default to the shared accent tokens - a theme can override just the
-     "selected" indicator's color without recoloring --color-accent itself (which also drives
+  /* Opt-in hooks defaulting to the shared accent tokens - a theme can override just the
+     "selected" indicator's color without recoloring --color-accent itself (also drives
      buttons/toasts/tile focus rings). */
   background: var(--accent-active-background, var(--color-accent));
   color: var(--accent-active-color, var(--color-on-accent));
 }
 
-/* Shared inset for every non-library view's own top-level component (each applies this class
-   to its own root, alongside its own class - not a wrapper div in App.vue anymore, so a
-   component's inset is part of its own styling, not something the caller has to remember to
-   provide). The library view's own top gap comes from GameFilters.vue's sticky `.filters`
-   (padding-top baked in there instead). */
+/* Shared inset for every non-library view's own top-level component (each applies this to its
+   own root). The library view's own top gap comes from GameFilters.vue's sticky `.filters`
+   instead. */
 .settings-panel {
   padding: var(--space-5) var(--space-6) 0;
 }
 
-/* Named-item manager panel - TagsPanel.vue, CollectionsPanel.vue. Byte-identical (both wrap
-   useNamedItemManager.ts's create/rename/delete/usage-count UI). Cancels `.settings-panel`'s
-   own padding-top specifically (compound selector wins over `.settings-panel` alone
-   regardless of source order) - `.sticky-header` below supplies that same gap as its own
-   padding instead, keeping it present at every scroll position rather than only before the
-   first scroll. */
+/* Named-item manager panel - TagsPanel.vue, CollectionsPanel.vue (both wrap
+   useNamedItemManager.ts's create/rename/delete/usage-count UI). Cancels .settings-panel's own
+   padding-top - .sticky-header below supplies that same gap as its own padding instead, so it
+   stays present at every scroll position, not just before the first scroll. */
 .panel {
   margin-bottom: var(--space-5);
 }
@@ -485,15 +437,10 @@ small {
   position: sticky;
   top: 0;
   z-index: 10;
-  /* --background-sticky falls back to --content-background (both transparent by default) - a
-     theme opts into a distinct tint by overriding --background-sticky explicitly, otherwise it
-     just gets its own content pattern here too. background-attachment: fixed is what makes that
-     actually align: it anchors the background to the viewport instead of this element's own
-     box, the same coordinate space .content itself uses (also fixed - see App.vue), so this
-     renders as a continuous extension of the real pattern rather than a second, independently
-     -positioned copy (that's what broke ARC Raiders' stripes when .sticky-header drew
-     --content-background with normal, box-relative attachment). Opaque wherever the underlying
-     pattern is opaque, so scrolled rows are genuinely hidden, not just blurred. */
+  /* --background-sticky falls back through --content-background to --color-base - a theme with
+     a pattern gets it painted here too. background-attachment: fixed anchors it to the viewport
+     (same coordinate space .content uses) so it renders as one continuous pattern instead of a
+     second, independently-positioned copy. */
   background: var(--background-sticky);
   background-attachment: fixed;
   padding-top: var(--space-5);

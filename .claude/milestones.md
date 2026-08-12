@@ -460,17 +460,24 @@ selection state. See devlog for full rationale/design evolution.
 - [x] Expandable sort dropdown under `GameFilters.vue`'s bar; playtime-range/install-status
   filters remain deliberately deferred (no data hooks decided yet)
 
-## Milestone 26 — Quick-Launch Search (not started)
+## Milestone 26 — Quick-Launch Search
 Spotlight/Alfred-style overlay: global hotkey opens a search box, type to filter the library,
-launch directly - faster than opening the app to the desktop UI for a single launch.
-- [ ] Global hotkey registration (Tauri global-shortcut plugin) - decide default binding,
-  configurable in `AppSettings`
-- [ ] A dedicated always-on-top overlay window (separate from the main window) or an in-app
-  modal if a true OS-level overlay proves too heavy for this pass
-- [ ] Fuzzy title search over `library.ts`'s `games`, keyboard-navigable results
-- [ ] Enter launches the selected game via the same path `GameCard`/`GameListRow` already use,
-  then closes the overlay
-- [ ] Decide behavior when the main window isn't running/is minimized
+launch directly - faster than opening the app to the desktop UI for a single launch. Confirmed
+via research this is a real, precedented pattern (Playnite's "Keyboard Launcher"). See devlog
+for the full design rationale.
+- [x] Global hotkey registration (`tauri-plugin-global-shortcut`) - default `Ctrl+Alt+Space`,
+  configurable in `AppSettings` via a listening-for-input recorder
+- [x] Dedicated always-on-top overlay window (separate Vite entry/Tauri window, not an in-app
+  modal) - required adding system tray support (not originally scoped) so the app can stay
+  alive after the main window closes; close (X) now hides to tray instead of quitting
+- [x] Fuzzy title search over `library.ts`'s `games` (new in-house `fuzzyMatch.ts`, not a
+  dependency), keyboard-navigable, results lazy-load in batches as the list scrolls
+- [x] Enter launches the selected game via `library.ts`'s real `launchGame()` (same path
+  `GameCard`/`GameListRow` use), then closes the overlay
+- [x] Behavior when main window isn't running: works whenever the app process is alive (tray-
+  backed), same inherent limitation any tray app has if fully quit rather than closed
+- [x] Overlay follows the active theme (`--content-background`/`cssVariables` etc.) - re-applied
+  on every show, since the window is created once and reused rather than recreated per toggle
 
 ## Milestone 27 — Library Backup/Export (not started)
 Export/import games, tags, collections, and settings as a portable file - covers reinstall/

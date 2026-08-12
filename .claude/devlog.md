@@ -5808,3 +5808,106 @@ null platform as that sentinel for matching purposes, so "manual" behaves as a n
 New `filters.showMore`/`browseFilters`/`platformsHeading`/`tagsHeading`/`collectionsHeading`/
 `matchAny`/`matchAll`/`matchModeHint` i18n keys across all 10 locales (`showLess` added then
 removed once per-row inline expansion was replaced by the modal).
+
+## Milestone 26 — Quick-Launch Search
+
+Before implementing, researched whether this pattern (global hotkey -> systemwide overlay ->
+type to search/launch) actually has real precedent, since it changes the architecture
+significantly. Confirmed: Playnite's "Keyboard Launcher" is exactly this - a system-wide
+shortcut opening an overlay that works even when Playnite itself isn't focused, distinct from
+its separate in-app "Global Search" (a VS-Code-style command palette, only reachable while
+already looking at Playnite's window). Steam has nothing equivalent (Shift+Tab's overlay
+requires a game already running). This distinction - dedicated OS window vs. in-app modal -
+became the first real decision point, resolved with the user in favor of the dedicated window,
+matching Playnite's actual precedent rather than the weaker in-app-modal alternative.
+
+That decision had a consequence the milestone didn't originally scope: a dedicated overlay
+window is only actually useful if it survives the main window closing, and this app had no tray
+support at all - closing (X) quit the whole process. Surfaced this explicitly rather than
+silently building a "dedicated overlay" that only worked while the main window happened to be
+open anyway (no better than the in-app-modal alternative it was chosen over). User opted to add
+tray support as part of this milestone.
+
+**Rust.** New `tray.rs`: `TrayIconBuilder` with a Show/Quick Launch/Quit menu (reuses
+`app.default_window_icon()`, no new asset), left-click shows+focuses the main window.
+`CloseToTrayState(Mutex<bool>)` (Tauri-managed, defaults `true`) is read synchronously from the
+main window's `WindowEvent::CloseRequested` handler (`install_close_to_tray_handler`) -
+`api.prevent_close()` + `.hide()` instead of quitting, whenever the flag is set; the tray's own
+Quit item calls `app.exit(0)` directly, bypassing this. The flag has to be a synchronous
+in-memory value (not an async DB read) since `CloseRequested` fires synchronously - the frontend
+(`appSettings.ts`) mirrors the real persisted setting into it via `set_close_to_tray`, both on
+every toggle and once during its own `init()`, accepting a small window right at startup where
+Rust's own default is used before the frontend's near-instant init has run (a user can't
+physically click the close button before that resolves).
+
+New `quick_launch.rs`: registers `tauri-plugin-global-shortcut` with a handler that
+unconditionally toggles the overlay on `ShortcutState::Pressed` - only one shortcut is ever
+registered at a time (swapped via `register_hotkey`, never added alongside a second one), so the
+handler doesn't need to disambiguate which shortcut fired. The overlay itself is a
+`WebviewWindow` (label `quick-launch`, `decorations(false)`/`always_on_top(true)`/
+`skip_taskbar(true)`/`resizable(false)`, centered on the primary monitor - cursor-aware
+multi-monitor placement deliberately deferred, not blocking) created once on first toggle and
+reused (hidden/shown) thereafter, not recreated per press. Hides on `WindowEvent::Focused(false)`
+(clicking away), matching the Spotlight/Alfred/Playnite convention. A `quick-launch-shown` event
+is emitted on every show (not just creation) since a plain `show()` doesn't reliably hand
+keyboard focus to the webview's own input element - `QuickLaunchOverlay.vue` listens for it to
+clear/refocus its search input every time.
+
+`capabilities/quick-launch.json` is scoped deliberately minimal, since this window is reachable
+via a global hotkey regardless of the app's own focus state: `core:default` + only the
+`core:window:*` ops the overlay itself needs, `sql:default`/`allow-select`/`allow-load` (read-
+only - the overlay never writes), `opener:default` + the same URL allowlist `default.json` has
+(needed since it reuses `library.ts`'s real `launchGame`, URI branches included). No
+`sql:allow-execute`, no `updater:*`/`process:*` - none of that applies here. Custom app-defined
+commands (`launch_game`, `set_quick_launch_hotkey`, `hide_quick_launch`, etc.) aren't gated by
+the capability system at all - only official Tauri/plugin commands are - so none of those needed
+explicit permission entries either.
+
+**Frontend.** No `vue-router` exists anywhere in this project, so the overlay isn't a route
+inside the main SPA - it's a second Vite build entry (`quick-launch.html`/`src/quickLaunch.ts`,
+its own `createApp`/Pinia instance, `vite.config.ts`'s `build.rollupOptions.input`), keeping its
+own load fast since it needs to feel instant on hotkey press. `QuickLaunchOverlay.vue` uses the
+real `useLibraryStore()` and calls `library.launchGame(game)` directly rather than
+re-implementing any launch logic - one code path, not two that could drift, same reasoning
+already applied to the batch-ops selection UI back in Milestone 25.
+
+Fuzzy matching is a small in-house subsequence scorer (`src/utils/fuzzyMatch.ts`) rather than a
+dependency like Fuse.js - this only ever needs to score game titles (a few hundred entries at
+most), not worth pulling in a library for. Consecutive-run and start-of-string matches score
+higher, matching the usual Spotlight/Alfred fuzzy-finder intuition.
+
+Results aren't rendered all at once - `visibleCount` grows by `BATCH_SIZE` (8) as `.results`
+scrolls near its bottom, or via arrow-key navigation past the last rendered row, against the
+full uncapped match set (`allMatches`). Already-rendered rows never unmount on scroll-back-up,
+so there's no separate "previous batch" mechanism - whatever loaded stays loaded. Resets on
+every new search and on every `quick-launch-shown` event. A post-render top-up call
+(`loadMoreIfNeeded()` right after the initial batch renders) handles the edge case where the
+first batch doesn't actually overflow the results container (a short list, or an unusually tall
+window) - without it there'd be no scrollbar to ever trigger the `@scroll` handler at all,
+silently stranding the rest of the matches unreachable.
+
+Two post-ship fixes, both real bugs found via user testing:
+- The overlay never called `theme.init()` - it's a separate window with its own DOM, so it never
+  inherited the main window's theme application at all and was silently stuck on default
+  Catppuccin Latte tokens regardless of what was actually selected. Fixed by calling
+  `theme.init()` on every show (not just once on mount) - the overlay window is created once and
+  reused rather than recreated per toggle, so a theme changed while it was hidden needs to be
+  picked up the next time it opens, not just at first launch.
+- `.result` rows weren't reliably left-aligned - added explicit `justify-content: flex-start` +
+  `width: 100%` rather than relying on implicit flex-item stretch/button default behavior.
+
+Settings gained a "Quick Launch" section: a hotkey recorder (`listeningForHotkey`, mirrors
+`GamepadRemapSettings.vue`'s established "listen for the next input" interaction pattern, reused
+for keyboard capture instead of gamepad input - `event.code`, not `event.key`, since it matches
+the same key-code naming the Rust-side `Code` enum from the `keyboard-types` crate already uses,
+so the accelerator string built in JS needs no translation layer to be valid on the Rust side)
+and a "Close to tray" checkbox. New `quickLaunch.*`/`settings.quickLaunch*`/`settings.closeToTray`
+i18n keys across all 10 locales.
+
+Also styled the results list to pick up `--content-background` (same token/fixed-attachment
+technique as the main window's sticky bars from Milestone 25's earlier work, falling back to
+`--color-mantle` for themes without a pattern) - and, unrelated to this milestone but found while
+testing it, fixed `--background-sticky`'s own fallback in `styles.css`: it fell back to
+`transparent` instead of `--color-base`, so every theme except Arc Raiders (the only one that
+actually sets `--content-background`) left the main window's sticky bars fully transparent,
+showing scrolled rows through underneath instead of an opaque bar matching the page.

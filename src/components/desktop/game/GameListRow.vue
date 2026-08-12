@@ -47,9 +47,11 @@ function onRowClick() {
       <IconLoader2 :size="18" :stroke-width="1.75" class="spin" />
     </div>
 
-    <div v-if="selection.active" class="select-check" :class="{ checked: selected }">
-      <IconCheck v-if="selected" :size="12" :stroke-width="2.5" />
-    </div>
+    <Transition name="select-check">
+      <div v-if="selection.active" class="select-check" :class="{ checked: selected }">
+        <IconCheck v-if="selected" :size="12" :stroke-width="2.5" />
+      </div>
+    </Transition>
 
     <div class="info">
       <div class="title">{{ title }}</div>
@@ -131,6 +133,20 @@ function onRowClick() {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-on-accent);
+}
+
+/* Same pop-in/out as GameCard.vue's identical badge. */
+.select-check-enter-active,
+.select-check-leave-active {
+  transition:
+    transform 0.15s ease-in-out,
+    opacity 0.15s ease-in-out;
+}
+
+.select-check-enter-from,
+.select-check-leave-to {
+  transform: scale(0.5);
+  opacity: 0;
 }
 
 .list-row-shell.no-cover {

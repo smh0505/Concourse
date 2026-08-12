@@ -64,11 +64,13 @@ function onCardClick() {
         <IconLoader2 :size="24" :stroke-width="1.75" class="spin" />
       </div>
 
-      <div v-if="selection.active" class="select-check" :class="{ checked: selected }">
-        <IconCheck v-if="selected" :size="14" :stroke-width="2.5" />
-      </div>
+      <Transition name="select-check">
+        <div v-if="selection.active" class="select-check" :class="{ checked: selected }">
+          <IconCheck v-if="selected" :size="14" :stroke-width="2.5" />
+        </div>
+      </Transition>
 
-      <div v-else class="footer icon-action-row">
+      <div v-if="!selection.active" class="footer icon-action-row">
         <button class="play" :title="t('gameCard.play')" @click.stop="library.launchGame(game)">
           <IconPlayerPlay :size="15" :stroke-width="1.75" />
         </button>
@@ -150,6 +152,21 @@ function onCardClick() {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-on-accent);
+}
+
+/* Pop-in/out as selection mode itself toggles, not per-item selection (toggling checked just
+   swaps .checked's background, no transition needed there - see .checked above). */
+.select-check-enter-active,
+.select-check-leave-active {
+  transition:
+    transform 0.15s ease-in-out,
+    opacity 0.15s ease-in-out;
+}
+
+.select-check-enter-from,
+.select-check-leave-to {
+  transform: scale(0.5);
+  opacity: 0;
 }
 
 .card-visual {

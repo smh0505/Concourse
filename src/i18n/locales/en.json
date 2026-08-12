@@ -163,7 +163,17 @@
       "recentlyPlayed": "Recently Played",
       "mostPlayed": "Most Played",
       "recentlyAdded": "Recently Added"
-    }
+    },
+    "toggleSelectionMode": "Select games",
+    "selectionCount": "{count} selected",
+    "selectAll": "Select all",
+    "clearSelection": "Clear",
+    "addTag": "Add tag",
+    "addToCollection": "Add to collection",
+    "noTagsYet": "No tags yet",
+    "noCollectionsYet": "No collections yet",
+    "removeFromLibrary": "Remove from library",
+    "exitSelectionMode": "Exit selection mode"
   },
   "stats": {
     "gamesInLibrary": "Games in library",

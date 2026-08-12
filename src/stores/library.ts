@@ -193,6 +193,14 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
   }
 
+  /** Milestone 25 batch ops - loops gameRepo.delete rather than calling deleteGame per id,
+   *  which would re-run refresh()'s full games+lastPlayed+tags+collections reload once per
+   *  game instead of once for the whole batch. */
+  async function deleteGames(ids: number[]) {
+    for (const id of ids) await gameRepo.delete(id);
+    await refresh();
+  }
+
   /**
    * Imports scanned plugin entries. A title matching an existing game merges into that
    * row (executable_path/platform upgraded to the scanned source, id preserved so
@@ -387,6 +395,7 @@ export const useLibraryStore = defineStore("library", () => {
     fetchBackgroundArt,
     addGame,
     deleteGame,
+    deleteGames,
     importEntries,
     openDetail,
     closeDetail,

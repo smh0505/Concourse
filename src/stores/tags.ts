@@ -47,6 +47,19 @@ export const useTagsStore = defineStore("tags", () => {
     await refreshSelf();
   }
 
+  /** Milestone 25 batch ops - loops the same per-game repo call rather than reusing
+   *  addToGame/removeFromGame in a loop, since those each call refreshSelf() themselves; doing
+   *  that per game in a multi-game batch would re-run the same full refresh N times over. */
+  async function addToGames(games: Game[], names: string[]) {
+    for (const game of games) await tagRepo.addToGame(game.id, names);
+    await refreshSelf();
+  }
+
+  async function removeFromGames(games: Game[], name: string) {
+    for (const game of games) await tagRepo.removeFromGame(game.id, name);
+    await refreshSelf();
+  }
+
   /** Standalone tag management (rename/merge/delete, usage counts) for the "Tags" manager
    *  tab - distinct from the per-game add/remove above, which only ever touch one game's own
    *  assignment. */
@@ -78,6 +91,8 @@ export const useTagsStore = defineStore("tags", () => {
     matches,
     addToGame,
     removeFromGame,
+    addToGames,
+    removeFromGames,
     create,
     rename,
     remove,

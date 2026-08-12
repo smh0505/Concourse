@@ -163,7 +163,17 @@
       "recentlyPlayed": "최근 플레이함",
       "mostPlayed": "가장 많이 플레이함",
       "recentlyAdded": "최근 추가됨"
-    }
+    },
+    "toggleSelectionMode": "게임 선택",
+    "selectionCount": "{count}개 선택됨",
+    "selectAll": "전체 선택",
+    "clearSelection": "선택 해제",
+    "addTag": "태그 추가",
+    "addToCollection": "컬렉션에 추가",
+    "noTagsYet": "아직 태그가 없습니다",
+    "noCollectionsYet": "아직 컬렉션이 없습니다",
+    "removeFromLibrary": "라이브러리에서 제거",
+    "exitSelectionMode": "선택 모드 종료"
   },
   "stats": {
     "gamesInLibrary": "라이브러리의 게임 수",

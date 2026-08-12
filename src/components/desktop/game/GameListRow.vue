@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import {
+  IconCheck,
   IconEdit,
   IconInfoCircle,
   IconLoader2,
@@ -11,6 +12,7 @@ import {
 
 import { useLibraryStore } from "@/stores/library";
 import { useAppSettingsStore } from "@/stores/appSettings";
+import { useLibrarySelectionStore } from "@/stores/librarySelection";
 import { displayTitle, type Game } from "@/db";
 
 const props = defineProps<{ game: Game }>();
@@ -18,21 +20,35 @@ const props = defineProps<{ game: Game }>();
 const { t } = useI18n();
 const library = useLibraryStore();
 const appSettings = useAppSettingsStore();
+const selection = useLibrarySelectionStore();
 
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
 const title = computed(() => displayTitle(props.game, appSettings.locale));
+const selected = computed(() => selection.isSelected(props.game.id));
+
+/** Milestone 25 batch ops - same reasoning as GameCard.vue's identical handler: the whole row
+ *  becomes one toggle target in selection mode, .actions hidden entirely below rather than
+ *  left reachable alongside it. */
+function onRowClick() {
+  if (selection.active) selection.toggle(props.game.id);
+}
 </script>
 
 <template>
   <div
     class="list-row-shell"
-    :class="{ 'no-cover': !game.cover_art_url }"
+    :class="{ 'no-cover': !game.cover_art_url, selected: selection.active && selected, selectable: selection.active }"
     :style="game.cover_art_url ? { backgroundImage: `url(${game.cover_art_url})` } : undefined"
+    @click="onRowClick"
   >
     <div class="scrim" />
 
     <div v-if="fetchingMetadata" class="fetch-overlay">
       <IconLoader2 :size="18" :stroke-width="1.75" class="spin" />
+    </div>
+
+    <div v-if="selection.active" class="select-check" :class="{ checked: selected }">
+      <IconCheck v-if="selected" :size="12" :stroke-width="2.5" />
     </div>
 
     <div class="info">
@@ -46,22 +62,22 @@ const title = computed(() => displayTitle(props.game, appSettings.locale));
       </div>
     </div>
 
-    <div class="actions icon-action-row">
-      <button class="play" :title="t('gameCard.play')" @click="library.launchGame(game)">
+    <div v-if="!selection.active" class="actions icon-action-row">
+      <button class="play" :title="t('gameCard.play')" @click.stop="library.launchGame(game)">
         <IconPlayerPlay :size="15" :stroke-width="1.75" />
       </button>
       <button
         class="fetch-metadata"
         :title="t('gameCard.fetchMetadata')"
         :disabled="fetchingMetadata"
-        @click="library.fetchMetadata(game)"
+        @click.stop="library.fetchMetadata(game)"
       >
         <IconInfoCircle :size="15" :stroke-width="1.75" />
       </button>
-      <button class="edit" :title="t('gameCard.edit')" @click="library.openDetail(game)">
+      <button class="edit" :title="t('gameCard.edit')" @click.stop="library.openDetail(game)">
         <IconEdit :size="15" :stroke-width="1.75" />
       </button>
-      <button class="remove" :title="t('gameCard.remove')" @click="library.deleteGame(game.id)">
+      <button class="remove" :title="t('gameCard.remove')" @click.stop="library.deleteGame(game.id)">
         <IconTrash :size="15" :stroke-width="1.75" />
       </button>
     </div>
@@ -84,6 +100,37 @@ const title = computed(() => displayTitle(props.game, appSettings.locale));
 
 .list-row-shell:hover {
   min-height: 6rem;
+}
+
+/* Milestone 25 batch ops - box-shadow ring (not border) so it doesn't shift the row's own
+   padding/box, same reasoning as GameCard.vue's identical .selected rule. */
+.list-row-shell.selected {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.list-row-shell.selectable {
+  cursor: pointer;
+}
+
+.select-check {
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.select-check.checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .list-row-shell.no-cover {

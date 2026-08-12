@@ -5701,3 +5701,47 @@ never ended up needing a text label).
 
 Batch operations (multi-select, batch tag/collection/remove actions, selection UI) remain
 unstarted - a separable, larger workstream from filter/sort, left for a following pass.
+
+**Batch operations.** New `stores/librarySelection.ts`: `active` (boolean, whether selection
+mode is on) and `selectedIds` (`Set<number>`, always reassigned rather than mutated in place -
+`.add()`/`.delete()` directly on the existing Set wouldn't trigger Vue reactivity for anything
+keyed off the ref). A separate store from `library.ts` for the same reason tags/collections
+already got their own stores - selection is interaction/UI-mode state, not library data.
+
+`GameCard.vue`/`GameListRow.vue`: while `selection.active`, the whole card/row becomes a single
+click-to-toggle target (`onCardClick`/`onRowClick`, gated on `selection.active` so normal
+browsing is unaffected) and the play/edit/remove action footer is hidden entirely rather than
+just visually deprioritized - an accidental single-game action mid-batch-session would be easy
+to trigger if the buttons stayed reachable underneath. A small circular checkbox badge
+(`.select-check`) is always visible (not hover-revealed) while selection mode is active, so
+selection state is scannable across the whole grid/list at a glance. Confirmed via an Explore
+pass first that neither component had an existing click-to-navigate handler on the card/row
+body - nothing to conflict with.
+
+Bulk store methods on `tags.ts`/`collections.ts` (`addToGames`/`removeFromGames`) and
+`library.ts` (`deleteGames`) all follow the same shape: loop the raw repo call per game, then
+call the store's own refresh function exactly once after the loop - looping the *existing*
+single-item store action instead would have refreshed once per game, an O(n) waste for an O(1)-
+refreshable operation.
+
+`GameFilters.vue` UI: a selection-mode toggle button (`IconSquareCheck`, same
+`.view-toggle-button` look as the view-mode/sort triggers) next to the view-mode toggle. While
+active, a "N selected" bar appears with Select All (`selection.selectAll` over
+`library.filteredGames`, so Select All respects whatever search/tag/collection filter is
+currently applied) and Clear buttons, plus batch-action icon buttons: Add Tag and Add to
+Collection (both `DropdownMenu`-based pickers listing `tags.allTags`/`collections.allCollections`,
+right-aligned via the same `:deep(.batch-menu-panel) { left: auto; right: 0 }` override every
+other custom dropdown in this file already uses), Remove from Library (`library.deleteGames`
+then `selection.exit()`, no confirmation dialog - matches the existing single-game delete
+button's lack of one), and an explicit exit button. All three action buttons disable when
+nothing is selected.
+
+Scoped this pass to *add*-only for tag/collection (not remove-specific-tag/remove-from-specific-
+collection, despite the milestone text listing both directions) - a bulk "remove tag" picker
+would need to be scoped to tags common to *all* selected games (a real design question: show the
+union, or only the intersection?) rather than being a mechanical mirror of the add case. Left as
+an explicit follow-up rather than guessing at that design call silently.
+
+New `filters.toggleSelectionMode`/`selectionCount`/`selectAll`/`clearSelection`/`addTag`/
+`addToCollection`/`noTagsYet`/`noCollectionsYet`/`removeFromLibrary`/`exitSelectionMode` i18n
+keys across all 10 locales.

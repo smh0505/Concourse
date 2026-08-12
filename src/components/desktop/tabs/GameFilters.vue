@@ -1,27 +1,62 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   IconAdjustmentsHorizontal,
   IconChartBar,
   IconClock,
   IconClockPlus,
+  IconFolderPlus,
   IconLayoutGrid,
   IconList,
   IconSortAscendingLetters,
+  IconSquareCheck,
+  IconTag,
+  IconTrash,
+  IconX,
 } from "@tabler/icons-vue";
 
 import { useLibraryStore, type SortOption } from "@/stores/library";
+import { useLibrarySelectionStore } from "@/stores/librarySelection";
 import { useTagsStore } from "@/stores/tags";
 import { useCollectionsStore } from "@/stores/collections";
 import DropdownMenu from "@/components/desktop/common/DropdownMenu.vue";
 
 const { t } = useI18n();
 const library = useLibraryStore();
+const selection = useLibrarySelectionStore();
 const tags = useTagsStore();
 const collections = useCollectionsStore();
 
 const sortMenuOpen = ref(false);
+const addTagMenuOpen = ref(false);
+const addCollectionMenuOpen = ref(false);
+
+// Games backing the current selection - looked up from the full library, not filteredGames,
+// so a selection stays intact (and batch actions still target the right games) even if the
+// search/filter/sort state changes after selecting.
+const selectedGames = computed(() =>
+  library.games.filter((game) => selection.isSelected(game.id)),
+);
+
+function selectAll() {
+  selection.selectAll(library.filteredGames.map((game) => game.id));
+}
+
+function addTagToSelection(name: string) {
+  tags.addToGames(selectedGames.value, [name]);
+  addTagMenuOpen.value = false;
+}
+
+function addCollectionToSelection(name: string) {
+  collections.addToGames(selectedGames.value, [name]);
+  addCollectionMenuOpen.value = false;
+}
+
+async function removeSelectionFromLibrary() {
+  await library.deleteGames([...selection.selectedIds]);
+  selection.exit();
+}
 
 const SORT_OPTION_ICONS: Record<SortOption, typeof IconClock> = {
   title: IconSortAscendingLetters,
@@ -83,6 +118,86 @@ function selectSortOption(option: SortOption) {
         <IconList v-if="library.viewMode === 'grid'" :size="18" :stroke-width="1.75" />
         <IconLayoutGrid v-else :size="18" :stroke-width="1.75" />
       </button>
+      <button
+        type="button"
+        class="view-toggle-button"
+        :class="{ 'accent-active': selection.active }"
+        :title="t('filters.toggleSelectionMode')"
+        @click="selection.active ? selection.exit() : selection.enter()"
+      >
+        <IconSquareCheck :size="18" :stroke-width="1.75" />
+      </button>
+    </div>
+    <div class="selection-bar" v-if="selection.active">
+      <span class="selection-count">{{ t("filters.selectionCount", { count: selection.count }) }}</span>
+      <button type="button" class="link-button" @click="selectAll">{{ t("filters.selectAll") }}</button>
+      <button type="button" class="link-button" @click="selection.clear()">{{ t("filters.clearSelection") }}</button>
+      <div class="selection-actions">
+        <DropdownMenu v-model:open="addTagMenuOpen" wrap-class="batch-menu-wrap" panel-class="batch-menu-panel">
+          <template #trigger="{ open: menuOpen }">
+            <button
+              type="button"
+              class="view-toggle-button"
+              :class="{ 'accent-active': menuOpen }"
+              :disabled="!selection.count"
+              :title="t('filters.addTag')"
+              @click="addTagMenuOpen = !menuOpen"
+            >
+              <IconTag :size="18" :stroke-width="1.75" />
+            </button>
+          </template>
+          <div class="batch-options">
+            <button
+              v-for="tag in tags.allTags"
+              :key="tag"
+              type="button"
+              class="batch-option"
+              @click="addTagToSelection(tag)"
+            >
+              {{ tag }}
+            </button>
+            <p v-if="!tags.allTags.length" class="batch-empty">{{ t("filters.noTagsYet") }}</p>
+          </div>
+        </DropdownMenu>
+        <DropdownMenu v-model:open="addCollectionMenuOpen" wrap-class="batch-menu-wrap" panel-class="batch-menu-panel">
+          <template #trigger="{ open: menuOpen }">
+            <button
+              type="button"
+              class="view-toggle-button"
+              :class="{ 'accent-active': menuOpen }"
+              :disabled="!selection.count"
+              :title="t('filters.addToCollection')"
+              @click="addCollectionMenuOpen = !menuOpen"
+            >
+              <IconFolderPlus :size="18" :stroke-width="1.75" />
+            </button>
+          </template>
+          <div class="batch-options">
+            <button
+              v-for="name in collections.allCollections"
+              :key="name"
+              type="button"
+              class="batch-option"
+              @click="addCollectionToSelection(name)"
+            >
+              {{ name }}
+            </button>
+            <p v-if="!collections.allCollections.length" class="batch-empty">{{ t("filters.noCollectionsYet") }}</p>
+          </div>
+        </DropdownMenu>
+        <button
+          type="button"
+          class="view-toggle-button remove-selection"
+          :disabled="!selection.count"
+          :title="t('filters.removeFromLibrary')"
+          @click="removeSelectionFromLibrary"
+        >
+          <IconTrash :size="18" :stroke-width="1.75" />
+        </button>
+        <button type="button" class="view-toggle-button" :title="t('filters.exitSelectionMode')" @click="selection.exit()">
+          <IconX :size="18" :stroke-width="1.75" />
+        </button>
+      </div>
     </div>
     <div class="tags" v-if="tags.allTags.length">
       <span
@@ -212,6 +327,82 @@ function selectSortOption(option: SortOption) {
 }
 
 /* .accent-active (shared, styles.css) supplies the selected option's own highlight. */
+
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.selection-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.remove-selection:not(:disabled):hover {
+  color: var(--color-danger, #e05555);
+}
+
+/* Same left/right-alignment override as .sort-menu-wrap/.sort-menu-panel above. */
+.batch-menu-wrap {
+  position: relative;
+  display: flex;
+}
+
+.batch-menu-wrap :deep(.batch-menu-panel) {
+  left: auto;
+  right: 0;
+}
+
+.batch-options {
+  display: flex;
+  flex-direction: column;
+  min-width: 10rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  padding: var(--space-2);
+}
+
+.batch-option {
+  text-align: left;
+  padding: var(--space-2);
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  cursor: pointer;
+}
+
+.batch-option:hover {
+  background: var(--color-surface0);
+}
+
+.batch-empty {
+  padding: var(--space-2);
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin: 0;
+}
 
 .tags {
   display: flex;

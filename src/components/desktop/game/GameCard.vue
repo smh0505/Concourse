@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
+  IconCheck,
   IconEdit,
   IconInfoCircle,
   IconLoader2,
@@ -11,6 +12,7 @@ import {
 
 import { useLibraryStore } from "@/stores/library";
 import { useAppSettingsStore } from "@/stores/appSettings";
+import { useLibrarySelectionStore } from "@/stores/librarySelection";
 import { useBalloonAnchor } from "@/composables/useBalloonAnchor";
 import { CardVisualRenderer } from "@/theme/cardVisualAst";
 import { useActiveCardVisual } from "@/theme/cardVisualRegistry";
@@ -21,19 +23,36 @@ const props = defineProps<{ game: Game }>();
 const { t } = useI18n();
 const library = useLibraryStore();
 const appSettings = useAppSettingsStore();
+const selection = useLibrarySelectionStore();
 const activeCardVisual = useActiveCardVisual();
 
 const fetchingMetadata = computed(() => library.fetchingMetadataFor === props.game.id);
 const playtimeMinutes = computed(() => Math.round(props.game.total_playtime / 60));
 const title = computed(() => displayTitle(props.game, appSettings.locale));
+const selected = computed(() => selection.isSelected(props.game.id));
 
 const cardEl = ref<HTMLElement | null>(null);
 const balloonEl = ref<HTMLElement | null>(null);
 const { anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(cardEl, balloonEl);
+
+/** Milestone 25 batch ops - the whole card becomes one big toggle target while selection mode
+ *  is active, instead of leaving the play/edit/remove footer reachable (which would make a
+ *  bulk-select session too easy to derail with an accidental single-game action - the footer
+ *  is hidden entirely below while selection.active, see the template). */
+function onCardClick() {
+  if (selection.active) selection.toggle(props.game.id);
+}
 </script>
 
 <template>
-  <div ref="cardEl" class="card" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave">
+  <div
+    ref="cardEl"
+    class="card"
+    :class="{ selected: selection.active && selected, selectable: selection.active }"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
+    @click="onCardClick"
+  >
     <div class="card-visual">
       <CardVisualRenderer v-if="activeCardVisual" :node="activeCardVisual" :game="game" />
       <template v-else>
@@ -45,22 +64,26 @@ const { anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(c
         <IconLoader2 :size="24" :stroke-width="1.75" class="spin" />
       </div>
 
-      <div class="footer icon-action-row">
-        <button class="play" :title="t('gameCard.play')" @click="library.launchGame(game)">
+      <div v-if="selection.active" class="select-check" :class="{ checked: selected }">
+        <IconCheck v-if="selected" :size="14" :stroke-width="2.5" />
+      </div>
+
+      <div v-else class="footer icon-action-row">
+        <button class="play" :title="t('gameCard.play')" @click.stop="library.launchGame(game)">
           <IconPlayerPlay :size="15" :stroke-width="1.75" />
         </button>
         <button
           class="fetch-metadata"
           :title="t('gameCard.fetchMetadata')"
           :disabled="fetchingMetadata"
-          @click="library.fetchMetadata(game)"
+          @click.stop="library.fetchMetadata(game)"
         >
           <IconInfoCircle :size="15" :stroke-width="1.75" />
         </button>
-        <button class="edit" :title="t('gameCard.edit')" @click="library.openDetail(game)">
+        <button class="edit" :title="t('gameCard.edit')" @click.stop="library.openDetail(game)">
           <IconEdit :size="15" :stroke-width="1.75" />
         </button>
-        <button class="remove" :title="t('gameCard.remove')" @click="library.deleteGame(game.id)">
+        <button class="remove" :title="t('gameCard.remove')" @click.stop="library.deleteGame(game.id)">
           <IconTrash :size="15" :stroke-width="1.75" />
         </button>
       </div>
@@ -92,6 +115,41 @@ const { anchor: balloonAnchor, onMouseEnter, onMouseLeave } = useBalloonAnchor(c
 .card:hover {
   transform: scale(1.06);
   z-index: 2;
+}
+
+/* Milestone 25 batch ops - a ring instead of the pill-style .accent-active fill, since a fill
+   would obscure the cover art underneath; box-shadow (not border) so it doesn't shift layout
+   or get clipped by .card-visual's own border-radius the way an inset border sometimes can. */
+.card.selected {
+  box-shadow: 0 0 0 3px var(--color-accent);
+  border-radius: var(--card-radius, var(--radius-md));
+}
+
+.card.selectable {
+  cursor: pointer;
+}
+
+.select-check {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  /* Always visible while selection mode is active (not hover-revealed like .footer) - the
+     whole point is being able to see selection state across every card at a glance. */
+}
+
+.select-check.checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .card-visual {

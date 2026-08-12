@@ -45,6 +45,19 @@ export const useCollectionsStore = defineStore("collections", () => {
     await refreshSelf();
   }
 
+  /** Milestone 25 batch ops - see tags.ts's identical addToGames/removeFromGames for why this
+   *  loops the raw repo call instead of reusing addToGame/removeFromGame (each of those calls
+   *  refreshSelf() itself). */
+  async function addToGames(games: Game[], names: string[]) {
+    for (const game of games) await collectionRepo.addToGame(game.id, names);
+    await refreshSelf();
+  }
+
+  async function removeFromGames(games: Game[], name: string) {
+    for (const game of games) await collectionRepo.removeFromGame(game.id, name);
+    await refreshSelf();
+  }
+
   async function create(name: string) {
     await collectionRepo.create(name);
     await refreshSelf();
@@ -73,6 +86,8 @@ export const useCollectionsStore = defineStore("collections", () => {
     matches,
     addToGame,
     removeFromGame,
+    addToGames,
+    removeFromGames,
     create,
     rename,
     remove,

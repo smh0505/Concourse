@@ -471,18 +471,21 @@ install-by-URL, no WASM/code execution) rather than the WASM tier.
   `loader.ts`/`GamepadRemapSettings.vue`; absent falls back to the component's own built-in
   default layout/shape, so `8bitdo-micro`'s existing manifest needed no changes
 
-## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort (in progress)
+## Milestone 25 — Library Functions Update: Batch Ops + Filter/Sort
 `GameFilters.vue` today only has search + tag/collection pill toggles (`library.ts`'s
 `filteredGames` filters on search text and the active tag/collection, no sort at all) - one
 game at a time is the only way to tag/remove/collection-assign. Two workstreams, scoped
 together since both touch the same filter-bar area and library selection state.
 
 **Batch operations.**
-- [ ] Multi-select mode for the grid/list view (checkbox or ctrl/shift-click) - new selection
-  state, likely `library.ts` or a new `stores/librarySelection.ts`
-- [ ] Batch actions on a selection: add/remove tag, assign/remove collection, remove from
-  library
-- [ ] Selection UI affordance (a "N selected" bar, Select All/Clear)
+- [x] Multi-select mode for the grid/list view (whole-card/row click-to-toggle while active) -
+  new `stores/librarySelection.ts` (`active`/`selectedIds`), toggle button + checkbox UI in
+  `GameCard.vue`/`GameListRow.vue`
+- [x] Batch actions on a selection: add tag, add to collection, remove from library
+  (`tags.addToGames`/`collections.addToGames`/`library.deleteGames`, all loop-the-repo-call-
+  then-refresh-once). Remove-specific-tag/remove-from-specific-collection deliberately deferred
+  to a follow-up pass - see devlog
+- [x] Selection UI affordance (a "N selected" bar, Select All/Clear) in `GameFilters.vue`
 
 **Filter/sort expansion.**
 - [x] Platform filter shipped early, via a `platform:steam` search-box token (`filteredGames`

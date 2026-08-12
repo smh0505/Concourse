@@ -163,7 +163,17 @@
       "recentlyPlayed": "最近游玩",
       "mostPlayed": "最多游玩",
       "recentlyAdded": "最近添加"
-    }
+    },
+    "toggleSelectionMode": "选择游戏",
+    "selectionCount": "已选择 {count} 个",
+    "selectAll": "全选",
+    "clearSelection": "清除选择",
+    "addTag": "添加标签",
+    "addToCollection": "添加到收藏集",
+    "noTagsYet": "暂无标签",
+    "noCollectionsYet": "暂无收藏集",
+    "removeFromLibrary": "从库中移除",
+    "exitSelectionMode": "退出选择模式"
   },
   "stats": {
     "gamesInLibrary": "库中游戏数",

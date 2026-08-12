@@ -163,7 +163,17 @@
       "recentlyPlayed": "最近プレイしたゲーム",
       "mostPlayed": "最もプレイされたゲーム",
       "recentlyAdded": "最近追加した項目"
-    }
+    },
+    "toggleSelectionMode": "ゲームを選択",
+    "selectionCount": "{count}件選択中",
+    "selectAll": "すべて選択",
+    "clearSelection": "選択解除",
+    "addTag": "タグを追加",
+    "addToCollection": "コレクションに追加",
+    "noTagsYet": "タグはまだありません",
+    "noCollectionsYet": "コレクションはまだありません",
+    "removeFromLibrary": "ライブラリから削除",
+    "exitSelectionMode": "選択モードを終了"
   },
   "stats": {
     "gamesInLibrary": "ライブラリのゲーム数",

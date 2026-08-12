@@ -8,6 +8,7 @@ export * from "./appUpdate";
 export * from "./collections";
 export * from "./controllerMapping";
 export * from "./library";
+export * from "./librarySelection";
 export * from "./metadataProviders";
 export * from "./pluginInstall";
 export * from "./pluginUpdates";

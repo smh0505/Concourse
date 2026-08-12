@@ -163,7 +163,17 @@
       "recentlyPlayed": "Недавно сыграно",
       "mostPlayed": "Больше всего сыграно",
       "recentlyAdded": "Недавно добавлены"
-    }
+    },
+    "toggleSelectionMode": "Выбрать игры",
+    "selectionCount": "Выбрано: {count}",
+    "selectAll": "Выбрать всё",
+    "clearSelection": "Снять выбор",
+    "addTag": "Добавить тег",
+    "addToCollection": "Добавить в коллекцию",
+    "noTagsYet": "Пока нет тегов",
+    "noCollectionsYet": "Пока нет коллекций",
+    "removeFromLibrary": "Удалить из библиотеки",
+    "exitSelectionMode": "Выйти из режима выбора"
   },
   "stats": {
     "gamesInLibrary": "Игр в библиотеке",

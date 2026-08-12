@@ -179,6 +179,13 @@ onBeforeUnmount(() => unlistenShown?.());
   flex-direction: column;
   padding: var(--space-2);
   gap: 0.15rem;
+  /* Same token/anchoring technique as the main window's sticky bars (styles.css's
+     --background-sticky) - falls back to --color-mantle (matching .overlay's own base) for
+     themes that don't set a pattern. background-attachment: fixed anchors it to the window's
+     own viewport rather than this scrolling box, so the pattern stays put as results scroll
+     instead of scrolling along with them. */
+  background: var(--content-background, var(--color-mantle));
+  background-attachment: fixed;
 }
 
 .result {

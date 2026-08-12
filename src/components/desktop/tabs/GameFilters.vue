@@ -151,14 +151,14 @@ function selectSortOption(option: SortOption) {
 
 /* .view-toggle-button (shared, styles.css) supplies this rule's entire look. */
 
-/* display:flex + align-items:center so the trigger button centers vertically within
-   .search-row's stretched flex height, same as .view-toggle-button itself does as a direct
-   flex child - without this, DropdownMenu's plain (block, unstretched-content) wrapper div
-   left the button sitting top-anchored instead of centered like its view-mode sibling. */
+/* display:flex with the *default* align-items:stretch (not center - center only aligns the
+   button at its own short intrinsic height, it doesn't grow it) so the trigger button stretches
+   to .search-row's full flex height, same as .view-toggle-button itself does as a direct flex
+   child - without this, DropdownMenu's plain wrapper div left the button shorter than its
+   view-mode sibling. */
 .sort-menu-wrap {
   position: relative;
   display: flex;
-  align-items: center;
 }
 
 /* Right-aligned to the trigger instead of DropdownMenu's own default left:0 - the trigger sits

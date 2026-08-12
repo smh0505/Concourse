@@ -9,15 +9,15 @@ numbered as a continuing milestone sequence for the same devlog cross-reference 
 
 **2.0.0**: user decision (no breaking change forcing it) - Milestone 21 was the last one counted
 under the 1.x line (closed at 1.7.0); Milestone 22's close bumped the app to 2.0.0, shipped.
-Milestones 23 (DLsite, scoped, unstarted) and 24-37 (brainstormed, unstarted) fall under the 2.x
+Milestones 23 (DLsite, scoped, unstarted) and 24-38 (brainstormed, unstarted) fall under the 2.x
 line along with 22 - none of them were required to close before 2.0.0 shipped, since 22 was the
 one that actually triggered it. The Icebox at the bottom of this file sits outside this numbering
 entirely, not counted toward either line.
 
-**3.0.0**: user decision (no breaking change forcing it, same as 2.0.0) - Milestone 31 is the
-last one counted under the 2.x line; Milestone 32's close will bump the app to 3.0.0, not yet
-shipped. Milestones 33-37 (brainstormed, unstarted) fall under the 3.x line along with 32 - none
-of them are required to close before 3.0.0 ships, since 32 is the one that will actually trigger
+**3.0.0**: user decision (no breaking change forcing it, same as 2.0.0) - Milestone 32 is the
+last one counted under the 2.x line; Milestone 33's close will bump the app to 3.0.0, not yet
+shipped. Milestones 34-38 (brainstormed, unstarted) fall under the 3.x line along with 33 - none
+of them are required to close before 3.0.0 ships, since 33 is the one that will actually trigger
 it.
 
 ## Milestone 1 — Core Library Foundation
@@ -491,23 +491,34 @@ migration without re-scanning every source plugin and redoing manual metadata ed
   (different install locations) - flag rather than silently break
 - [ ] Version the export format (so a future schema migration can still read an older export)
 
-## Milestone 28 — Discord Rich Presence Plugin (not started)
-Shows "Playing <game>" on the user's Discord status while a game is running - fits the existing
-plugin architecture, though Rich Presence is behavior tied to *any* running game, not one
-specific source/theme/metadata/controller, so it likely needs a new plugin kind (or a non-
-plugin, always-on feature) rather than forcing it into one of the four existing kinds.
-- [ ] Decide integration shape: new plugin kind (`presence`?) vs. a built-in non-plugin feature,
-  given there's only ever one Discord client to report to (unlike source/metadata's multi-enable
-  model)
+## Milestone 28 — Discord Rich Presence (not started)
+Shows "Playing <game>" on the user's Discord status while a game is running - a built-in
+feature, not a plugin: there's only ever one Discord client to report to, unlike source/
+metadata's multi-enable model. See Milestone 29 for generalizing this into a real presence
+plugin kind, if a second real target (Twitch/Slack/OBS webhook) is ever actually wanted.
 - [ ] Discord IPC/RPC integration (local Discord client, not a bot/webhook - no server-side
-  component)
+  component) - likely the `discord-rich-presence` crate
 - [ ] Wire into `launcher.rs`'s existing launch/session-end lifecycle (same hook playtime
   tracking already uses) to set/clear presence
 - [ ] Settings toggle (on/off, and per-game opt-out for privacy)
 - [ ] Handle Discord not running / IPC connection failure gracefully (feature quietly no-ops,
   not a hard error)
 
-## Milestone 29 — Multi-Library / Profile Support (not started)
+## Milestone 29 — Presence Plugin Type (not started)
+Generalizes Milestone 28's Discord-only integration into a real multi-enable plugin kind, if a
+second real presence target is ever actually wanted - Slack custom status, Twitch stream title/
+category, a generic "now playing" webhook for OBS overlays, or Steam's own custom rich-presence
+string. Unlike theme/controller's exclusive-single-active model, this would be multi-enable like
+source/metadata-provider - a user could reasonably want Discord and Twitch and an OBS webhook
+running at once. Deliberately deferred until a second concrete target exists - speculative
+architecture for a kind with exactly one implementation isn't worth building now.
+- [ ] New `PresencePlugin` interface (`activate(game)`/`deactivate()` or similar, mirroring the
+  launch-lifecycle hook Milestone 28 wires directly)
+- [ ] Manifest/loader wiring, matching the existing four-kind pattern
+- [ ] Migrate Milestone 28's built-in Discord integration into this kind's first real plugin
+- [ ] Settings UI: multi-enable checkboxes, same as the Source/Metadata Provider tabs
+
+## Milestone 30 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a
 filtered "kids mode" view. Real schema/architecture question, not just a UI toggle - today
 there's exactly one SQLite DB (`library.db`) and no concept of "whose library this is."
@@ -520,7 +531,7 @@ there's exactly one SQLite DB (`library.db`) and no concept of "whose library th
 - [ ] "Kids mode" as a filtered view of one profile (age-rating/tag-based hide-list) vs. a real
   separate profile - decide which before building
 
-## Milestone 30 — Custom Launch Arguments Per Game (not started)
+## Milestone 31 — Custom Launch Arguments Per Game (not started)
 `launcher.rs`'s `launch_game` spawns `executable_path` bare - some games need `-windowed`,
 mod-loader flags, or other CLI args that currently have no home.
 - [ ] New `launch_args` column on `games` (migration)
@@ -529,9 +540,9 @@ mod-loader flags, or other CLI args that currently have no home.
 - [ ] Decide handling for URI-launched entries (`steam://`, etc.) - args likely don't apply the
   same way there
 
-## Milestone 31 — Pre-Launch Scripts/Hooks (not started)
+## Milestone 32 — Pre-Launch Scripts/Hooks (not started)
 Run a script before/after launch (mount a virtual drive, kill a background app, apply a mod) -
-builds on Milestone 30's launch-args groundwork but is a materially bigger trust/security
+builds on Milestone 31's launch-args groundwork but is a materially bigger trust/security
 surface (arbitrary script execution, not just CLI flags).
 - [ ] Decide trust model first - this is arbitrary code execution tied to a game entry, a
   bigger surface than anything in the existing WASM capability-gating model (Milestone 12)
@@ -542,7 +553,7 @@ surface (arbitrary script execution, not just CLI flags).
 - [ ] Explicit user-facing warning given the security surface - this isn't sandboxed like a
   plugin is
 
-## Milestone 32 — Game Notes/Journal (not started)
+## Milestone 33 — Game Notes/Journal (not started)
 Free-text per-game notes (playthrough progress, build order, "where I left off").
 - [ ] New `notes` column on `games` (migration) or a separate `game_notes` table if history/
   timestamps per note entry matter (a journal, not just one overwritable field)
@@ -550,7 +561,7 @@ Free-text per-game notes (playthrough progress, build order, "where I left off")
   field (`marked` + `DOMPurify.sanitize`, already wired for descriptions)
 - [ ] Decide: one note per game (simple) vs. a dated log (more journal-like, more schema)
 
-## Milestone 33 — Random Game Picker (not started)
+## Milestone 34 — Random Game Picker (not started)
 "Surprise me" button for a big backlog - optionally filtered ("something under 2 hours", by
 tag/collection).
 - [ ] Picker button (sidebar or library toolbar) - random selection from `filteredGames`
@@ -561,9 +572,9 @@ tag/collection).
 - [ ] Result presentation - jump straight to `GameDetail`, or a lightweight reveal
   animation/modal before committing to navigation
 
-## Milestone 34 — Recently-Removed / Trash Bin (not started)
+## Milestone 35 — Recently-Removed / Trash Bin (not started)
 Soft-delete with an undo window instead of immediate removal - more important once Milestone
-26's batch-remove ships (accidental mass-delete becomes much easier).
+25's batch-remove ships (accidental mass-delete becomes much easier).
 - [ ] Soft-delete: `deleted_at` column on `games` (migration) instead of a hard `DELETE`,
   filtered out of normal library queries
 - [ ] "Recently Removed" view (sidebar tab or a filter toggle) listing soft-deleted games with
@@ -573,7 +584,7 @@ Soft-delete with an undo window instead of immediate removal - more important on
   `pushAction()`, added for Milestone 19's update banner) - immediate undo without needing to
   visit the trash view at all
 
-## Milestone 35 — Time-Played Goals/Reminders (not started)
+## Milestone 36 — Time-Played Goals/Reminders (not started)
 "Haven't played X in 3 months" surfacing, or backlog-clearing nudges - encourages using the
 library rather than just cataloging it.
 - [ ] Decide trigger model: computed from existing `playtime_sessions`/`total_playtime` (no new
@@ -583,7 +594,7 @@ library rather than just cataloging it.
 - [ ] Decide whether this needs OS-level notifications (app must be running vs. a true
   background nudge) - likely app-open-only for a first pass
 
-## Milestone 36 — Touch/Mouse-as-Gamepad Input for Big Picture (not started)
+## Milestone 37 — Touch/Mouse-as-Gamepad Input for Big Picture (not started)
 Second Big Picture input method for handheld/tablet Windows devices without a physical
 controller - `useGamepadNav` today reads only real Gamepad API input via the active
 `ControllerMappingPlugin`.
@@ -594,7 +605,7 @@ controller - `useGamepadNav` today reads only real Gamepad API input via the act
 - [ ] Decide auto-detection (no real gamepad connected -> show virtual overlay) vs. a manual
   toggle in settings
 
-## Milestone 37 — Bulk Cover Art Auto-Crop/Regen Tool (not started)
+## Milestone 38 — Bulk Cover Art Auto-Crop/Regen Tool (not started)
 Bulk re-fetch/fix missing or misformatted art after adding many manual games at once, or after
 enabling a new metadata provider retroactively.
 - [ ] "Fetch metadata for all missing" bulk action (library-wide, not per-game) - reuses the

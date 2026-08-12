@@ -63,19 +63,35 @@ const PILL_ROW_LIMIT = 8;
 
 /** Capped preview per pill row (platform/tags/collections) - a row past PILL_ROW_LIMIT shows a
  *  "+N more" pill that opens pillModalOpen (below) instead of expanding in place, since the
- *  modal already lists every pill uncapped. Plain function (not a class - project convention)
- *  called once per row, wrapped in `reactive()` so its computed properties auto-unwrap in the
- *  template (`row.visible` instead of `row.visible.value`). */
-function usePillRow(items: () => string[]) {
+ *  modal already lists every pill uncapped. Selected pills sort to the front of the row before
+ *  the cap is applied, so toggling a pill outside the visible cap still surfaces it (and keeps
+ *  it visible) rather than leaving an active filter's pill hidden behind "+N more". Plain
+ *  function (not a class - project convention) called once per row, wrapped in `reactive()` so
+ *  its computed properties auto-unwrap in the template (`row.visible` instead of
+ *  `row.visible.value`). */
+function usePillRow(items: () => string[], isActive: (item: string) => boolean) {
   const list = computed(items);
-  const visible = computed(() => list.value.slice(0, PILL_ROW_LIMIT));
+  const visible = computed(() => {
+    const active = list.value.filter((item) => isActive(item));
+    const inactive = list.value.filter((item) => !isActive(item));
+    return [...active, ...inactive].slice(0, PILL_ROW_LIMIT);
+  });
   const hiddenCount = computed(() => Math.max(0, list.value.length - PILL_ROW_LIMIT));
   return reactive({ visible, hiddenCount });
 }
 
-const platformRow = usePillRow(() => library.allPlatforms);
-const tagRow = usePillRow(() => tags.allTags);
-const collectionRow = usePillRow(() => collections.allCollections);
+const platformRow = usePillRow(
+  () => library.allPlatforms,
+  (platform) => library.activePlatformFilters.has(platform),
+);
+const tagRow = usePillRow(
+  () => tags.allTags,
+  (tag) => tags.activeFilters.has(tag),
+);
+const collectionRow = usePillRow(
+  () => collections.allCollections,
+  (name) => collections.activeFilters.has(name),
+);
 
 const pillModalOpen = ref(false);
 

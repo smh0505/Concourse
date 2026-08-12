@@ -491,7 +491,9 @@ together since both touch the same filter-bar area and library selection state.
 - [x] Platform filter shipped early, via a `platform:steam` search-box token (`filteredGames`
   pulls it out of the normal title-search tokens) rather than the expandable panel below -
   simpler, ships now instead of waiting on the panel; covers the "platform" filter this section
-  originally scoped for the panel
+  originally scoped for the panel. Later joined by clickable platform pills (same row style as
+  Tags/Collections), plus matching `tag:`/`collection:` tokens - the search box is the single
+  source of truth for all three, pills just add/remove their own token in it
 - [x] Sort options (title A-Z, recently played, most played, recently added) - `filteredGames`
   gained a sort step after the existing filter step; new `PlaytimeRepository.getAllLastPlayed()`
   (unlimited version of the existing top-N `getRecentlyPlayed`) backs the recently-played sort,

@@ -139,14 +139,26 @@ export const useLibraryStore = defineStore("library", () => {
     { immediate: true },
   );
 
+  // Unique platform values actually present in the library, for GameFilters.vue's platform pill
+  // row - platform has no dedicated store (unlike tags/collections) since `Game.platform` is
+  // already first-class data, not a separate many-to-many table, so this lives here rather than
+  // a new store just to hold one derived list.
+  const allPlatforms = computed(() =>
+    [...new Set(games.value.map((g) => g.platform).filter((p): p is string => !!p))].sort(),
+  );
+  // The active platform: token, if any - GameFilters.vue's platform pills read this the same
+  // way tags.activeFilter/collections.activeFilter drive the tag/collection pills, even though
+  // platform has no dedicated store to hold it.
+  const activePlatformFilter = computed(() => parseSearchTokens(search.value).platformFilter);
+
   const filteredGames = computed(() => {
     const tags = useTagsStore();
     const collections = useCollectionsStore();
-    // tag:/collection: tokens now drive the Tags/Collections panel's own pill activeFilter
-    // directly (see the sync watcher below, which highlights the matching pill), so filtering
-    // by them here just means going through tags.matches()/collections.matches() like a normal
-    // pill click would - no separate token-based AND-filter needed alongside it. platform: has
-    // no pill equivalent, so it's still matched directly here.
+    // tag:/collection:/platform: tokens all drive their matching pill's highlighted state (see
+    // the sync watcher below for tag/collection, activePlatformFilter above for platform), so
+    // filtering here just means going through tags.matches()/collections.matches()/
+    // platformFilter comparison like a pill click would - one mechanism, not a token-based
+    // AND-filter running independently alongside pill state.
     const { platformFilter, titleQuery } = parseSearchTokens(search.value);
 
     const filtered = games.value.filter((game) => {
@@ -205,7 +217,7 @@ export const useLibraryStore = defineStore("library", () => {
    *  string; the watcher picks the change up and updates activeFilter from there, same as if
    *  the user had typed the token by hand. `value: null` removes the token (drops it from the
    *  search string entirely) rather than leaving an empty tag:"" behind. */
-  function setSearchToken(kind: "tag" | "collection", value: string | null) {
+  function setSearchToken(kind: "tag" | "collection" | "platform", value: string | null) {
     const prefix = `${kind}:`;
     const tokens = Array.from(search.value.matchAll(/(\w+:"[^"]*")|\S+/g), (m) => m[0]);
     const kept = tokens.filter((token) => !token.toLowerCase().startsWith(prefix));
@@ -473,6 +485,8 @@ export const useLibraryStore = defineStore("library", () => {
     viewMode,
     sortOption,
     filteredGames,
+    allPlatforms,
+    activePlatformFilter,
     refresh,
     setViewMode,
     setSortOption,

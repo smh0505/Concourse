@@ -203,6 +203,17 @@ function selectSortOption(option: SortOption) {
     </div>
     </div>
     </Transition>
+    <div class="tags" v-if="library.allPlatforms.length">
+      <span
+        class="tag-pill filter-tag"
+        :class="{ 'accent-active': library.activePlatformFilter === platform }"
+        v-for="platform in library.allPlatforms"
+        :key="platform"
+        @click="library.setSearchToken('platform', library.activePlatformFilter === platform ? null : platform)"
+      >
+        {{ platform }}
+      </span>
+    </div>
     <div class="tags" v-if="tags.allTags.length">
       <span
         class="tag-pill filter-tag"

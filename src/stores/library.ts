@@ -16,7 +16,7 @@ import { i18n } from "@/i18n";
 import { useMetadataProviderStore } from "./metadataProviders";
 import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
-import { useTagsStore } from "./tags";
+import { useTagsStore, type PillMatchMode } from "./tags";
 import { useCollectionsStore } from "./collections";
 
 const VIEW_MODE_SETTING = "view_mode";
@@ -151,12 +151,22 @@ export const useLibraryStore = defineStore("library", () => {
   // The active platform: tokens, if any - GameFilters.vue's platform pills read this the same
   // way tags.activeFilters/collections.activeFilters drive the tag/collection pills, even
   // though platform has no dedicated store to hold it. A Set (like those two) for O(1)
-  // membership checks and OR-within-kind semantics, canonicalized against allPlatforms the same
-  // way the watcher above canonicalizes tag/collection casing.
+  // membership checks, canonicalized against allPlatforms the same way the watcher above
+  // canonicalizes tag/collection casing.
   const activePlatformFilters = computed(() => {
     const { platformFilters } = parseSearchTokens(search.value);
     return new Set(allPlatforms.value.filter((p) => platformFilters.includes(p.toLowerCase())));
   });
+  // Same or/and toggle as tags.ts/collections.ts's matchMode, plain local state here since
+  // platform has no dedicated store. Note "and" is honest but not very useful for platform
+  // specifically - Game.platform is a single value, not an array like tags/collections, so
+  // selecting more than one platform under "and" can never match anything (a game can't be
+  // "steam" and "gog" at once). Still offered for consistency across all three pill kinds
+  // rather than special-casing platform's UI to be the odd one out.
+  const platformMatchMode = ref<PillMatchMode>("or");
+  function setPlatformMatchMode(mode: PillMatchMode) {
+    platformMatchMode.value = mode;
+  }
 
   const filteredGames = computed(() => {
     const tags = useTagsStore();
@@ -169,8 +179,12 @@ export const useLibraryStore = defineStore("library", () => {
     const { platformFilters, titleQuery } = parseSearchTokens(search.value);
 
     const filtered = games.value.filter((game) => {
+      const gamePlatform = (game.platform ?? "").toLowerCase();
       const matchesPlatform =
-        platformFilters.length === 0 || platformFilters.includes((game.platform ?? "").toLowerCase());
+        platformFilters.length === 0 ||
+        (platformMatchMode.value === "and"
+          ? platformFilters.every((p) => p === gamePlatform)
+          : platformFilters.includes(gamePlatform));
       const matchesSearch = !titleQuery || game.title.toLowerCase().includes(titleQuery);
       return matchesPlatform && matchesSearch && tags.matches(game.id) && collections.matches(game.id);
     });
@@ -498,6 +512,8 @@ export const useLibraryStore = defineStore("library", () => {
     filteredGames,
     allPlatforms,
     activePlatformFilters,
+    platformMatchMode,
+    setPlatformMatchMode,
     refresh,
     setViewMode,
     setSortOption,

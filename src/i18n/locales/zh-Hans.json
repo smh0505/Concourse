@@ -178,7 +178,10 @@
     "browseFilters": "浏览筛选条件",
     "platformsHeading": "平台",
     "tagsHeading": "标签",
-    "collectionsHeading": "收藏集"
+    "collectionsHeading": "收藏集",
+    "matchAny": "任一",
+    "matchAll": "全部",
+    "matchModeHint": "切换此处多选时是需要任一项还是全部匹配"
   },
   "stats": {
     "gamesInLibrary": "库中游戏数",

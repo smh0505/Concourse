@@ -4,16 +4,20 @@ import { ref } from "vue";
 import { tags as tagRepo, type Game } from "@/db";
 import { useLibraryStore } from "./library";
 
+export type PillMatchMode = "or" | "and";
+
 /** Per-game tag assignment, the tag list, and the library's active tag filter - split out of
  *  library.ts once tags grew their own dedicated "Tags" manager tab, a genuinely separate
  *  domain from core game CRUD/launch, not just "a lot of library actions." */
 export const useTagsStore = defineStore("tags", () => {
   const gameTags = ref<Record<number, string[]>>({});
   const allTags = ref<string[]>([]);
-  // A Set (not a single value) - multiple tag pills can be active at once, OR'd together (a
-  // game matches if it carries *any* selected tag, not all of them - narrowing further than
-  // that is what stacking a second facet, like a collection filter, is for).
+  // A Set (not a single value) - multiple tag pills can be active at once. Combined per
+  // matchMode: "or" (default - a game matches if it carries *any* selected tag) or "and" (must
+  // carry every selected tag). Different kinds (tag vs. collection vs. platform) always AND
+  // together regardless of this - matchMode only governs multiple pills within this one kind.
   const activeFilters = ref<Set<string>>(new Set());
+  const matchMode = ref<PillMatchMode>("or");
 
   /** Takes the current game list from `useLibraryStore` rather than owning it - tags don't
    *  know which games exist, only which tags each one carries. */
@@ -32,10 +36,16 @@ export const useTagsStore = defineStore("tags", () => {
     activeFilters.value = new Set(tags);
   }
 
+  function setMatchMode(mode: PillMatchMode) {
+    matchMode.value = mode;
+  }
+
   function matches(gameId: number): boolean {
     if (activeFilters.value.size === 0) return true;
     const gTags = gameTags.value[gameId] ?? [];
-    return gTags.some((t) => activeFilters.value.has(t));
+    return matchMode.value === "and"
+      ? [...activeFilters.value].every((t) => gTags.includes(t))
+      : gTags.some((t) => activeFilters.value.has(t));
   }
 
   /** Re-runs just this store's own refresh - a tag mutation never changes which games exist,
@@ -94,8 +104,10 @@ export const useTagsStore = defineStore("tags", () => {
     gameTags,
     allTags,
     activeFilters,
+    matchMode,
     refresh,
     setFilters,
+    setMatchMode,
     matches,
     addToGame,
     removeFromGame,

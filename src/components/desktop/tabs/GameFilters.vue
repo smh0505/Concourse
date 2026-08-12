@@ -270,7 +270,17 @@ function selectSortOption(option: SortOption) {
     <BaseModal :open="pillModalOpen" :title="t('filters.browseFilters')" @close="pillModalOpen = false">
       <template #body>
         <div class="modal-pill-section" v-if="library.allPlatforms.length">
-          <h3>{{ t("filters.platformsHeading") }}</h3>
+          <div class="modal-pill-section-header">
+            <h3>{{ t("filters.platformsHeading") }}</h3>
+            <button
+              type="button"
+              class="match-mode-toggle"
+              :title="t('filters.matchModeHint')"
+              @click="library.setPlatformMatchMode(library.platformMatchMode === 'and' ? 'or' : 'and')"
+            >
+              {{ library.platformMatchMode === "and" ? t("filters.matchAll") : t("filters.matchAny") }}
+            </button>
+          </div>
           <div class="tags">
             <span
               class="tag-pill filter-tag"
@@ -284,7 +294,17 @@ function selectSortOption(option: SortOption) {
           </div>
         </div>
         <div class="modal-pill-section" v-if="tags.allTags.length">
-          <h3>{{ t("filters.tagsHeading") }}</h3>
+          <div class="modal-pill-section-header">
+            <h3>{{ t("filters.tagsHeading") }}</h3>
+            <button
+              type="button"
+              class="match-mode-toggle"
+              :title="t('filters.matchModeHint')"
+              @click="tags.setMatchMode(tags.matchMode === 'and' ? 'or' : 'and')"
+            >
+              {{ tags.matchMode === "and" ? t("filters.matchAll") : t("filters.matchAny") }}
+            </button>
+          </div>
           <div class="tags">
             <span
               class="tag-pill filter-tag"
@@ -298,7 +318,17 @@ function selectSortOption(option: SortOption) {
           </div>
         </div>
         <div class="modal-pill-section" v-if="collections.allCollections.length">
-          <h3>{{ t("filters.collectionsHeading") }}</h3>
+          <div class="modal-pill-section-header">
+            <h3>{{ t("filters.collectionsHeading") }}</h3>
+            <button
+              type="button"
+              class="match-mode-toggle"
+              :title="t('filters.matchModeHint')"
+              @click="collections.setMatchMode(collections.matchMode === 'and' ? 'or' : 'and')"
+            >
+              {{ collections.matchMode === "and" ? t("filters.matchAll") : t("filters.matchAny") }}
+            </button>
+          </div>
           <div class="tags">
             <span
               class="tag-pill filter-tag"
@@ -556,13 +586,38 @@ function selectSortOption(option: SortOption) {
   opacity: 1;
 }
 
-.modal-pill-section h3 {
-  margin: 0 0 var(--space-2);
+.modal-pill-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.modal-pill-section-header h3 {
+  margin: 0;
   font-size: 0.85rem;
   opacity: 0.8;
 }
 
 .modal-pill-section + .modal-pill-section {
   margin-top: var(--space-3);
+}
+
+/* Deliberately distinct from both .filter-tag and .more-pill - this toggles how this section's
+   own selected pills combine (or/and), not a filter value or a navigation action. */
+.match-mode-toggle {
+  cursor: pointer;
+  background: var(--color-surface0);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  color: var(--color-text);
+  opacity: 0.8;
+}
+
+.match-mode-toggle:hover {
+  opacity: 1;
 }
 </style>

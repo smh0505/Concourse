@@ -3,15 +3,17 @@ import { ref } from "vue";
 
 import { collections as collectionRepo, type Game } from "@/db";
 import { useLibraryStore } from "./library";
+import type { PillMatchMode } from "./tags";
 
 /** Mirrors tags.ts exactly, over collections instead - split out of library.ts at the same
  *  time and for the same reason (its own dedicated "Collections" manager tab). */
 export const useCollectionsStore = defineStore("collections", () => {
   const gameCollections = ref<Record<number, string[]>>({});
   const allCollections = ref<string[]>([]);
-  // See tags.ts's identical activeFilters for why this is a Set (multi-select, OR'd within
-  // this facet) rather than a single value.
+  // See tags.ts's identical activeFilters/matchMode for why this is a Set combined per mode
+  // rather than a single value.
   const activeFilters = ref<Set<string>>(new Set());
+  const matchMode = ref<PillMatchMode>("or");
 
   async function refresh(games: Game[]) {
     const entries = await Promise.all(
@@ -26,10 +28,16 @@ export const useCollectionsStore = defineStore("collections", () => {
     activeFilters.value = new Set(names);
   }
 
+  function setMatchMode(mode: PillMatchMode) {
+    matchMode.value = mode;
+  }
+
   function matches(gameId: number): boolean {
     if (activeFilters.value.size === 0) return true;
     const gCollections = gameCollections.value[gameId] ?? [];
-    return gCollections.some((c) => activeFilters.value.has(c));
+    return matchMode.value === "and"
+      ? [...activeFilters.value].every((c) => gCollections.includes(c))
+      : gCollections.some((c) => activeFilters.value.has(c));
   }
 
   /** Re-runs just this store's own refresh - a collection mutation never changes which games
@@ -84,8 +92,10 @@ export const useCollectionsStore = defineStore("collections", () => {
     gameCollections,
     allCollections,
     activeFilters,
+    matchMode,
     refresh,
     setFilters,
+    setMatchMode,
     matches,
     addToGame,
     removeFromGame,

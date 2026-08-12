@@ -178,7 +178,10 @@
     "browseFilters": "필터 둘러보기",
     "platformsHeading": "플랫폼",
     "tagsHeading": "태그",
-    "collectionsHeading": "컬렉션"
+    "collectionsHeading": "컬렉션",
+    "matchAny": "하나 이상",
+    "matchAll": "모두",
+    "matchModeHint": "여러 개 선택 시 하나 이상 또는 모두를 요구할지 전환합니다"
   },
   "stats": {
     "gamesInLibrary": "라이브러리의 게임 수",

@@ -178,7 +178,10 @@
     "browseFilters": "Обзор фильтров",
     "platformsHeading": "Платформы",
     "tagsHeading": "Теги",
-    "collectionsHeading": "Коллекции"
+    "collectionsHeading": "Коллекции",
+    "matchAny": "Любой",
+    "matchAll": "Все",
+    "matchModeHint": "Переключает, требуется ли хотя бы один или все выбранные варианты"
   },
   "stats": {
     "gamesInLibrary": "Игр в библиотеке",

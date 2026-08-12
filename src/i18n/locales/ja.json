@@ -178,7 +178,10 @@
     "browseFilters": "フィルターを見る",
     "platformsHeading": "プラットフォーム",
     "tagsHeading": "タグ",
-    "collectionsHeading": "コレクション"
+    "collectionsHeading": "コレクション",
+    "matchAny": "いずれか",
+    "matchAll": "すべて",
+    "matchModeHint": "複数選択時に「いずれか」または「すべて」を要求するか切り替えます"
   },
   "stats": {
     "gamesInLibrary": "ライブラリのゲーム数",

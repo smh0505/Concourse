@@ -178,7 +178,10 @@
     "browseFilters": "Browse filters",
     "platformsHeading": "Platforms",
     "tagsHeading": "Tags",
-    "collectionsHeading": "Collections"
+    "collectionsHeading": "Collections",
+    "matchAny": "Match any",
+    "matchAll": "Match all",
+    "matchModeHint": "Toggle whether selecting multiple here requires any or all of them"
   },
   "stats": {
     "gamesInLibrary": "Games in library",

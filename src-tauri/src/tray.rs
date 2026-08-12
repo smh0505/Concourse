@@ -53,7 +53,7 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main_window(app),
             "quick_launch" => crate::quick_launch::toggle_overlay(app),
-            "quit" => app.exit(0),
+            "quit" => quit(app),
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
@@ -76,4 +76,18 @@ fn show_main_window(app: &AppHandle) {
         let _ = window.show();
         let _ = window.set_focus();
     }
+}
+
+/// `.destroy()` (not `.close()`) for every window before `app.exit(0)` - the main window's own
+/// close-to-tray handler intercepts `.close()`'s `CloseRequested` and just re-hides it, and a
+/// hidden-but-still-registered WebView2 host window (main when hidden to tray, or the
+/// quick-launch overlay, which is created once and left alive rather than destroyed on hide)
+/// racing an abrupt `app.exit()` is what produces Windows' benign but noisy
+/// "Failed to unregister class Chrome_WidgetWin_0" warning on exit. `.destroy()` tears a window
+/// down immediately with no event to intercept, so every window is actually gone before exit.
+fn quit(app: &AppHandle) {
+    for (_, window) in app.webview_windows() {
+        let _ = window.destroy();
+    }
+    app.exit(0);
 }

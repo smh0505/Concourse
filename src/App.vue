@@ -260,10 +260,16 @@ onUnmounted(() => {
 }
 
 /* Cross-fade between GameDetail and the browse view - out-in waits for the old view to fade
-   out before the new one fades in, so they never both occupy .content's scroll position at once. */
+   out before the new one fades in, so they never both occupy .content's scroll position at once.
+   will-change: opacity promotes GameDetail to its own compositing layer up front, before the
+   transition starts - without it, GameDetail.vue's .action-bar (background-attachment: fixed)
+   visibly re-renders/"redraws" partway through the fade, since the browser only decides to
+   promote a fixed-background descendant to a stable layer reactively once the opacity animation
+   is already underway, not from frame one. */
 .detail-enter-active,
 .detail-leave-active {
   transition: opacity 0.15s ease;
+  will-change: opacity;
 }
 
 .detail-enter-from,

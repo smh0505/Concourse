@@ -7,6 +7,7 @@ import { IconSearch } from "@tabler/icons-vue";
 
 import { useLibraryStore } from "@/stores/library";
 import { useAppSettingsStore } from "@/stores/appSettings";
+import { useThemeStore } from "@/stores/theme";
 import { displayTitle, type Game } from "@/db";
 import { fuzzyFilter } from "@/utils/fuzzyMatch";
 
@@ -18,6 +19,7 @@ const LOAD_MORE_THRESHOLD_PX = 80;
 const { t } = useI18n();
 const library = useLibraryStore();
 const appSettings = useAppSettingsStore();
+const theme = useThemeStore();
 
 const search = ref("");
 const selectedIndex = ref(0);
@@ -52,6 +54,10 @@ async function resetAndFocus() {
   search.value = "";
   selectedIndex.value = 0;
   visibleCount.value = BATCH_SIZE;
+  // Re-applied on every show (not just once on mount) - the overlay window is created once and
+  // reused (hidden/shown, never destroyed), so a theme changed in Settings while it was hidden
+  // needs to be picked up the next time it's shown, not just at first launch.
+  await theme.init();
   await library.refresh();
   await nextTick();
   inputEl.value?.focus();

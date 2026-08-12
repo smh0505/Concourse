@@ -23,6 +23,11 @@ export const useCollectionsStore = defineStore("collections", () => {
     activeFilter.value = activeFilter.value === name ? null : name;
   }
 
+  /** Direct (non-toggling) assignment - see tags.ts's identical setFilter for why. */
+  function setFilter(name: string | null) {
+    activeFilter.value = name;
+  }
+
   function matches(gameId: number): boolean {
     return (
       !activeFilter.value || (gameCollections.value[gameId]?.includes(activeFilter.value) ?? false)
@@ -83,6 +88,7 @@ export const useCollectionsStore = defineStore("collections", () => {
     activeFilter,
     refresh,
     toggleFilter,
+    setFilter,
     matches,
     addToGame,
     removeFromGame,

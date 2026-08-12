@@ -26,6 +26,13 @@ export const useTagsStore = defineStore("tags", () => {
     activeFilter.value = activeFilter.value === tag ? null : tag;
   }
 
+  /** Direct (non-toggling) assignment, unlike toggleFilter - used by library.ts's search-token
+   *  sync watcher, which needs to set the exact tag a typed `tag:` token names rather than
+   *  flip-flopping it on every keystroke. */
+  function setFilter(tag: string | null) {
+    activeFilter.value = tag;
+  }
+
   function matches(gameId: number): boolean {
     return !activeFilter.value || (gameTags.value[gameId]?.includes(activeFilter.value) ?? false);
   }
@@ -88,6 +95,7 @@ export const useTagsStore = defineStore("tags", () => {
     activeFilter,
     refresh,
     toggleFilter,
+    setFilter,
     matches,
     addToGame,
     removeFromGame,

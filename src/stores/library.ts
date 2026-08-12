@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -32,10 +32,57 @@ function parentDir(executablePath: string): string | null {
 export type ViewMode = "grid" | "list";
 export type SortOption = "title" | "recentlyPlayed" | "mostPlayed" | "recentlyAdded";
 
-/** Strips a single pair of wrapping double-quotes, if present - `filteredGames`' tag:/
- *  collection: tokens use this for multi-word values (`tag:"Final Fantasy"`). */
+/** Strips a single pair of wrapping double-quotes, if present - used for multi-word tag:/
+ *  collection: token values (`tag:"Final Fantasy"`). */
 function stripQuotes(value: string): string {
   return value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value;
+}
+
+interface ParsedSearchTokens {
+  platformFilter: string | null;
+  tagFilter: string | null;
+  collectionFilter: string | null;
+  titleQuery: string;
+}
+
+/** Pulls platform:/tag:/collection: tokens out of the raw search string, lowercased, leaving
+ *  whatever's left as the plain title query - shared by `filteredGames` (the actual filtering)
+ *  and the tag/collection-pill sync watcher below (so a typed token also highlights its pill),
+ *  so the two never drift out of sync on what counts as a token. */
+function parseSearchTokens(raw: string): ParsedSearchTokens {
+  // Tag/collection names can contain spaces ("Co-op" is fine unquoted, but "Final Fantasy"
+  // isn't) - a plain \s+ split would break those into two tokens. Quoted values
+  // (tag:"Final Fantasy") are pulled out first as their own tokens before falling back to a
+  // whitespace split for everything else.
+  const tokens: string[] = [];
+  const tokenPattern = /(\w+:"[^"]*")|\S+/g;
+  for (const match of raw.trim().matchAll(tokenPattern)) {
+    tokens.push(match[0]);
+  }
+
+  let platformFilter: string | null = null;
+  let tagFilter: string | null = null;
+  let collectionFilter: string | null = null;
+  // Lookup table (prefix -> setter) instead of an if/else-if chain per prefix - same dispatch
+  // shape as loader.ts's WASM_PLUGIN_FACTORIES/DATA_PLUGIN_FACTORIES, adding a fourth token
+  // prefix here is a new entry, not a new branch.
+  const TOKEN_PREFIXES: Record<string, (value: string) => void> = {
+    "platform:": (value) => (platformFilter = value),
+    "tag:": (value) => (tagFilter = value),
+    "collection:": (value) => (collectionFilter = value),
+  };
+  const titleTokens: string[] = [];
+  for (const token of tokens) {
+    const lower = token.toLowerCase();
+    const prefix = Object.keys(TOKEN_PREFIXES).find((p) => lower.startsWith(p));
+    if (prefix) {
+      TOKEN_PREFIXES[prefix](stripQuotes(token.slice(prefix.length)).toLowerCase());
+    } else {
+      titleTokens.push(token);
+    }
+  }
+
+  return { platformFilter, tagFilter, collectionFilter, titleQuery: titleTokens.join(" ").toLowerCase() };
 }
 
 interface GameSessionEnded {
@@ -67,67 +114,42 @@ export const useLibraryStore = defineStore("library", () => {
 
   let unlistenSessionEnded: UnlistenFn | undefined;
 
+  // Typing a tag:/collection: token highlights its matching pill in the Tags/Collections panel,
+  // rather than filtering independently of it - a token found value is looked up
+  // case-insensitively against the real tag/collection list to recover its actual stored
+  // casing (activeFilter/matches() both compare exact strings). Deliberately one-directional and
+  // additive-only: clicking a pill never populates the search box, and clearing/editing the
+  // token away doesn't reset the pill back to null - the token is a shortcut for setting the
+  // filter, not a leash on it once set.
+  watch(search, (raw) => {
+    const { tagFilter, collectionFilter } = parseSearchTokens(raw);
+    if (tagFilter) {
+      const tags = useTagsStore();
+      const canonical = tags.allTags.find((t) => t.toLowerCase() === tagFilter);
+      if (canonical) tags.setFilter(canonical);
+    }
+    if (collectionFilter) {
+      const collections = useCollectionsStore();
+      const canonical = collections.allCollections.find((c) => c.toLowerCase() === collectionFilter);
+      if (canonical) collections.setFilter(canonical);
+    }
+  });
+
   const filteredGames = computed(() => {
     const tags = useTagsStore();
     const collections = useCollectionsStore();
-    // "platform:steam"/"tag:coop"/"collection:zelda" are special tokens, not part of the title
-    // search - pulled out of whatever else was typed (e.g. "platform:steam zelda" still
-    // title-searches "zelda" within Steam games only) rather than requiring one alone. These
-    // are additive AND-filters independent of the Tags/Collections panel's own pill-based
-    // activeFilter (below) - typing a token doesn't highlight a pill, and a pill selection
-    // doesn't populate the search box; both simply narrow the result together.
-    //
-    // Tag/collection names can contain spaces ("Co-op" is fine unquoted, but "Final Fantasy"
-    // isn't) - a plain \s+ split would break those into two tokens. Quoted values
-    // (tag:"Final Fantasy") are pulled out first as their own tokens before falling back to a
-    // whitespace split for everything else.
-    const tokens: string[] = [];
-    const tokenPattern = /(\w+:"[^"]*")|\S+/g;
-    for (const match of search.value.trim().matchAll(tokenPattern)) {
-      tokens.push(match[0]);
-    }
-    let platformFilter: string | null = null;
-    let tagFilter: string | null = null;
-    let collectionFilter: string | null = null;
-    // Lookup table (prefix -> setter) instead of an if/else-if chain per prefix - same dispatch
-    // shape as loader.ts's WASM_PLUGIN_FACTORIES/DATA_PLUGIN_FACTORIES, adding a fourth token
-    // prefix here is a new entry, not a new branch.
-    const TOKEN_PREFIXES: Record<string, (value: string) => void> = {
-      "platform:": (value) => (platformFilter = value),
-      "tag:": (value) => (tagFilter = value),
-      "collection:": (value) => (collectionFilter = value),
-    };
-    const titleTokens: string[] = [];
-    for (const token of tokens) {
-      const lower = token.toLowerCase();
-      const prefix = Object.keys(TOKEN_PREFIXES).find((p) => lower.startsWith(p));
-      if (prefix) {
-        TOKEN_PREFIXES[prefix](stripQuotes(token.slice(prefix.length)).toLowerCase());
-      } else {
-        titleTokens.push(token);
-      }
-    }
-    const titleQuery = titleTokens.join(" ").toLowerCase();
+    // tag:/collection: tokens now drive the Tags/Collections panel's own pill activeFilter
+    // directly (see the sync watcher below, which highlights the matching pill), so filtering
+    // by them here just means going through tags.matches()/collections.matches() like a normal
+    // pill click would - no separate token-based AND-filter needed alongside it. platform: has
+    // no pill equivalent, so it's still matched directly here.
+    const { platformFilter, titleQuery } = parseSearchTokens(search.value);
 
     const filtered = games.value.filter((game) => {
       const matchesPlatform =
         !platformFilter || (game.platform ?? "").toLowerCase() === platformFilter;
       const matchesSearch = !titleQuery || game.title.toLowerCase().includes(titleQuery);
-      const matchesTagToken =
-        !tagFilter ||
-        (tags.gameTags[game.id]?.some((t) => t.toLowerCase() === tagFilter) ?? false);
-      const matchesCollectionToken =
-        !collectionFilter ||
-        (collections.gameCollections[game.id]?.some((c) => c.toLowerCase() === collectionFilter) ??
-          false);
-      return (
-        matchesPlatform &&
-        matchesSearch &&
-        matchesTagToken &&
-        matchesCollectionToken &&
-        tags.matches(game.id) &&
-        collections.matches(game.id)
-      );
+      return matchesPlatform && matchesSearch && tags.matches(game.id) && collections.matches(game.id);
     });
 
     // gameRepo.list() itself already returns title-A-Z order, so "title" needs no re-sort here

@@ -54,7 +54,7 @@ function selectSortOption(option: SortOption) {
           <button
             type="button"
             class="view-toggle-button"
-            :class="{ 'accent-active': menuOpen || library.sortOption !== 'title' }"
+            :class="{ 'accent-active': menuOpen }"
             :title="t('filters.toggleSortFilter')"
             @click="sortMenuOpen = !menuOpen"
           >

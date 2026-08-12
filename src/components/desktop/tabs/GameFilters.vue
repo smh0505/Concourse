@@ -332,39 +332,40 @@ function selectSortOption(option: SortOption) {
 
 /* .accent-active (shared, styles.css) supplies the selected option's own highlight. */
 
-/* grid-template-rows 1fr/0fr (not max-height) drives the height animation - unlike max-height
-   this animates to/from the content's own real height with no guessed cap, standard trick for
-   animating an intrinsically-sized block. .selection-bar itself (the grid's single row/child)
-   needs min-height: 0 - grid children default to min-height: auto, which would keep it from
-   ever shrinking below its content height as the row track collapses toward 0fr. */
+/* max-height (not grid-template-rows) drives the height animation - fr-unit grid-row
+   transitions interpolate visibly janky in Chromium (recomputes intrinsic content size against
+   the shrinking track every frame), even with matched durations/easing. max-height animates a
+   plain length instead, same proven-smooth trick GameListRow.vue's own .details expand/collapse
+   already uses. The 3rem cap only needs to clear the bar's own real content height (~2.5rem
+   with its padding) - it's a ceiling to transition toward, not a real constraint once expanded. */
 .selection-bar-wrap {
-  display: grid;
-  grid-template-rows: 1fr;
+  overflow: hidden;
 }
 
 .selection-bar {
-  overflow: hidden;
-  min-height: 0;
   display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) 0;
 }
 
-/* Same duration/easing on both properties - a mismatch (rows finishing after opacity, or vice
-   versa) reads as a jerk right at the start/end of the animation, even though the middle looks
-   smooth, since one property is still moving after the other has already settled. */
 .selection-bar-enter-active,
 .selection-bar-leave-active {
   transition:
-    grid-template-rows 0.2s ease-in-out,
+    max-height 0.2s ease-in-out,
     opacity 0.2s ease-in-out;
 }
 
 .selection-bar-enter-from,
 .selection-bar-leave-to {
-  grid-template-rows: 0fr;
+  max-height: 0;
   opacity: 0;
+}
+
+.selection-bar-enter-to,
+.selection-bar-leave-from {
+  max-height: 3rem;
+  opacity: 1;
 }
 
 .selection-count {

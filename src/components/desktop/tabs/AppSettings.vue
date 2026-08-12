@@ -46,6 +46,13 @@ function selectModel(modelId: string) {
   translation.setSelectedModel(modelId);
   modelMenuOpen.value = false;
 }
+
+const languageMenuOpen = ref(false);
+
+function selectLocale(code: string) {
+  appSettings.setLocale(code);
+  languageMenuOpen.value = false;
+}
 </script>
 
 <template>
@@ -65,17 +72,35 @@ function selectModel(modelId: string) {
       {{ t("settings.autoLaunchBigPicture") }}
     </label>
 
-    <label class="language-label">
+    <div class="language-row">
       {{ t("settings.language") }}
-      <select
-        :value="appSettings.locale"
-        @change="appSettings.setLocale(($event.target as HTMLSelectElement).value)"
+      <DropdownMenu
+        v-model:open="languageMenuOpen"
+        wrap-class="language-menu-wrap"
+        panel-class="language-menu-panel"
       >
-        <option v-for="code in localeOptions" :key="code" :value="code">
+        <template #trigger>
+          <button
+            type="button"
+            class="compact-button language-menu-trigger"
+            @click="languageMenuOpen = !languageMenuOpen"
+          >
+            {{ localeNames[appSettings.locale] ?? appSettings.locale }}
+            <IconChevronDown :size="14" :stroke-width="1.75" />
+          </button>
+        </template>
+        <button
+          v-for="code in localeOptions"
+          :key="code"
+          type="button"
+          class="language-menu-item"
+          :class="{ active: code === appSettings.locale }"
+          @click="selectLocale(code)"
+        >
           {{ localeNames[code] ?? code }}
-        </option>
-      </select>
-    </label>
+        </button>
+      </DropdownMenu>
+    </div>
 
     <div class="translation-section">
       <h3>{{ t("settings.translation") }}</h3>
@@ -172,15 +197,55 @@ function selectModel(modelId: string) {
 
 <style scoped>
 .checkbox-label,
-.language-label {
+.language-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   font-size: 0.9rem;
 }
 
-.language-label {
+.language-row {
   margin-top: var(--space-3);
+}
+
+/* Same shell/highlight pattern as .model-menu-* below - a custom DropdownMenu instead of a
+   native <select>, so the currently-active language reads the same way the active translation
+   model does. */
+.language-menu-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.language-menu-trigger {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.language-menu-wrap :deep(.language-menu-panel) {
+  right: 0;
+}
+
+.language-menu-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.85rem;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.language-menu-item:hover {
+  background: var(--color-surface0);
+}
+
+/* Compound selector (not .accent-active/.active alone) - same specificity-tie reasoning as
+   GameFilters.vue's .sort-option.accent-active: this rule's own background:none/color:inherit
+   above would otherwise fight a same-specificity utility class for the highlight. */
+.language-menu-item.active {
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .translation-section {

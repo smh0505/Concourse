@@ -173,7 +173,9 @@
     "noTagsYet": "暂无标签",
     "noCollectionsYet": "暂无收藏集",
     "removeFromLibrary": "从库中移除",
-    "exitSelectionMode": "退出选择模式"
+    "exitSelectionMode": "退出选择模式",
+    "showMore": "还有 {count} 个",
+    "showLess": "收起"
   },
   "stats": {
     "gamesInLibrary": "库中游戏数",

@@ -173,7 +173,9 @@
     "noTagsYet": "タグはまだありません",
     "noCollectionsYet": "コレクションはまだありません",
     "removeFromLibrary": "ライブラリから削除",
-    "exitSelectionMode": "選択モードを終了"
+    "exitSelectionMode": "選択モードを終了",
+    "showMore": "他{count}件",
+    "showLess": "折りたたむ"
   },
   "stats": {
     "gamesInLibrary": "ライブラリのゲーム数",

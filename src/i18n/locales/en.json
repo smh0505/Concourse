@@ -173,7 +173,9 @@
     "noTagsYet": "No tags yet",
     "noCollectionsYet": "No collections yet",
     "removeFromLibrary": "Remove from library",
-    "exitSelectionMode": "Exit selection mode"
+    "exitSelectionMode": "Exit selection mode",
+    "showMore": "+{count} more",
+    "showLess": "Show less"
   },
   "stats": {
     "gamesInLibrary": "Games in library",

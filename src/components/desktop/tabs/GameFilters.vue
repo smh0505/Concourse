@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   IconAdjustmentsHorizontal,
@@ -57,6 +57,28 @@ async function removeSelectionFromLibrary() {
   await library.deleteGames([...selection.selectedIds]);
   selection.exit();
 }
+
+const PILL_ROW_LIMIT = 8;
+
+/** Independent collapsed/expanded state per pill row (platform/tags/collections) - a row with
+ *  40 tags and one with 3 platforms shouldn't share a single "expand everything" toggle. Plain
+ *  function (not a class - project convention) called once per row, wrapped in `reactive()` so
+ *  its computed/ref properties auto-unwrap when accessed from the template (`row.visible`
+ *  instead of `row.visible.value`) the same way a component's own top-level refs already do. */
+function usePillRow(items: () => string[]) {
+  const expanded = ref(false);
+  const list = computed(items);
+  const visible = computed(() => (expanded.value ? list.value : list.value.slice(0, PILL_ROW_LIMIT)));
+  const hiddenCount = computed(() => Math.max(0, list.value.length - PILL_ROW_LIMIT));
+  function toggle() {
+    expanded.value = !expanded.value;
+  }
+  return reactive({ visible, hiddenCount, expanded, toggle });
+}
+
+const platformRow = usePillRow(() => library.allPlatforms);
+const tagRow = usePillRow(() => tags.allTags);
+const collectionRow = usePillRow(() => collections.allCollections);
 
 const SORT_OPTION_ICONS: Record<SortOption, typeof IconClock> = {
   title: IconSortAscendingLetters,
@@ -207,33 +229,46 @@ function selectSortOption(option: SortOption) {
       <span
         class="tag-pill filter-tag"
         :class="{ 'accent-active': library.activePlatformFilter === platform }"
-        v-for="platform in library.allPlatforms"
+        v-for="platform in platformRow.visible"
         :key="platform"
         @click="library.setSearchToken('platform', library.activePlatformFilter === platform ? null : platform)"
       >
         {{ platform }}
+      </span>
+      <span v-if="platformRow.hiddenCount || platformRow.expanded" class="tag-pill more-pill" @click="platformRow.toggle()">
+        {{ platformRow.expanded ? t("filters.showLess") : t("filters.showMore", { count: platformRow.hiddenCount }) }}
       </span>
     </div>
     <div class="tags" v-if="tags.allTags.length">
       <span
         class="tag-pill filter-tag"
         :class="{ 'accent-active': tags.activeFilter === tag }"
-        v-for="tag in tags.allTags"
+        v-for="tag in tagRow.visible"
         :key="tag"
         @click="library.setSearchToken('tag', tags.activeFilter === tag ? null : tag)"
       >
         {{ tag }}
+      </span>
+      <span v-if="tagRow.hiddenCount || tagRow.expanded" class="tag-pill more-pill" @click="tagRow.toggle()">
+        {{ tagRow.expanded ? t("filters.showLess") : t("filters.showMore", { count: tagRow.hiddenCount }) }}
       </span>
     </div>
     <div class="tags" v-if="collections.allCollections.length">
       <span
         class="tag-pill filter-tag"
         :class="{ 'accent-active': collections.activeFilter === name }"
-        v-for="name in collections.allCollections"
+        v-for="name in collectionRow.visible"
         :key="name"
         @click="library.setSearchToken('collection', collections.activeFilter === name ? null : name)"
       >
         {{ name }}
+      </span>
+      <span
+        v-if="collectionRow.hiddenCount || collectionRow.expanded"
+        class="tag-pill more-pill"
+        @click="collectionRow.toggle()"
+      >
+        {{ collectionRow.expanded ? t("filters.showLess") : t("filters.showMore", { count: collectionRow.hiddenCount }) }}
       </span>
     </div>
   </div>
@@ -461,4 +496,18 @@ function selectSortOption(option: SortOption) {
 }
 
 /* .accent-active (shared, styles.css) supplies this rule's entire look. */
+
+/* Deliberately distinct from .filter-tag - this pill toggles the row's own expanded state, not
+   a filter, so it shouldn't read as another selectable value in the same row. */
+.more-pill {
+  cursor: pointer;
+  background: none;
+  border: 1px dashed var(--color-surface2);
+  color: var(--color-text);
+  opacity: 0.75;
+}
+
+.more-pill:hover {
+  opacity: 1;
+}
 </style>

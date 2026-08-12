@@ -173,7 +173,9 @@
     "noTagsYet": "Пока нет тегов",
     "noCollectionsYet": "Пока нет коллекций",
     "removeFromLibrary": "Удалить из библиотеки",
-    "exitSelectionMode": "Выйти из режима выбора"
+    "exitSelectionMode": "Выйти из режима выбора",
+    "showMore": "ещё {count}",
+    "showLess": "Свернуть"
   },
   "stats": {
     "gamesInLibrary": "Игр в библиотеке",

@@ -175,7 +175,10 @@
     "removeFromLibrary": "Rimuovi dalla libreria",
     "exitSelectionMode": "Esci dalla modalità selezione",
     "showMore": "+{count} altri",
-    "showLess": "Mostra meno"
+    "browseFilters": "Sfoglia filtri",
+    "platformsHeading": "Piattaforme",
+    "tagsHeading": "Tag",
+    "collectionsHeading": "Raccolte"
   },
   "stats": {
     "gamesInLibrary": "Giochi in libreria",

@@ -175,7 +175,10 @@
     "removeFromLibrary": "Remove from library",
     "exitSelectionMode": "Exit selection mode",
     "showMore": "+{count} more",
-    "showLess": "Show less"
+    "browseFilters": "Browse filters",
+    "platformsHeading": "Platforms",
+    "tagsHeading": "Tags",
+    "collectionsHeading": "Collections"
   },
   "stats": {
     "gamesInLibrary": "Games in library",

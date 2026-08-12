@@ -21,6 +21,7 @@ import { useLibrarySelectionStore } from "@/stores/librarySelection";
 import { useTagsStore } from "@/stores/tags";
 import { useCollectionsStore } from "@/stores/collections";
 import DropdownMenu from "@/components/desktop/common/DropdownMenu.vue";
+import BaseModal from "@/components/desktop/common/BaseModal.vue";
 
 const { t } = useI18n();
 const library = useLibraryStore();
@@ -60,25 +61,23 @@ async function removeSelectionFromLibrary() {
 
 const PILL_ROW_LIMIT = 8;
 
-/** Independent collapsed/expanded state per pill row (platform/tags/collections) - a row with
- *  40 tags and one with 3 platforms shouldn't share a single "expand everything" toggle. Plain
- *  function (not a class - project convention) called once per row, wrapped in `reactive()` so
- *  its computed/ref properties auto-unwrap when accessed from the template (`row.visible`
- *  instead of `row.visible.value`) the same way a component's own top-level refs already do. */
+/** Capped preview per pill row (platform/tags/collections) - a row past PILL_ROW_LIMIT shows a
+ *  "+N more" pill that opens pillModalOpen (below) instead of expanding in place, since the
+ *  modal already lists every pill uncapped. Plain function (not a class - project convention)
+ *  called once per row, wrapped in `reactive()` so its computed properties auto-unwrap in the
+ *  template (`row.visible` instead of `row.visible.value`). */
 function usePillRow(items: () => string[]) {
-  const expanded = ref(false);
   const list = computed(items);
-  const visible = computed(() => (expanded.value ? list.value : list.value.slice(0, PILL_ROW_LIMIT)));
+  const visible = computed(() => list.value.slice(0, PILL_ROW_LIMIT));
   const hiddenCount = computed(() => Math.max(0, list.value.length - PILL_ROW_LIMIT));
-  function toggle() {
-    expanded.value = !expanded.value;
-  }
-  return reactive({ visible, hiddenCount, expanded, toggle });
+  return reactive({ visible, hiddenCount });
 }
 
 const platformRow = usePillRow(() => library.allPlatforms);
 const tagRow = usePillRow(() => tags.allTags);
 const collectionRow = usePillRow(() => collections.allCollections);
+
+const pillModalOpen = ref(false);
 
 const SORT_OPTION_ICONS: Record<SortOption, typeof IconClock> = {
   title: IconSortAscendingLetters,
@@ -235,8 +234,8 @@ function selectSortOption(option: SortOption) {
       >
         {{ platform }}
       </span>
-      <span v-if="platformRow.hiddenCount || platformRow.expanded" class="tag-pill more-pill" @click="platformRow.toggle()">
-        {{ platformRow.expanded ? t("filters.showLess") : t("filters.showMore", { count: platformRow.hiddenCount }) }}
+      <span v-if="platformRow.hiddenCount" class="tag-pill more-pill" @click="pillModalOpen = true">
+        {{ t("filters.showMore", { count: platformRow.hiddenCount }) }}
       </span>
     </div>
     <div class="tags" v-if="tags.allTags.length">
@@ -249,8 +248,8 @@ function selectSortOption(option: SortOption) {
       >
         {{ tag }}
       </span>
-      <span v-if="tagRow.hiddenCount || tagRow.expanded" class="tag-pill more-pill" @click="tagRow.toggle()">
-        {{ tagRow.expanded ? t("filters.showLess") : t("filters.showMore", { count: tagRow.hiddenCount }) }}
+      <span v-if="tagRow.hiddenCount" class="tag-pill more-pill" @click="pillModalOpen = true">
+        {{ t("filters.showMore", { count: tagRow.hiddenCount }) }}
       </span>
     </div>
     <div class="tags" v-if="collections.allCollections.length">
@@ -263,14 +262,60 @@ function selectSortOption(option: SortOption) {
       >
         {{ name }}
       </span>
-      <span
-        v-if="collectionRow.hiddenCount || collectionRow.expanded"
-        class="tag-pill more-pill"
-        @click="collectionRow.toggle()"
-      >
-        {{ collectionRow.expanded ? t("filters.showLess") : t("filters.showMore", { count: collectionRow.hiddenCount }) }}
+      <span v-if="collectionRow.hiddenCount" class="tag-pill more-pill" @click="pillModalOpen = true">
+        {{ t("filters.showMore", { count: collectionRow.hiddenCount }) }}
       </span>
     </div>
+
+    <BaseModal :open="pillModalOpen" :title="t('filters.browseFilters')" @close="pillModalOpen = false">
+      <template #body>
+        <div class="modal-pill-section" v-if="library.allPlatforms.length">
+          <h3>{{ t("filters.platformsHeading") }}</h3>
+          <div class="tags">
+            <span
+              class="tag-pill filter-tag"
+              :class="{ 'accent-active': library.activePlatformFilter === platform }"
+              v-for="platform in library.allPlatforms"
+              :key="platform"
+              @click="library.setSearchToken('platform', library.activePlatformFilter === platform ? null : platform)"
+            >
+              {{ platform }}
+            </span>
+          </div>
+        </div>
+        <div class="modal-pill-section" v-if="tags.allTags.length">
+          <h3>{{ t("filters.tagsHeading") }}</h3>
+          <div class="tags">
+            <span
+              class="tag-pill filter-tag"
+              :class="{ 'accent-active': tags.activeFilter === tag }"
+              v-for="tag in tags.allTags"
+              :key="tag"
+              @click="library.setSearchToken('tag', tags.activeFilter === tag ? null : tag)"
+            >
+              {{ tag }}
+            </span>
+          </div>
+        </div>
+        <div class="modal-pill-section" v-if="collections.allCollections.length">
+          <h3>{{ t("filters.collectionsHeading") }}</h3>
+          <div class="tags">
+            <span
+              class="tag-pill filter-tag"
+              :class="{ 'accent-active': collections.activeFilter === name }"
+              v-for="name in collections.allCollections"
+              :key="name"
+              @click="library.setSearchToken('collection', collections.activeFilter === name ? null : name)"
+            >
+              {{ name }}
+            </span>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <button type="button" @click="pillModalOpen = false">{{ t("common.close") }}</button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -497,8 +542,8 @@ function selectSortOption(option: SortOption) {
 
 /* .accent-active (shared, styles.css) supplies this rule's entire look. */
 
-/* Deliberately distinct from .filter-tag - this pill toggles the row's own expanded state, not
-   a filter, so it shouldn't read as another selectable value in the same row. */
+/* Deliberately distinct from .filter-tag - this pill opens the browse-all modal, not a filter,
+   so it shouldn't read as another selectable value in the same row. */
 .more-pill {
   cursor: pointer;
   background: none;
@@ -509,5 +554,15 @@ function selectSortOption(option: SortOption) {
 
 .more-pill:hover {
   opacity: 1;
+}
+
+.modal-pill-section h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.modal-pill-section + .modal-pill-section {
+  margin-top: var(--space-3);
 }
 </style>

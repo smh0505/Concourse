@@ -175,7 +175,10 @@
     "removeFromLibrary": "从库中移除",
     "exitSelectionMode": "退出选择模式",
     "showMore": "还有 {count} 个",
-    "showLess": "收起"
+    "browseFilters": "浏览筛选条件",
+    "platformsHeading": "平台",
+    "tagsHeading": "标签",
+    "collectionsHeading": "收藏集"
   },
   "stats": {
     "gamesInLibrary": "库中游戏数",

@@ -175,7 +175,10 @@
     "removeFromLibrary": "Удалить из библиотеки",
     "exitSelectionMode": "Выйти из режима выбора",
     "showMore": "ещё {count}",
-    "showLess": "Свернуть"
+    "browseFilters": "Обзор фильтров",
+    "platformsHeading": "Платформы",
+    "tagsHeading": "Теги",
+    "collectionsHeading": "Коллекции"
   },
   "stats": {
     "gamesInLibrary": "Игр в библиотеке",

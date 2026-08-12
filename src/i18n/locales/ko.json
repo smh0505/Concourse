@@ -175,7 +175,10 @@
     "removeFromLibrary": "라이브러리에서 제거",
     "exitSelectionMode": "선택 모드 종료",
     "showMore": "+{count}개 더",
-    "showLess": "간략히 보기"
+    "browseFilters": "필터 둘러보기",
+    "platformsHeading": "플랫폼",
+    "tagsHeading": "태그",
+    "collectionsHeading": "컬렉션"
   },
   "stats": {
     "gamesInLibrary": "라이브러리의 게임 수",

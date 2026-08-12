@@ -175,7 +175,10 @@
     "removeFromLibrary": "ライブラリから削除",
     "exitSelectionMode": "選択モードを終了",
     "showMore": "他{count}件",
-    "showLess": "折りたたむ"
+    "browseFilters": "フィルターを見る",
+    "platformsHeading": "プラットフォーム",
+    "tagsHeading": "タグ",
+    "collectionsHeading": "コレクション"
   },
   "stats": {
     "gamesInLibrary": "ライブラリのゲーム数",

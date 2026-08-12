@@ -89,15 +89,20 @@ export const useLibraryStore = defineStore("library", () => {
     let platformFilter: string | null = null;
     let tagFilter: string | null = null;
     let collectionFilter: string | null = null;
+    // Lookup table (prefix -> setter) instead of an if/else-if chain per prefix - same dispatch
+    // shape as loader.ts's WASM_PLUGIN_FACTORIES/DATA_PLUGIN_FACTORIES, adding a fourth token
+    // prefix here is a new entry, not a new branch.
+    const TOKEN_PREFIXES: Record<string, (value: string) => void> = {
+      "platform:": (value) => (platformFilter = value),
+      "tag:": (value) => (tagFilter = value),
+      "collection:": (value) => (collectionFilter = value),
+    };
     const titleTokens: string[] = [];
     for (const token of tokens) {
       const lower = token.toLowerCase();
-      if (lower.startsWith("platform:")) {
-        platformFilter = stripQuotes(token.slice("platform:".length)).toLowerCase();
-      } else if (lower.startsWith("tag:")) {
-        tagFilter = stripQuotes(token.slice("tag:".length)).toLowerCase();
-      } else if (lower.startsWith("collection:")) {
-        collectionFilter = stripQuotes(token.slice("collection:".length)).toLowerCase();
+      const prefix = Object.keys(TOKEN_PREFIXES).find((p) => lower.startsWith(p));
+      if (prefix) {
+        TOKEN_PREFIXES[prefix](stripQuotes(token.slice(prefix.length)).toLowerCase());
       } else {
         titleTokens.push(token);
       }

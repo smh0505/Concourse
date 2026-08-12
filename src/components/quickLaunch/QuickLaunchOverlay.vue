@@ -148,6 +148,12 @@ onBeforeUnmount(() => unlistenShown?.());
 .result {
   display: flex;
   align-items: center;
+  /* justify-content: flex-start (not the flex default of stretch/center a plain <button>'s own
+     UA text-align: center could otherwise suggest) - packs .cover/.title to the left edge
+     instead of centering them in the row. width: 100% so the button actually fills .results'
+     column width rather than shrink-wrapping to its own content. */
+  justify-content: flex-start;
+  width: 100%;
   gap: var(--space-3);
   padding: var(--space-2);
   border: none;

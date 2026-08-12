@@ -19,7 +19,11 @@
     "downloading": "{percent}%",
     "downloadingEngine": "Downloading...",
     "download": "Download",
-    "remove": "Remove"
+    "remove": "Remove",
+    "quickLaunch": "Quick Launch",
+    "quickLaunchHotkey": "Global hotkey",
+    "pressKeys": "Press keys...",
+    "closeToTray": "Close to tray instead of quitting"
   },
   "app": {
     "switchToSlideshow": "Switch to slideshow view",
@@ -300,5 +304,9 @@
   "pluginUpdates": {
     "updated": "{name} updated to {version}.",
     "updateFailed": "Failed to update {name}: {error}"
+  },
+  "quickLaunch": {
+    "searchPlaceholder": "Search your library...",
+    "noMatches": "No matching games."
   }
 }

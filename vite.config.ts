@@ -18,6 +18,18 @@ export default defineConfig(async () => ({
     },
   },
 
+  build: {
+    rollupOptions: {
+      // Two separate HTML entries, not a vue-router route inside the main SPA (this project has
+      // no router at all) - the quick-launch overlay needs to load fast on a global-hotkey
+      // press, so it gets its own minimal bundle rather than pulling in the full desktop shell.
+      input: {
+        main: fileURLToPath(new URL("./index.html", import.meta.url)),
+        quickLaunch: fileURLToPath(new URL("./quick-launch.html", import.meta.url)),
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

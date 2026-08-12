@@ -7,7 +7,9 @@ mod launcher;
 mod plugin_installer;
 mod plugin_registry;
 mod plugin_verification;
+mod quick_launch;
 mod translation;
+mod tray;
 mod wasm_plugin_runtime;
 mod wasm_plugins;
 mod zip_install;
@@ -24,10 +26,22 @@ pub fn run() {
                 .build(),
         )
         .manage(translation::TranslationState::new())
+        .manage(tray::CloseToTrayState(std::sync::Mutex::new(true)))
+        .setup(|app| {
+            tray::build_tray(app.handle())?;
+            quick_launch::init(app, quick_launch::DEFAULT_HOTKEY)?;
+            if let Some(main_window) = app.get_webview_window("main") {
+                tray::install_close_to_tray_handler(&main_window);
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             image_utils::check_image_brightness,
             launcher::launch_game,
             launcher::track_folder_playtime,
+            tray::set_close_to_tray,
+            quick_launch::set_quick_launch_hotkey,
+            quick_launch::hide_quick_launch,
             plugin_installer::fetch_plugin_preview,
             plugin_installer::install_plugin,
             plugin_installer::list_data_themes,

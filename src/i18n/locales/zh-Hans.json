@@ -19,7 +19,11 @@
     "download": "下载",
     "translationEngine": "翻译引擎",
     "downloadingEngine": "下载中...",
-    "remove": "删除"
+    "remove": "删除",
+    "quickLaunch": "快速启动",
+    "quickLaunchHotkey": "全局快捷键",
+    "pressKeys": "请按键...",
+    "closeToTray": "关闭时最小化到托盘而非退出"
   },
   "app": {
     "switchToSlideshow": "切换到幻灯片视图",
@@ -300,5 +304,9 @@
   "pluginUpdates": {
     "updated": "{name} 已更新到 {version}。",
     "updateFailed": "更新 {name} 失败:{error}"
+  },
+  "quickLaunch": {
+    "searchPlaceholder": "搜索您的库...",
+    "noMatches": "没有匹配的游戏。"
   }
 }

@@ -19,7 +19,11 @@
     "download": "ダウンロード",
     "translationEngine": "翻訳エンジン",
     "downloadingEngine": "ダウンロード中...",
-    "remove": "削除"
+    "remove": "削除",
+    "quickLaunch": "クイックランチ",
+    "quickLaunchHotkey": "グローバルホットキー",
+    "pressKeys": "キーを押してください...",
+    "closeToTray": "終了せずにトレイに格納する"
   },
   "app": {
     "switchToSlideshow": "スライドショー表示に切り替え",
@@ -300,5 +304,9 @@
   "pluginUpdates": {
     "updated": "{name} を {version} に更新しました。",
     "updateFailed": "{name} の更新に失敗しました: {error}"
+  },
+  "quickLaunch": {
+    "searchPlaceholder": "ライブラリを検索...",
+    "noMatches": "一致するゲームがありません。"
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconChevronDown } from "@tabler/icons-vue";
 
@@ -53,6 +53,52 @@ function selectLocale(code: string) {
   appSettings.setLocale(code);
   languageMenuOpen.value = false;
 }
+
+// A single modifier key alone (e.g. just tapping Ctrl) can't be a shortcut on its own - ignore
+// keydowns that are purely a modifier and wait for a real key pressed alongside one.
+const MODIFIER_CODES = new Set([
+  "ControlLeft",
+  "ControlRight",
+  "AltLeft",
+  "AltRight",
+  "ShiftLeft",
+  "ShiftRight",
+  "MetaLeft",
+  "MetaRight",
+]);
+
+const listeningForHotkey = ref(false);
+
+// event.code (not event.key) - it matches the same key-code naming (`Space`, `KeyA`, `Digit1`,
+// `ArrowUp`, ...) the Rust side's `Code` enum (from the `keyboard-types` crate) already uses, so
+// the accelerator string built here needs no translation layer to be valid on the Rust side.
+function onHotkeyKeydown(e: KeyboardEvent) {
+  e.preventDefault();
+  if (MODIFIER_CODES.has(e.code)) return;
+
+  const parts: string[] = [];
+  if (e.ctrlKey) parts.push("Ctrl");
+  if (e.altKey) parts.push("Alt");
+  if (e.shiftKey) parts.push("Shift");
+  if (e.metaKey) parts.push("Super");
+  if (parts.length === 0) return; // require at least one modifier - avoid binding a bare key
+
+  parts.push(e.code);
+  stopListeningForHotkey();
+  appSettings.setQuickLaunchHotkey(parts.join("+"));
+}
+
+function startListeningForHotkey() {
+  listeningForHotkey.value = true;
+  window.addEventListener("keydown", onHotkeyKeydown);
+}
+
+function stopListeningForHotkey() {
+  listeningForHotkey.value = false;
+  window.removeEventListener("keydown", onHotkeyKeydown);
+}
+
+onBeforeUnmount(stopListeningForHotkey);
 </script>
 
 <template>
@@ -100,6 +146,30 @@ function selectLocale(code: string) {
           {{ localeNames[code] ?? code }}
         </button>
       </DropdownMenu>
+    </div>
+
+    <div class="translation-section">
+      <h3>{{ t("settings.quickLaunch") }}</h3>
+
+      <div class="model-row">
+        <span class="model-name">{{ t("settings.quickLaunchHotkey") }}</span>
+        <button
+          type="button"
+          class="compact-button"
+          @click="listeningForHotkey ? stopListeningForHotkey() : startListeningForHotkey()"
+        >
+          {{ listeningForHotkey ? t("settings.pressKeys") : appSettings.quickLaunchHotkey }}
+        </button>
+      </div>
+
+      <label class="checkbox-label model-row-spaced">
+        <input
+          type="checkbox"
+          :checked="appSettings.closeToTray"
+          @change="appSettings.setCloseToTray(($event.target as HTMLInputElement).checked)"
+        />
+        {{ t("settings.closeToTray") }}
+      </label>
     </div>
 
     <div class="translation-section">

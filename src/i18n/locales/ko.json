@@ -19,7 +19,11 @@
     "download": "다운로드",
     "translationEngine": "번역 엔진",
     "downloadingEngine": "다운로드 중...",
-    "remove": "삭제"
+    "remove": "삭제",
+    "quickLaunch": "퀵 런치",
+    "quickLaunchHotkey": "전역 단축키",
+    "pressKeys": "키를 누르세요...",
+    "closeToTray": "종료 대신 트레이로 최소화"
   },
   "app": {
     "switchToSlideshow": "슬라이드쇼 보기로 전환",
@@ -300,5 +304,9 @@
   "pluginUpdates": {
     "updated": "{name}이(가) {version}(으)로 업데이트되었습니다.",
     "updateFailed": "{name} 업데이트 실패: {error}"
+  },
+  "quickLaunch": {
+    "searchPlaceholder": "라이브러리 검색...",
+    "noMatches": "일치하는 게임이 없습니다."
   }
 }

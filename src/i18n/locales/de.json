@@ -19,7 +19,11 @@
     "download": "Herunterladen",
     "translationEngine": "Übersetzungs-Engine",
     "downloadingEngine": "Wird heruntergeladen...",
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "quickLaunch": "Schnellstart",
+    "quickLaunchHotkey": "Globale Tastenkombination",
+    "pressKeys": "Tasten drücken...",
+    "closeToTray": "In die Taskleiste minimieren statt beenden"
   },
   "app": {
     "switchToSlideshow": "Zur Diashow-Ansicht wechseln",
@@ -300,5 +304,9 @@
   "pluginUpdates": {
     "updated": "{name} wurde auf {version} aktualisiert.",
     "updateFailed": "Aktualisierung von {name} fehlgeschlagen: {error}"
+  },
+  "quickLaunch": {
+    "searchPlaceholder": "Bibliothek durchsuchen...",
+    "noMatches": "Keine passenden Spiele."
   }
 }

@@ -1,0 +1,24 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "quick-launch",
+  "description": "Capability for the quick-launch overlay window - read-only DB access plus launch, nothing else.",
+  "windows": ["quick-launch"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-hide",
+    "core:window:allow-close",
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "steam:*" },
+        { "url": "com.epicgames.launcher:*" },
+        { "url": "origin2:*" },
+        { "url": "uplay:*" }
+      ]
+    },
+    "sql:default",
+    "sql:allow-select",
+    "sql:allow-load"
+  ]
+}

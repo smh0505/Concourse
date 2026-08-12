@@ -19,7 +19,11 @@
     "download": "Baixar",
     "translationEngine": "Mecanismo de tradução",
     "downloadingEngine": "Baixando...",
-    "remove": "Remover"
+    "remove": "Remover",
+    "quickLaunch": "Início rápido",
+    "quickLaunchHotkey": "Atalho global",
+    "pressKeys": "Pressione as teclas...",
+    "closeToTray": "Minimizar para a bandeja em vez de sair"
   },
   "app": {
     "switchToSlideshow": "Mudar para visualização em slideshow",
@@ -300,5 +304,9 @@
   "pluginUpdates": {
     "updated": "{name} atualizado para {version}.",
     "updateFailed": "Falha ao atualizar {name}: {error}"
+  },
+  "quickLaunch": {
+    "searchPlaceholder": "Buscar na sua biblioteca...",
+    "noMatches": "Nenhum jogo correspondente."
   }
 }

@@ -6060,11 +6060,41 @@ noting as a pattern: "uses PKCE" alone doesn't guarantee "doesn't need a secret"
 has to be checked for whether PKCE actually *replaces* the secret requirement or just sits
 alongside it.
 
-**Other candidates raised, not yet researched:** Mastodon/Fediverse auto-posting (likely
-sidesteps the OAuth-secret problem entirely via manual per-instance personal access tokens, the
-way most desktop Mastodon clients already work - complicated by federation meaning there's no
-single API to register against), and a local Home Assistant/smart-home webhook (same zero-
-external-auth category as the OBS idea below, different audience).
+**Telegram.** No ambient-status concept exists in Telegram at all - the only realistic shape is
+"message myself via a bot when a game starts," a personal-notification utility rather than a
+status visible to others, different purpose from every other candidate here. Auth is a bot
+token from @BotFather (`/newbot`, instant, no formal app registration or review) - a per-user
+credential the user has to create and paste in, same shape as IGDB's API key, just dramatically
+lower friction to obtain than a real OAuth app registration.
+
+**X (Twitter) - ruled out on cost, not auth.** OAuth 2.0 with PKCE is genuinely supported for
+posting (`tweet.write` scope, standard authorization-code-with-PKCE flow to `x.com/i/oauth2/
+authorize`) - the auth model itself isn't the blocker here. The free API tier was fully retired
+for new developers as of February 2026; posting is now pay-per-use only ($0.01 per post
+created), with the old free/Basic/Pro tiers grandfathered for existing subscribers only. Not
+viable for a feature meant to work out of the box for every user without asking them to pay per
+status update - dropped on cost, unlike every other candidate here which was evaluated purely on
+auth friction.
+
+**Bluesky (AT Protocol).** The strongest candidate found after Discord/Twitch/Slack. AT
+Protocol OAuth explicitly classifies native/desktop apps as "Public" clients "Forbidden" from
+using a `client_secret` - authentication instead relies on PKCE plus DPoP (Demonstrating Proof
+of Possession, a non-exportable cryptographic keypair bound to the specific device/install).
+Genuinely no shared secret anywhere in the flow. The real wrinkle: `client_id` itself must be a
+fully-qualified `https://` URL pointing to a publicly-hosted JSON client-metadata document (the
+protocol validates the client by fetching and checking that document), not just an opaque
+string - Concourse would need to host that file somewhere public. The existing GitHub Pages docs
+site is a natural fit for this (already serving static content at a stable URL), so this is a
+small addition, not a real blocker - just more moving parts than Twitch/Slack's plain PKCE flow.
+
+**Mastodon/Fediverse - still not researched in depth.** Likely sidesteps the OAuth-secret
+problem entirely via manual per-instance personal access tokens, the way most desktop Mastodon
+clients already work - complicated by federation meaning there's no single API to register
+against, unlike every centralized platform researched so far.
+
+**Home Assistant / local smart-home webhook - still not researched.** Same zero-external-auth
+category as the OBS idea below, different audience (home-automation users rather than
+streamers/chat users).
 
 **Local/self-hosted, no external auth at all.** A "now playing" webhook Concourse serves locally
 for OBS's own Browser Source to point at - no OAuth, no account, no secret of any kind, since

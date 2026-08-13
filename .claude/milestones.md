@@ -528,16 +528,25 @@ the same axis: does it need a real `client_secret` (per-user credential friction
 is it safe to hardcode/auth-free (like Discord's `client_id`)? See devlog for the full research
 behind each entry below.
 
-*Chat/community status* - broadcasts "now playing" to a social/chat platform, same shape as
-Milestone 28's Discord integration.
+*Ambient chat status* - a persistent "now playing" indicator on a chat platform, same shape as
+Milestone 28's Discord integration (sets on launch, clears on exit).
 - [x] Discord - done (Milestone 28), built-in feature, one shared hardcoded `client_id`
 - [ ] Slack - researched: supports Authorization Code + PKCE - enabling PKCE marks the app as a
   public client, and the token exchange then uses `code_verifier` instead of `client_secret`
-  entirely, same safe-to-hardcode shape as Twitch (one-way app setting, can't be disabled once
+  entirely, same safe-to-hardcode shape as Discord (one-way app setting, can't be disabled once
   turned on) - not started
-- [ ] Mastodon/Fediverse (auto-post "started playing X") - not researched yet; likely sidesteps
-  the OAuth-secret problem via manual per-instance personal access tokens (how most desktop
-  Mastodon apps already do it), but federation means no single API - registration is per-instance
+
+*Social auto-post* - a one-off public post ("started playing X") rather than a persistent status
+- fundamentally different UX shape from the ambient-status group above (visible in a feed, not
+  just a profile badge), even though the auth question is evaluated the same way.
+- [ ] Bluesky (AT Protocol) - researched: OAuth explicitly forbids `client_secret` for native/
+  desktop clients ("Public" client type) - uses PKCE + DPoP (a device-bound cryptographic
+  keypair) instead, no shared secret anywhere. Requires `client_id` to be a real `https://` URL
+  hosting a public JSON metadata document - the existing GitHub Pages docs site could host it,
+  not a blocker, just an extra small piece of infrastructure - not started
+- [ ] Mastodon/Fediverse - not researched yet; likely sidesteps the OAuth-secret problem via
+  manual per-instance personal access tokens (how most desktop Mastodon apps already do it), but
+  federation means no single API - registration is per-instance
 
 *Livestreaming platforms* - updates a stream's title/category to match the current game.
 - [ ] Twitch - researched: supports Authorization Code + PKCE (no secret needed, unlike the
@@ -552,6 +561,14 @@ Milestone 28's Discord integration.
   client_secret, redirect_uri, grant_type, code_verifier`) - PKCE is additive here, not a
   secret-free substitute. Same per-user-credential friction as Chzzk, not started
 
+*Personal notification* - not a status visible to others, just a message to yourself when a
+game starts.
+- [ ] Telegram - researched: a bot token from @BotFather (instant, no app review) rather than
+  OAuth - genuinely low friction to obtain, but still a per-user credential the user has to
+  create and paste in (same shape as IGDB's key, just far easier to get). No ambient-status
+  concept in Telegram at all, so this can only ever be a "message myself" utility, not a status
+  others see - not started
+
 *Local/self-hosted* - no external account or OAuth at all, broadcasts only on the local network.
 - [ ] "Now playing" webhook for OBS Browser Source overlays - simplest candidate technically:
   Concourse runs a small local HTTP endpoint, zero external auth of any kind, not started
@@ -562,6 +579,9 @@ Milestone 28's Discord integration.
 - Steam Rich Presence - `SetRichPresence` must be called by a process registered under a real
   Steamworks App ID (the game's own, typically) - not injectable by a third-party launcher for
   arbitrary games it doesn't own
+- X (Twitter) - not a secret/auth problem (OAuth 2.0 + PKCE is supported) but a cost one: the
+  free API tier was fully retired for new developers in February 2026, pay-per-use only
+  ($0.01/post created) - not viable without charging users per status update
 - YouTube - parked, not dropped outright: Google's own docs are internally ambiguous on whether
   a Desktop-app-type `client_secret` is truly safe to hardcode (an older guide says yes, the
   current native-app reference doesn't clearly exempt Desktop apps the way it does Android/iOS/

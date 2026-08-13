@@ -526,6 +526,14 @@ research.
   the Source/Metadata Provider tabs
 - [x] Manually verified end-to-end (`bunx tauri dev`) - both plugins activate/deactivate
   correctly for direct-exe and URI-launched games, per-game `skip_presence` opt-out respected
+- [ ] Stretch: detach presence plugins into the WASM tier (like source/metadata plugins), so a
+  third-party presence integration could ship independently of app releases. Not a quick move -
+  there's no `activate`/`deactivate` WIT interface yet (`wasm_plugin_runtime.rs` only defines
+  worlds for source/metadata's own methods), and Discord specifically needs a host-function
+  bridge back into Rust's IPC client, neither of which exists. Data tier doesn't fit at all
+  (presence is inherently code, not declarative content). Only worth building once a third
+  target or a real independent-update need actually shows up - same reasoning `standard-gamepad`
+  stayed built-in instead of being detached - not started
 
 **Candidate platforms, grouped by what the plugin is actually for.** Each platform evaluated on
 the same axis: does it need a real `client_secret` (per-user credential friction, like IGDB) or

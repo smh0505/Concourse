@@ -1,0 +1,7 @@
+{
+  "id": "discord-presence",
+  "name": "Discord Rich Presence",
+  "version": "1.0.0",
+  "kind": "presence",
+  "entry": "index.ts"
+}

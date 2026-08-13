@@ -13,6 +13,7 @@ export * from "./metadataProviders";
 export * from "./pluginInstall";
 export * from "./pluginUpdates";
 export * from "./plugins";
+export * from "./presence";
 export * from "./stats";
 export * from "./tags";
 export * from "./theme";

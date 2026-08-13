@@ -23,8 +23,7 @@
     "quickLaunch": "Início rápido",
     "quickLaunchHotkey": "Atalho global",
     "pressKeys": "Pressione as teclas...",
-    "closeToTray": "Minimizar para a bandeja em vez de sair",
-    "discordPresence": "Mostrar o jogo atual no Discord"
+    "closeToTray": "Minimizar para a bandeja em vez de sair"
   },
   "app": {
     "switchToSlideshow": "Mudar para visualização em slideshow",
@@ -70,7 +69,7 @@
     "revokeTitleOnly": "Revogar tradução do título",
     "revokeContentOnly": "Revogar tradução do conteúdo",
     "revokeBoth": "Revogar tradução do título e conteúdo",
-    "skipDiscordPresence": "Ocultar este jogo do status do Discord"
+    "skipPresence": "Ocultar este jogo das integrações de presença"
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",
@@ -230,7 +229,8 @@
       "theme": "Tema",
       "metadata": "Provedor de metadados",
       "controller": "Controle",
-      "wrapper": "Wrapper"
+      "wrapper": "Wrapper",
+      "presence": "Presença"
     },
     "noSourcePlugins": "Nenhum plugin instalado.",
     "scanOrderHint": "A ordem de varredura importa: se um jogo com o mesmo título for encontrado por mais de uma fonte, o caminho de execução/plataforma da fonte posterior prevalece. Reordene com as setas abaixo.",
@@ -251,7 +251,8 @@
     "scanFailed": "Falha no escaneamento: {error}",
     "removeThemeFailed": "Falha ao remover o tema: {error}",
     "removeControllerMapping": "Remover",
-    "removeControllerMappingFailed": "Falha ao remover o mapeamento: {error}"
+    "removeControllerMappingFailed": "Falha ao remover o mapeamento: {error}",
+    "noPresencePlugins": "Nenhum plugin de presença instalado."
   },
   "gamepadRemap": {
     "settingsTrigger": "Remapear",
@@ -310,5 +311,8 @@
   "quickLaunch": {
     "searchPlaceholder": "Buscar na sua biblioteca...",
     "noMatches": "Nenhum jogo correspondente."
+  },
+  "obsPresence": {
+    "hint": "Aponte uma Fonte de Navegador do OBS para:"
   }
 }

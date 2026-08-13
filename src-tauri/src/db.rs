@@ -161,5 +161,17 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 7,
+            description: "rename_skip_discord_presence_to_skip_presence",
+            sql: r#"
+            -- Milestone 29 generalized presence from Discord-only into a real multi-enable
+            -- plugin kind - the per-game opt-out now applies to every enabled presence plugin,
+            -- not just Discord, so it gets the generic name. A real rename (not a new column
+            -- plus a dead old one) since SQLite's RENAME COLUMN preserves existing data.
+            ALTER TABLE games RENAME COLUMN skip_discord_presence TO skip_presence;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

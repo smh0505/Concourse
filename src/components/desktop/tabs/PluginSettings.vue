@@ -8,6 +8,7 @@ import { useThemeStore } from "@/stores/theme";
 import { useMetadataProviderStore } from "@/stores/metadataProviders";
 import { useControllerMappingStore } from "@/stores/controllerMapping";
 import { useWrapperPluginStore } from "@/stores/wrapperPlugins";
+import { usePresenceStore } from "@/stores/presence";
 import { usePluginInstallStore } from "@/stores/pluginInstall";
 import { usePluginUpdatesStore } from "@/stores/pluginUpdates";
 import { loadAllPlugins } from "@/plugins/loader";
@@ -19,10 +20,11 @@ import type {
   MetadataProviderPlugin,
   ControllerMappingPlugin,
   WrapperPlugin,
+  PresencePlugin,
 } from "@/plugins/types";
 import { RUN_PROGRAMS_CAPABILITY, type PluginManifest } from "@/plugins/manifest";
 
-type Tab = "source" | "theme" | "metadata" | "controller" | "wrapper";
+type Tab = "source" | "theme" | "metadata" | "controller" | "wrapper" | "presence";
 
 const { t } = useI18n();
 const plugins = usePluginStore();
@@ -30,6 +32,7 @@ const theme = useThemeStore();
 const metadataProviders = useMetadataProviderStore();
 const controllerMapping = useControllerMappingStore();
 const wrapperPlugins = useWrapperPluginStore();
+const presence = usePresenceStore();
 const pluginInstall = usePluginInstallStore();
 const pluginUpdates = usePluginUpdatesStore();
 
@@ -46,6 +49,7 @@ const allThemePlugins = shallowRef<Map<string, ThemePlugin>>(new Map());
 const allMetadataPlugins = shallowRef<Map<string, MetadataProviderPlugin>>(new Map());
 const allControllerPlugins = shallowRef<Map<string, ControllerMappingPlugin>>(new Map());
 const allWrapperPlugins = shallowRef<Map<string, WrapperPlugin>>(new Map());
+const allPresencePlugins = shallowRef<Map<string, PresencePlugin>>(new Map());
 
 /** Enabled plugins first, in their priority order, followed by installed-but-disabled ones -
  *  lets the reorder buttons act on a stable, priority-first list instead of jumping around
@@ -106,19 +110,21 @@ async function loadGrantedCapabilities(manifests: PluginManifest[]) {
 }
 
 onMounted(async () => {
-  const [sourcePlugins, themePlugins, metadataPlugins, controllerPlugins, wrapperPluginsMap] =
+  const [sourcePlugins, themePlugins, metadataPlugins, controllerPlugins, wrapperPluginsMap, presencePlugins] =
     await Promise.all([
       loadAllPlugins<SourcePlugin>("source"),
       loadAllPlugins<ThemePlugin>("theme"),
       loadAllPlugins<MetadataProviderPlugin>("metadata"),
       loadAllPlugins<ControllerMappingPlugin>("controller"),
       loadAllPlugins<WrapperPlugin>("wrapper"),
+      loadAllPlugins<PresencePlugin>("presence"),
     ]);
   allSourcePlugins.value = sourcePlugins;
   allThemePlugins.value = themePlugins;
   allMetadataPlugins.value = metadataPlugins;
   allControllerPlugins.value = controllerPlugins;
   allWrapperPlugins.value = wrapperPluginsMap;
+  allPresencePlugins.value = presencePlugins;
   await loadGrantedCapabilities([...plugins.manifests, ...wrapperPlugins.manifests]);
   // A fourth check point beyond the three canonical ones (app start/focus live in App.vue,
   // install-plugin modal open lives in AddPlugin.vue) - opening the Settings view itself is a
@@ -168,6 +174,12 @@ onMounted(async () => {
         @click="activeTab = 'wrapper'"
       >
         {{ t("pluginSettings.tabs.wrapper") }}
+      </button>
+      <button
+        :class="{ 'accent-active': activeTab === 'presence' }"
+        @click="activeTab = 'presence'"
+      >
+        {{ t("pluginSettings.tabs.presence") }}
       </button>
     </div>
 
@@ -363,7 +375,7 @@ onMounted(async () => {
       </ul>
     </div>
 
-    <div v-else class="tab-panel">
+    <div v-else-if="activeTab === 'wrapper'" class="tab-panel">
       <p v-if="wrapperPlugins.manifests.length === 0" class="empty">{{ t("pluginSettings.noWrapperPlugins") }}</p>
       <ul v-else class="plugin-list">
         <li class="plugin-row" v-for="manifest in wrapperPlugins.manifests" :key="manifest.id">
@@ -392,6 +404,35 @@ onMounted(async () => {
             {{ t("pluginSettings.permissionNeeded") }}
             <button type="button" class="compact-button" @click="grantRunPrograms(manifest.id)">{{ t("pluginSettings.grant") }}</button>
           </p>
+        </li>
+      </ul>
+    </div>
+
+    <div v-else class="tab-panel">
+      <p v-if="presence.manifests.length === 0" class="empty">{{ t("pluginSettings.noPresencePlugins") }}</p>
+      <ul v-else class="plugin-list">
+        <li class="plugin-row" v-for="manifest in presence.manifests" :key="manifest.id">
+          <label>
+            <input
+              type="checkbox"
+              :checked="presence.enabledIds.has(manifest.id)"
+              @change="presence.toggle(manifest.id)"
+            />
+            {{ manifest.name }}
+            <span class="version">{{ versionLabel(manifest) }}</span>
+            <button
+              v-if="pluginUpdates.isUpdateAvailable(manifest.id)"
+              type="button"
+              class="update-badge compact-button"
+              @click="pluginUpdates.applyUpdate(manifest)"
+            >
+              {{ t("pluginSettings.updateTo", { version: pluginUpdates.results[manifest.id]?.latestVersion }) }}
+            </button>
+          </label>
+          <component
+            :is="allPresencePlugins.get(manifest.id)?.settingsComponent"
+            v-if="allPresencePlugins.get(manifest.id)?.settingsComponent"
+          />
         </li>
       </ul>
     </div>

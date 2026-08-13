@@ -118,17 +118,6 @@ onBeforeUnmount(stopListeningForHotkey);
       {{ t("settings.autoLaunchBigPicture") }}
     </label>
 
-    <label class="checkbox-label">
-      <input
-        type="checkbox"
-        :checked="appSettings.discordPresenceEnabled"
-        @change="
-          appSettings.setDiscordPresenceEnabled(($event.target as HTMLInputElement).checked)
-        "
-      />
-      {{ t("settings.discordPresence") }}
-    </label>
-
     <div class="language-row">
       {{ t("settings.language") }}
       <DropdownMenu

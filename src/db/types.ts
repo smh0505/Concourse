@@ -31,9 +31,9 @@ export interface Game {
    *  currently displays, persisted per-game. */
   show_translated_title: number;
   show_translated_description: number;
-  /** SQLite boolean (0/1) - per-game opt-out from the global Discord Rich Presence toggle
-   *  (appSettings.ts's discordPresenceEnabled). */
-  skip_discord_presence: number;
+  /** SQLite boolean (0/1) - per-game opt-out from every enabled presence plugin (Milestone 29 -
+   *  Discord, a local OBS overlay, etc.), not just Discord specifically. */
+  skip_presence: number;
 }
 
 export type GameEditFields = Pick<
@@ -48,7 +48,7 @@ export type GameEditFields = Pick<
   | "skip_dedup"
   | "locale_profile_guid"
   | "locale_wrapper"
-  | "skip_discord_presence"
+  | "skip_presence"
 >;
 
 /** The title to show for `game` under the current UI `locale` - a valid cached translation, or

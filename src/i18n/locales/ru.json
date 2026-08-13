@@ -23,8 +23,7 @@
     "quickLaunch": "Быстрый запуск",
     "quickLaunchHotkey": "Глобальная горячая клавиша",
     "pressKeys": "Нажмите клавиши...",
-    "closeToTray": "Сворачивать в трей вместо закрытия",
-    "discordPresence": "Показывать текущую игру в Discord"
+    "closeToTray": "Сворачивать в трей вместо закрытия"
   },
   "app": {
     "switchToSlideshow": "Переключить на слайд-шоу",
@@ -70,7 +69,7 @@
     "revokeTitleOnly": "Отменить перевод названия",
     "revokeContentOnly": "Отменить перевод описания",
     "revokeBoth": "Отменить перевод названия и описания",
-    "skipDiscordPresence": "Скрыть эту игру из статуса Discord"
+    "skipPresence": "Скрыть эту игру из интеграций присутствия"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",
@@ -230,7 +229,8 @@
       "theme": "Тема",
       "metadata": "Поставщик метаданных",
       "controller": "Геймпад",
-      "wrapper": "Обёртка"
+      "wrapper": "Обёртка",
+      "presence": "Присутствие"
     },
     "noSourcePlugins": "Плагины не установлены.",
     "scanOrderHint": "Порядок сканирования важен: если игра с одинаковым названием найдена более чем одним источником, побеждает путь запуска/платформа более позднего источника. Измените порядок стрелками ниже.",
@@ -251,7 +251,8 @@
     "scanFailed": "Ошибка сканирования: {error}",
     "removeThemeFailed": "Не удалось удалить тему: {error}",
     "removeControllerMapping": "Удалить",
-    "removeControllerMappingFailed": "Не удалось удалить раскладку: {error}"
+    "removeControllerMappingFailed": "Не удалось удалить раскладку: {error}",
+    "noPresencePlugins": "Плагины присутствия не установлены."
   },
   "gamepadRemap": {
     "settingsTrigger": "Переназначить",
@@ -310,5 +311,8 @@
   "quickLaunch": {
     "searchPlaceholder": "Поиск по библиотеке...",
     "noMatches": "Совпадающих игр не найдено."
+  },
+  "obsPresence": {
+    "hint": "Укажите в источнике browser OBS адрес:"
   }
 }

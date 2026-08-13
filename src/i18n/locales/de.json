@@ -23,8 +23,7 @@
     "quickLaunch": "Schnellstart",
     "quickLaunchHotkey": "Globale Tastenkombination",
     "pressKeys": "Tasten drücken...",
-    "closeToTray": "In die Taskleiste minimieren statt beenden",
-    "discordPresence": "Aktuell gespieltes Spiel auf Discord anzeigen"
+    "closeToTray": "In die Taskleiste minimieren statt beenden"
   },
   "app": {
     "switchToSlideshow": "Zur Diashow-Ansicht wechseln",
@@ -70,7 +69,7 @@
     "revokeTitleOnly": "Titelübersetzung widerrufen",
     "revokeContentOnly": "Inhaltsübersetzung widerrufen",
     "revokeBoth": "Titel- und Inhaltsübersetzung widerrufen",
-    "skipDiscordPresence": "Dieses Spiel im Discord-Status ausblenden"
+    "skipPresence": "Dieses Spiel aus Präsenz-Integrationen ausblenden"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",
@@ -230,7 +229,8 @@
       "theme": "Theme",
       "metadata": "Metadaten-Anbieter",
       "controller": "Controller",
-      "wrapper": "Wrapper"
+      "wrapper": "Wrapper",
+      "presence": "Präsenz"
     },
     "noSourcePlugins": "Keine Plugins installiert.",
     "scanOrderHint": "Die Scan-Reihenfolge ist wichtig: Wird ein gleichnamiges Spiel von mehr als einer Quelle gefunden, gewinnt der Startpfad/die Plattform der später aufgeführten Quelle. Mit den Pfeilen unten neu anordnen.",
@@ -251,7 +251,8 @@
     "scanFailed": "Scan fehlgeschlagen: {error}",
     "removeThemeFailed": "Theme konnte nicht entfernt werden: {error}",
     "removeControllerMapping": "Entfernen",
-    "removeControllerMappingFailed": "Zuordnung konnte nicht entfernt werden: {error}"
+    "removeControllerMappingFailed": "Zuordnung konnte nicht entfernt werden: {error}",
+    "noPresencePlugins": "Keine Präsenz-Plugins installiert."
   },
   "gamepadRemap": {
     "settingsTrigger": "Neu zuordnen",
@@ -310,5 +311,8 @@
   "quickLaunch": {
     "searchPlaceholder": "Bibliothek durchsuchen...",
     "noMatches": "Keine passenden Spiele."
+  },
+  "obsPresence": {
+    "hint": "OBS-Browserquelle auf folgende Adresse richten:"
   }
 }

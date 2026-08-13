@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+use tauri::{AppHandle, Manager};
 
 /// Concourse's own Discord Application ID (discord.com/developers/applications). Safe to
 /// hardcode - unlike a metadata provider's API key/secret, this is a public identifier with no
@@ -57,4 +58,17 @@ pub fn clear_presence(state: &DiscordPresenceState) {
     if client.clear_activity().is_err() {
         *guard = None;
     }
+}
+
+/// Milestone 29 - the `discord-presence` TS plugin (src/plugins/discord-presence/) invokes
+/// these directly instead of launcher.rs calling `set_presence`/`clear_presence` inline; the
+/// two functions above are otherwise unchanged.
+#[tauri::command]
+pub fn set_discord_presence(app: AppHandle, title: String) {
+    set_presence(app.state::<DiscordPresenceState>().inner(), &title);
+}
+
+#[tauri::command]
+pub fn clear_discord_presence(app: AppHandle) {
+    clear_presence(app.state::<DiscordPresenceState>().inner());
 }

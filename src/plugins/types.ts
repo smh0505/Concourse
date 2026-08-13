@@ -137,3 +137,15 @@ export interface ThemePlugin extends PluginBase {
   activate?(): void | Promise<void>;
   deactivate?(): void | Promise<void>;
 }
+
+/** Milestone 29 - broadcasts "now playing" to an external target (Discord, a local OBS
+ *  overlay, ...) while a game runs. Deliberately minimal: `presence.ts` calls `activate` once a
+ *  game is confirmed running (the `game-session-started` event, not just on launch attempt) and
+ *  `deactivate` on session end, same lifecycle hook Milestone 28's Discord-only integration used
+ *  before being generalized into this kind. Multi-enable like source/metadata-provider, not
+ *  exclusive-single-active like theme/controller - a user can reasonably want Discord and a
+ *  local OBS overlay running at the same time. */
+export interface PresencePlugin extends PluginBase {
+  activate(gameTitle: string): Promise<void>;
+  deactivate(): Promise<void>;
+}

@@ -5,6 +5,7 @@ mod db;
 mod discord_presence;
 mod image_utils;
 mod launcher;
+mod obs_presence;
 mod plugin_installer;
 mod plugin_registry;
 mod plugin_verification;
@@ -29,9 +30,11 @@ pub fn run() {
         .manage(translation::TranslationState::new())
         .manage(tray::CloseToTrayState(std::sync::Mutex::new(true)))
         .manage(discord_presence::DiscordPresenceState::new())
+        .manage(obs_presence::ObsPresenceState::new())
         .setup(|app| {
             tray::build_tray(app.handle())?;
             quick_launch::init(app, quick_launch::DEFAULT_HOTKEY)?;
+            obs_presence::start(app.handle().clone());
             if let Some(main_window) = app.get_webview_window("main") {
                 tray::install_close_to_tray_handler(&main_window);
             }
@@ -44,6 +47,9 @@ pub fn run() {
             tray::set_close_to_tray,
             quick_launch::set_quick_launch_hotkey,
             quick_launch::hide_quick_launch,
+            discord_presence::set_discord_presence,
+            discord_presence::clear_discord_presence,
+            obs_presence::set_now_playing,
             plugin_installer::fetch_plugin_preview,
             plugin_installer::install_plugin,
             plugin_installer::list_data_themes,

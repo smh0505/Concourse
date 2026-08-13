@@ -1,0 +1,7 @@
+{
+  "id": "obs-presence",
+  "name": "OBS Overlay",
+  "version": "1.0.0",
+  "kind": "presence",
+  "entry": "index.ts"
+}

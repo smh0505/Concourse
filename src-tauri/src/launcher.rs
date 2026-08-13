@@ -1,7 +1,11 @@
 use sysinfo::{ProcessesToUpdate, System};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter};
 
-use crate::discord_presence::{self, DiscordPresenceState};
+#[derive(Clone, serde::Serialize)]
+pub struct GameSessionStarted {
+    game_id: i64,
+    title: String,
+}
 
 #[derive(Clone, serde::Serialize)]
 pub struct GameSessionEnded {
@@ -17,7 +21,6 @@ pub fn launch_game(
     game_id: i64,
     executable_path: String,
     title: String,
-    discord_presence_enabled: bool,
 ) -> Result<(), String> {
     let mut child = std::process::Command::new(&executable_path)
         .stdout(std::process::Stdio::null())
@@ -25,9 +28,11 @@ pub fn launch_game(
         .spawn()
         .map_err(|e| format!("Failed to launch {}: {}", executable_path, e))?;
 
-    if discord_presence_enabled {
-        discord_presence::set_presence(app.state::<DiscordPresenceState>().inner(), &title);
-    }
+    // Emitted here (not by the frontend right after invoking this command) so it fires at the
+    // same confirmed-running moment `track_folder_playtime` below fires its own copy - a plugin
+    // (presence.ts) reacting to this shouldn't have to know launch_game and track_folder_playtime
+    // detect "started" completely differently.
+    let _ = app.emit("game-session-started", GameSessionStarted { game_id, title });
 
     let start = std::time::SystemTime::now();
     let start_time = unix_timestamp(start);
@@ -39,10 +44,6 @@ pub fn launch_game(
             .duration_since(start)
             .map(|d| d.as_secs() as i64)
             .unwrap_or(0);
-
-        if discord_presence_enabled {
-            discord_presence::clear_presence(app.state::<DiscordPresenceState>().inner());
-        }
 
         let _ = app.emit(
             "game-session-ended",
@@ -87,13 +88,7 @@ fn any_process_under_folder(system: &mut System, install_dir: &str) -> bool {
 /// handle. Mirrors Playnite's "Folder" tracking mode: poll running processes and treat any
 /// whose exe path falls under the game's known install folder as "running".
 #[tauri::command]
-pub fn track_folder_playtime(
-    app: AppHandle,
-    game_id: i64,
-    install_dir: String,
-    title: String,
-    discord_presence_enabled: bool,
-) {
+pub fn track_folder_playtime(app: AppHandle, game_id: i64, install_dir: String, title: String) {
     let install_dir = normalize_path_for_comparison(&install_dir);
 
     std::thread::spawn(move || {
@@ -117,9 +112,9 @@ pub fn track_folder_playtime(
             std::thread::sleep(POLL_INTERVAL);
         }
 
-        if discord_presence_enabled {
-            discord_presence::set_presence(app.state::<DiscordPresenceState>().inner(), &title);
-        }
+        // Only now (not on command call, which fires right after openUrl() - before the game
+        // window necessarily even exists) is this actually confirmed running.
+        let _ = app.emit("game-session-started", GameSessionStarted { game_id, title });
 
         let start = std::time::SystemTime::now();
         let start_time = unix_timestamp(start);
@@ -136,10 +131,6 @@ pub fn track_folder_playtime(
                     break;
                 }
             }
-        }
-
-        if discord_presence_enabled {
-            discord_presence::clear_presence(app.state::<DiscordPresenceState>().inner());
         }
 
         let end = std::time::SystemTime::now();

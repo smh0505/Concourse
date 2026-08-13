@@ -23,8 +23,7 @@
     "quickLaunch": "Avvio rapido",
     "quickLaunchHotkey": "Scorciatoia globale",
     "pressKeys": "Premi i tasti...",
-    "closeToTray": "Riduci a icona nella tray invece di chiudere",
-    "discordPresence": "Mostra il gioco in corso su Discord"
+    "closeToTray": "Riduci a icona nella tray invece di chiudere"
   },
   "app": {
     "switchToSlideshow": "Passa alla visualizzazione presentazione",
@@ -70,7 +69,7 @@
     "revokeTitleOnly": "Revoca traduzione del titolo",
     "revokeContentOnly": "Revoca traduzione del contenuto",
     "revokeBoth": "Revoca traduzione di titolo e contenuto",
-    "skipDiscordPresence": "Nascondi questo gioco dallo stato di Discord"
+    "skipPresence": "Nascondi questo gioco dalle integrazioni di presenza"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",
@@ -230,7 +229,8 @@
       "theme": "Tema",
       "metadata": "Provider di metadati",
       "controller": "Controller",
-      "wrapper": "Wrapper"
+      "wrapper": "Wrapper",
+      "presence": "Presenza"
     },
     "noSourcePlugins": "Nessun plugin installato.",
     "scanOrderHint": "L'ordine di scansione è importante: se un gioco con lo stesso titolo viene trovato da più di una sorgente, prevale il percorso di avvio/piattaforma della sorgente successiva. Riordina con le frecce qui sotto.",
@@ -251,7 +251,8 @@
     "scanFailed": "Scansione non riuscita: {error}",
     "removeThemeFailed": "Impossibile rimuovere il tema: {error}",
     "removeControllerMapping": "Rimuovi",
-    "removeControllerMappingFailed": "Impossibile rimuovere la mappatura: {error}"
+    "removeControllerMappingFailed": "Impossibile rimuovere la mappatura: {error}",
+    "noPresencePlugins": "Nessun plugin di presenza installato."
   },
   "gamepadRemap": {
     "settingsTrigger": "Riassegna",
@@ -310,5 +311,8 @@
   "quickLaunch": {
     "searchPlaceholder": "Cerca nella tua libreria...",
     "noMatches": "Nessun gioco corrispondente."
+  },
+  "obsPresence": {
+    "hint": "Punta una Browser Source di OBS a:"
   }
 }

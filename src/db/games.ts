@@ -87,7 +87,7 @@ export class GameRepository {
          skip_dedup = $8,
          locale_profile_guid = $9,
          locale_wrapper = $10,
-         skip_discord_presence = $11,
+         skip_presence = $11,
          translated_title = NULL,
          translated_description = NULL,
          translated_locale = NULL,
@@ -105,7 +105,7 @@ export class GameRepository {
         fields.skip_dedup,
         fields.locale_profile_guid,
         fields.locale_wrapper,
-        fields.skip_discord_presence,
+        fields.skip_presence,
         id,
       ],
     );

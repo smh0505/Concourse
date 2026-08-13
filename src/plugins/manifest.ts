@@ -1,7 +1,7 @@
 // Single source of truth for every valid plugin kind - PluginKind derives its literal union
 // from this array (typeof/[number]) instead of being hand-duplicated, and isPluginManifest
 // below checks membership against it (a Set) instead of an m.kind === "x" || ... chain.
-const PLUGIN_KINDS = ["source", "theme", "metadata", "controller", "wrapper"] as const;
+const PLUGIN_KINDS = ["source", "theme", "metadata", "controller", "wrapper", "presence"] as const;
 const PLUGIN_KIND_SET: ReadonlySet<string> = new Set(PLUGIN_KINDS);
 
 export type PluginKind = (typeof PLUGIN_KINDS)[number];

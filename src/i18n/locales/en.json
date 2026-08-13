@@ -23,8 +23,7 @@
     "quickLaunch": "Quick Launch",
     "quickLaunchHotkey": "Global hotkey",
     "pressKeys": "Press keys...",
-    "closeToTray": "Close to tray instead of quitting",
-    "discordPresence": "Show currently playing game on Discord"
+    "closeToTray": "Close to tray instead of quitting"
   },
   "app": {
     "switchToSlideshow": "Switch to slideshow view",
@@ -70,7 +69,7 @@
     "revokeTitleOnly": "Revoke Title Translation",
     "revokeContentOnly": "Revoke Content Translation",
     "revokeBoth": "Revoke Title and Content Translation",
-    "skipDiscordPresence": "Hide this game from Discord status"
+    "skipPresence": "Hide this game from presence integrations"
   },
   "candidatePicker": {
     "title": "Multiple matches found",
@@ -230,7 +229,8 @@
       "theme": "Theme",
       "metadata": "Metadata Provider",
       "controller": "Controller",
-      "wrapper": "Wrapper"
+      "wrapper": "Wrapper",
+      "presence": "Presence"
     },
     "noSourcePlugins": "No plugins installed.",
     "scanOrderHint": "Scan order matters: on a same-titled game found by more than one source, the later source's launch path/platform wins. Reorder with the arrows below.",
@@ -251,7 +251,8 @@
     "scanFailed": "Scan failed: {error}",
     "removeThemeFailed": "Failed to remove theme: {error}",
     "removeControllerMapping": "Remove",
-    "removeControllerMappingFailed": "Failed to remove mapping: {error}"
+    "removeControllerMappingFailed": "Failed to remove mapping: {error}",
+    "noPresencePlugins": "No presence plugins installed."
   },
   "gamepadRemap": {
     "settingsTrigger": "Remap",
@@ -310,5 +311,8 @@
   "quickLaunch": {
     "searchPlaceholder": "Search your library...",
     "noMatches": "No matching games."
+  },
+  "obsPresence": {
+    "hint": "Point an OBS Browser Source at:"
   }
 }

@@ -509,19 +509,23 @@ metadata provider's API key/secret).
 - [x] Manually verified end-to-end (`bunx tauri dev`) - Discord shows "Playing <title>" while a
   game runs
 
-## Milestone 29 — Presence Plugin Type (not started)
-Generalizes Milestone 28's Discord-only integration into a real multi-enable plugin kind, if a
-second real presence target is ever actually wanted - Slack custom status, Twitch stream title/
-category, a generic "now playing" webhook for OBS overlays, or Steam's own custom rich-presence
-string. Unlike theme/controller's exclusive-single-active model, this would be multi-enable like
-source/metadata-provider - a user could reasonably want Discord and Twitch and an OBS webhook
-running at once. Deliberately deferred until a second concrete target exists - speculative
-architecture for a kind with exactly one implementation isn't worth building now.
-- [ ] New `PresencePlugin` interface (`activate(game)`/`deactivate()` or similar, mirroring the
-  launch-lifecycle hook Milestone 28 wires directly)
-- [ ] Manifest/loader wiring, matching the existing four-kind pattern
-- [ ] Migrate Milestone 28's built-in Discord integration into this kind's first real plugin
-- [ ] Settings UI: multi-enable checkboxes, same as the Source/Metadata Provider tabs
+## Milestone 29 — Presence Plugin Type
+Generalizes Milestone 28's Discord-only integration into a real multi-enable plugin kind - two
+real, researched, safe-to-hardcode targets (Discord, a local OBS webhook) is what triggered
+actually building it. Unlike theme/controller's exclusive-single-active model, this is multi-
+enable like source/metadata-provider. See devlog for the full design rationale and platform
+research.
+- [x] New `PresencePlugin` interface (`activate(gameTitle)`/`deactivate()`), manifest/loader
+  wiring matching the existing five-kind pattern
+- [x] Discord migrated from Milestone 28's Rust-hardcoded hook into a real plugin
+  (`discord-presence`) - `launcher.rs` no longer knows presence exists at all, a new
+  `game-session-started` event replaces the old inline boolean-parameter hook
+- [x] OBS Overlay (`obs-presence`) - always-on local HTTP server (`tiny_http`, fixed port),
+  zero external auth, the second implementation validating the interface
+- [x] Settings UI: new "Presence" tab in `PluginSettings.vue`, multi-enable checkboxes matching
+  the Source/Metadata Provider tabs
+- [x] Manually verified end-to-end (`bunx tauri dev`) - both plugins activate/deactivate
+  correctly for direct-exe and URI-launched games, per-game `skip_presence` opt-out respected
 
 **Candidate platforms, grouped by what the plugin is actually for.** Each platform evaluated on
 the same axis: does it need a real `client_secret` (per-user credential friction, like IGDB) or

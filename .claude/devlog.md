@@ -6102,3 +6102,76 @@ nothing ever leaves the local machine. Structurally the simplest candidate by fa
 because it avoids this entire class of problem - worth treating as the likely first real
 `PresencePlugin` implementation once that interface actually gets built, rather than waiting on
 Twitch/Chzzk's auth questions to fully resolve first.
+
+Telegram (researched later) and Home Assistant (my own speculative suggestion) were both
+dropped on direct feedback rather than technical merit - Telegram's only ambient-status feature
+(Emoji Status) is emoji-only, can't show an actual game title; Home Assistant had no real use
+case behind it. Neither made it into the "candidate platforms" list kept in milestones.md.
+
+**Implementation.** Two real targets (Discord + OBS webhook, both confirmed safe-to-hardcode/
+auth-free) was the trigger this milestone's own text had named for actually building the kind,
+rather than more speculative architecture for one implementation.
+
+New `PresencePlugin` interface (`types.ts`): `activate(gameTitle)`/`deactivate()`, deliberately
+minimal - mirrors the launch-lifecycle hook Milestone 28 already had, just moved into the
+standard plugin shape. `"presence"` added to `manifest.ts`'s `PLUGIN_KINDS` array (everything
+else - `PluginKind`, `isPluginManifest`'s Set check - already derives from it).
+
+The real architectural change was decoupling `launcher.rs` from presence entirely.
+Milestone 28's `launch_game`/`track_folder_playtime` took a `title`/`discord_presence_enabled`
+parameter pair and called `discord_presence::set_presence`/`clear_presence` inline - fine for
+one hardcoded target, wrong shape for a real plugin kind (`launcher.rs` doesn't know source/
+theme/metadata plugins exist either). Both commands dropped `discord_presence_enabled` and
+instead emit a new `"game-session-started"` event (`{ game_id, title }`) at the exact same two
+points presence used to fire - immediately after spawn in `launch_game`, immediately after
+Phase 1's "actually running" detection in `track_folder_playtime` (not on command call, which
+fires right after `openUrl()` - before the game window necessarily exists; this precision is
+why it's a new Rust event rather than moving "when did it start" logic into JS, which has no
+equivalent signal). `title` stayed as a parameter (still needed for the event payload).
+
+`discord_presence.rs`'s `set_presence`/`clear_presence` functions are byte-for-byte unchanged -
+they just gained real `#[tauri::command]` wrappers (`set_discord_presence`/
+`clear_discord_presence`) so the new `discord-presence` TS plugin (`src/plugins/discord-presence/`)
+can invoke them directly instead of `launcher.rs` calling them inline.
+
+New `src-tauri/src/obs_presence.rs`: `tiny_http` (sync, no async runtime - matches this
+codebase's existing thread-based style rather than pulling in a second HTTP stack alongside
+`reqwest`) serving a single auto-refreshing HTML page at `/` on a fixed port (47474, not user-
+configurable yet), reading from `Mutex<Option<String>>` managed state. Starts once in `.setup()`
+and stays up for the app's whole lifetime, completely decoupled from whether the OBS plugin is
+enabled - `activate`/`deactivate` (via a `set_now_playing(title: Option<String>)` command) only
+ever change *what the already-running server reports*, never whether it's listening. Takes
+`AppHandle` (not a raw `&'static` state reference) and re-fetches `ObsPresenceState` per
+request, matching how this codebase's other background threads (`launcher.rs`, `quick_launch.rs`)
+already cross thread boundaries - a first attempt at a literal `&'static` reference to the
+managed struct would have fought Tauri's own state lifetime.
+
+New `src/stores/presence.ts` mirrors `wrapperPlugins.ts`'s `Set<string>` multi-enable shape
+(order doesn't matter here, unlike metadata's provider-priority list) - own `listen()` calls for
+both `game-session-started` (new) and `game-session-ended` (existing), separate from
+`library.ts`'s own `game-session-ended` listener (which records playtime) since activation and
+playtime tracking are genuinely different concerns that happen to key off the same two events.
+`activateAll`/`deactivateAll` run every enabled plugin's call via `Promise.all` with each
+individually `.catch(() => {})`-guarded - one plugin throwing (Discord not running, say)
+shouldn't stop the others, same "one bad provider doesn't block the rest" reasoning
+`metadataProviders.ts`'s `fetchMetadata` already uses. `library.ts`'s `launchGame()` lost the
+`discordPresenceEnabled` computation entirely - that responsibility moved to `presence.ts`'s own
+event listeners, so `launchGame()` just calls `launch_game`/`track_folder_playtime` with
+`gameId`/`executablePath`/`title` or `gameId`/`installDir`/`title`, same shape as any other
+command it calls.
+
+Per-game opt-out generalized: `skip_discord_presence` renamed to `skip_presence` (migration v7,
+a real `ALTER TABLE ... RENAME COLUMN`, not a new column plus a dead old one - preserves
+existing data). `appSettings.ts`'s global `discordPresenceEnabled` toggle removed entirely -
+enablement now goes through the standard multi-enable plugin pattern (the new "Presence" tab in
+`PluginSettings.vue`, structurally identical to the existing "wrapper" tab) instead of a
+separate ad-hoc Settings checkbox.
+
+Discord defaults enabled on first init (`DEFAULT_PRESENCE_IDS = ["discord-presence"]`),
+preserving Milestone 28's original opt-out default now that it's a plugin instead of a
+hardcoded feature; OBS stays opt-in like source/metadata plugins, since there's nothing
+configured on the OBS side yet for a fresh install.
+
+Manually verified end-to-end: Discord status and the OBS page both update/clear correctly for
+both direct-exe and URI-launched games, and a game with `skip_presence` set is correctly
+excluded from both plugins.

@@ -522,6 +522,13 @@ architecture for a kind with exactly one implementation isn't worth building now
 - [ ] Manifest/loader wiring, matching the existing four-kind pattern
 - [ ] Migrate Milestone 28's built-in Discord integration into this kind's first real plugin
 - [ ] Settings UI: multi-enable checkboxes, same as the Source/Metadata Provider tabs
+- [ ] Stretch checkpoint: Chzzk (치지직) as a second real target - researched, real Open API
+  exists (`chzzk.gitbook.io`, stream title/category update via `Live` endpoints), but its OAuth
+  flow requires a `clientSecret` (confidential-client only, no PKCE, no documented desktop/
+  native support) - same per-user-credential problem as IGDB, not the "safe to hardcode" path
+  Discord's client_id or a PKCE-based Twitch integration would have. Needs either per-user
+  Naver Developer Center credentials (real friction, like IGDB) or a server-side proxy holding
+  the secret (real infrastructure, outside this app's local-only scope) - not started
 
 ## Milestone 30 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a

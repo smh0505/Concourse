@@ -536,17 +536,17 @@ research.
   stayed built-in instead of being detached - not started
 
 **OBS webhook follow-ups, stretch.** Ordered smallest-to-biggest lift; none block each other.
-- [ ] Cover art in the overlay - `render_page` (`obs_presence.rs`) currently serves title text
-  only, `Game.cover_art_url` is already available to include alongside it
-- [ ] Live elapsed-time counter - track session start alongside the title in
-  `ObsPresenceState`, render a running clock (same idea as Discord's own elapsed-time display)
+- [ ] Richer overlay content - cover art (`Game.cover_art_url`, already available) and a live
+  elapsed-time counter (track session start alongside the title in `ObsPresenceState`, same idea
+  as Discord's own elapsed-time display) rendered together, not just title text
 - [ ] Raw JSON `/status` endpoint (`{ title, coverUrl, startedAt }`) alongside the existing HTML
   page - lets a streamer build a fully custom overlay in their own HTML/CSS/JS instead of being
   stuck with what we render
-- [ ] Alert-style transient popup mode ("Started playing X!" fading after a few seconds) as an
-  alternative to the current persistent status card
-- [ ] Multiple overlay templates (minimal text-only vs. full card), selectable in Settings,
-  instead of the one fixed layout `render_page` hardcodes today
+- [ ] Overlay presentation options - an alert-style transient popup mode ("Started playing X!"
+  fading after a few seconds) as an alternative to the current persistent status card, and
+  multiple selectable templates (minimal text-only vs. full card) instead of the one fixed
+  layout `render_page` hardcodes today - both are "how it's presented" choices, worth designing
+  together rather than as separate settings
 - [ ] Real `obs-websocket` integration - a genuinely different, bigger architecture than the
   current passive Browser Source page: bidirectional control instead of Concourse just serving a
   page for OBS to poll, could push updates instantly and even auto-switch OBS to a "gaming"

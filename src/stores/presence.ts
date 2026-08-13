@@ -53,8 +53,10 @@ export const usePresenceStore = defineStore("presence", () => {
   /** A plugin throwing (e.g. Discord not running) shouldn't stop the others from
    *  activating/deactivating - same "one bad provider doesn't block the rest" reasoning
    *  metadataProviders.ts's fetchMetadata already uses. */
-  async function activateAll(gameTitle: string) {
-    await Promise.all(loadedPlugins.value.map((p) => p.activate(gameTitle).catch(() => {})));
+  async function activateAll(gameTitle: string, coverArtUrl: string | null) {
+    await Promise.all(
+      loadedPlugins.value.map((p) => p.activate(gameTitle, coverArtUrl).catch(() => {})),
+    );
   }
 
   async function deactivateAll() {
@@ -85,7 +87,7 @@ export const usePresenceStore = defineStore("presence", () => {
       const library = useLibraryStore();
       const game = library.games.find((g) => g.id === event.payload.game_id);
       if (game?.skip_presence === 1) return;
-      activateAll(event.payload.title);
+      activateAll(event.payload.title, game?.cover_art_url ?? null);
     });
     unlistenEnded = await listen<GameSessionEnded>("game-session-ended", () => {
       deactivateAll();

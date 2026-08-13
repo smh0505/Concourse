@@ -146,6 +146,8 @@ export interface ThemePlugin extends PluginBase {
  *  exclusive-single-active like theme/controller - a user can reasonably want Discord and a
  *  local OBS overlay running at the same time. */
 export interface PresencePlugin extends PluginBase {
-  activate(gameTitle: string): Promise<void>;
+  /** `coverArtUrl` is optional context, not every target uses it (Discord's current Activity
+   *  doesn't set an image at all) - a plugin that doesn't care is free to ignore the parameter. */
+  activate(gameTitle: string, coverArtUrl?: string | null): Promise<void>;
   deactivate(): Promise<void>;
 }

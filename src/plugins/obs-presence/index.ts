@@ -9,8 +9,9 @@ import ObsPresenceSettings from "./ObsPresenceSettings.vue";
 const plugin: PresencePlugin = {
   id: "obs-presence",
   name: "OBS Overlay",
-  activate: (gameTitle: string) => invoke("set_now_playing", { title: gameTitle }),
-  deactivate: () => invoke("set_now_playing", { title: null }),
+  activate: (gameTitle: string, coverArtUrl?: string | null) =>
+    invoke("set_now_playing", { title: gameTitle, coverUrl: coverArtUrl ?? null }),
+  deactivate: () => invoke("set_now_playing", { title: null, coverUrl: null }),
 };
 plugin.settingsComponent = defineComponent({
   render: () => h(ObsPresenceSettings),

@@ -561,24 +561,21 @@ Milestone 28's Discord integration (sets on launch, clears on exit).
   client_secret, redirect_uri, grant_type, code_verifier`) - PKCE is additive here, not a
   secret-free substitute. Same per-user-credential friction as Chzzk, not started
 
-*Personal notification* - not a status visible to others, just a message to yourself when a
-game starts.
-- [ ] Telegram - researched: a bot token from @BotFather (instant, no app review) rather than
-  OAuth - genuinely low friction to obtain, but still a per-user credential the user has to
-  create and paste in (same shape as IGDB's key, just far easier to get). No ambient-status
-  concept in Telegram at all, so this can only ever be a "message myself" utility, not a status
-  others see - not started
-
 *Local/self-hosted* - no external account or OAuth at all, broadcasts only on the local network.
 - [ ] "Now playing" webhook for OBS Browser Source overlays - simplest candidate technically:
   Concourse runs a small local HTTP endpoint, zero external auth of any kind, not started
-- [ ] Home Assistant / local smart-home webhook (e.g. flash a light when a game starts) - not
-  researched yet; same zero-external-auth category as the OBS webhook, different audience
 
-*Explicitly dropped, not viable* - kept here as a record so this doesn't get re-proposed later.
+*Explicitly dropped, not viable/not wanted* - kept here as a record so these don't get
+re-proposed later.
 - Steam Rich Presence - `SetRichPresence` must be called by a process registered under a real
   Steamworks App ID (the game's own, typically) - not injectable by a third-party launcher for
   arbitrary games it doesn't own
+- Telegram - researched, but rejected on merit rather than a technical blocker: its only
+  ambient-status feature (Emoji Status) is emoji-only, not free text, so it can't show an actual
+  game title the way Discord/Slack do; the alternative (a bot messaging just yourself) isn't a
+  status visible to others at all. Neither is worth the per-user bot-token setup cost.
+- Home Assistant / local smart-home webhook - dropped as a speculative addition with no clear
+  use case behind it (my own suggestion, not something actually wanted)
 - X (Twitter) - not a secret/auth problem (OAuth 2.0 + PKCE is supported) but a cost one: the
   free API tier was fully retired for new developers in February 2026, pay-per-use only
   ($0.01/post created) - not viable without charging users per status update

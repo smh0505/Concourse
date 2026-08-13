@@ -5997,3 +5997,62 @@ v6) mirrors `skip_dedup`'s exact existing shape (SQLite boolean, `GameEditFields
 Settings toggle (`appSettings.ts`'s `discordPresenceEnabled`, default `true` - opt-out model,
 matching how Rich Presence itself normally defaults on for supporting apps). New
 `settings.discordPresence`/`gameDetail.skipDiscordPresence` i18n keys across all 10 locales.
+
+## Milestone 29 — Presence Plugin Type
+
+No implementation yet - this entry records the platform research done while scoping which
+second target (beyond Discord) is actually worth building against, before committing to any
+interface design. Same evaluation lens applied to every candidate: does it need a real
+`client_secret` (per-user credential friction, the IGDB problem) or is it safe to hardcode/auth-
+free (the Discord `client_id` situation)? Getting this wrong for the *second* target would mean
+designing `PresencePlugin`'s interface around one auth model, then having to rework it once a
+genuinely different one (per-user OAuth secrets) showed up - worth settling before writing code.
+
+**Chzzk (치지직).** Real Open API exists (`chzzk.gitbook.io`) with `Live` endpoints for stream
+title/category updates - structurally similar to what a Twitch presence plugin would do.
+Confirmed via their own authorization docs, though: the token exchange (`POST /auth/v1/token`)
+requires `clientId` **and** `clientSecret`, no PKCE support anywhere in the docs, and no mention
+of desktop/native app support at all - every example is oriented at server-backed web apps that
+can keep a secret. Same problem as IGDB: either every user registers their own Naver Developer
+Center app (real per-user friction), or Concourse runs a server-side proxy holding the secret
+(real backend infrastructure, well outside "local desktop app").
+
+**Twitch.** Confirmed Twitch supports Authorization Code + PKCE, the flow specifically designed
+for public/native clients that can't protect a secret - the user authenticates via Twitch's own
+login/consent screen, and the resulting token is scoped to *their* account and rate limit, not a
+shared app-wide identity the way IGDB's Client Credentials grant works. Best candidate found so
+far on the "safe to hardcode `client_id`, no per-user friction" axis - same trust shape Discord's
+local-IPC model has, just achieved via OAuth instead of a local pipe.
+
+**Steam Rich Presence - dropped, not viable.** `ISteamFriends::SetRichPresence` must be called
+by a process that has initialized the Steamworks API under a real, registered Steam App ID (via
+`steam_appid.txt`/`SteamAPI_Init`) - it's designed to be called by the game itself, not injected
+by an external launcher for arbitrary games it doesn't own. Concourse has no Steam App ID of its
+own (it isn't published on Steam), and impersonating another game's App ID isn't a real option.
+Correctly ruled out rather than left as a vague "maybe" in the candidate list.
+
+**YouTube - parked, genuinely ambiguous.** Google's own documentation conflicts with itself on
+whether a "Desktop app" credential type's `client_secret` is safe to hardcode: the older "OAuth
+2.0 for Installed Applications" guide states outright that the secret "is obviously not treated
+as a secret" for installed apps, but the current "OAuth 2.0 for iOS & Desktop Apps" reference
+still calls it a secret, marks it "Optional" in the token exchange (the "not applicable" carve-
+out is explicitly stated only for Android/iOS/Chrome client types, not Desktop), and doesn't
+clearly confirm PKCE alone suffices for refresh-token requests specifically (which any
+long-running session beyond the ~1hr access-token lifetime would need). Not confidently resolved
+either way from documentation alone - would need testing against a real Desktop-type credential
+before trusting it the way Twitch's PKCE flow is trusted.
+
+**Other candidates raised, not yet researched:** Slack custom status (same confidential-client
+OAuth shape suspected as Chzzk, unconfirmed), Kick (Twitch's newer competitor - unknown whether
+it follows Twitch's PKCE-friendly model or Chzzk's secret-required one), Mastodon/Fediverse
+auto-posting (likely sidesteps the OAuth-secret problem entirely via manual per-instance personal
+access tokens, the way most desktop Mastodon clients already work - complicated by federation
+meaning there's no single API to register against), and a local Home Assistant/smart-home webhook
+(same zero-external-auth category as the OBS idea below, different audience).
+
+**Local/self-hosted, no external auth at all.** A "now playing" webhook Concourse serves locally
+for OBS's own Browser Source to point at - no OAuth, no account, no secret of any kind, since
+nothing ever leaves the local machine. Structurally the simplest candidate by far precisely
+because it avoids this entire class of problem - worth treating as the likely first real
+`PresencePlugin` implementation once that interface actually gets built, rather than waiting on
+Twitch/Chzzk's auth questions to fully resolve first.

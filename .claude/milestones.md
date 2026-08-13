@@ -522,13 +522,45 @@ architecture for a kind with exactly one implementation isn't worth building now
 - [ ] Manifest/loader wiring, matching the existing four-kind pattern
 - [ ] Migrate Milestone 28's built-in Discord integration into this kind's first real plugin
 - [ ] Settings UI: multi-enable checkboxes, same as the Source/Metadata Provider tabs
-- [ ] Stretch checkpoint: Chzzk (치지직) as a second real target - researched, real Open API
-  exists (`chzzk.gitbook.io`, stream title/category update via `Live` endpoints), but its OAuth
-  flow requires a `clientSecret` (confidential-client only, no PKCE, no documented desktop/
-  native support) - same per-user-credential problem as IGDB, not the "safe to hardcode" path
-  Discord's client_id or a PKCE-based Twitch integration would have. Needs either per-user
-  Naver Developer Center credentials (real friction, like IGDB) or a server-side proxy holding
-  the secret (real infrastructure, outside this app's local-only scope) - not started
+**Candidate platforms, grouped by what the plugin is actually for.** Each platform evaluated on
+the same axis: does it need a real `client_secret` (per-user credential friction, like IGDB) or
+is it safe to hardcode/auth-free (like Discord's `client_id`)? See devlog for the full research
+behind each entry below.
+
+*Chat/community status* - broadcasts "now playing" to a social/chat platform, same shape as
+Milestone 28's Discord integration.
+- [x] Discord - done (Milestone 28), built-in feature, one shared hardcoded `client_id`
+- [ ] Slack - researched: requires a `clientSecret` (confidential-client OAuth, no PKCE) - same
+  per-user-credential friction as IGDB, not started
+- [ ] Mastodon/Fediverse (auto-post "started playing X") - not researched yet; likely sidesteps
+  the OAuth-secret problem via manual per-instance personal access tokens (how most desktop
+  Mastodon apps already do it), but federation means no single API - registration is per-instance
+
+*Livestreaming platforms* - updates a stream's title/category to match the current game.
+- [ ] Twitch - researched: supports Authorization Code + PKCE (no secret needed, unlike the
+  Client Credentials grant IGDB uses) - best fit found so far, not started
+- [ ] Chzzk (치지직) - researched: real Open API exists (`chzzk.gitbook.io`, stream title/category
+  via `Live` endpoints), but requires a `clientSecret` (confidential-client only, no PKCE, no
+  documented desktop/native support) - same per-user-credential problem as IGDB/Slack. Needs
+  either per-user Naver Developer Center credentials or a server-side proxy holding the secret
+  (real infrastructure, outside this app's local-only scope) - not started
+- [ ] Kick - not researched yet; worth checking whether it supports PKCE like Twitch or requires
+  a secret like Chzzk
+
+*Local/self-hosted* - no external account or OAuth at all, broadcasts only on the local network.
+- [ ] "Now playing" webhook for OBS Browser Source overlays - simplest candidate technically:
+  Concourse runs a small local HTTP endpoint, zero external auth of any kind, not started
+- [ ] Home Assistant / local smart-home webhook (e.g. flash a light when a game starts) - not
+  researched yet; same zero-external-auth category as the OBS webhook, different audience
+
+*Explicitly dropped, not viable* - kept here as a record so this doesn't get re-proposed later.
+- Steam Rich Presence - `SetRichPresence` must be called by a process registered under a real
+  Steamworks App ID (the game's own, typically) - not injectable by a third-party launcher for
+  arbitrary games it doesn't own
+- YouTube - parked, not dropped outright: Google's own docs are internally ambiguous on whether
+  a Desktop-app-type `client_secret` is truly safe to hardcode (an older guide says yes, the
+  current native-app reference doesn't clearly exempt Desktop apps the way it does Android/iOS/
+  Chrome types) - needs testing against a real credential before it can be trusted either way
 
 ## Milestone 30 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a

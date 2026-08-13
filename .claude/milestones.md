@@ -522,6 +522,7 @@ architecture for a kind with exactly one implementation isn't worth building now
 - [ ] Manifest/loader wiring, matching the existing four-kind pattern
 - [ ] Migrate Milestone 28's built-in Discord integration into this kind's first real plugin
 - [ ] Settings UI: multi-enable checkboxes, same as the Source/Metadata Provider tabs
+
 **Candidate platforms, grouped by what the plugin is actually for.** Each platform evaluated on
 the same axis: does it need a real `client_secret` (per-user credential friction, like IGDB) or
 is it safe to hardcode/auth-free (like Discord's `client_id`)? See devlog for the full research
@@ -530,8 +531,10 @@ behind each entry below.
 *Chat/community status* - broadcasts "now playing" to a social/chat platform, same shape as
 Milestone 28's Discord integration.
 - [x] Discord - done (Milestone 28), built-in feature, one shared hardcoded `client_id`
-- [ ] Slack - researched: requires a `clientSecret` (confidential-client OAuth, no PKCE) - same
-  per-user-credential friction as IGDB, not started
+- [ ] Slack - researched: supports Authorization Code + PKCE - enabling PKCE marks the app as a
+  public client, and the token exchange then uses `code_verifier` instead of `client_secret`
+  entirely, same safe-to-hardcode shape as Twitch (one-way app setting, can't be disabled once
+  turned on) - not started
 - [ ] Mastodon/Fediverse (auto-post "started playing X") - not researched yet; likely sidesteps
   the OAuth-secret problem via manual per-instance personal access tokens (how most desktop
   Mastodon apps already do it), but federation means no single API - registration is per-instance
@@ -541,11 +544,13 @@ Milestone 28's Discord integration.
   Client Credentials grant IGDB uses) - best fit found so far, not started
 - [ ] Chzzk (치지직) - researched: real Open API exists (`chzzk.gitbook.io`, stream title/category
   via `Live` endpoints), but requires a `clientSecret` (confidential-client only, no PKCE, no
-  documented desktop/native support) - same per-user-credential problem as IGDB/Slack. Needs
+  documented desktop/native support) - same per-user-credential problem as IGDB/Kick. Needs
   either per-user Naver Developer Center credentials or a server-side proxy holding the secret
   (real infrastructure, outside this app's local-only scope) - not started
-- [ ] Kick - not researched yet; worth checking whether it supports PKCE like Twitch or requires
-  a secret like Chzzk
+- [ ] Kick - researched: uses OAuth 2.1 with PKCE, but unlike Twitch/Slack the `client_secret` is
+  still mandatory alongside `code_verifier` in the token exchange (`code, client_id,
+  client_secret, redirect_uri, grant_type, code_verifier`) - PKCE is additive here, not a
+  secret-free substitute. Same per-user-credential friction as Chzzk, not started
 
 *Local/self-hosted* - no external account or OAuth at all, broadcasts only on the local network.
 - [ ] "Now playing" webhook for OBS Browser Source overlays - simplest candidate technically:

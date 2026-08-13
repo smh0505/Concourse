@@ -6042,13 +6042,29 @@ long-running session beyond the ~1hr access-token lifetime would need). Not conf
 either way from documentation alone - would need testing against a real Desktop-type credential
 before trusting it the way Twitch's PKCE flow is trusted.
 
-**Other candidates raised, not yet researched:** Slack custom status (same confidential-client
-OAuth shape suspected as Chzzk, unconfirmed), Kick (Twitch's newer competitor - unknown whether
-it follows Twitch's PKCE-friendly model or Chzzk's secret-required one), Mastodon/Fediverse
-auto-posting (likely sidesteps the OAuth-secret problem entirely via manual per-instance personal
-access tokens, the way most desktop Mastodon clients already work - complicated by federation
-meaning there's no single API to register against), and a local Home Assistant/smart-home webhook
-(same zero-external-auth category as the OBS idea below, different audience).
+**Slack.** Initially assumed to share Chzzk's confidential-client shape (wrong guess, corrected
+after actually checking) - Slack's own docs confirm PKCE support, and enabling it marks the app
+as a "public client": the token exchange (`oauth.v2.access`) then sends `code_verifier` instead
+of `client_secret`, not alongside it. Genuinely secret-free, same safe-to-hardcode shape as
+Twitch. One real wrinkle: enabling PKCE is a one-way app setting (can't be turned back off
+without contacting Slack support), and refresh tokens issued under PKCE expire in 30 days
+instead of lasting indefinitely - a minor ongoing-maintenance cost, not a blocker.
+
+**Kick.** Uses OAuth 2.1 with PKCE for its user-token flow, which looked promising by name alone
+- but confirmed via Kick's own dev docs that the token exchange requires `client_secret`
+**and** `code_verifier` together (`code, client_id, client_secret, redirect_uri, grant_type,
+code_verifier`), not one or the other. PKCE here is additive security on top of a still-
+confidential client, not a substitute for the secret the way it is for Twitch/Slack - same
+per-user-credential friction as Chzzk despite the modern-looking OAuth 2.1 branding. Worth
+noting as a pattern: "uses PKCE" alone doesn't guarantee "doesn't need a secret" - each provider
+has to be checked for whether PKCE actually *replaces* the secret requirement or just sits
+alongside it.
+
+**Other candidates raised, not yet researched:** Mastodon/Fediverse auto-posting (likely
+sidesteps the OAuth-secret problem entirely via manual per-instance personal access tokens, the
+way most desktop Mastodon clients already work - complicated by federation meaning there's no
+single API to register against), and a local Home Assistant/smart-home webhook (same zero-
+external-auth category as the OBS idea below, different audience).
 
 **Local/self-hosted, no external auth at all.** A "now playing" webhook Concourse serves locally
 for OBS's own Browser Source to point at - no OAuth, no account, no secret of any kind, since

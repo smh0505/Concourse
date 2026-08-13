@@ -535,6 +535,24 @@ research.
   target or a real independent-update need actually shows up - same reasoning `standard-gamepad`
   stayed built-in instead of being detached - not started
 
+**OBS webhook follow-ups, stretch.** Ordered smallest-to-biggest lift; none block each other.
+- [ ] Cover art in the overlay - `render_page` (`obs_presence.rs`) currently serves title text
+  only, `Game.cover_art_url` is already available to include alongside it
+- [ ] Live elapsed-time counter - track session start alongside the title in
+  `ObsPresenceState`, render a running clock (same idea as Discord's own elapsed-time display)
+- [ ] Raw JSON `/status` endpoint (`{ title, coverUrl, startedAt }`) alongside the existing HTML
+  page - lets a streamer build a fully custom overlay in their own HTML/CSS/JS instead of being
+  stuck with what we render
+- [ ] Alert-style transient popup mode ("Started playing X!" fading after a few seconds) as an
+  alternative to the current persistent status card
+- [ ] Multiple overlay templates (minimal text-only vs. full card), selectable in Settings,
+  instead of the one fixed layout `render_page` hardcodes today
+- [ ] Real `obs-websocket` integration - a genuinely different, bigger architecture than the
+  current passive Browser Source page: bidirectional control instead of Concourse just serving a
+  page for OBS to poll, could push updates instantly and even auto-switch OBS to a "gaming"
+  scene when a game launches. Worth its own scoping pass, not a small addition like the others
+  above
+
 **Candidate platforms, grouped by what the plugin is actually for.** Each platform evaluated on
 the same axis: does it need a real `client_secret` (per-user credential friction, like IGDB) or
 is it safe to hardcode/auth-free (like Discord's `client_id`)? See devlog for the full research

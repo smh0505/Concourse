@@ -43,7 +43,7 @@ pub fn launch_game(
         // Milestone 39 - applied here (not before spawn returns) since it needs the game's own
         // window, which doesn't exist until moments after the process starts.
         let fullscreen_state = if pseudo_fullscreen {
-            crate::pseudo_fullscreen::apply(pid)
+            crate::pseudo_fullscreen::apply(|| vec![pid])
         } else {
             None
         };
@@ -95,11 +95,20 @@ fn any_process_under_folder(system: &mut System, install_dir: &str) -> bool {
 /// Same match as `any_process_under_folder`, but returns the matched process's PID - Milestone
 /// 39 needs a real PID to find the game's window, not just a yes/no.
 fn find_process_under_folder(system: &mut System, install_dir: &str) -> Option<u32> {
+    all_processes_under_folder(system, install_dir).into_iter().next()
+}
+
+/// Every currently-running PID under the install folder, not just the first one found -
+/// Milestone 39's window search needs to try all of them, since the process a folder match
+/// happens to return first (a launcher stub, an anti-cheat helper) frequently isn't the one that
+/// actually owns the game's window. `find_process_under_folder`'s single-PID version stays
+/// separate (fine for the game-session-started emit, which just needs "something is running").
+fn all_processes_under_folder(system: &mut System, install_dir: &str) -> Vec<u32> {
     system.refresh_processes(ProcessesToUpdate::All, true);
     system
         .processes()
         .iter()
-        .find(|(_, process)| {
+        .filter(|(_, process)| {
             process
                 .exe()
                 .and_then(|exe| exe.to_str())
@@ -107,6 +116,7 @@ fn find_process_under_folder(system: &mut System, install_dir: &str) -> Option<u
                 .unwrap_or(false)
         })
         .map(|(pid, _)| pid.as_u32())
+        .collect()
 }
 
 /// Tracks playtime for URI-launched games (Steam/Epic/GOG), where we hold no child process
@@ -133,21 +143,29 @@ pub fn track_folder_playtime(
 
         // Phase 1: wait for the game to actually start.
         let wait_start = std::time::Instant::now();
-        let pid = loop {
-            if let Some(pid) = find_process_under_folder(&mut system, &install_dir) {
-                break pid;
+        loop {
+            if find_process_under_folder(&mut system, &install_dir).is_some() {
+                break;
             }
             if wait_start.elapsed() > MATCH_TIMEOUT {
                 return;
             }
             std::thread::sleep(POLL_INTERVAL);
-        };
+        }
 
         // Only now (not on command call, which fires right after openUrl() - before the game
         // window necessarily even exists) is this actually confirmed running.
         let _ = app.emit("game-session-started", GameSessionStarted { game_id, title });
 
-        let fullscreen_state = if pseudo_fullscreen { crate::pseudo_fullscreen::apply(pid) } else { None };
+        // Re-scans for every matching process on each retry tick (not just the one first seen in
+        // Phase 1 above) - the real game window frequently belongs to a different process than
+        // whichever one happened to match the folder first (a launcher stub, an anti-cheat
+        // helper), and it may not even exist yet at this exact moment.
+        let fullscreen_state = if pseudo_fullscreen {
+            crate::pseudo_fullscreen::apply(|| all_processes_under_folder(&mut system, &install_dir))
+        } else {
+            None
+        };
 
         let start = std::time::SystemTime::now();
         let start_time = unix_timestamp(start);

@@ -56,12 +56,19 @@ fn find_window_for_pid(pid: u32) -> Option<HWND> {
     state.1.map(|raw| HWND(raw as *mut _))
 }
 
-/// Games can take a moment after the process is confirmed running before their real top-level
-/// window actually exists - short retry loop rather than a single check.
-fn wait_for_window(pid: u32) -> Option<HWND> {
+/// Retries for ~5s, re-evaluating `candidate_pids` fresh on every attempt rather than fixing on
+/// one PID up front. For a folder-tracked (URI-launched) game, "the process running under this
+/// install folder" is frequently *not* the one process that owns the actual game window - a
+/// launcher stub, an anti-cheat helper, or a 32-bit bootstrap can share the same folder and get
+/// matched first, and none of those own any window at all. Checking every currently-running
+/// candidate each tick (not just the first one ever seen) finds the real one once it exists,
+/// even if it starts after some other process under the same folder already has.
+fn wait_for_window(mut candidate_pids: impl FnMut() -> Vec<u32>) -> Option<HWND> {
     for _ in 0..20 {
-        if let Some(hwnd) = find_window_for_pid(pid) {
-            return Some(hwnd);
+        for pid in candidate_pids() {
+            if let Some(hwnd) = find_window_for_pid(pid) {
+                return Some(hwnd);
+            }
         }
         std::thread::sleep(Duration::from_millis(250));
     }
@@ -162,13 +169,15 @@ fn spawn_overlay(bounds: RECT, insert_after: HWND) -> (isize, JoinHandle<()>) {
     (hwnd, thread)
 }
 
-/// Finds the game's window (by PID), strips its title bar/border, resizes it (not stretches -
-/// the game's own client content keeps its real aspect ratio) to fit letterboxed within
-/// whichever display it opened on, and drops a black overlay behind it to cover the margin.
-/// Returns `None` (a no-op) if the window can't be found in time - never blocks the caller's own
-/// session tracking indefinitely.
-pub fn apply(pid: u32) -> Option<PseudoFullscreenState> {
-    let hwnd = wait_for_window(pid)?;
+/// Finds the game's window, strips its title bar/border, resizes it (not stretches - the game's
+/// own client content keeps its real aspect ratio) to fit letterboxed within whichever display
+/// it opened on, and drops a black overlay behind it to cover the margin. Returns `None` (a
+/// no-op) if no window turns up among `candidate_pids` in time - never blocks the caller's own
+/// session tracking indefinitely. `candidate_pids` is re-evaluated on every retry tick (see
+/// `wait_for_window`) - pass a closure that returns just the one known PID for a direct-exe
+/// launch, or one that re-scans for every process under an install folder for a URI-launched one.
+pub fn apply(candidate_pids: impl FnMut() -> Vec<u32>) -> Option<PseudoFullscreenState> {
+    let hwnd = wait_for_window(candidate_pids)?;
 
     unsafe {
         let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);

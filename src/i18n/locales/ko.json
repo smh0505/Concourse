@@ -313,6 +313,15 @@
     "noMatches": "일치하는 게임이 없습니다."
   },
   "obsPresence": {
+    "configure": "오버레이 설정",
+    "modalTitle": "OBS 오버레이",
+    "portLabel": "포트",
+    "apply": "적용",
+    "test": "테스트",
+    "close": "닫기",
+    "invalidPort": "1에서 65535 사이의 포트를 입력하세요.",
+    "applySuccess": "적용되었습니다.",
+    "testSuccess": "오버레이가 정상적으로 응답했습니다.",
     "hint": "OBS 브라우저 소스를 다음 주소로 설정하세요:",
     "statusHint": "커스텀 오버레이를 위해 원시 JSON 상태는 다음 주소에서 확인할 수 있습니다:"
   }

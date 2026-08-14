@@ -1,26 +1,139 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { invoke } from "@tauri-apps/api/core";
 
-// Must match src-tauri/src/obs_presence.rs's PORT constant - fixed for this pass, not
-// user-configurable yet (Milestone 29's own explicitly-deferred scope).
-const OBS_PRESENCE_URL = "http://localhost:47474/";
-const OBS_PRESENCE_STATUS_URL = "http://localhost:47474/status";
+import { settings as settingsRepo } from "@/db";
+import BaseModal from "@/components/desktop/common/BaseModal.vue";
+import { OBS_PRESENCE_DEFAULT_PORT, OBS_PRESENCE_PORT_SETTING } from "./index";
 
 const { t } = useI18n();
+
+const modalOpen = ref(false);
+const appliedPort = ref(OBS_PRESENCE_DEFAULT_PORT);
+const portInput = ref(String(OBS_PRESENCE_DEFAULT_PORT));
+
+type Status = "idle" | "busy" | "success" | "error";
+const applyStatus = ref<Status>("idle");
+const applyMessage = ref("");
+const testStatus = ref<Status>("idle");
+const testMessage = ref("");
+
+const overlayUrl = computed(() => `http://localhost:${appliedPort.value}/`);
+const statusUrl = computed(() => `http://localhost:${appliedPort.value}/status`);
+
+async function openModal() {
+  const stored = await settingsRepo.get(OBS_PRESENCE_PORT_SETTING);
+  const storedPort = stored ? Number(stored) : OBS_PRESENCE_DEFAULT_PORT;
+  appliedPort.value = Number.isInteger(storedPort) && storedPort > 0 ? storedPort : OBS_PRESENCE_DEFAULT_PORT;
+  portInput.value = String(appliedPort.value);
+  applyStatus.value = "idle";
+  testStatus.value = "idle";
+  modalOpen.value = true;
+}
+
+async function applyPort() {
+  const port = Number(portInput.value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    applyStatus.value = "error";
+    applyMessage.value = t("obsPresence.invalidPort");
+    return;
+  }
+
+  applyStatus.value = "busy";
+  testStatus.value = "idle";
+  try {
+    await invoke("set_obs_presence_port", { port });
+    await settingsRepo.set(OBS_PRESENCE_PORT_SETTING, String(port));
+    appliedPort.value = port;
+    applyStatus.value = "success";
+    applyMessage.value = t("obsPresence.applySuccess");
+  } catch (e) {
+    applyStatus.value = "error";
+    applyMessage.value = String(e);
+  }
+}
+
+async function testConnection() {
+  testStatus.value = "busy";
+  try {
+    await invoke("test_obs_presence_port", { port: appliedPort.value });
+    testStatus.value = "success";
+    testMessage.value = t("obsPresence.testSuccess");
+  } catch (e) {
+    testStatus.value = "error";
+    testMessage.value = String(e);
+  }
+}
 </script>
 
 <template>
-  <p class="obs-presence-hint">
-    {{ t("obsPresence.hint") }}
-    <code>{{ OBS_PRESENCE_URL }}</code>
-  </p>
-  <p class="obs-presence-hint">
-    {{ t("obsPresence.statusHint") }}
-    <code>{{ OBS_PRESENCE_STATUS_URL }}</code>
-  </p>
+  <button type="button" class="obs-presence-configure" @click="openModal">
+    {{ t("obsPresence.configure") }}
+  </button>
+
+  <BaseModal :open="modalOpen" :title="t('obsPresence.modalTitle')" @close="modalOpen = false">
+    <template #body>
+      <label class="obs-presence-field">
+        {{ t("obsPresence.portLabel") }}
+        <input v-model="portInput" type="number" min="1" max="65535" />
+      </label>
+      <div class="obs-presence-actions">
+        <button type="button" @click="applyPort">{{ t("obsPresence.apply") }}</button>
+        <button type="button" @click="testConnection">{{ t("obsPresence.test") }}</button>
+      </div>
+      <p v-if="applyStatus !== 'idle'" class="obs-presence-status" :class="applyStatus">
+        {{ applyMessage }}
+      </p>
+      <p v-if="testStatus !== 'idle'" class="obs-presence-status" :class="testStatus">
+        {{ testMessage }}
+      </p>
+
+      <p class="obs-presence-hint">
+        {{ t("obsPresence.hint") }}
+        <code>{{ overlayUrl }}</code>
+      </p>
+      <p class="obs-presence-hint">
+        {{ t("obsPresence.statusHint") }}
+        <code>{{ statusUrl }}</code>
+      </p>
+    </template>
+    <template #footer>
+      <button type="button" @click="modalOpen = false">{{ t("obsPresence.close") }}</button>
+    </template>
+  </BaseModal>
 </template>
 
 <style scoped>
+.obs-presence-configure {
+  font-size: 0.8rem;
+}
+
+.obs-presence-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.85rem;
+}
+
+.obs-presence-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.obs-presence-status {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.obs-presence-status.success {
+  color: var(--color-accent);
+}
+
+.obs-presence-status.error {
+  color: var(--color-danger);
+}
+
 .obs-presence-hint {
   font-size: 0.8rem;
   opacity: 0.8;

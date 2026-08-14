@@ -1,13 +1,15 @@
-use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 use tiny_http::{Header, Method, Response, Server};
 
-/// Fixed for this pass (not user-configurable in Settings yet) - the OBS plugin's own
-/// settingsComponent shows this URL for the user to paste into a Browser Source.
-pub const PORT: u16 = 47474;
+/// Boot-time default - actually-active port lives in `ObsPresenceState.port`, since
+/// `set_obs_presence_port` can rebind it later. The server always starts on this port so a
+/// fresh install has a working overlay before Settings is ever opened; a persisted custom port
+/// (see `ObsPresenceSettings.vue`) is re-applied by `presence.ts`'s `init()` on every launch.
+pub const DEFAULT_PORT: u16 = 47474;
 
 struct NowPlaying {
     title: String,
@@ -25,11 +27,18 @@ struct NowPlaying {
 /// every HTTP request rather than pushed to the browser - simplest way to stay correct without
 /// a websocket, at the cost of the page needing to poll/refresh itself for title/cover changes
 /// (see the served HTML's own meta-refresh below).
-pub struct ObsPresenceState(Mutex<Option<NowPlaying>>);
+pub struct ObsPresenceState {
+    now_playing: Mutex<Option<NowPlaying>>,
+    /// Current listener - swapped out (not mutated in place) by `set_obs_presence_port`, so a
+    /// bind failure on the new port leaves the old one still serving. `Arc` so both this state
+    /// and the serving thread can hold a reference; `unblock()` on the old `Server` is what ends
+    /// its thread's `incoming_requests()` loop when it's replaced.
+    server: Mutex<Option<Arc<Server>>>,
+}
 
 impl ObsPresenceState {
     pub fn new() -> Self {
-        Self(Mutex::new(None))
+        Self { now_playing: Mutex::new(None), server: Mutex::new(None) }
     }
 }
 
@@ -46,7 +55,7 @@ pub fn set_now_playing(
     title: Option<String>,
     cover_url: Option<String>,
 ) {
-    let mut guard = state.0.lock().unwrap();
+    let mut guard = state.now_playing.lock().unwrap();
     *guard = title.map(|title| {
         let started_at = match guard.as_ref() {
             Some(existing) if existing.title == title => existing.started_at,
@@ -134,46 +143,90 @@ fn html_escape(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
+/// Runs on its own thread for as long as `server` stays bound - ends when `server.unblock()` is
+/// called elsewhere (port change) or the process exits. Shared by both the initial boot-time
+/// server and every later rebind from `set_obs_presence_port`.
+fn serve(app: AppHandle, server: Arc<Server>) {
+    for request in server.incoming_requests() {
+        let now_playing_snapshot = {
+            let state = app.state::<ObsPresenceState>();
+            let guard = state.now_playing.lock().unwrap();
+            guard.as_ref().map(|np| NowPlaying {
+                title: np.title.clone(),
+                cover_url: np.cover_url.clone(),
+                started_at: np.started_at,
+            })
+        };
+        let is_status = *request.method() == Method::Get && request.url() == "/status";
+        if is_status {
+            let json = render_status_json(&now_playing_snapshot);
+            let header =
+                Header::from_bytes(&b"Content-Type"[..], &b"application/json; charset=utf-8"[..])
+                    .expect("static header is valid");
+            let _ = request.respond(Response::from_string(json).with_header(header));
+        } else {
+            let html = render_page(&now_playing_snapshot);
+            let header = Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..])
+                .expect("static header is valid");
+            let _ = request.respond(Response::from_string(html).with_header(header));
+        }
+    }
+}
+
 /// Starts once in `.setup()` and just stays up for the app's whole lifetime - no start/stop
 /// lifecycle tied to a plugin being enabled, since the OBS plugin's activate/deactivate only
 /// ever change *what the already-running server reports*, not whether it's listening at all.
-/// Takes `AppHandle` (not a raw state reference) and re-fetches `ObsPresenceState` per request,
-/// the same "go through the handle, not a borrowed reference" pattern this codebase's other
-/// background threads (launcher.rs, quick_launch.rs) already use across thread boundaries.
-pub fn start(app: AppHandle) {
-    std::thread::spawn(move || {
-        let server = match Server::http(("127.0.0.1", PORT)) {
-            Ok(server) => server,
-            Err(e) => {
-                eprintln!("obs_presence: failed to bind 127.0.0.1:{PORT}: {e}");
-                return;
-            }
-        };
-
-        for request in server.incoming_requests() {
-            let now_playing_snapshot = {
-                let state = app.state::<ObsPresenceState>();
-                let guard = state.0.lock().unwrap();
-                guard.as_ref().map(|np| NowPlaying {
-                    title: np.title.clone(),
-                    cover_url: np.cover_url.clone(),
-                    started_at: np.started_at,
-                })
-            };
-            let is_status = *request.method() == Method::Get && request.url() == "/status";
-            if is_status {
-                let json = render_status_json(&now_playing_snapshot);
-                let header =
-                    Header::from_bytes(&b"Content-Type"[..], &b"application/json; charset=utf-8"[..])
-                        .expect("static header is valid");
-                let _ = request.respond(Response::from_string(json).with_header(header));
-            } else {
-                let html = render_page(&now_playing_snapshot);
-                let header =
-                    Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..])
-                        .expect("static header is valid");
-                let _ = request.respond(Response::from_string(html).with_header(header));
-            }
+pub fn start(app: AppHandle, port: u16) {
+    let server = match Server::http(("127.0.0.1", port)) {
+        Ok(server) => Arc::new(server),
+        Err(e) => {
+            eprintln!("obs_presence: failed to bind 127.0.0.1:{port}: {e}");
+            return;
         }
-    });
+    };
+    *app.state::<ObsPresenceState>().server.lock().unwrap() = Some(server.clone());
+    let app_for_thread = app.clone();
+    std::thread::spawn(move || serve(app_for_thread, server));
+}
+
+/// Rebinds the overlay server to a new port, called from `ObsPresenceSettings.vue`'s Apply
+/// button (and once at startup by `presence.ts` if a non-default port was persisted last
+/// session). Binds the new port *before* tearing down the old one, so a port already in use by
+/// something else fails loudly without taking down the currently-working overlay.
+#[tauri::command]
+pub fn set_obs_presence_port(app: AppHandle, port: u16) -> Result<(), String> {
+    let new_server = Server::http(("127.0.0.1", port))
+        .map(Arc::new)
+        .map_err(|e| format!("Failed to bind port {port}: {e}"))?;
+
+    let old_server = {
+        let state = app.state::<ObsPresenceState>();
+        let mut guard = state.server.lock().unwrap();
+        guard.replace(new_server.clone())
+    };
+    if let Some(old_server) = old_server {
+        old_server.unblock();
+    }
+
+    let app_for_thread = app.clone();
+    std::thread::spawn(move || serve(app_for_thread, new_server));
+    Ok(())
+}
+
+/// Backs the Settings panel's "Test" button - a real HTTP round trip to `/status` on the given
+/// port, not just a "does something own this port" TCP probe, so it actually proves the overlay
+/// responds and not merely that some other process is squatting the port.
+#[tauri::command]
+pub fn test_obs_presence_port(port: u16) -> Result<(), String> {
+    let url = format!("http://127.0.0.1:{port}/status");
+    let response = reqwest::blocking::Client::new()
+        .get(&url)
+        .timeout(Duration::from_secs(3))
+        .send()
+        .map_err(|e| format!("No response from {url}: {e}"))?;
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        Err(format!("{url} responded with status {}", response.status()))
+    }
 }

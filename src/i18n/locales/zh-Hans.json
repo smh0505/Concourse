@@ -313,6 +313,15 @@
     "noMatches": "没有匹配的游戏。"
   },
   "obsPresence": {
+    "configure": "配置叠加层",
+    "modalTitle": "OBS 叠加层",
+    "portLabel": "端口",
+    "apply": "应用",
+    "test": "测试",
+    "close": "关闭",
+    "invalidPort": "请输入 1 到 65535 之间的端口。",
+    "applySuccess": "已应用。",
+    "testSuccess": "叠加层响应成功。",
     "hint": "将 OBS 浏览器源指向：",
     "statusHint": "如需自定义叠加层，原始 JSON 状态可在以下地址获取："
   }

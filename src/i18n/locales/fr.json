@@ -313,6 +313,15 @@
     "noMatches": "Aucun jeu correspondant."
   },
   "obsPresence": {
+    "configure": "Configurer l'incrustation",
+    "modalTitle": "Incrustation OBS",
+    "portLabel": "Port",
+    "apply": "Appliquer",
+    "test": "Tester",
+    "close": "Fermer",
+    "invalidPort": "Saisissez un port entre 1 et 65535.",
+    "applySuccess": "Appliqué.",
+    "testSuccess": "L'incrustation a répondu avec succès.",
     "hint": "Pointez une source navigateur OBS vers :",
     "statusHint": "Pour une incrustation personnalisée, le statut JSON brut est disponible à :"
   }

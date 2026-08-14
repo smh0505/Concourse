@@ -1,11 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { PresencePlugin } from "@/plugins/types";
+import { OBS_PRESENCE_PORT_SETTING } from "@/plugins/obs-presence";
 import { useLibraryStore } from "./library";
 
 const ENABLED_PRESENCE_SETTING = "enabled_presence_plugins";
@@ -63,8 +65,20 @@ export const usePresenceStore = defineStore("presence", () => {
     await Promise.all(loadedPlugins.value.map((p) => p.deactivate().catch(() => {})));
   }
 
+  /** The overlay server always boots on obs_presence.rs's DEFAULT_PORT (Rust has no DB access
+   *  to read a persisted value itself) - re-apply a saved custom port here so a fresh launch
+   *  matches whatever the user last configured, without requiring Settings to be opened first. */
+  async function applyPersistedObsPort() {
+    const storedPort = await settingsRepo.get(OBS_PRESENCE_PORT_SETTING);
+    if (!storedPort) return;
+    const port = Number(storedPort);
+    if (!Number.isInteger(port) || port <= 0) return;
+    await invoke("set_obs_presence_port", { port }).catch(() => {});
+  }
+
   async function init() {
     await refreshManifests();
+    await applyPersistedObsPort();
 
     const stored = await settingsRepo.get(ENABLED_PRESENCE_SETTING);
     if (stored === null) {

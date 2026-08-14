@@ -313,6 +313,15 @@
     "noMatches": "No matching games."
   },
   "obsPresence": {
+    "configure": "Configure Overlay",
+    "modalTitle": "OBS Overlay",
+    "portLabel": "Port",
+    "apply": "Apply",
+    "test": "Test",
+    "close": "Close",
+    "invalidPort": "Enter a port between 1 and 65535.",
+    "applySuccess": "Applied.",
+    "testSuccess": "Overlay responded successfully.",
     "hint": "Point an OBS Browser Source at:",
     "statusHint": "For a custom overlay, raw JSON status is available at:"
   }

@@ -313,6 +313,15 @@
     "noMatches": "Nenhum jogo correspondente."
   },
   "obsPresence": {
+    "configure": "Configurar sobreposição",
+    "modalTitle": "Sobreposição do OBS",
+    "portLabel": "Porta",
+    "apply": "Aplicar",
+    "test": "Testar",
+    "close": "Fechar",
+    "invalidPort": "Informe uma porta entre 1 e 65535.",
+    "applySuccess": "Aplicado.",
+    "testSuccess": "A sobreposição respondeu com sucesso.",
     "hint": "Aponte uma Fonte de Navegador do OBS para:",
     "statusHint": "Para uma sobreposição personalizada, o status JSON bruto está disponível em:"
   }

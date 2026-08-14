@@ -34,7 +34,7 @@ pub fn run() {
         .setup(|app| {
             tray::build_tray(app.handle())?;
             quick_launch::init(app, quick_launch::DEFAULT_HOTKEY)?;
-            obs_presence::start(app.handle().clone());
+            obs_presence::start(app.handle().clone(), obs_presence::DEFAULT_PORT);
             if let Some(main_window) = app.get_webview_window("main") {
                 tray::install_close_to_tray_handler(&main_window);
             }
@@ -50,6 +50,8 @@ pub fn run() {
             discord_presence::set_discord_presence,
             discord_presence::clear_discord_presence,
             obs_presence::set_now_playing,
+            obs_presence::set_obs_presence_port,
+            obs_presence::test_obs_presence_port,
             plugin_installer::fetch_plugin_preview,
             plugin_installer::install_plugin,
             plugin_installer::list_data_themes,

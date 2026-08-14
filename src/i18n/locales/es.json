@@ -313,6 +313,15 @@
     "noMatches": "No hay juegos coincidentes."
   },
   "obsPresence": {
+    "configure": "Configurar superposición",
+    "modalTitle": "Superposición de OBS",
+    "portLabel": "Puerto",
+    "apply": "Aplicar",
+    "test": "Probar",
+    "close": "Cerrar",
+    "invalidPort": "Introduce un puerto entre 1 y 65535.",
+    "applySuccess": "Aplicado.",
+    "testSuccess": "La superposición respondió correctamente.",
     "hint": "Apunta una fuente de navegador de OBS a:",
     "statusHint": "Para una superposición personalizada, el estado JSON en bruto está disponible en:"
   }

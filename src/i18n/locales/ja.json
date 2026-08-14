@@ -313,6 +313,15 @@
     "noMatches": "一致するゲームがありません。"
   },
   "obsPresence": {
+    "configure": "オーバーレイを設定",
+    "modalTitle": "OBSオーバーレイ",
+    "portLabel": "ポート",
+    "apply": "適用",
+    "test": "テスト",
+    "close": "閉じる",
+    "invalidPort": "1から65535の間のポート番号を入力してください。",
+    "applySuccess": "適用しました。",
+    "testSuccess": "オーバーレイが正常に応答しました。",
     "hint": "OBSのブラウザソースを次のURLに設定してください:",
     "statusHint": "カスタムオーバーレイ用に、生のJSONステータスは次のURLで取得できます:"
   }

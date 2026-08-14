@@ -313,6 +313,15 @@
     "noMatches": "Keine passenden Spiele."
   },
   "obsPresence": {
+    "configure": "Overlay konfigurieren",
+    "modalTitle": "OBS-Overlay",
+    "portLabel": "Port",
+    "apply": "Anwenden",
+    "test": "Testen",
+    "close": "Schließen",
+    "invalidPort": "Gib einen Port zwischen 1 und 65535 ein.",
+    "applySuccess": "Angewendet.",
+    "testSuccess": "Overlay hat erfolgreich geantwortet.",
     "hint": "OBS-Browserquelle auf folgende Adresse richten:",
     "statusHint": "Für ein individuelles Overlay ist der rohe JSON-Status verfügbar unter:"
   }

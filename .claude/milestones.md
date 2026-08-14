@@ -546,11 +546,10 @@ research.
   commands, port persisted and re-applied on every launch; Settings UI moved the overlay/status
   URLs off inline text into a "Configure Overlay" modal alongside the port field and Apply/Test
   actions (not originally on this sublist - added ad hoc)
-- [ ] Overlay presentation options - an alert-style transient popup mode ("Started playing X!"
-  fading after a few seconds) as an alternative to the current persistent status card, and
-  multiple selectable templates (minimal text-only vs. full card) instead of the one fixed
-  layout `render_page` hardcodes today - both are "how it's presented" choices, worth designing
-  together rather than as separate settings
+- [x] Overlay presentation options - alert-style transient popup mode (fades out client-side
+  after a configurable number of seconds) alongside the original persistent status card, and a
+  minimal (title-only) template alongside the original full card (cover + elapsed time) -
+  `set_obs_overlay_style`, applied instantly, no bind/collision failure mode like the port has
 - [ ] Real `obs-websocket` integration - a genuinely different, bigger architecture than the
   current passive Browser Source page: bidirectional control instead of Concourse just serving a
   page for OBS to poll, could push updates instantly and even auto-switch OBS to a "gaming"

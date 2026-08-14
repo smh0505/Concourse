@@ -6290,3 +6290,82 @@ failed rebind never leaves a stale/wrong value written to disk.
 New i18n keys (`configure`, `modalTitle`, `portLabel`, `apply`, `test`, `close`, `invalidPort`,
 `applySuccess`, `testSuccess`) added across all 10 locales alongside the existing `hint`/
 `statusHint` keys.
+
+### OBS webhook follow-up: port-config UX fixes + structured errors
+
+Three small fixes found via real testing of the port config/modal feature above, before moving
+to the next stretch item:
+
+1. Test button tested `appliedPort` (the last *successfully* applied port), not whatever was
+   typed in the field. After a failed Apply, pressing Test silently re-checked the old good port
+   and showed a stale "responded successfully" next to a different port number in the input -
+   confusing, looked like the failed port had actually worked. Fixed: `testConnection` now
+   validates and probes `portInput` directly, and both success messages name the port they
+   tested (`applySuccess`/`testSuccess` gained a `{port}` param) so there's no ambiguity about
+   which port a message refers to.
+2. Reapplying the port already active failed with a real Windows `os error 10048`
+   (`WSAEADDRINUSE`) - expected, since `set_obs_presence_port` always binds the *new* port before
+   dropping the old one (so a bad port can't take down a working overlay), which guarantees a
+   self-collision when "new" and "old" are the same port. Short-circuited client-side: if
+   `portInput === appliedPort`, skip the round-trip and show a new `alreadyApplied` success
+   message instead of a doomed bind attempt.
+3. `set_obs_presence_port`/`test_obs_presence_port` returned flat `String` errors, string-
+   formatted in Rust (`format!("Failed to bind port {port}: {e}")`) and shown as-is. Two real
+   OS-error cases hit during testing (port 1094 landing in a Windows-reserved dynamic port
+   exclusion range → `os error 10013`/`WSAEACCES`; the port-1420-self-collision case above →
+   `os error 10048`) surfaced that raw OS error text is itself in the OS's language, not this
+   app's i18n - a non-English-Windows user's bug report would show OS text in a language
+   inconsistent with the rest of the translated UI around it. Discussed the trade-off explicitly
+   (raw code is genuinely useful for real debugging - it's what diagnosed both cases above -
+   versus a curated message being friendlier for a first-time user) and landed on a middle
+   ground: keep the raw text, but stop making it the *only* thing shown. New `ObsPresenceError`
+   enum (`#[derive(Serialize)] #[serde(tag = "kind")]`) with `BindFailed`/`Unreachable`/
+   `BadStatus` variants, each carrying the structured fields (`port`, `status`) *and* a `raw:
+   String` field for the underlying OS/HTTP text. `ObsPresenceSettings.vue` matches on `kind` to
+   build a fully localized headline sentence via i18n (`errorBindFailed`/`errorUnreachable`/
+   `errorBadStatus`), with `raw` rendered underneath as a smaller monospace detail line - both
+   still on-screen, nothing written to a log file (confirmed no logging infrastructure exists
+   anywhere in this codebase yet - only ad hoc `eprintln!`, stdout/stderr only, gone in a release
+   build).
+
+Considered doing this consistently across every other `Result<_, String>` command in the
+backend (`plugin_installer.rs`/`wasm_plugin_runtime.rs`/`wasm_plugins.rs` alone account for 20+)
+but iceboxed it as its own thing - genuinely different failure domains per module (network,
+filesystem, zip, wasmtime, Sigstore), real architecture work either as one kitchen-sink enum or
+a `thiserror`-style hierarchy, and nothing outside OBS has hit user-facing confusion serious
+enough yet to justify it. No `thiserror` dependency added or needed for the OBS case itself -
+confirmed this project has hand-rolled this exact pattern (`#[derive(Serialize)]` tagged enum,
+`.map_err` at each fallible call) without it before.
+
+### OBS webhook follow-up: presentation options (template + alert-popup mode)
+
+Third of the four original stretch items (only real `obs-websocket` integration remains).
+
+New `OverlayStyle` struct (`template: Template` Minimal/Full, `mode: Mode` Persistent/Alert,
+`alert_seconds: u64`) added to `ObsPresenceState` alongside the existing `now_playing`/`server`
+fields - deliberately orthogonal to `NowPlaying` ("what's playing" vs. "how it's shown"), so
+changing style never touches activation state and vice versa. `render_page` branches on both:
+minimal template omits the cover `<img>` and elapsed-time `<div>` entirely (title only), full
+template is the existing card unchanged.
+
+Alert mode needed no new server-side "have I already shown this" tracking. The served page's own
+script already computes `now - started_at` every second for the elapsed-time display; alert mode
+reuses that same clock to toggle a `.faded` CSS class (`opacity: 0`, `transition: opacity 0.5s
+ease`) once elapsed seconds cross `alert_seconds`. Because it's derived from a real timestamp
+(`started_at`, sent to the page once) rather than any "have I shown this popup yet" flag, it
+stays correct across the page's own 15s meta-refresh reloads for free - a freshly-reloaded page
+mid-fade just recomputes the same elapsed value and renders the same faded/not-faded state,
+no localStorage or other persisted view-state needed.
+
+New `set_obs_overlay_style(template, mode, alert_seconds)` command - unlike the port, there's no
+bind/collision failure mode here (nothing to fail on a plain in-memory struct swap), so it
+applies instantly on every control change in `ObsPresenceSettings.vue` rather than needing an
+explicit Apply button like the port field has. Style settings persist via the same
+`settingsRepo`-then-re-apply-at-boot pattern as the port (`presence.ts`'s `applyPersistedObsPort`
+gained a sibling `applyPersistedObsStyle`, both called from `init()`) - Rust still has no DB
+access to read either back for itself, `OverlayStyle::default()` is always the boot-time
+starting point.
+
+Hit the same `E0716` "temporary value dropped while borrowed" pattern as `obs_presence.rs`'s very
+first version (`app.state::<T>().field.lock()` chained directly) - same fix, bind
+`app.state::<ObsPresenceState>()` to a local before locking.

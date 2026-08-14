@@ -139,7 +139,7 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
             };
             let info_class = if style.corner.is_right() { " reverse" } else { "" };
             format!(
-                r#"<div id="card" data-started="{}" style="{}"><div class="info{info_class}">{cover}<div class="title">{}</div>{elapsed}</div></div>"#,
+                r#"<div id="card" data-started="{}" style="{}"><div class="info{info_class}">{cover}<div class="text"><div class="title-wrap"><span class="title-inner">{}</span></div>{elapsed}</div></div></div>"#,
                 np.started_at,
                 style.corner.css_position(),
                 html_escape(&np.title),
@@ -164,7 +164,18 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
   .info {{ display: flex; align-items: center; gap: 0.75rem; }}
   .info.reverse {{ flex-direction: row-reverse; }}
   .cover {{ width: 4rem; height: 4rem; object-fit: cover; border-radius: 0.3rem; }}
-  .title {{ font-size: 2rem; }}
+  .text {{ display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }}
+  .title-wrap {{ max-width: 16rem; overflow: hidden; white-space: nowrap; }}
+  .title-inner {{ display: inline-block; font-size: 2rem; }}
+  .title-inner.marquee {{
+    animation: marquee-scroll linear infinite;
+    animation-duration: var(--marquee-duration, 6s);
+  }}
+  @keyframes marquee-scroll {{
+    0%, 10% {{ transform: translateX(0); }}
+    45%, 55% {{ transform: translateX(var(--marquee-distance, 0)); }}
+    90%, 100% {{ transform: translateX(0); }}
+  }}
   .elapsed {{ font-size: 1.1rem; opacity: 0.8; font-variant-numeric: tabular-nums; }}
 </style>
 </head><body>{body}
@@ -188,6 +199,17 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
     }};
     tick();
     setInterval(tick, 1000);
+  }}
+
+  const titleWrap = document.querySelector(".title-wrap");
+  const titleInner = document.querySelector(".title-inner");
+  if (titleWrap && titleInner) {{
+    const overflow = titleInner.scrollWidth - titleWrap.clientWidth;
+    if (overflow > 0) {{
+      titleInner.style.setProperty("--marquee-distance", `-${{overflow}}px`);
+      titleInner.style.setProperty("--marquee-duration", `${{Math.max(3, overflow / 30)}}s`);
+      titleInner.classList.add("marquee");
+    }}
   }}
 </script>
 </body></html>"#

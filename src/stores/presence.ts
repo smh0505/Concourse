@@ -7,7 +7,15 @@ import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { PresencePlugin } from "@/plugins/types";
-import { OBS_PRESENCE_PORT_SETTING } from "@/plugins/obs-presence";
+import {
+  OBS_PRESENCE_ALERT_SECONDS_SETTING,
+  OBS_PRESENCE_DEFAULT_ALERT_SECONDS,
+  OBS_PRESENCE_DEFAULT_MODE,
+  OBS_PRESENCE_DEFAULT_TEMPLATE,
+  OBS_PRESENCE_MODE_SETTING,
+  OBS_PRESENCE_PORT_SETTING,
+  OBS_PRESENCE_TEMPLATE_SETTING,
+} from "@/plugins/obs-presence";
 import { useLibraryStore } from "./library";
 
 const ENABLED_PRESENCE_SETTING = "enabled_presence_plugins";
@@ -76,9 +84,27 @@ export const usePresenceStore = defineStore("presence", () => {
     await invoke("set_obs_presence_port", { port }).catch(() => {});
   }
 
+  /** Same rationale as `applyPersistedObsPort` - style also lives in `ObsPresenceState`, which
+   *  Rust always boots with `OverlayStyle::default()`. */
+  async function applyPersistedObsStyle() {
+    const [template, mode, alertSecondsStr] = await Promise.all([
+      settingsRepo.get(OBS_PRESENCE_TEMPLATE_SETTING),
+      settingsRepo.get(OBS_PRESENCE_MODE_SETTING),
+      settingsRepo.get(OBS_PRESENCE_ALERT_SECONDS_SETTING),
+    ]);
+    if (!template && !mode && !alertSecondsStr) return;
+    const alertSeconds = alertSecondsStr ? Number(alertSecondsStr) : OBS_PRESENCE_DEFAULT_ALERT_SECONDS;
+    await invoke("set_obs_overlay_style", {
+      template: template ?? OBS_PRESENCE_DEFAULT_TEMPLATE,
+      mode: mode ?? OBS_PRESENCE_DEFAULT_MODE,
+      alertSeconds: Number.isInteger(alertSeconds) && alertSeconds > 0 ? alertSeconds : OBS_PRESENCE_DEFAULT_ALERT_SECONDS,
+    }).catch(() => {});
+  }
+
   async function init() {
     await refreshManifests();
     await applyPersistedObsPort();
+    await applyPersistedObsStyle();
 
     const stored = await settingsRepo.get(ENABLED_PRESENCE_SETTING);
     if (stored === null) {

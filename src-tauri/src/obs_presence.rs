@@ -11,6 +11,37 @@ use tiny_http::{Header, Method, Response, Server};
 /// (see `ObsPresenceSettings.vue`) is re-applied by `presence.ts`'s `init()` on every launch.
 pub const DEFAULT_PORT: u16 = 47474;
 
+#[derive(Clone, Copy, PartialEq)]
+enum Template {
+    Minimal,
+    Full,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Mode {
+    Persistent,
+    Alert,
+}
+
+/// "How it's presented" - orthogonal to `NowPlaying` ("what's currently playing"), so changing
+/// style never touches activation state and vice versa. Alert mode needs no server-side "have I
+/// already shown this" tracking: the served page's own script computes `now - started_at`
+/// client-side every second (same clock the elapsed-time display already uses) and fades the
+/// card out once that exceeds `alert_seconds` - correct even across the page's own meta-refresh
+/// reloads, since it's derived from a real timestamp, not view history.
+#[derive(Clone, Copy)]
+struct OverlayStyle {
+    template: Template,
+    mode: Mode,
+    alert_seconds: u64,
+}
+
+impl Default for OverlayStyle {
+    fn default() -> Self {
+        Self { template: Template::Full, mode: Mode::Persistent, alert_seconds: 5 }
+    }
+}
+
 struct NowPlaying {
     title: String,
     cover_url: Option<String>,
@@ -34,11 +65,16 @@ pub struct ObsPresenceState {
     /// and the serving thread can hold a reference; `unblock()` on the old `Server` is what ends
     /// its thread's `incoming_requests()` loop when it's replaced.
     server: Mutex<Option<Arc<Server>>>,
+    style: Mutex<OverlayStyle>,
 }
 
 impl ObsPresenceState {
     pub fn new() -> Self {
-        Self { now_playing: Mutex::new(None), server: Mutex::new(None) }
+        Self {
+            now_playing: Mutex::new(None),
+            server: Mutex::new(None),
+            style: Mutex::new(OverlayStyle::default()),
+        }
     }
 }
 
@@ -65,22 +101,32 @@ pub fn set_now_playing(
     });
 }
 
-fn render_page(now_playing: &Option<NowPlaying>) -> String {
+fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String {
     let body = match now_playing {
         Some(np) => {
-            let cover = np
-                .cover_url
-                .as_ref()
-                .map(|url| format!(r#"<img class="cover" src="{}">"#, html_escape(url)))
-                .unwrap_or_default();
+            let cover = if style.template == Template::Full {
+                np.cover_url
+                    .as_ref()
+                    .map(|url| format!(r#"<img class="cover" src="{}">"#, html_escape(url)))
+                    .unwrap_or_default()
+            } else {
+                String::new()
+            };
+            let elapsed = if style.template == Template::Full {
+                format!(r#"<div class="elapsed" data-started="{}">0:00</div>"#, np.started_at)
+            } else {
+                String::new()
+            };
             format!(
-                r#"{cover}<div class="info"><div class="title">{}</div><div class="elapsed" data-started="{}">0:00</div></div>"#,
-                html_escape(&np.title),
+                r#"<div id="card" data-started="{}"><div class="info">{cover}<div class="title">{}</div>{elapsed}</div></div>"#,
                 np.started_at,
+                html_escape(&np.title),
             )
         }
         None => r#"<div class="idle">Not playing</div>"#.to_string(),
     };
+    let is_alert = style.mode == Mode::Alert;
+    let alert_seconds = style.alert_seconds;
     format!(
         r#"<!doctype html>
 <html><head>
@@ -91,25 +137,34 @@ fn render_page(now_playing: &Option<NowPlaying>) -> String {
           text-shadow: 0 1px 3px rgba(0,0,0,0.8); display: flex; align-items: center;
           justify-content: center; height: 100vh; }}
   .idle {{ opacity: 0.5; font-size: 1.2rem; }}
-  .info {{ display: flex; flex-direction: column; gap: 0.15rem; }}
-  .cover {{ width: 4rem; height: 4rem; object-fit: cover; border-radius: 0.3rem;
-            margin-right: 0.75rem; }}
+  #card {{ opacity: 1; transition: opacity 0.5s ease; display: flex; }}
+  #card.faded {{ opacity: 0; }}
+  .info {{ display: flex; align-items: center; gap: 0.75rem; }}
+  .cover {{ width: 4rem; height: 4rem; object-fit: cover; border-radius: 0.3rem; }}
   .title {{ font-size: 2rem; }}
   .elapsed {{ font-size: 1.1rem; opacity: 0.8; font-variant-numeric: tabular-nums; }}
 </style>
 </head><body>{body}
 <script>
+  const card = document.getElementById("card");
   const el = document.querySelector(".elapsed");
-  if (el) {{
-    const started = Number(el.dataset.started);
-    setInterval(() => {{
+  const isAlert = {is_alert};
+  const alertSeconds = {alert_seconds};
+  if (card) {{
+    const started = Number(card.dataset.started);
+    const tick = () => {{
       const secs = Math.max(0, Math.floor(Date.now() / 1000 - started));
-      const h = Math.floor(secs / 3600);
-      const m = Math.floor((secs % 3600) / 60);
-      const s = secs % 60;
-      const pad = (n) => String(n).padStart(2, "0");
-      el.textContent = h > 0 ? `${{h}}:${{pad(m)}}:${{pad(s)}}` : `${{m}}:${{pad(s)}}`;
-    }}, 1000);
+      if (el) {{
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        const s = secs % 60;
+        const pad = (n) => String(n).padStart(2, "0");
+        el.textContent = h > 0 ? `${{h}}:${{pad(m)}}:${{pad(s)}}` : `${{m}}:${{pad(s)}}`;
+      }}
+      if (isAlert) card.classList.toggle("faded", secs >= alertSeconds);
+    }};
+    tick();
+    setInterval(tick, 1000);
   }}
 </script>
 </body></html>"#
@@ -148,8 +203,8 @@ fn html_escape(s: &str) -> String {
 /// server and every later rebind from `set_obs_presence_port`.
 fn serve(app: AppHandle, server: Arc<Server>) {
     for request in server.incoming_requests() {
+        let state = app.state::<ObsPresenceState>();
         let now_playing_snapshot = {
-            let state = app.state::<ObsPresenceState>();
             let guard = state.now_playing.lock().unwrap();
             guard.as_ref().map(|np| NowPlaying {
                 title: np.title.clone(),
@@ -165,7 +220,8 @@ fn serve(app: AppHandle, server: Arc<Server>) {
                     .expect("static header is valid");
             let _ = request.respond(Response::from_string(json).with_header(header));
         } else {
-            let html = render_page(&now_playing_snapshot);
+            let style = *state.style.lock().unwrap();
+            let html = render_page(&now_playing_snapshot, &style);
             let header = Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..])
                 .expect("static header is valid");
             let _ = request.respond(Response::from_string(html).with_header(header));
@@ -246,4 +302,29 @@ pub fn test_obs_presence_port(port: u16) -> Result<(), ObsPresenceError> {
             raw: response.status().to_string(),
         })
     }
+}
+
+/// Applies instantly - unlike the port, there's no bind/collision failure mode here, so no
+/// Apply-then-rebind dance is needed; `ObsPresenceSettings.vue` calls this directly on change.
+#[tauri::command]
+pub fn set_obs_overlay_style(
+    app: AppHandle,
+    template: String,
+    mode: String,
+    alert_seconds: u64,
+) -> Result<(), String> {
+    let template = match template.as_str() {
+        "minimal" => Template::Minimal,
+        "full" => Template::Full,
+        other => return Err(format!("Unknown overlay template: {other}")),
+    };
+    let mode = match mode.as_str() {
+        "persistent" => Mode::Persistent,
+        "alert" => Mode::Alert,
+        other => return Err(format!("Unknown overlay mode: {other}")),
+    };
+    let state = app.state::<ObsPresenceState>();
+    let mut guard = state.style.lock().unwrap();
+    *guard = OverlayStyle { template, mode, alert_seconds: alert_seconds.max(1) };
+    Ok(())
 }

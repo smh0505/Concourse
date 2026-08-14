@@ -5,13 +5,28 @@ import { invoke } from "@tauri-apps/api/core";
 
 import { settings as settingsRepo } from "@/db";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
-import { OBS_PRESENCE_DEFAULT_PORT, OBS_PRESENCE_PORT_SETTING } from "./index";
+import {
+  OBS_PRESENCE_ALERT_SECONDS_SETTING,
+  OBS_PRESENCE_DEFAULT_ALERT_SECONDS,
+  OBS_PRESENCE_DEFAULT_MODE,
+  OBS_PRESENCE_DEFAULT_PORT,
+  OBS_PRESENCE_DEFAULT_TEMPLATE,
+  OBS_PRESENCE_MODE_SETTING,
+  OBS_PRESENCE_PORT_SETTING,
+  OBS_PRESENCE_TEMPLATE_SETTING,
+} from "./index";
 
 const { t } = useI18n();
 
 const modalOpen = ref(false);
 const appliedPort = ref(OBS_PRESENCE_DEFAULT_PORT);
 const portInput = ref(String(OBS_PRESENCE_DEFAULT_PORT));
+
+const template = ref(OBS_PRESENCE_DEFAULT_TEMPLATE);
+const mode = ref(OBS_PRESENCE_DEFAULT_MODE);
+const alertSeconds = ref(OBS_PRESENCE_DEFAULT_ALERT_SECONDS);
+const styleStatus = ref<"idle" | "error">("idle");
+const styleMessage = ref("");
 
 type Status = "idle" | "busy" | "success" | "error";
 const applyStatus = ref<Status>("idle");
@@ -60,7 +75,44 @@ async function openModal() {
   portInput.value = String(appliedPort.value);
   applyStatus.value = "idle";
   testStatus.value = "idle";
+
+  const [storedTemplate, storedMode, storedAlertSeconds] = await Promise.all([
+    settingsRepo.get(OBS_PRESENCE_TEMPLATE_SETTING),
+    settingsRepo.get(OBS_PRESENCE_MODE_SETTING),
+    settingsRepo.get(OBS_PRESENCE_ALERT_SECONDS_SETTING),
+  ]);
+  template.value = storedTemplate ?? OBS_PRESENCE_DEFAULT_TEMPLATE;
+  mode.value = storedMode ?? OBS_PRESENCE_DEFAULT_MODE;
+  const parsedAlertSeconds = storedAlertSeconds ? Number(storedAlertSeconds) : NaN;
+  alertSeconds.value =
+    Number.isInteger(parsedAlertSeconds) && parsedAlertSeconds > 0
+      ? parsedAlertSeconds
+      : OBS_PRESENCE_DEFAULT_ALERT_SECONDS;
+  styleStatus.value = "idle";
+
   modalOpen.value = true;
+}
+
+/** No bind/collision failure mode for style (unlike the port), so this applies immediately on
+ *  any control change rather than needing an explicit Apply button. */
+async function applyStyle() {
+  const seconds = Math.max(1, Math.round(alertSeconds.value));
+  try {
+    await invoke("set_obs_overlay_style", {
+      template: template.value,
+      mode: mode.value,
+      alertSeconds: seconds,
+    });
+    await Promise.all([
+      settingsRepo.set(OBS_PRESENCE_TEMPLATE_SETTING, template.value),
+      settingsRepo.set(OBS_PRESENCE_MODE_SETTING, mode.value),
+      settingsRepo.set(OBS_PRESENCE_ALERT_SECONDS_SETTING, String(seconds)),
+    ]);
+    styleStatus.value = "idle";
+  } catch (e) {
+    styleStatus.value = "error";
+    styleMessage.value = String(e);
+  }
 }
 
 async function applyPort() {
@@ -149,6 +201,30 @@ async function testConnection() {
         <p v-if="testRaw" class="obs-presence-status-raw">{{ testRaw }}</p>
       </div>
 
+      <div class="obs-presence-style">
+        <label class="obs-presence-field">
+          {{ t("obsPresence.templateLabel") }}
+          <select v-model="template" @change="applyStyle">
+            <option value="full">{{ t("obsPresence.templateFull") }}</option>
+            <option value="minimal">{{ t("obsPresence.templateMinimal") }}</option>
+          </select>
+        </label>
+        <label class="obs-presence-field">
+          {{ t("obsPresence.modeLabel") }}
+          <select v-model="mode" @change="applyStyle">
+            <option value="persistent">{{ t("obsPresence.modePersistent") }}</option>
+            <option value="alert">{{ t("obsPresence.modeAlert") }}</option>
+          </select>
+        </label>
+        <label v-if="mode === 'alert'" class="obs-presence-field">
+          {{ t("obsPresence.alertSecondsLabel") }}
+          <input v-model.number="alertSeconds" type="number" min="1" max="120" @change="applyStyle" />
+        </label>
+        <div v-if="styleStatus === 'error'" class="obs-presence-status error">
+          <p>{{ styleMessage }}</p>
+        </div>
+      </div>
+
       <p class="obs-presence-hint">
         {{ t("obsPresence.hint") }}
         <code>{{ overlayUrl }}</code>
@@ -205,6 +281,14 @@ async function testConnection() {
   font-size: 0.7rem !important;
   opacity: 0.7;
   color: var(--color-text) !important;
+}
+
+.obs-presence-style {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-surface0);
 }
 
 .obs-presence-hint {

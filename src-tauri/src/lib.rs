@@ -52,6 +52,7 @@ pub fn run() {
             obs_presence::set_now_playing,
             obs_presence::set_obs_presence_port,
             obs_presence::test_obs_presence_port,
+            obs_presence::set_obs_overlay_style,
             plugin_installer::fetch_plugin_preview,
             plugin_installer::install_plugin,
             plugin_installer::list_data_themes,

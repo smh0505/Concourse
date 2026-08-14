@@ -542,6 +542,10 @@ research.
 - [x] Raw JSON `/status` endpoint (`{ title, coverUrl, startedAt }`) alongside the existing HTML
   page - lets a streamer build a fully custom overlay in their own HTML/CSS/JS instead of being
   stuck with what we render
+- [x] Configurable, testable overlay port - `set_obs_presence_port`/`test_obs_presence_port`
+  commands, port persisted and re-applied on every launch; Settings UI moved the overlay/status
+  URLs off inline text into a "Configure Overlay" modal alongside the port field and Apply/Test
+  actions (not originally on this sublist - added ad hoc)
 - [ ] Overlay presentation options - an alert-style transient popup mode ("Started playing X!"
   fading after a few seconds) as an alternative to the current persistent status card, and
   multiple selectable templates (minimal text-only vs. full card) instead of the one fixed

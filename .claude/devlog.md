@@ -6239,3 +6239,54 @@ overlay, `http://localhost:47474/status` for custom-overlay builders), one hint 
 No `ObsPresenceState`/`set_now_playing` changes needed - both endpoints read the same
 `Mutex<Option<NowPlaying>>` snapshot already in place from the previous follow-up, just rendered
 two different ways depending on the request path.
+
+### OBS webhook follow-up: configurable, testable port + URLs moved into a modal
+
+Not one of the original four stretch items - added ad hoc after the port was still hardcoded to
+`47474` and the overlay/status URLs sat as always-visible inline text in the Presence settings
+row.
+
+`ObsPresenceState` gained a `server: Mutex<Option<Arc<Server>>>` field alongside the existing
+`now_playing` one (`PORT` renamed `DEFAULT_PORT`, boot-time fallback only). Per-request handling
+was pulled out of `start()` into a standalone `serve(app, server)` function so both the initial
+boot-time bind and any later rebind share the exact same routing logic instead of drifting.
+
+New `set_obs_presence_port(app, port)` command: binds the *new* port first, and only swaps it
+into `ObsPresenceState`/spawns its serving thread (via `old_server.unblock()` to end the
+previous thread's `incoming_requests()` loop) once the bind succeeds - a port already in use by
+something else fails loudly without taking down the currently-working overlay. `tiny_http`'s
+`Server::unblock()` is exactly the tool for this: it's what makes a thread blocked in
+`incoming_requests()` return and exit cleanly, rather than leaking a thread parked on the old
+socket forever.
+
+New `test_obs_presence_port(port)` command: a real `reqwest::blocking` GET to
+`http://127.0.0.1:<port>/status` (3s timeout), `Ok(())` only on a 2xx response - deliberately a
+full HTTP round trip through the actual route, not a bare TCP-connect probe, so a green result
+means "the overlay responds correctly," not just "something is listening on that port."
+`reqwest::blocking` inside a synchronous `#[tauri::command]` already has precedent in this
+codebase (`wasm_plugins.rs`) - Tauri dispatches non-`async fn` commands onto its own blocking
+thread pool, so this doesn't fight the async runtime the way calling it from an `async fn`
+command would.
+
+Since `tauri-plugin-sql` is JS-only in this codebase (no `rusqlite`/`sqlx` pool held on the Rust
+side - same fact established investigating the earlier focus/throttle red herring above), the
+Rust server can't read a persisted port for itself at boot. It always starts on `DEFAULT_PORT`;
+`presence.ts`'s `init()` gained `applyPersistedObsPort()`, which reads the
+`obs_presence_port` setting (if any) and calls `set_obs_presence_port` once per launch to
+re-apply it - runs unconditionally at startup (not gated on the OBS plugin being enabled),
+documented in-line as a small, deliberate exception to "`presence.ts` doesn't know about
+individual presence plugins."
+
+`ObsPresenceSettings.vue` rewritten: the plugin row now shows a single "Configure Overlay"
+button instead of always-visible URL text, opening a `BaseModal` (the same shared modal
+component `AddGame.vue`/`ConfirmInstall.vue`/etc. already use) containing a port number input,
+Apply and Test buttons each with their own idle/busy/success/error status line
+(`--color-accent`/`--color-danger`, matching this codebase's existing success/error color
+conventions - `ToastContainer.vue`'s `.toast-success` and `styles.css`'s shared `.error-text`),
+and the overlay/status URLs (still shown, just inside the modal instead of inline). Apply
+persists the port to `settingsRepo` only after `set_obs_presence_port` actually succeeds, so a
+failed rebind never leaves a stale/wrong value written to disk.
+
+New i18n keys (`configure`, `modalTitle`, `portLabel`, `apply`, `test`, `close`, `invalidPort`,
+`applySuccess`, `testSuccess`) added across all 10 locales alongside the existing `hint`/
+`statusHint` keys.

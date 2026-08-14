@@ -459,14 +459,16 @@ async function testConnection() {
         </template>
       </div>
 
-      <p class="obs-presence-hint">
-        {{ t("obsPresence.hint") }}
-        <code>{{ overlayUrl }}</code>
-      </p>
-      <p class="obs-presence-hint">
-        {{ t("obsPresence.statusHint") }}
-        <code>{{ statusUrl }}</code>
-      </p>
+      <div class="obs-presence-urls">
+        <p class="obs-presence-hint">
+          {{ t("obsPresence.hint") }}
+          <code>{{ overlayUrl }}</code>
+        </p>
+        <p class="obs-presence-hint">
+          {{ t("obsPresence.statusHint") }}
+          <code>{{ statusUrl }}</code>
+        </p>
+      </div>
     </template>
     <template #footer>
       <button type="button" @click="modalOpen = false">{{ t("obsPresence.close") }}</button>
@@ -615,6 +617,14 @@ async function testConnection() {
 }
 
 .obs-presence-style {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-surface0);
+}
+
+.obs-presence-urls {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);

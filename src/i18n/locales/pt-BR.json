@@ -320,8 +320,8 @@
     "test": "Testar",
     "close": "Fechar",
     "invalidPort": "Informe uma porta entre 1 e 65535.",
-    "applySuccess": "Aplicado.",
-    "testSuccess": "A sobreposição respondeu com sucesso.",
+    "applySuccess": "Aplicado. Agora ouvindo na porta {port}.",
+    "testSuccess": "A sobreposição respondeu com sucesso na porta {port}.",
     "hint": "Aponte uma Fonte de Navegador do OBS para:",
     "statusHint": "Para uma sobreposição personalizada, o status JSON bruto está disponível em:"
   }

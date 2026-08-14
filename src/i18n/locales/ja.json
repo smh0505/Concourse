@@ -320,8 +320,8 @@
     "test": "テスト",
     "close": "閉じる",
     "invalidPort": "1から65535の間のポート番号を入力してください。",
-    "applySuccess": "適用しました。",
-    "testSuccess": "オーバーレイが正常に応答しました。",
+    "applySuccess": "適用しました。ポート {port} で待機中です。",
+    "testSuccess": "ポート {port} でオーバーレイが正常に応答しました。",
     "hint": "OBSのブラウザソースを次のURLに設定してください:",
     "statusHint": "カスタムオーバーレイ用に、生のJSONステータスは次のURLで取得できます:"
   }

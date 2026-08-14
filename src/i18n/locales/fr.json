@@ -320,8 +320,8 @@
     "test": "Tester",
     "close": "Fermer",
     "invalidPort": "Saisissez un port entre 1 et 65535.",
-    "applySuccess": "Appliqué.",
-    "testSuccess": "L'incrustation a répondu avec succès.",
+    "applySuccess": "Appliqué. Écoute désormais sur le port {port}.",
+    "testSuccess": "L'incrustation a répondu avec succès sur le port {port}.",
     "hint": "Pointez une source navigateur OBS vers :",
     "statusHint": "Pour une incrustation personnalisée, le statut JSON brut est disponible à :"
   }

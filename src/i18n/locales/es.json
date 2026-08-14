@@ -320,8 +320,8 @@
     "test": "Probar",
     "close": "Cerrar",
     "invalidPort": "Introduce un puerto entre 1 y 65535.",
-    "applySuccess": "Aplicado.",
-    "testSuccess": "La superposición respondió correctamente.",
+    "applySuccess": "Aplicado. Ahora escuchando en el puerto {port}.",
+    "testSuccess": "La superposición respondió correctamente en el puerto {port}.",
     "hint": "Apunta una fuente de navegador de OBS a:",
     "statusHint": "Para una superposición personalizada, el estado JSON en bruto está disponible en:"
   }

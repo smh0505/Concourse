@@ -47,19 +47,29 @@ async function applyPort() {
     await settingsRepo.set(OBS_PRESENCE_PORT_SETTING, String(port));
     appliedPort.value = port;
     applyStatus.value = "success";
-    applyMessage.value = t("obsPresence.applySuccess");
+    applyMessage.value = t("obsPresence.applySuccess", { port });
   } catch (e) {
     applyStatus.value = "error";
     applyMessage.value = String(e);
   }
 }
 
+/** Tests whatever port is currently typed - deliberately independent of `appliedPort`, so a
+ *  failed/not-yet-applied Apply doesn't leave a stale success message next to a different port
+ *  number in the field. */
 async function testConnection() {
+  const port = Number(portInput.value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    testStatus.value = "error";
+    testMessage.value = t("obsPresence.invalidPort");
+    return;
+  }
+
   testStatus.value = "busy";
   try {
-    await invoke("test_obs_presence_port", { port: appliedPort.value });
+    await invoke("test_obs_presence_port", { port });
     testStatus.value = "success";
-    testMessage.value = t("obsPresence.testSuccess");
+    testMessage.value = t("obsPresence.testSuccess", { port });
   } catch (e) {
     testStatus.value = "error";
     testMessage.value = String(e);

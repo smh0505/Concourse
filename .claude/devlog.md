@@ -6175,3 +6175,50 @@ configured on the OBS side yet for a fresh install.
 Manually verified end-to-end: Discord status and the OBS page both update/clear correctly for
 both direct-exe and URI-launched games, and a game with `skip_presence` set is correctly
 excluded from both plugins.
+
+### OBS webhook follow-up: cover art + live elapsed-time counter
+
+First of the "OBS webhook follow-ups, stretch" sublist, picked as the smallest lift. Replaced
+the overlay's title-only static text with a cover-art image and a ticking elapsed-time display.
+
+`ObsPresenceState`'s inner type went from `Option<String>` (just the title) to
+`Option<NowPlaying>` (`title`, `cover_url`, `started_at: u64` unix seconds). `set_now_playing`
+gained a `cover_url` parameter and now decides `started_at` itself: if the incoming title
+matches what's already stored, the existing `started_at` is kept (re-activating an
+already-running game - e.g. a second enabled presence plugin re-triggering `activateAll` -
+shouldn't reset the clock); a genuinely new title gets `now_unix()`.
+
+Elapsed time is computed client-side, not server-side. `render_page` embeds `started_at` as a
+`data-started` attribute on an `.elapsed` span; a small inline `<script>` in the served page
+runs a `setInterval` every second computing `Date.now()/1000 - started` and formatting it as
+`M:SS`/`H:MM:SS`. This is why the page's own `<meta http-equiv="refresh">` interval could widen
+from 3s to 15s - it used to be the only thing making the display look "live" at all, now it's
+only responsible for picking up an actual title/cover change, not driving the clock.
+
+`PresencePlugin.activate()`'s signature widened to `activate(gameTitle: string, coverArtUrl?:
+string | null)` - optional, since Discord's current Activity setup doesn't use an image and has
+no reason to care. `presence.ts`'s `activateAll` now takes and forwards a `coverArtUrl` param,
+sourced from `game.cover_art_url` in the `game-session-started` listener; `obs-presence`'s
+`activate` passes it through to `set_now_playing`, `discord-presence`'s `activate` still only
+takes one argument - TypeScript's structural typing lets a narrower implementation satisfy an
+interface with extra optional parameters, no change needed on the Discord side.
+
+One real Rust borrow-checker fix along the way: `start()`'s per-request handler originally
+chained `app.state::<ObsPresenceState>().0.lock().unwrap()` directly, which dropped the
+temporary `State<'_, T>` mid-expression (E0716). Fixed by binding `app.state::<...>()` to a
+named `let` first, then locking on a separate line.
+
+Investigated separately (not a bug in this feature): a report that the overlay only seemed to
+update "when the main app window gets focus." Traced through - both `game-session-started` and
+`game-session-ended` fire via `app.emit` from plain background OS threads (`launcher.rs`), no
+window/focus dependency at all, and `presence.ts`'s `listen()` handlers should receive them
+regardless of window state. Considered (but didn't build, since the report turned out to be a
+false alarm) moving OBS's state update into Rust directly - `obs_presence.rs` registering its
+own `app.listen_any` handler instead of going through the frontend webview - which would have
+required a second, Rust-side SQLite read for the `skip_presence` check (no `sqlx`/`rusqlite`
+pool exists on the Rust side today; `tauri-plugin-sql` is JS-only in this codebase). Turned out
+unnecessary: real cause was `track_folder_playtime`'s existing Phase-2 grace period
+(`POLL_INTERVAL` 3s × `MISSING_GRACE_POLLS` 2 = up to ~6s after the game actually closes before
+`game-session-ended` fires, by design, to survive a brief launcher-relay handoff) - confirmed by
+the user timing a real OBS test at ~6s, matching exactly. No focus/webview-throttling bug
+exists; no code change made for it.

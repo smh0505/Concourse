@@ -536,7 +536,7 @@ research.
   stayed built-in instead of being detached - not started
 
 **OBS webhook follow-ups, stretch.** Ordered smallest-to-biggest lift; none block each other.
-- [ ] Richer overlay content - cover art (`Game.cover_art_url`, already available) and a live
+- [x] Richer overlay content - cover art (`Game.cover_art_url`, already available) and a live
   elapsed-time counter (track session start alongside the title in `ObsPresenceState`, same idea
   as Discord's own elapsed-time display) rendered together, not just title text
 - [ ] Raw JSON `/status` endpoint (`{ title, coverUrl, startedAt }`) alongside the existing HTML

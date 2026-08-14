@@ -6369,3 +6369,54 @@ starting point.
 Hit the same `E0716` "temporary value dropped while borrowed" pattern as `obs_presence.rs`'s very
 first version (`app.state::<T>().field.lock()` chained directly) - same fix, bind
 `app.state::<ObsPresenceState>()` to a local before locking.
+
+### OBS webhook follow-up: real obs-websocket integration (scene auto-switching)
+
+Fourth and last of the original stretch sublist, closing it out. Explicitly flagged from the
+start as "worth its own scoping pass" rather than a quick addition - asked the user to pick a
+concrete goal before writing anything, since obs-websocket's actual protocol (auth handshake,
+persistent WS connection, dozens of possible request types) is a different shape entirely from
+`obs_presence.rs`'s passive `tiny_http` server. Options offered: auto-switch scenes on
+launch/exit (narrow, 2-3 commands), push-instant overlay updates (smaller real win than it
+sounds - the overlay already updates in ~1s via its own client-side timer script), or a full
+bidirectional control surface (closest to a mini OBS remote-control plugin, likely its own
+milestone number). User picked scene auto-switching.
+
+Added the `obws` crate (`0.15`, default features only - no `builder`/`events`/`tls` needed for
+plain request/response scene calls) after confirming via `cargo add --dry-run` it resolves, then
+reading the actual downloaded source (`Client::connect`, `Scenes::list`/
+`set_current_program_scene`, the `SceneId<'a>` enum's `From<&str>` impl) rather than guessing at
+an unfamiliar crate's API - same discipline as checking `tiny_http`'s source earlier this
+session before trusting assumptions about its behavior.
+
+New `obs_websocket.rs`: two commands, `obs_ws_list_scenes` (backs a "Fetch Scenes" button in
+Settings, doubles as a connectivity test) and `obs_ws_switch_scene`. Both do a fresh
+connect-switch-disconnect per call rather than holding any persistent `Client` in managed state -
+deliberate: this only fires twice per game session (start/end), so a connection-health/reconnect
+lifecycle would be real complexity for a call rate that doesn't need it. Errors follow the same
+structured pattern `ObsPresenceError` established (`#[serde(tag = "kind")]`, `ConnectFailed`/
+`RequestFailed`, each carrying a `raw` detail string) - `obws::Error` (a `thiserror` enum
+covering URI/handshake/timeout/API failures internally) collapses down to just those two kinds,
+which is what the Settings UI actually needs to tell apart.
+
+Bundled into the existing `obs-presence` plugin rather than a new plugin entry - both overlay and
+scene-switching are "what this game session tells OBS," and the plugin already had its own
+settings modal to extend. Scene-switching gets its own independent enable checkbox inside that
+modal, so a user can run the overlay without scene-switching or vice versa; the Presence tab's
+outer enable checkbox still gates the whole plugin (both features off if disabled there).
+`switchObsScene` (index.ts) reads host/port/password/scene settings fresh from `settingsRepo` on
+every `activate`/`deactivate` call rather than through any apply-at-boot Rust state (unlike the
+port/style, there's no persistent Rust-side state to keep in sync - nothing to re-apply) -
+`.catch(() => {})`'d the same way `set_now_playing` already is, so a misconfigured or unreachable
+obs-websocket never blocks the overlay's own title/cover update.
+
+Settings UI: host/port/password fields, "Fetch Scenes" populating a `<datalist>` shared by both
+scene-name inputs (plain text inputs with `list=`, not `<select>` - resilient to configuring
+scenes while OBS/obs-websocket happens to be offline, autocomplete is a convenience layered on
+top rather than a hard requirement). New i18n keys (`wsEnabledLabel` through
+`wsErrorRequestFailed`) across all 10 locales, same discipline as every other feature this
+session.
+
+This closes every item on the original four-item OBS webhook follow-up sublist. The one
+remaining unstarted M29 item (detaching presence plugins into the WASM tier) stays separately
+flagged as its own not-started stretch item, unrelated to this sublist.

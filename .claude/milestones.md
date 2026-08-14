@@ -550,11 +550,11 @@ research.
   after a configurable number of seconds) alongside the original persistent status card, and a
   minimal (title-only) template alongside the original full card (cover + elapsed time) -
   `set_obs_overlay_style`, applied instantly, no bind/collision failure mode like the port has
-- [ ] Real `obs-websocket` integration - a genuinely different, bigger architecture than the
-  current passive Browser Source page: bidirectional control instead of Concourse just serving a
-  page for OBS to poll, could push updates instantly and even auto-switch OBS to a "gaming"
-  scene when a game launches. Worth its own scoping pass, not a small addition like the others
-  above
+- [x] Real `obs-websocket` integration - scoped down to auto-switching OBS scenes on game
+  launch/exit (user's explicit pick over push-instant-overlay-updates or a full bidirectional
+  control surface, both judged bigger than warranted). `obs_websocket.rs` (`obws` crate, v5
+  protocol) - stateless connect-switch-disconnect per call, bundled into the existing
+  obs-presence plugin/settings modal with its own independent enable toggle, not a new plugin
 
 **Candidate platforms, grouped by what the plugin is actually for.** Each platform evaluated on
 the same axis: does it need a real `client_secret` (per-user credential friction, like IGDB) or

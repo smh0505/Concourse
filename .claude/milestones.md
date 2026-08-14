@@ -539,7 +539,7 @@ research.
 - [x] Richer overlay content - cover art (`Game.cover_art_url`, already available) and a live
   elapsed-time counter (track session start alongside the title in `ObsPresenceState`, same idea
   as Discord's own elapsed-time display) rendered together, not just title text
-- [ ] Raw JSON `/status` endpoint (`{ title, coverUrl, startedAt }`) alongside the existing HTML
+- [x] Raw JSON `/status` endpoint (`{ title, coverUrl, startedAt }`) alongside the existing HTML
   page - lets a streamer build a fully custom overlay in their own HTML/CSS/JS instead of being
   stuck with what we render
 - [ ] Overlay presentation options - an alert-style transient popup mode ("Started playing X!"

@@ -6222,3 +6222,20 @@ unnecessary: real cause was `track_folder_playtime`'s existing Phase-2 grace per
 `game-session-ended` fires, by design, to survive a brief launcher-relay handoff) - confirmed by
 the user timing a real OBS test at ~6s, matching exactly. No focus/webview-throttling bug
 exists; no code change made for it.
+
+### OBS webhook follow-up: raw JSON `/status` endpoint
+
+Second stretch item. `obs_presence.rs`'s request loop now branches on `request.url()`: a GET to
+`/status` returns a `NowPlayingStatus` struct (`title`, `cover_url`, `started_at`, each
+`Option`-typed - `None` across the board when idle) serialized via `serde_json`; anything else
+falls through to the existing `render_page` HTML response, unchanged. `serde_json` and `serde`'s
+`Serialize` derive were already dependencies (used elsewhere in the Rust backend), no new crate
+needed - `tiny_http`'s `Method`/`Server` request/response plumbing is the only new import.
+
+`ObsPresenceSettings.vue` surfaces both URLs now (`http://localhost:47474/` for the built-in
+overlay, `http://localhost:47474/status` for custom-overlay builders), one hint line each, new
+`obsPresence.statusHint` i18n key added across all 10 locales alongside the existing `hint` key.
+
+No `ObsPresenceState`/`set_now_playing` changes needed - both endpoints read the same
+`Mutex<Option<NowPlaying>>` snapshot already in place from the previous follow-up, just rendered
+two different ways depending on the request path.

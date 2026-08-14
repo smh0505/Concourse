@@ -54,6 +54,7 @@ const form = ref<GameEditFields>({
   locale_wrapper: null,
   skip_presence: 0,
   pseudo_fullscreen: 0,
+  always_on_top: 0,
 });
 
 function resetForm() {
@@ -70,6 +71,7 @@ function resetForm() {
     locale_wrapper: game.value.locale_wrapper,
     skip_presence: game.value.skip_presence,
     pseudo_fullscreen: game.value.pseudo_fullscreen,
+    always_on_top: game.value.always_on_top,
   };
 }
 
@@ -434,6 +436,7 @@ async function onSave() {
     locale_wrapper: form.value.locale_wrapper,
     skip_presence: form.value.skip_presence,
     pseudo_fullscreen: form.value.pseudo_fullscreen,
+    always_on_top: form.value.always_on_top,
   });
   editing.value = false;
 }
@@ -700,6 +703,14 @@ async function onDelete() {
                 @change="form.pseudo_fullscreen = ($event.target as HTMLInputElement).checked ? 1 : 0"
               />
               {{ t("gameDetail.pseudoFullscreen") }}
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                :checked="form.always_on_top === 1"
+                @change="form.always_on_top = ($event.target as HTMLInputElement).checked ? 1 : 0"
+              />
+              {{ t("gameDetail.alwaysOnTop") }}
             </label>
             <label>
               {{ t("gameDetail.wrapperProfile") }}

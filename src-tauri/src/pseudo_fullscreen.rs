@@ -46,7 +46,7 @@ extern "system" fn find_window_proc(hwnd: HWND, lparam: LPARAM) -> windows::core
     }
 }
 
-fn find_window_for_pid(pid: u32) -> Option<HWND> {
+pub(crate) fn find_window_for_pid(pid: u32) -> Option<HWND> {
     let mut state: (u32, Option<isize>) = (pid, None);
     unsafe {
         let _ = EnumWindows(Some(find_window_proc), LPARAM(&mut state as *mut _ as isize));
@@ -57,7 +57,7 @@ fn find_window_for_pid(pid: u32) -> Option<HWND> {
 /// Retries for ~5s, re-evaluating `candidate_pids` fresh each attempt rather than fixing on one
 /// PID up front - the first process matched under a folder is often a launcher stub or helper
 /// with no window at all, and the real one may not exist yet.
-fn wait_for_window(mut candidate_pids: impl FnMut() -> Vec<u32>) -> Option<HWND> {
+pub(crate) fn wait_for_window(mut candidate_pids: impl FnMut() -> Vec<u32>) -> Option<HWND> {
     for _ in 0..20 {
         for pid in candidate_pids() {
             if let Some(hwnd) = find_window_for_pid(pid) {

@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::Manager;
 
+mod always_on_top;
 mod db;
 mod discord_presence;
 mod image_utils;

@@ -444,6 +444,7 @@ export const useLibraryStore = defineStore("library", () => {
           executablePath: game.executable_path,
           title: game.title,
           pseudoFullscreen: game.pseudo_fullscreen === 1,
+          alwaysOnTop: game.always_on_top === 1,
         });
         return;
       }
@@ -457,6 +458,7 @@ export const useLibraryStore = defineStore("library", () => {
           installDir,
           title: game.title,
           pseudoFullscreen: game.pseudo_fullscreen === 1,
+          alwaysOnTop: game.always_on_top === 1,
         });
       }
     } catch (e) {

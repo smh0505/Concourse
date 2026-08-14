@@ -70,7 +70,8 @@
     "revokeContentOnly": "내용 번역 취소",
     "revokeBoth": "제목과 내용 번역 취소",
     "skipPresence": "이 게임을 프레즌스 연동에서 제외",
-    "pseudoFullscreen": "테두리 없는 유사 전체화면으로 실행"
+    "pseudoFullscreen": "테두리 없는 유사 전체화면으로 실행",
+    "alwaysOnTop": "창을 항상 위에 유지"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

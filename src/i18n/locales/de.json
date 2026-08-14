@@ -70,7 +70,8 @@
     "revokeContentOnly": "Inhaltsübersetzung widerrufen",
     "revokeBoth": "Titel- und Inhaltsübersetzung widerrufen",
     "skipPresence": "Dieses Spiel aus Präsenz-Integrationen ausblenden",
-    "pseudoFullscreen": "Im rahmenlosen Pseudo-Vollbild ausführen"
+    "pseudoFullscreen": "Im rahmenlosen Pseudo-Vollbild ausführen",
+    "alwaysOnTop": "Fenster immer im Vordergrund halten"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

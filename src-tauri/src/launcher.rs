@@ -22,6 +22,7 @@ pub fn launch_game(
     executable_path: String,
     title: String,
     pseudo_fullscreen: bool,
+    always_on_top: bool,
 ) -> Result<(), String> {
     let mut child = std::process::Command::new(&executable_path)
         .stdout(std::process::Stdio::null())
@@ -47,15 +48,21 @@ pub fn launch_game(
         } else {
             None
         };
+        let mut topmost_state = if always_on_top { crate::always_on_top::apply(|| vec![pid]) } else { None };
 
-        if pseudo_fullscreen {
+        if pseudo_fullscreen || always_on_top {
             // Polls instead of a single blocking child.wait() so a launcher window closing and
             // being replaced by the real game window (same process, new HWND) still gets caught.
             loop {
                 match child.try_wait() {
                     Ok(Some(_)) => break,
                     Ok(None) => {
-                        fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || vec![pid]);
+                        if pseudo_fullscreen {
+                            fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || vec![pid]);
+                        }
+                        if always_on_top {
+                            topmost_state = crate::always_on_top::refresh(topmost_state, || vec![pid]);
+                        }
                         std::thread::sleep(std::time::Duration::from_secs(3));
                     }
                     Err(_) => break,
@@ -67,6 +74,9 @@ pub fn launch_game(
 
         if let Some(state) = fullscreen_state {
             crate::pseudo_fullscreen::revert(state);
+        }
+        if let Some(state) = topmost_state {
+            crate::always_on_top::revert(state);
         }
 
         let end = std::time::SystemTime::now();
@@ -143,6 +153,7 @@ pub fn track_folder_playtime(
     install_dir: String,
     title: String,
     pseudo_fullscreen: bool,
+    always_on_top: bool,
 ) {
     let install_dir = normalize_path_for_comparison(&install_dir);
 
@@ -180,6 +191,11 @@ pub fn track_folder_playtime(
         } else {
             None
         };
+        let mut topmost_state = if always_on_top {
+            crate::always_on_top::apply(|| all_processes_under_folder(&mut system, &install_dir))
+        } else {
+            None
+        };
 
         let start = std::time::SystemTime::now();
         let start_time = unix_timestamp(start);
@@ -188,9 +204,14 @@ pub fn track_folder_playtime(
         let mut missing_polls = 0;
         loop {
             std::thread::sleep(POLL_INTERVAL);
+            // Piggybacked on this same poll tick rather than a separate timer.
             if pseudo_fullscreen {
-                // Piggybacked on this same poll tick rather than a separate timer.
                 fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || {
+                    all_processes_under_folder(&mut system, &install_dir)
+                });
+            }
+            if always_on_top {
+                topmost_state = crate::always_on_top::refresh(topmost_state, || {
                     all_processes_under_folder(&mut system, &install_dir)
                 });
             }
@@ -206,6 +227,9 @@ pub fn track_folder_playtime(
 
         if let Some(state) = fullscreen_state {
             crate::pseudo_fullscreen::revert(state);
+        }
+        if let Some(state) = topmost_state {
+            crate::always_on_top::revert(state);
         }
 
         let end = std::time::SystemTime::now();

@@ -184,5 +184,16 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 9,
+            description: "add_always_on_top",
+            sql: r#"
+            -- Milestone 39 stretch - per-game opt-in to keep the game window pinned above every
+            -- other window for the session. Independent of pseudo_fullscreen - either, neither,
+            -- or both can be enabled for the same game.
+            ALTER TABLE games ADD COLUMN always_on_top INTEGER NOT NULL DEFAULT 0;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

@@ -37,6 +37,9 @@ export interface Game {
   /** SQLite boolean (0/1) - Milestone 39's per-game opt-in for borderless pseudo-fullscreen
    *  (built-in feature, not a plugin). Off by default - not every game benefits. */
   pseudo_fullscreen: number;
+  /** SQLite boolean (0/1) - Milestone 39 stretch, per-game opt-in to keep the game window
+   *  pinned above every other window for the session. Independent of pseudo_fullscreen. */
+  always_on_top: number;
 }
 
 export type GameEditFields = Pick<
@@ -53,6 +56,7 @@ export type GameEditFields = Pick<
   | "locale_wrapper"
   | "skip_presence"
   | "pseudo_fullscreen"
+  | "always_on_top"
 >;
 
 /** The title to show for `game` under the current UI `locale` - a valid cached translation, or

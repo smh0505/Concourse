@@ -21,6 +21,33 @@ enum Mode {
     Alert,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum Corner {
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+}
+
+impl Corner {
+    /// Fixed CSS position for `#card`, keeping it out of `body`'s own centering flex flow
+    /// (which still centers the idle placeholder).
+    fn css_position(self) -> &'static str {
+        match self {
+            Corner::TopLeft => "top: 2rem; left: 2rem;",
+            Corner::TopRight => "top: 2rem; right: 2rem;",
+            Corner::BottomLeft => "bottom: 2rem; left: 2rem;",
+            Corner::BottomRight => "bottom: 2rem; right: 2rem;",
+        }
+    }
+
+    /// Right-anchored corners reverse `.info`'s flex order so the cover art sits nearest the
+    /// screen edge (same side the card itself is anchored to) instead of always on the left.
+    fn is_right(self) -> bool {
+        matches!(self, Corner::TopRight | Corner::BottomRight)
+    }
+}
+
 /// "How it's presented" - orthogonal to `NowPlaying`. Alert mode needs no server-side "already
 /// shown" tracking: the page's own script fades the card once `now - started_at` (a real
 /// timestamp, not view history) exceeds `alert_seconds` - stays correct across meta-refreshes.
@@ -29,11 +56,17 @@ struct OverlayStyle {
     template: Template,
     mode: Mode,
     alert_seconds: u64,
+    corner: Corner,
 }
 
 impl Default for OverlayStyle {
     fn default() -> Self {
-        Self { template: Template::Full, mode: Mode::Persistent, alert_seconds: 5 }
+        Self {
+            template: Template::Full,
+            mode: Mode::Persistent,
+            alert_seconds: 5,
+            corner: Corner::BottomLeft,
+        }
     }
 }
 
@@ -104,9 +137,11 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
             } else {
                 String::new()
             };
+            let info_class = if style.corner.is_right() { " reverse" } else { "" };
             format!(
-                r#"<div id="card" data-started="{}"><div class="info">{cover}<div class="title">{}</div>{elapsed}</div></div>"#,
+                r#"<div id="card" data-started="{}" style="{}"><div class="info{info_class}">{cover}<div class="title">{}</div>{elapsed}</div></div>"#,
                 np.started_at,
+                style.corner.css_position(),
                 html_escape(&np.title),
             )
         }
@@ -124,9 +159,10 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
           text-shadow: 0 1px 3px rgba(0,0,0,0.8); display: flex; align-items: center;
           justify-content: center; height: 100vh; }}
   .idle {{ opacity: 0.5; font-size: 1.2rem; }}
-  #card {{ opacity: 1; transition: opacity 0.5s ease; display: flex; }}
+  #card {{ position: fixed; opacity: 1; transition: opacity 0.5s ease; display: flex; }}
   #card.faded {{ opacity: 0; }}
   .info {{ display: flex; align-items: center; gap: 0.75rem; }}
+  .info.reverse {{ flex-direction: row-reverse; }}
   .cover {{ width: 4rem; height: 4rem; object-fit: cover; border-radius: 0.3rem; }}
   .title {{ font-size: 2rem; }}
   .elapsed {{ font-size: 1.1rem; opacity: 0.8; font-variant-numeric: tabular-nums; }}
@@ -291,6 +327,7 @@ pub fn set_obs_overlay_style(
     template: String,
     mode: String,
     alert_seconds: u64,
+    corner: String,
 ) -> Result<(), String> {
     let template = match template.as_str() {
         "minimal" => Template::Minimal,
@@ -302,8 +339,15 @@ pub fn set_obs_overlay_style(
         "alert" => Mode::Alert,
         other => return Err(format!("Unknown overlay mode: {other}")),
     };
+    let corner = match corner.as_str() {
+        "top-left" => Corner::TopLeft,
+        "top-right" => Corner::TopRight,
+        "bottom-left" => Corner::BottomLeft,
+        "bottom-right" => Corner::BottomRight,
+        other => return Err(format!("Unknown overlay corner: {other}")),
+    };
     let state = app.state::<ObsPresenceState>();
     let mut guard = state.style.lock().unwrap();
-    *guard = OverlayStyle { template, mode, alert_seconds: alert_seconds.max(1) };
+    *guard = OverlayStyle { template, mode, alert_seconds: alert_seconds.max(1), corner };
     Ok(())
 }

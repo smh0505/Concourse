@@ -12,10 +12,12 @@ export const OBS_PRESENCE_DEFAULT_PORT = 47474;
 export const OBS_PRESENCE_TEMPLATE_SETTING = "obs_presence_template";
 export const OBS_PRESENCE_MODE_SETTING = "obs_presence_mode";
 export const OBS_PRESENCE_ALERT_SECONDS_SETTING = "obs_presence_alert_seconds";
+export const OBS_PRESENCE_CORNER_SETTING = "obs_presence_corner";
 // Must match src-tauri/src/obs_presence.rs's OverlayStyle::default().
 export const OBS_PRESENCE_DEFAULT_TEMPLATE = "full";
 export const OBS_PRESENCE_DEFAULT_MODE = "persistent";
 export const OBS_PRESENCE_DEFAULT_ALERT_SECONDS = 5;
+export const OBS_PRESENCE_DEFAULT_CORNER = "bottom-left";
 
 export const OBS_WS_ENABLED_SETTING = "obs_ws_enabled";
 export const OBS_WS_HOST_SETTING = "obs_ws_host";

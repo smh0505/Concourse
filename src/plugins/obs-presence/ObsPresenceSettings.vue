@@ -9,7 +9,9 @@ import BaseModal from "@/components/desktop/common/BaseModal.vue";
 import { DropdownMenu } from "@/components/desktop/common";
 import {
   OBS_PRESENCE_ALERT_SECONDS_SETTING,
+  OBS_PRESENCE_CORNER_SETTING,
   OBS_PRESENCE_DEFAULT_ALERT_SECONDS,
+  OBS_PRESENCE_DEFAULT_CORNER,
   OBS_PRESENCE_DEFAULT_MODE,
   OBS_PRESENCE_DEFAULT_PORT,
   OBS_PRESENCE_DEFAULT_TEMPLATE,
@@ -35,10 +37,12 @@ const portInput = ref(String(OBS_PRESENCE_DEFAULT_PORT));
 const template = ref(OBS_PRESENCE_DEFAULT_TEMPLATE);
 const mode = ref(OBS_PRESENCE_DEFAULT_MODE);
 const alertSeconds = ref(OBS_PRESENCE_DEFAULT_ALERT_SECONDS);
+const corner = ref(OBS_PRESENCE_DEFAULT_CORNER);
 const styleStatus = ref<"idle" | "error">("idle");
 const styleMessage = ref("");
 const templateMenuOpen = ref(false);
 const modeMenuOpen = ref(false);
+const cornerMenuOpen = ref(false);
 
 const templateLabel = computed(() =>
   template.value === "minimal" ? t("obsPresence.templateMinimal") : t("obsPresence.templateFull"),
@@ -46,6 +50,13 @@ const templateLabel = computed(() =>
 const modeLabel = computed(() =>
   mode.value === "alert" ? t("obsPresence.modeAlert") : t("obsPresence.modePersistent"),
 );
+const cornerLabels: Record<string, string> = {
+  "top-left": "cornerTopLeft",
+  "top-right": "cornerTopRight",
+  "bottom-left": "cornerBottomLeft",
+  "bottom-right": "cornerBottomRight",
+};
+const cornerLabel = computed(() => t(`obsPresence.${cornerLabels[corner.value]}`));
 
 function selectTemplate(value: string) {
   template.value = value;
@@ -56,6 +67,12 @@ function selectTemplate(value: string) {
 function selectMode(value: string) {
   mode.value = value;
   modeMenuOpen.value = false;
+  applyStyle();
+}
+
+function selectCorner(value: string) {
+  corner.value = value;
+  cornerMenuOpen.value = false;
   applyStyle();
 }
 
@@ -176,10 +193,11 @@ async function openModal() {
   applyStatus.value = "idle";
   testStatus.value = "idle";
 
-  const [storedTemplate, storedMode, storedAlertSeconds] = await Promise.all([
+  const [storedTemplate, storedMode, storedAlertSeconds, storedCorner] = await Promise.all([
     settingsRepo.get(OBS_PRESENCE_TEMPLATE_SETTING),
     settingsRepo.get(OBS_PRESENCE_MODE_SETTING),
     settingsRepo.get(OBS_PRESENCE_ALERT_SECONDS_SETTING),
+    settingsRepo.get(OBS_PRESENCE_CORNER_SETTING),
   ]);
   template.value = storedTemplate ?? OBS_PRESENCE_DEFAULT_TEMPLATE;
   mode.value = storedMode ?? OBS_PRESENCE_DEFAULT_MODE;
@@ -188,6 +206,7 @@ async function openModal() {
     Number.isInteger(parsedAlertSeconds) && parsedAlertSeconds > 0
       ? parsedAlertSeconds
       : OBS_PRESENCE_DEFAULT_ALERT_SECONDS;
+  corner.value = storedCorner ?? OBS_PRESENCE_DEFAULT_CORNER;
   styleStatus.value = "idle";
 
   const [storedWsEnabled, storedWsHost, storedWsPort, storedWsPassword, storedStartScene, storedEndScene] =
@@ -219,11 +238,13 @@ async function applyStyle() {
       template: template.value,
       mode: mode.value,
       alertSeconds: seconds,
+      corner: corner.value,
     });
     await Promise.all([
       settingsRepo.set(OBS_PRESENCE_TEMPLATE_SETTING, template.value),
       settingsRepo.set(OBS_PRESENCE_MODE_SETTING, mode.value),
       settingsRepo.set(OBS_PRESENCE_ALERT_SECONDS_SETTING, String(seconds)),
+      settingsRepo.set(OBS_PRESENCE_CORNER_SETTING, corner.value),
     ]);
     styleStatus.value = "idle";
   } catch (e) {
@@ -395,6 +416,35 @@ async function testConnection() {
               @click="selectMode('alert')"
             >
               {{ t("obsPresence.modeAlert") }}
+            </button>
+          </DropdownMenu>
+        </div>
+        <div class="obs-presence-labeled-row">
+          <span class="obs-presence-row-label">{{ t("obsPresence.cornerLabel") }}</span>
+          <DropdownMenu
+            v-model:open="cornerMenuOpen"
+            wrap-class="obs-presence-dropdown-wrap"
+            panel-class="obs-presence-dropdown-panel"
+          >
+            <template #trigger>
+              <button
+                type="button"
+                class="compact-button obs-presence-dropdown-trigger"
+                @click="cornerMenuOpen = !cornerMenuOpen"
+              >
+                {{ cornerLabel }}
+                <IconChevronDown :size="14" :stroke-width="1.75" />
+              </button>
+            </template>
+            <button
+              v-for="(labelKey, value) in cornerLabels"
+              :key="value"
+              type="button"
+              class="obs-presence-dropdown-item"
+              :class="{ active: corner === value }"
+              @click="selectCorner(value)"
+            >
+              {{ t(`obsPresence.${labelKey}`) }}
             </button>
           </DropdownMenu>
         </div>

@@ -6545,3 +6545,60 @@ even after that. Two layers of friction stacked, not one.
 Scopes weren't clearly enumerated in what's publicly documented - moot anyway given the
 confidential-client requirement already rules this out on the same grounds as Chzzk/Kick.
 Not started, not a strong candidate.
+
+### Milestone 29 candidate research: broader search beyond the already-listed platforms
+
+User asked to look past everything already researched/dropped. Live-checked (WebSearch/WebFetch
+against current docs, not trained-knowledge guessing) three new candidates.
+
+**Matrix protocol - the strongest candidate found across all of M29's research.** Two things
+distinguish it from every platform researched before it:
+
+1. It has a genuine protocol-level ambient presence concept, not a one-off post - `PUT
+   /_matrix/client/v3/presence/{userId}/status` sets both a presence state (online/away/etc.)
+   and a free-text `status_msg`, settable and clearable exactly like Discord's Rich Presence
+   `set_activity`/`clear_activity`. This is the same shape M29's original scoping call picked
+   Discord+OBS to validate the `PresencePlugin` interface against - Matrix would be a third real
+   implementation of that exact same shape, not a new one requiring interface changes.
+2. Matrix is mid-migration to a new OAuth 2.0/OIDC-based auth system (MSC3861, "next-generation
+   auth") using OAuth 2.0 Dynamic Client Registration (RFC 7591) instead of a fixed per-server
+   app - same structural benefit Mastodon's `/api/v1/apps` gives (no static secret baked into
+   Concourse's source), but going further: as of the current spec status, PKCE is now *required*
+   for device-scope binding under the new auth flow, meaning a fully secret-free public-client
+   flow is achievable here, not just a fallback-to-secret-when-PKCE-unavailable situation like
+   Mastodon's still has.
+
+Real caveat found, not glossed over: this auth system is still actively rolling out across the
+Matrix ecosystem (matrix.org's own homeserver only migrated to the new Matrix Authentication
+Service in April 2025; as of the most recent "This Week in Matrix" post found, dynamic client
+registration is still described as "opt-in" per-homeserver). Since Matrix is federated like
+Mastodon, a real implementation can't assume every homeserver a user might connect to has
+migrated yet - would need a fallback to the legacy `/_matrix/client/v3/login` password-based
+flow for homeservers that haven't, which has no PKCE/secret question at all since it's direct
+credential submission (arguably a worse UX/trust ask than either OAuth path, but the simplest to
+implement as a fallback). Confirmed via `matrix.org`'s own blog posts and the actual MSC3861/
+MSC2966 spec proposal documents on `github.com/matrix-org/matrix-spec-proposals`, not secondary
+sources.
+
+**Guilded - researched, weak fit.** A Discord-alternative gaming community platform. Its
+documented auth model is a bot-token pattern (generate a token in the app's dashboard, paste it
+in) rather than real OAuth with a public/PKCE option - same shape as a Discord bot token, not
+comparable to Twitch/Slack's actual OAuth flows. More importantly, nothing found in its API docs
+resembling an ambient "now playing" / presence-status field a bot or OAuth'd user could set -
+Guilded's API is oriented around bots posting messages/managing servers, not personal status.
+Without a presence concept to set, this doesn't fit the category at all regardless of the auth
+question.
+
+**ntfy.sh - a genuinely different category, not a social platform.** A simple HTTP pub-sub push-
+notification service (`PUT`/`POST` a message to a topic URL, subscribers get a phone/desktop
+push). Zero-auth by default - anyone can publish to any topic unless access control is
+explicitly configured, no OAuth of any kind needed. This doesn't "notify friends" the way a
+social post does (it's closer to a personal alert - you'd subscribe your own phone to a topic
+Concourse posts to), so it's a different feature shape than every social-platform candidate
+above, closer in spirit to the OBS webhook idea. One real distinction from OBS's webhook,
+though: `ntfy.sh` itself (the free public instance most people would default to) is a real third-
+party server on the open internet, not something running on the user's own machine - unlike the
+"nothing ever leaves the local machine" property that made the OBS webhook the simplest M29
+candidate in the first place. Self-hosting ntfy would restore that property; using the public
+instance is a deliberate trade of privacy for zero setup. Worth flagging explicitly rather than
+assuming it's as clean as the OBS case just because the request itself needs no credentials.

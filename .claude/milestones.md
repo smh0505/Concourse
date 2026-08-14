@@ -535,8 +535,11 @@ Generalizes Milestone 28's Discord-only integration into a real multi-enable plu
 **Candidate presence platforms researched, not built** (see devlog for the full per-platform
 auth research):
 - [x] Discord - done (Milestone 28/29), one shared hardcoded `client_id`
-- [ ] Slack - PKCE, safe to hardcode like Discord - **in progress, see below**
-- [ ] Twitch - PKCE, safe to hardcode; best livestreaming-platform fit found
+- [ ] Slack - technically ready to build (PKCE, safe to hardcode like Discord), but
+  deprioritized by the user - audience/atmosphere mismatch, not a technical one: far fewer
+  people use Slack for gaming-community chat than Discord, so a Slack presence feature would
+  reach almost nobody relevant. Not dropped as unviable, just parked, same as Matrix
+- [ ] Twitch - PKCE, safe to hardcode; best livestreaming-platform fit found - **next up**
 - [ ] Bluesky (AT Protocol) - PKCE + DPoP, no shared secret, needs a hosted client-metadata URL
 - [ ] Chzzk, Kick, SOOP - need a real per-user `client_secret`, same friction as IGDB. SOOP also
   gate-keeps API access behind a manual partnership application (~10 business days), on top of

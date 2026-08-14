@@ -316,9 +316,13 @@ async function testConnection() {
       </div>
 
       <div class="obs-presence-style">
-        <div class="obs-presence-field">
-          {{ t("obsPresence.templateLabel") }}
-          <DropdownMenu v-model:open="templateMenuOpen" wrap-class="obs-presence-dropdown-wrap">
+        <div class="obs-presence-labeled-row">
+          <span class="obs-presence-row-label">{{ t("obsPresence.templateLabel") }}</span>
+          <DropdownMenu
+            v-model:open="templateMenuOpen"
+            wrap-class="obs-presence-dropdown-wrap"
+            panel-class="obs-presence-dropdown-panel"
+          >
             <template #trigger>
               <button
                 type="button"
@@ -347,9 +351,13 @@ async function testConnection() {
             </button>
           </DropdownMenu>
         </div>
-        <div class="obs-presence-field">
-          {{ t("obsPresence.modeLabel") }}
-          <DropdownMenu v-model:open="modeMenuOpen" wrap-class="obs-presence-dropdown-wrap">
+        <div class="obs-presence-labeled-row">
+          <span class="obs-presence-row-label">{{ t("obsPresence.modeLabel") }}</span>
+          <DropdownMenu
+            v-model:open="modeMenuOpen"
+            wrap-class="obs-presence-dropdown-wrap"
+            panel-class="obs-presence-dropdown-panel"
+          >
             <template #trigger>
               <button
                 type="button"
@@ -494,7 +502,8 @@ async function testConnection() {
 }
 
 .obs-presence-dropdown-wrap {
-  align-self: flex-start;
+  flex: 1;
+  min-width: 0;
 }
 
 .obs-presence-dropdown-trigger {
@@ -502,18 +511,29 @@ async function testConnection() {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  min-width: 10rem;
+  width: 100%;
+}
+
+/* :deep() required - DropdownMenu.vue renders this panel inside its own template, not this
+   component's root, so it never carries this component's scope attribute. Stretches the panel
+   to the trigger's full width instead of DropdownMenu's own content-width default. */
+.obs-presence-dropdown-wrap :deep(.obs-presence-dropdown-panel) {
+  left: 0;
+  right: 0;
 }
 
 .obs-presence-dropdown-item {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  width: 100%;
   padding: var(--space-2) var(--space-3);
   font-size: 0.85rem;
   border: none;
   background: none;
   cursor: pointer;
   color: inherit;
+  text-align: left;
   white-space: nowrap;
 }
 

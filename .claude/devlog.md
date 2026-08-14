@@ -6883,3 +6883,25 @@ Concourse's own MIT license. Nothing was copied - only the *behavior* was read a
 then reimplemented independently in Rust against a completely different API (`windows` crate vs.
 .NET P/Invoke). GPL's copyleft applies to copying/deriving code, not to reading public source for
 research and writing an unrelated independent implementation.
+
+### Milestone 39 stretch: always-on-top pinning
+
+First of the three speculative window-behavior stretch items - the user picked it explicitly
+after a trade-off comparison of all three (always-on-top: smallest, self-contained; remembered
+position: needs off-screen-rect clamping; forced resolution/DPI: two genuinely different
+mechanisms, whole-desktop side effects, the riskiest by far).
+
+New `always_on_top.rs`, deliberately thin - `SetWindowPos` with `HWND_TOPMOST`/`HWND_NOTOPMOST`
+is the entire mechanism, no overlay, no letterbox math. Reuses `pseudo_fullscreen.rs`'s window-
+finding (`find_window_for_pid`/`wait_for_window`, both changed from private to `pub(crate)`)
+rather than duplicating the `EnumWindows` callback - that's the trickiest unsafe code in the
+whole feature, not worth a second copy. Keeps its own independent `AlwaysOnTopState`/`apply`/
+`revert`/`refresh` rather than folding into `PseudoFullscreenState`, since the two treatments
+are independently toggleable per game (either, neither, or both).
+
+Same window-replacement handling as pseudo-fullscreen (`refresh()`, piggybacked on each tracking
+thread's existing poll tick rather than a new timer) - `launch_game`/`track_folder_playtime` in
+`launcher.rs` now carry both `pseudo_fullscreen` and `always_on_top` bool params side by side,
+applying/refreshing/reverting each independently within the same loop iteration. New
+`always_on_top` column (migration v9), `GameDetail.vue` checkbox mirroring the existing pattern
+exactly.

@@ -714,12 +714,13 @@ Known limitation (same as Borderless Gaming - not solved there either): a game r
 still-alive window later isn't caught, only a window closing/being replaced is. Iceboxed, see
 below - not an active TODO on this milestone.
 
-**Window behavior, stretch - speculative, none started, no tab/kind unless one of these is
-actually built.** Grouped here since they'd share the same "act on the game's window after
-launch" mechanism as pseudo-fullscreen above, not because any is planned yet.
-- [ ] Always-on-top pinning for the game window
-- [ ] Remembered window position/size per game (restore where you last left it)
-- [ ] Forced resolution/DPI override at launch
+**Window behavior, stretch.** Grouped here since they share the same "act on the game's window
+after launch" mechanism as pseudo-fullscreen above.
+- [x] Always-on-top pinning for the game window - `always_on_top.rs`, per-game opt-in
+  (migration v9), independent of pseudo-fullscreen
+- [ ] Remembered window position/size per game (restore where you last left it) - not started
+- [ ] Forced resolution/DPI override at launch - not started, riskiest of the three (global
+  desktop-resolution side effects vs. a separate per-process DPI-awareness mechanism)
 
 ---
 

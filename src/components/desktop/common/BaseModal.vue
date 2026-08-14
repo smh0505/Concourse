@@ -110,9 +110,8 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  /* Only the body scrolls - header/footer stay put. min-height: 0 is required for a flex child
-     to actually shrink below its content size instead of forcing the frame (and thus header/
-     footer) to grow past max-height along with it. */
+  /* Only the body scrolls - header/footer stay put. min-height: 0 lets a flex child actually
+     shrink below its content size instead of growing the frame past max-height. */
   min-height: 0;
   overflow-y: auto;
 }

@@ -24,14 +24,12 @@ export const OBS_WS_PASSWORD_SETTING = "obs_ws_password";
 export const OBS_WS_START_SCENE_SETTING = "obs_ws_start_scene";
 export const OBS_WS_END_SCENE_SETTING = "obs_ws_end_scene";
 export const OBS_WS_DEFAULT_HOST = "127.0.0.1";
-// obs-websocket's own default port (distinct from OBS_PRESENCE_DEFAULT_PORT, the overlay's own
+// obs-websocket's own default port - distinct from OBS_PRESENCE_DEFAULT_PORT (the overlay's
 // unrelated tiny_http server).
 export const OBS_WS_DEFAULT_PORT = 4455;
 
-/** No-op unless scene-switching is enabled and a scene is configured for this event - a fresh
- *  connect-switch-disconnect per call (obs_websocket.rs), so this only touches the network when
- *  actually configured to. `.catch(() => {})`'d by the caller, same "one bad thing doesn't block
- *  the rest" isolation `set_now_playing` already gets. */
+/** No-op unless scene-switching is enabled and configured for this event. `.catch(() => {})`'d
+ *  by the caller. */
 async function switchObsScene(sceneSetting: string) {
   const enabled = await settingsRepo.get(OBS_WS_ENABLED_SETTING);
   if (enabled !== "true") return;
@@ -50,12 +48,8 @@ async function switchObsScene(sceneSetting: string) {
   });
 }
 
-// obs_presence.rs's local HTTP server runs unconditionally from app startup - activate/
-// deactivate only change *what it reports* (title, or None), never whether it's listening.
-// Scene-switching (obs_websocket.rs) is a separate, independently-configured concern bundled
-// into the same plugin/settings-modal rather than a second plugin entry, since both are "what
-// this game session tells OBS" - the Presence tab's single enable checkbox still gates the
-// overlay; scene-switching has its own enable toggle inside this plugin's own settings.
+// Scene-switching bundled into this plugin rather than a second entry - both are "what this
+// game session tells OBS," and it gets its own independent enable toggle in the settings modal.
 const plugin: PresencePlugin = {
   id: "obs-presence",
   name: "OBS Overlay",

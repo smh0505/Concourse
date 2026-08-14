@@ -73,9 +73,8 @@ export const usePresenceStore = defineStore("presence", () => {
     await Promise.all(loadedPlugins.value.map((p) => p.deactivate().catch(() => {})));
   }
 
-  /** The overlay server always boots on obs_presence.rs's DEFAULT_PORT (Rust has no DB access
-   *  to read a persisted value itself) - re-apply a saved custom port here so a fresh launch
-   *  matches whatever the user last configured, without requiring Settings to be opened first. */
+  /** Rust always boots on DEFAULT_PORT (no DB access of its own) - re-apply a saved custom port
+   *  here so a fresh launch matches what was last configured. */
   async function applyPersistedObsPort() {
     const storedPort = await settingsRepo.get(OBS_PRESENCE_PORT_SETTING);
     if (!storedPort) return;
@@ -84,8 +83,7 @@ export const usePresenceStore = defineStore("presence", () => {
     await invoke("set_obs_presence_port", { port }).catch(() => {});
   }
 
-  /** Same rationale as `applyPersistedObsPort` - style also lives in `ObsPresenceState`, which
-   *  Rust always boots with `OverlayStyle::default()`. */
+  /** Same rationale as `applyPersistedObsPort`. */
   async function applyPersistedObsStyle() {
     const [template, mode, alertSecondsStr] = await Promise.all([
       settingsRepo.get(OBS_PRESENCE_TEMPLATE_SETTING),
@@ -120,9 +118,7 @@ export const usePresenceStore = defineStore("presence", () => {
 
     await reloadPlugins();
 
-    // Own listeners, separate from library.ts's game-session-ended one (which records
-    // playtime) - presence activation/deactivation is a distinct concern from playtime
-    // tracking, even though both key off the same two Rust-emitted events.
+    // Own listeners, separate from library.ts's (which records playtime off the same events).
     unlistenStarted = await listen<GameSessionStarted>("game-session-started", (event) => {
       const library = useLibraryStore();
       const game = library.games.find((g) => g.id === event.payload.game_id);

@@ -1,11 +1,8 @@
 use serde::Serialize;
 
-/// Structured the same way `obs_presence.rs`'s `ObsPresenceError` is - a `kind` the frontend
-/// matches on to build a localized headline, plus the underlying `obws`/OBS error text as a
-/// `raw` detail line rather than dropped. `obws::Error` already covers URI/handshake/timeout/API
-/// failures internally (it's a `thiserror` enum); collapsing all of those into two kinds here is
-/// enough for what the Settings UI actually needs to tell the user apart: "couldn't reach/auth
-/// to OBS at all" vs. "reached it, but this specific request failed."
+/// Same shape as `obs_presence.rs`'s `ObsPresenceError` - `kind` for a localized headline, `raw`
+/// for the underlying `obws`/OBS error text. Collapses `obws::Error`'s many internal variants
+/// down to the two distinctions the Settings UI actually needs.
 #[derive(Serialize)]
 #[serde(tag = "kind")]
 pub enum ObsWsError {
@@ -19,9 +16,8 @@ async fn connect(host: &str, port: u16, password: Option<&str>) -> Result<obws::
         .map_err(|e| ObsWsError::ConnectFailed { raw: e.to_string() })
 }
 
-/// Backs the Settings panel's "Fetch Scenes" button - populates the start/end scene fields'
-/// autocomplete list, and doubles as a connectivity test the same way `test_obs_presence_port`
-/// does for the overlay port.
+/// Backs "Fetch Scenes" - populates the scene autocomplete list and doubles as a connectivity
+/// test, same idea as `test_obs_presence_port`.
 #[tauri::command]
 pub async fn obs_ws_list_scenes(
     host: String,
@@ -37,10 +33,8 @@ pub async fn obs_ws_list_scenes(
     Ok(scenes.scenes.into_iter().map(|scene| scene.id.name).collect())
 }
 
-/// Called from the `obs-presence` TS plugin's `activate`/`deactivate` when scene-switching is
-/// enabled in Settings - a fresh connect-switch-disconnect per call rather than holding a
-/// persistent connection, since this only fires twice per game session (start/end) and avoids
-/// any connection-health/reconnect lifecycle to manage for such a low call rate.
+/// Fresh connect-switch-disconnect per call rather than a persistent connection - fires only
+/// twice per game session, so no reconnect lifecycle is worth managing.
 #[tauri::command]
 pub async fn obs_ws_switch_scene(
     host: String,

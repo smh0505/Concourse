@@ -5,10 +5,8 @@ use serde::Serialize;
 use tauri::{AppHandle, Manager};
 use tiny_http::{Header, Method, Response, Server};
 
-/// Boot-time default - actually-active port lives in `ObsPresenceState.port`, since
-/// `set_obs_presence_port` can rebind it later. The server always starts on this port so a
-/// fresh install has a working overlay before Settings is ever opened; a persisted custom port
-/// (see `ObsPresenceSettings.vue`) is re-applied by `presence.ts`'s `init()` on every launch.
+/// Boot-time fallback - `set_obs_presence_port` can rebind later; `presence.ts` re-applies a
+/// persisted custom port on every launch.
 pub const DEFAULT_PORT: u16 = 47474;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -23,12 +21,9 @@ enum Mode {
     Alert,
 }
 
-/// "How it's presented" - orthogonal to `NowPlaying` ("what's currently playing"), so changing
-/// style never touches activation state and vice versa. Alert mode needs no server-side "have I
-/// already shown this" tracking: the served page's own script computes `now - started_at`
-/// client-side every second (same clock the elapsed-time display already uses) and fades the
-/// card out once that exceeds `alert_seconds` - correct even across the page's own meta-refresh
-/// reloads, since it's derived from a real timestamp, not view history.
+/// "How it's presented" - orthogonal to `NowPlaying`. Alert mode needs no server-side "already
+/// shown" tracking: the page's own script fades the card once `now - started_at` (a real
+/// timestamp, not view history) exceeds `alert_seconds` - stays correct across meta-refreshes.
 #[derive(Clone, Copy)]
 struct OverlayStyle {
     template: Template,
@@ -45,25 +40,17 @@ impl Default for OverlayStyle {
 struct NowPlaying {
     title: String,
     cover_url: Option<String>,
-    /// Unix seconds - reused across calls for the *same* title (a plugin re-activating an
-    /// already-active game shouldn't reset the clock), reset whenever the title actually
-    /// changes. Sent to the client as-is; the elapsed-time display itself ticks client-side
-    /// (see the served page's own <script>) rather than being recomputed server-side on every
-    /// request, so it updates every second without needing a full page reload that often.
+    /// Unix seconds - kept across calls for the *same* title so re-activating doesn't reset the
+    /// clock; elapsed time itself ticks client-side (see the served page's <script>).
     started_at: u64,
 }
 
-/// What the locally-served page currently shows - `None` renders an idle placeholder. Updated
-/// by `set_now_playing` (the `obs-presence` TS plugin's activate/deactivate), read fresh on
-/// every HTTP request rather than pushed to the browser - simplest way to stay correct without
-/// a websocket, at the cost of the page needing to poll/refresh itself for title/cover changes
-/// (see the served HTML's own meta-refresh below).
+/// What the locally-served page shows - `None` renders idle. Read fresh per request rather than
+/// pushed to the browser, so the page polls/refreshes itself for changes instead.
 pub struct ObsPresenceState {
     now_playing: Mutex<Option<NowPlaying>>,
-    /// Current listener - swapped out (not mutated in place) by `set_obs_presence_port`, so a
-    /// bind failure on the new port leaves the old one still serving. `Arc` so both this state
-    /// and the serving thread can hold a reference; `unblock()` on the old `Server` is what ends
-    /// its thread's `incoming_requests()` loop when it's replaced.
+    /// Swapped, not mutated in place, by `set_obs_presence_port` - a bind failure on the new
+    /// port leaves the old one still serving. `unblock()` on the old `Server` ends its thread.
     server: Mutex<Option<Arc<Server>>>,
     style: Mutex<OverlayStyle>,
 }
@@ -171,8 +158,8 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
     )
 }
 
-/// JSON shape for `/status` - lets a streamer build a fully custom overlay in their own HTML/
-/// CSS/JS instead of being stuck with `render_page`'s fixed layout.
+/// JSON shape for `/status` - lets a streamer build a custom overlay instead of using
+/// `render_page`'s fixed layout.
 #[derive(Serialize)]
 struct NowPlayingStatus {
     title: Option<String>,
@@ -198,9 +185,8 @@ fn html_escape(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
-/// Runs on its own thread for as long as `server` stays bound - ends when `server.unblock()` is
-/// called elsewhere (port change) or the process exits. Shared by both the initial boot-time
-/// server and every later rebind from `set_obs_presence_port`.
+/// Runs until `server.unblock()` is called (port change) or the process exits. Shared by the
+/// boot-time server and every later rebind.
 fn serve(app: AppHandle, server: Arc<Server>) {
     for request in server.incoming_requests() {
         let state = app.state::<ObsPresenceState>();
@@ -229,11 +215,9 @@ fn serve(app: AppHandle, server: Arc<Server>) {
     }
 }
 
-/// Structured so `ObsPresenceSettings.vue` can build its own localized "why" sentence instead of
-/// splicing an OS-language error string (Windows' own, not this app's i18n) into an otherwise-
-/// translated one. `raw` still carries the underlying OS/HTTP error text, shown as a secondary
-/// detail line rather than dropped - it's what actually let this session's port-1094/1420 cases
-/// get diagnosed, no reason to hide it, just not let it be the *only* message.
+/// Structured so `ObsPresenceSettings.vue` can build a localized "why" sentence instead of
+/// splicing raw OS-language error text into a translated one. `raw` keeps that OS/HTTP text as
+/// a secondary detail line rather than dropping it.
 #[derive(Serialize)]
 #[serde(tag = "kind")]
 pub enum ObsPresenceError {
@@ -242,9 +226,8 @@ pub enum ObsPresenceError {
     BadStatus { port: u16, status: u16, raw: String },
 }
 
-/// Starts once in `.setup()` and just stays up for the app's whole lifetime - no start/stop
-/// lifecycle tied to a plugin being enabled, since the OBS plugin's activate/deactivate only
-/// ever change *what the already-running server reports*, not whether it's listening at all.
+/// Starts once in `.setup()` and stays up for the app's lifetime - activate/deactivate only
+/// change what it reports, never whether it's listening.
 pub fn start(app: AppHandle, port: u16) {
     let server = match Server::http(("127.0.0.1", port)) {
         Ok(server) => Arc::new(server),
@@ -258,10 +241,8 @@ pub fn start(app: AppHandle, port: u16) {
     std::thread::spawn(move || serve(app_for_thread, server));
 }
 
-/// Rebinds the overlay server to a new port, called from `ObsPresenceSettings.vue`'s Apply
-/// button (and once at startup by `presence.ts` if a non-default port was persisted last
-/// session). Binds the new port *before* tearing down the old one, so a port already in use by
-/// something else fails loudly without taking down the currently-working overlay.
+/// Binds the new port *before* tearing down the old one, so a port already in use fails loudly
+/// without taking down the currently-working overlay.
 #[tauri::command]
 pub fn set_obs_presence_port(app: AppHandle, port: u16) -> Result<(), ObsPresenceError> {
     let new_server = Server::http(("127.0.0.1", port)).map(Arc::new).map_err(|e| {
@@ -282,9 +263,8 @@ pub fn set_obs_presence_port(app: AppHandle, port: u16) -> Result<(), ObsPresenc
     Ok(())
 }
 
-/// Backs the Settings panel's "Test" button - a real HTTP round trip to `/status` on the given
-/// port, not just a "does something own this port" TCP probe, so it actually proves the overlay
-/// responds and not merely that some other process is squatting the port.
+/// A real HTTP round trip to `/status`, not just a TCP-connect probe - proves the overlay
+/// actually responds, not just that something owns the port.
 #[tauri::command]
 pub fn test_obs_presence_port(port: u16) -> Result<(), ObsPresenceError> {
     let url = format!("http://127.0.0.1:{port}/status");
@@ -304,8 +284,7 @@ pub fn test_obs_presence_port(port: u16) -> Result<(), ObsPresenceError> {
     }
 }
 
-/// Applies instantly - unlike the port, there's no bind/collision failure mode here, so no
-/// Apply-then-rebind dance is needed; `ObsPresenceSettings.vue` calls this directly on change.
+/// Applies instantly - no bind/collision failure mode here, so no Apply-then-rebind dance needed.
 #[tauri::command]
 pub fn set_obs_overlay_style(
     app: AppHandle,

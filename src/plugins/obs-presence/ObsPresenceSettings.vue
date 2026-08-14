@@ -69,9 +69,8 @@ function isObsPresenceError(e: unknown): e is ObsPresenceError {
   return typeof e === "object" && e !== null && "kind" in e;
 }
 
-/** Turns a rejected `invoke()` error into a localized "why" sentence plus the original OS/HTTP
- *  error text as a separate raw detail - not dropped (it's what diagnosed both real cases hit
- *  this session), just no longer the *only* thing shown. */
+/** Turns a rejected `invoke()` error into a localized "why" sentence plus the raw OS/HTTP text
+ *  as a separate detail line. */
 function describeError(e: unknown): { message: string; raw: string } {
   if (!isObsPresenceError(e)) return { message: String(e), raw: "" };
   switch (e.kind) {
@@ -104,9 +103,8 @@ function describeWsError(e: unknown): { message: string; raw: string } {
   }
 }
 
-/** No connect-time failure mode from just typing (only Fetch Scenes actually opens a
- *  connection), and `switchObsScene` (index.ts) reads these fresh from settingsRepo on every
- *  game launch anyway - so plain instant-persist on change, same as the style section above. */
+/** Instant-persist on change, same as the style section - no connect-time failure mode from
+ *  just typing. */
 async function saveWsSettings() {
   await Promise.all([
     settingsRepo.set(OBS_WS_ENABLED_SETTING, String(wsEnabled.value)),
@@ -118,8 +116,7 @@ async function saveWsSettings() {
   ]);
 }
 
-/** Populates the start/end scene fields' autocomplete list and doubles as a connectivity test -
- *  same "Fetch"-as-test idea `testConnection` above uses for the overlay port. */
+/** Populates the scene autocomplete list; doubles as a connectivity test. */
 async function fetchScenes() {
   const port = Number(wsPort.value);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -191,8 +188,7 @@ async function openModal() {
   modalOpen.value = true;
 }
 
-/** No bind/collision failure mode for style (unlike the port), so this applies immediately on
- *  any control change rather than needing an explicit Apply button. */
+/** No bind/collision failure mode for style, so this applies immediately on change. */
 async function applyStyle() {
   const seconds = Math.max(1, Math.round(alertSeconds.value));
   try {
@@ -221,9 +217,8 @@ async function applyPort() {
     applyRaw.value = "";
     return;
   }
-  // Rebinding to the port already applied would bind the same port twice before releasing the
-  // old listener (set_obs_presence_port always binds new-then-drops-old, so a bad port can't
-  // take down a working overlay) - a guaranteed self-collision, not a real failure.
+  // Reapplying the same port is a guaranteed self-collision (new binds before old drops), not a
+  // real failure.
   if (port === appliedPort.value) {
     applyStatus.value = "success";
     applyMessage.value = t("obsPresence.alreadyApplied", { port });
@@ -248,9 +243,7 @@ async function applyPort() {
   }
 }
 
-/** Tests whatever port is currently typed - deliberately independent of `appliedPort`, so a
- *  failed/not-yet-applied Apply doesn't leave a stale success message next to a different port
- *  number in the field. */
+/** Tests whatever port is typed, independent of `appliedPort`. */
 async function testConnection() {
   const port = Number(portInput.value);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {

@@ -45,20 +45,15 @@ const activeCardVisual = useActiveCardVisual();
      height, unlike the earlier max-height approach which grew the tile in flow and stretched
      every other tile sharing its grid row. */
   transition: transform 0.15s ease;
-  /* .tile-title sits absolutely positioned below this button's own box (see below), so it's
-     invisible to scrollIntoView's bounding-rect math - without this, "nearest" scrolling
-     (BigPictureGrid.vue) stops as soon as the cover art is visible, clipping the title right at
-     the viewport edge. Reserves room for the title's own height (line + margin-top gap). */
+  /* .tile-title is absolutely positioned below this button's own box, invisible to
+     scrollIntoView's bounding-rect math - reserves room so "nearest" scrolling doesn't clip it. */
   scroll-margin-bottom: 2.5rem;
-  /* Symmetrical breathing room at the top edge - the focus-lift transform below shifts the tile
-     up by 0.6rem, and without margin the lifted tile can sit flush against the viewport edge. */
+  /* Matching room at top for the focus-lift transform below. */
   scroll-margin-top: 1rem;
 }
 
-/* Real :hover is gated behind .big-picture:not(.mouse-idle) (BigPictureGrid.vue) - once
-   gamepad/keyboard nav takes over, the motionless real cursor can still sit over some other
-   tile, and without this gate that tile would keep lifting/showing its title even though the
-   controller-driven highlight (.tile-selected) has moved elsewhere. */
+/* Real :hover gated behind .big-picture:not(.mouse-idle) - keeps a motionless cursor from
+   lifting/showing the title of a tile the gamepad-driven highlight has since moved past. */
 .big-picture:not(.mouse-idle) .tile:hover,
 .tile.tile-selected {
   transform: translateY(-0.6rem);

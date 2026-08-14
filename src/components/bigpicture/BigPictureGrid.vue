@@ -101,10 +101,8 @@ function setTileRef(index: number, el: Element | ComponentPublicInstance | null)
   }
 }
 
-/** Plain `scrollIntoView({ block: "nearest" })` stops as soon as the tile itself is visible - it
- *  has no notion of `.big-picture`'s own padding beyond the tile's bounding box, so the last bit
- *  of top/bottom padding never scrolls into view once the tile no longer needs it to. Force the
- *  container to its true scroll extremes when the focused tile is in the first/last row instead. */
+/** `scrollIntoView({ block: "nearest" })` stops once the tile is visible, ignoring the
+ *  container's own top/bottom padding - force true scroll extremes on the first/last row. */
 watch(focusedTile, (el) => {
   if (!el) return;
   const container = rootRef.value;
@@ -173,10 +171,8 @@ watch(focusedTile, (el) => {
   display: none;
 }
 
-/* Hides the real OS cursor once keyboard/gamepad nav has taken over (useMouseActivity.ts) -
-   otherwise it sits motionless over whatever tile it happened to land on, still visible and
-   still triggering that tile's native :hover styling (see BigPictureTile.vue) even though the
-   gamepad-driven highlight has moved elsewhere. Any real mousemove clears `mouse-idle` again. */
+/* Hides the OS cursor once gamepad/keyboard nav takes over (useMouseActivity.ts) - otherwise it
+   sits motionless, still triggering :hover styling (BigPictureTile.vue) elsewhere from focus. */
 .big-picture.mouse-idle {
   cursor: none;
 }

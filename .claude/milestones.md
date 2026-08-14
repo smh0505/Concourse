@@ -510,112 +510,35 @@ metadata provider's API key/secret).
   game runs
 
 ## Milestone 29 — Presence Plugin Type
-Generalizes Milestone 28's Discord-only integration into a real multi-enable plugin kind - two
-real, researched, safe-to-hardcode targets (Discord, a local OBS webhook) is what triggered
-actually building it. Unlike theme/controller's exclusive-single-active model, this is multi-
-enable like source/metadata-provider. See devlog for the full design rationale and platform
-research.
-- [x] New `PresencePlugin` interface (`activate(gameTitle)`/`deactivate()`), manifest/loader
-  wiring matching the existing five-kind pattern
-- [x] Discord migrated from Milestone 28's Rust-hardcoded hook into a real plugin
-  (`discord-presence`) - `launcher.rs` no longer knows presence exists at all, a new
-  `game-session-started` event replaces the old inline boolean-parameter hook
-- [x] OBS Overlay (`obs-presence`) - always-on local HTTP server (`tiny_http`, fixed port),
-  zero external auth, the second implementation validating the interface
-- [x] Settings UI: new "Presence" tab in `PluginSettings.vue`, multi-enable checkboxes matching
-  the Source/Metadata Provider tabs
-- [x] Manually verified end-to-end (`bunx tauri dev`) - both plugins activate/deactivate
-  correctly for direct-exe and URI-launched games, per-game `skip_presence` opt-out respected
-- [ ] Stretch: detach presence plugins into the WASM tier (like source/metadata plugins), so a
-  third-party presence integration could ship independently of app releases. Not a quick move -
-  there's no `activate`/`deactivate` WIT interface yet (`wasm_plugin_runtime.rs` only defines
-  worlds for source/metadata's own methods), and Discord specifically needs a host-function
-  bridge back into Rust's IPC client, neither of which exists. Data tier doesn't fit at all
-  (presence is inherently code, not declarative content). Only worth building once a third
-  target or a real independent-update need actually shows up - same reasoning `standard-gamepad`
-  stayed built-in instead of being detached - not started
+Generalizes Milestone 28's Discord-only integration into a real multi-enable plugin kind
+(Discord + a new local OBS webhook). See devlog for design rationale and platform research.
+- [x] New `PresencePlugin` interface (`activate`/`deactivate`), manifest/loader wiring
+- [x] Discord migrated to a real plugin (`discord-presence`); `launcher.rs` no longer knows
+  presence exists at all
+- [x] OBS Overlay (`obs-presence`) - always-on local HTTP server (`tiny_http`), zero external auth
+- [x] Settings UI: new "Presence" tab, multi-enable checkboxes
+- [x] Manually verified end-to-end
+- [ ] Stretch: detach presence plugins into the WASM tier - not started, no `activate`/
+  `deactivate` WIT interface exists yet; see devlog
 
-**OBS webhook follow-ups, stretch.** Ordered smallest-to-biggest lift; none block each other.
-- [x] Richer overlay content - cover art (`Game.cover_art_url`, already available) and a live
-  elapsed-time counter (track session start alongside the title in `ObsPresenceState`, same idea
-  as Discord's own elapsed-time display) rendered together, not just title text
-- [x] Raw JSON `/status` endpoint (`{ title, coverUrl, startedAt }`) alongside the existing HTML
-  page - lets a streamer build a fully custom overlay in their own HTML/CSS/JS instead of being
-  stuck with what we render
-- [x] Configurable, testable overlay port - `set_obs_presence_port`/`test_obs_presence_port`
-  commands, port persisted and re-applied on every launch; Settings UI moved the overlay/status
-  URLs off inline text into a "Configure Overlay" modal alongside the port field and Apply/Test
-  actions (not originally on this sublist - added ad hoc)
-- [x] Overlay presentation options - alert-style transient popup mode (fades out client-side
-  after a configurable number of seconds) alongside the original persistent status card, and a
-  minimal (title-only) template alongside the original full card (cover + elapsed time) -
-  `set_obs_overlay_style`, applied instantly, no bind/collision failure mode like the port has
-- [x] Real `obs-websocket` integration - scoped down to auto-switching OBS scenes on game
-  launch/exit (user's explicit pick over push-instant-overlay-updates or a full bidirectional
-  control surface, both judged bigger than warranted). `obs_websocket.rs` (`obws` crate, v5
-  protocol) - stateless connect-switch-disconnect per call, bundled into the existing
-  obs-presence plugin/settings modal with its own independent enable toggle, not a new plugin
+**OBS webhook follow-ups, stretch** (all done):
+- [x] Richer overlay content - cover art + live elapsed-time counter
+- [x] Raw JSON `/status` endpoint alongside the HTML page
+- [x] Configurable, testable overlay port - "Configure Overlay" modal (added ad hoc)
+- [x] Overlay presentation options - alert-popup mode + minimal template
+- [x] Real `obs-websocket` integration - scene auto-switch on game launch/exit (`obws` crate)
 
-**Candidate platforms, grouped by what the plugin is actually for.** Each platform evaluated on
-the same axis: does it need a real `client_secret` (per-user credential friction, like IGDB) or
-is it safe to hardcode/auth-free (like Discord's `client_id`)? See devlog for the full research
-behind each entry below.
-
-*Ambient chat status* - a persistent "now playing" indicator on a chat platform, same shape as
-Milestone 28's Discord integration (sets on launch, clears on exit).
-- [x] Discord - done (Milestone 28), built-in feature, one shared hardcoded `client_id`
-- [ ] Slack - researched: supports Authorization Code + PKCE - enabling PKCE marks the app as a
-  public client, and the token exchange then uses `code_verifier` instead of `client_secret`
-  entirely, same safe-to-hardcode shape as Discord (one-way app setting, can't be disabled once
-  turned on) - not started
-
-*Social auto-post* - a one-off public post ("started playing X") rather than a persistent status
-- fundamentally different UX shape from the ambient-status group above (visible in a feed, not
-  just a profile badge), even though the auth question is evaluated the same way.
-- [ ] Bluesky (AT Protocol) - researched: OAuth explicitly forbids `client_secret` for native/
-  desktop clients ("Public" client type) - uses PKCE + DPoP (a device-bound cryptographic
-  keypair) instead, no shared secret anywhere. Requires `client_id` to be a real `https://` URL
-  hosting a public JSON metadata document - the existing GitHub Pages docs site could host it,
-  not a blocker, just an extra small piece of infrastructure - not started
-- [ ] Mastodon/Fediverse - not researched yet; likely sidesteps the OAuth-secret problem via
-  manual per-instance personal access tokens (how most desktop Mastodon apps already do it), but
-  federation means no single API - registration is per-instance
-
-*Livestreaming platforms* - updates a stream's title/category to match the current game.
-- [ ] Twitch - researched: supports Authorization Code + PKCE (no secret needed, unlike the
-  Client Credentials grant IGDB uses) - best fit found so far, not started
-- [ ] Chzzk (치지직) - researched: real Open API exists (`chzzk.gitbook.io`, stream title/category
-  via `Live` endpoints), but requires a `clientSecret` (confidential-client only, no PKCE, no
-  documented desktop/native support) - same per-user-credential problem as IGDB/Kick. Needs
-  either per-user Naver Developer Center credentials or a server-side proxy holding the secret
-  (real infrastructure, outside this app's local-only scope) - not started
-- [ ] Kick - researched: uses OAuth 2.1 with PKCE, but unlike Twitch/Slack the `client_secret` is
-  still mandatory alongside `code_verifier` in the token exchange (`code, client_id,
-  client_secret, redirect_uri, grant_type, code_verifier`) - PKCE is additive here, not a
-  secret-free substitute. Same per-user-credential friction as Chzzk, not started
-
-*Local/self-hosted* - no external account or OAuth at all, broadcasts only on the local network.
-- [ ] "Now playing" webhook for OBS Browser Source overlays - simplest candidate technically:
-  Concourse runs a small local HTTP endpoint, zero external auth of any kind, not started
-
-*Explicitly dropped, not viable/not wanted* - kept here as a record so these don't get
-re-proposed later.
-- Steam Rich Presence - `SetRichPresence` must be called by a process registered under a real
-  Steamworks App ID (the game's own, typically) - not injectable by a third-party launcher for
-  arbitrary games it doesn't own
-- Telegram - researched, but rejected on merit rather than a technical blocker: its only
-  ambient-status feature (Emoji Status) is emoji-only, not free text, so it can't show an actual
-  game title the way Discord/Slack do; the alternative (a bot messaging just yourself) isn't a
-  status visible to others at all. Neither is worth the per-user bot-token setup cost.
-- Home Assistant / local smart-home webhook - dropped as a speculative addition with no clear
-  use case behind it (my own suggestion, not something actually wanted)
-- X (Twitter) - not a secret/auth problem (OAuth 2.0 + PKCE is supported) but a cost one: the
-  free API tier was fully retired for new developers in February 2026, pay-per-use only
-  ($0.01/post created) - not viable without charging users per status update
-- YouTube - parked, not dropped outright: Google's own docs are internally ambiguous on whether
-  a Desktop-app-type `client_secret` is truly safe to hardcode (an older guide says yes, the
-  current native-app reference doesn't clearly exempt Desktop apps the way it does Android/iOS/
-  Chrome types) - needs testing against a real credential before it can be trusted either way
+**Candidate presence platforms researched, not built** (see devlog for the full per-platform
+auth research):
+- [x] Discord - done (Milestone 28/29), one shared hardcoded `client_id`
+- [ ] Slack - PKCE, safe to hardcode like Discord
+- [ ] Twitch - PKCE, safe to hardcode; best livestreaming-platform fit found
+- [ ] Bluesky (AT Protocol) - PKCE + DPoP, no shared secret, needs a hosted client-metadata URL
+- [ ] Chzzk, Kick - need a real per-user `client_secret`, same friction as IGDB
+- [ ] Mastodon/Fediverse - not researched yet
+- Dropped/not viable: Steam Rich Presence (needs a real Steamworks App ID), Telegram (no
+  free-text status), X/Twitter (API now pay-per-post), YouTube (Desktop-secret safety unclear),
+  Home Assistant (no real use case)
 
 ## Milestone 30 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a
@@ -728,20 +651,11 @@ milestone number reflecting whenever it's actually picked up, don't reuse the ol
 ever changes.
 
 ## Structured Errors Across Rust Commands
-Every `#[tauri::command]` outside `obs_presence.rs` still returns `Result<_, String>` -
-`plugin_installer.rs`/`wasm_plugin_runtime.rs`/`wasm_plugins.rs` alone account for 20+ of them,
-spanning genuinely different failure domains (network, filesystem, zip extraction, wasmtime
-instantiation, Sigstore verification, process spawn). M29's OBS overlay follow-up gave
-`set_obs_presence_port`/`test_obs_presence_port` a real `#[derive(Serialize)]` enum
-(`ObsPresenceError`) instead, so the frontend builds a localized "why" sentence via i18n instead
-of splicing a raw (non-i18n'd) OS/HTTP error string into an otherwise-translated message - but
-that only covers 2 commands out of the whole backend. Iceboxed rather than started: no
-`thiserror` dependency needed (confirmed - this project has done exact this pattern by hand
-before), but a shared type spanning every command's error domain is real architecture work
-(one kitchen-sink enum, or a `ConcourseError::Plugin(PluginError)`-style hierarchy per module)
-much bigger than a follow-up, and nothing outside OBS has actually hit user confusion serious
-enough to justify it yet.
-- [ ] Design the enum shape (flat vs. per-module hierarchy) before touching any command
+Every `#[tauri::command]` outside `obs_presence.rs`/`obs_websocket.rs` still returns flat
+`Result<_, String>` (`plugin_installer.rs`/`wasm_plugin_runtime.rs`/`wasm_plugins.rs` alone
+account for 20+). Iceboxed, not started - genuinely different failure domains per module, real
+architecture work (one enum or a per-module hierarchy), no `thiserror` needed. See devlog.
+- [ ] Design the enum shape before touching any command
 - [ ] Migrate `plugin_installer.rs`/`wasm_plugin_runtime.rs`/`wasm_plugins.rs` (largest cluster)
 - [ ] Migrate the rest (`translation.rs`, `plugin_registry.rs`, `zip_install.rs`,
   `plugin_verification.rs`, `image_utils.rs`, `launcher.rs`, `quick_launch.rs`)

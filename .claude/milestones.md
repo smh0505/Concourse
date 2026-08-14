@@ -542,7 +542,8 @@ auth research, including everything dropped below.
   Secret-free PKCE auth path exists but is still mid-rollout across homeservers, so a legacy
   password-login fallback would be needed too. Parked, not dropped - unfamiliar platform, more
   setup than a first build needs, revisit later
-- [ ] TeamSpeak - strongest Discord-*mechanism* match found: the built-in `ClientQuery` plugin is
+- [ ] TeamSpeak - parked, not dropped. Strongest Discord-*mechanism* match found: the built-in
+  `ClientQuery` plugin is
   a local-only TCP socket (localhost by default, on by every install), authenticated with a
   locally-generated API key the user pastes in once - genuinely the same local-trust model as
   Discord's IPC, not OAuth at all. Supports a custom away-message field settable at runtime,
@@ -551,7 +552,8 @@ auth research, including everything dropped below.
   actual gaming-community usage has been declining in Discord's favor for years - real but
   shrinking audience, unlike Discord's own reach
 - [ ] Stoat (rebranded from Revolt, Oct 2025 - same codebase/API/architecture, cease-and-desist
-  over the old name, not a fork or replacement) - open-source Discord-alternative, `users.edit`
+  over the old name, not a fork or replacement) - parked, not dropped. Open-source
+  Discord-alternative, `users.edit`
   supports a `{ text, presence }` status shape closely matching Discord's own. **Confirmed**:
   personal accounts genuinely can set this (not bot-only as first thought) - auth is
   email/password login producing a session token, and the official Stoat client itself uses

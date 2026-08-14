@@ -171,8 +171,8 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
     animation-duration: var(--marquee-duration, 6s);
   }}
   @keyframes marquee-scroll {{
-    0% {{ transform: translateX(0); }}
-    100% {{ transform: translateX(var(--marquee-distance, 0)); }}
+    0% {{ transform: translateX(var(--marquee-start, 0)); }}
+    100% {{ transform: translateX(var(--marquee-end, 0)); }}
   }}
   .elapsed {{ font-size: 1.1rem; opacity: 0.8; font-variant-numeric: tabular-nums; }}
 </style>
@@ -202,13 +202,20 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
   const titleWrap = document.querySelector(".title-wrap");
   const titleInner = document.querySelector(".title-inner");
   if (titleWrap && titleInner) {{
-    const overflow = titleInner.scrollWidth - titleWrap.clientWidth;
+    const wrapWidth = titleWrap.clientWidth;
+    const titleWidth = titleInner.scrollWidth;
+    const overflow = titleWidth - wrapWidth;
     // Skip the marquee entirely below a small overflow rather than clamping duration to a
     // minimum - a duration floor would speed up short overflows to hit it, breaking the
     // constant-speed (px/sec) scaling every other overflow amount gets.
     if (overflow > 20) {{
-      titleInner.style.setProperty("--marquee-distance", `-${{overflow}}px`);
-      titleInner.style.setProperty("--marquee-duration", `${{overflow / 30}}s`);
+      // Starts fully off-screen right, ends fully off-screen left (not just far enough to show
+      // the last character) - the loop-back jump happens while off-screen and invisible, so it
+      // reads as one continuous flow instead of a visible snap mid-title.
+      const totalDistance = wrapWidth + titleWidth;
+      titleInner.style.setProperty("--marquee-start", `${{wrapWidth}}px`);
+      titleInner.style.setProperty("--marquee-end", `-${{titleWidth}}px`);
+      titleInner.style.setProperty("--marquee-duration", `${{totalDistance / 30}}s`);
       titleInner.classList.add("marquee");
     }}
   }}

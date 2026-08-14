@@ -19,11 +19,11 @@ use windows::Win32::Graphics::Gdi::{
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DispatchMessageW, EnumWindows, GetClientRect,
-    GetMessageW, GetWindowLongPtrW, GetWindowRect, GetWindowThreadProcessId, IsWindowVisible,
-    PostMessageW, PostQuitMessage, RegisterClassExW, SetWindowLongPtrW, SetWindowPos,
-    TranslateMessage, CS_HREDRAW, CS_VREDRAW, GWL_STYLE, MSG, SWP_FRAMECHANGED, SWP_NOACTIVATE,
-    SWP_NOSIZE, SWP_NOZORDER, WM_CLOSE, WM_DESTROY, WNDCLASSEXW, WS_CAPTION, WS_EX_NOACTIVATE,
-    WS_EX_TOOLWINDOW, WS_POPUP, WS_THICKFRAME, WS_VISIBLE,
+    GetMessageW, GetWindowLongPtrW, GetWindowRect, GetWindowThreadProcessId, IsWindow,
+    IsWindowVisible, PostMessageW, PostQuitMessage, RegisterClassExW, SetWindowLongPtrW,
+    SetWindowPos, TranslateMessage, CS_HREDRAW, CS_VREDRAW, GWL_STYLE, MSG, SWP_FRAMECHANGED,
+    SWP_NOACTIVATE, SWP_NOSIZE, SWP_NOZORDER, WM_CLOSE, WM_DESTROY, WNDCLASSEXW, WS_CAPTION,
+    WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_POPUP, WS_THICKFRAME, WS_VISIBLE,
 };
 
 /// State needed to put a game's window back the way it was, plus the overlay to tear down.
@@ -169,16 +169,10 @@ fn spawn_overlay(bounds: RECT, insert_after: HWND) -> (isize, JoinHandle<()>) {
     (hwnd, thread)
 }
 
-/// Finds the game's window, strips its title bar/border, resizes it (not stretches - the game's
-/// own client content keeps its real aspect ratio) to fit letterboxed within whichever display
-/// it opened on, and drops a black overlay behind it to cover the margin. Returns `None` (a
-/// no-op) if no window turns up among `candidate_pids` in time - never blocks the caller's own
-/// session tracking indefinitely. `candidate_pids` is re-evaluated on every retry tick (see
-/// `wait_for_window`) - pass a closure that returns just the one known PID for a direct-exe
-/// launch, or one that re-scans for every process under an install folder for a URI-launched one.
-pub fn apply(candidate_pids: impl FnMut() -> Vec<u32>) -> Option<PseudoFullscreenState> {
-    let hwnd = wait_for_window(candidate_pids)?;
-
+/// Strips `hwnd`'s title bar/border, resizes it (not stretches - the game's own client content
+/// keeps its real aspect ratio, read once here) to fit letterboxed within whichever display it
+/// opened on, and drops a black overlay behind it to cover the margin.
+fn apply_to_hwnd(hwnd: HWND) -> PseudoFullscreenState {
     unsafe {
         let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
         let mut monitor_info = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
@@ -210,32 +204,43 @@ pub fn apply(candidate_pids: impl FnMut() -> Vec<u32>) -> Option<PseudoFullscree
 
         let (overlay_hwnd, overlay_thread) = spawn_overlay(monitor_rect, hwnd);
 
-        Some(PseudoFullscreenState {
+        PseudoFullscreenState {
             game_hwnd: hwnd.0 as isize,
             original_style,
             original_rect,
             overlay_hwnd,
             overlay_thread,
-        })
+        }
     }
 }
 
-/// Restores the game window's original style/position and tears down the overlay. Safe to call
-/// even if the game already closed its window - the underlying Win32 calls just no-op/fail
-/// silently on a stale handle rather than panicking.
-pub fn revert(state: PseudoFullscreenState) {
+/// Finds the game's window and applies borderless letterboxing to it. Returns `None` (a no-op)
+/// if no window turns up among `candidate_pids` within ~5s - never blocks the caller's own
+/// session tracking indefinitely. `candidate_pids` is re-evaluated on every retry tick (see
+/// `wait_for_window`) - pass a closure that returns just the one known PID for a direct-exe
+/// launch, or one that re-scans for every process under an install folder for a URI-launched one.
+pub fn apply(candidate_pids: impl FnMut() -> Vec<u32>) -> Option<PseudoFullscreenState> {
+    wait_for_window(candidate_pids).map(apply_to_hwnd)
+}
+
+/// Tears down the overlay and, if the window is still alive, restores its original style/rect.
+/// Safe to call on an already-invalid handle - restoring a destroyed window's style/rect is
+/// skipped rather than attempted, since there's nothing left to restore.
+fn teardown(state: PseudoFullscreenState) {
     unsafe {
         let hwnd = HWND(state.game_hwnd as *mut _);
-        SetWindowLongPtrW(hwnd, GWL_STYLE, state.original_style);
-        let _ = SetWindowPos(
-            hwnd,
-            None,
-            state.original_rect.left,
-            state.original_rect.top,
-            state.original_rect.right - state.original_rect.left,
-            state.original_rect.bottom - state.original_rect.top,
-            SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE,
-        );
+        if IsWindow(Some(hwnd)).as_bool() {
+            SetWindowLongPtrW(hwnd, GWL_STYLE, state.original_style);
+            let _ = SetWindowPos(
+                hwnd,
+                None,
+                state.original_rect.left,
+                state.original_rect.top,
+                state.original_rect.right - state.original_rect.left,
+                state.original_rect.bottom - state.original_rect.top,
+                SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE,
+            );
+        }
 
         if state.overlay_hwnd != 0 {
             let overlay = HWND(state.overlay_hwnd as *mut _);
@@ -243,4 +248,37 @@ pub fn revert(state: PseudoFullscreenState) {
         }
     }
     let _ = state.overlay_thread.join();
+}
+
+/// Restores the game window's original style/position and tears down the overlay - called once
+/// the session is actually ending. Safe to call even if the game already closed its window.
+pub fn revert(state: PseudoFullscreenState) {
+    teardown(state);
+}
+
+/// Called periodically (piggybacked on the caller's own existing exit-polling loop, not a
+/// separate timer) to catch a launcher window closing and being replaced by the real game
+/// window - a real, observed case (see milestones.md/devlog), and one even the reference tool
+/// for this feature (Borderless Gaming) handles by detecting the old window's disappearance and
+/// re-applying to whatever new one appears, rather than trying to track one window's identity
+/// forever. No-ops (returns `state` unchanged) if the current window is still alive - this is
+/// deliberately a single lookup attempt per call, not `apply()`'s multi-second retry, since it's
+/// already being called repeatedly by the caller's own loop.
+pub fn refresh(
+    state: Option<PseudoFullscreenState>,
+    mut candidate_pids: impl FnMut() -> Vec<u32>,
+) -> Option<PseudoFullscreenState> {
+    if let Some(state) = state {
+        let hwnd = HWND(state.game_hwnd as *mut _);
+        if unsafe { IsWindow(Some(hwnd)) }.as_bool() {
+            return Some(state);
+        }
+        // Window's gone - clean up its now-orphaned overlay before searching for a replacement.
+        teardown(state);
+    }
+
+    candidate_pids()
+        .into_iter()
+        .find_map(find_window_for_pid)
+        .map(apply_to_hwnd)
 }

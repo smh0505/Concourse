@@ -48,7 +48,25 @@ pub fn launch_game(
             None
         };
 
-        let _ = child.wait();
+        let mut fullscreen_state = fullscreen_state;
+        if pseudo_fullscreen {
+            // Polls instead of a single blocking child.wait() so a launcher window closing and
+            // being replaced by the real game window (same process, new HWND) still gets caught
+            // - see pseudo_fullscreen::refresh's own doc comment for why this can't just track
+            // one window's identity for the whole session.
+            loop {
+                match child.try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) => {
+                        fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || vec![pid]);
+                        std::thread::sleep(std::time::Duration::from_secs(3));
+                    }
+                    Err(_) => break,
+                }
+            }
+        } else {
+            let _ = child.wait();
+        }
 
         if let Some(state) = fullscreen_state {
             crate::pseudo_fullscreen::revert(state);
@@ -161,7 +179,7 @@ pub fn track_folder_playtime(
         // Phase 1 above) - the real game window frequently belongs to a different process than
         // whichever one happened to match the folder first (a launcher stub, an anti-cheat
         // helper), and it may not even exist yet at this exact moment.
-        let fullscreen_state = if pseudo_fullscreen {
+        let mut fullscreen_state = if pseudo_fullscreen {
             crate::pseudo_fullscreen::apply(|| all_processes_under_folder(&mut system, &install_dir))
         } else {
             None
@@ -174,6 +192,15 @@ pub fn track_folder_playtime(
         let mut missing_polls = 0;
         loop {
             std::thread::sleep(POLL_INTERVAL);
+            if pseudo_fullscreen {
+                // Piggybacked on this same poll tick rather than a separate timer - catches a
+                // launcher window closing and being replaced by the real game window. See
+                // pseudo_fullscreen::refresh's own doc comment for why this can't just track one
+                // window's identity for the whole session.
+                fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || {
+                    all_processes_under_folder(&mut system, &install_dir)
+                });
+            }
             if any_process_under_folder(&mut system, &install_dir) {
                 missing_polls = 0;
             } else {

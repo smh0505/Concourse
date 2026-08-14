@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
-import { IconChevronDown } from "@tabler/icons-vue";
+import { IconCheck, IconChevronDown, IconPlugConnected } from "@tabler/icons-vue";
 
 import { settings as settingsRepo } from "@/db";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
@@ -298,13 +298,25 @@ async function testConnection() {
 
   <BaseModal :open="modalOpen" :title="t('obsPresence.modalTitle')" @close="modalOpen = false">
     <template #body>
-      <label class="obs-presence-field">
-        {{ t("obsPresence.portLabel") }}
+      <div class="obs-presence-labeled-row">
+        <span class="obs-presence-row-label">{{ t("obsPresence.portLabel") }}</span>
         <input v-model="portInput" type="number" min="1" max="65535" />
-      </label>
-      <div class="obs-presence-actions">
-        <button type="button" @click="applyPort">{{ t("obsPresence.apply") }}</button>
-        <button type="button" @click="testConnection">{{ t("obsPresence.test") }}</button>
+        <button
+          type="button"
+          class="obs-presence-icon-button"
+          :title="t('obsPresence.apply')"
+          @click="applyPort"
+        >
+          <IconCheck :size="16" :stroke-width="1.75" />
+        </button>
+        <button
+          type="button"
+          class="obs-presence-icon-button"
+          :title="t('obsPresence.test')"
+          @click="testConnection"
+        >
+          <IconPlugConnected :size="16" :stroke-width="1.75" />
+        </button>
       </div>
       <div v-if="applyStatus !== 'idle'" class="obs-presence-status" :class="applyStatus">
         <p>{{ applyMessage }}</p>
@@ -494,6 +506,25 @@ async function testConnection() {
 .obs-presence-row-label {
   flex-shrink: 0;
   width: 5rem;
+}
+
+.obs-presence-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: var(--button-border-width) solid var(--color-surface1);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.obs-presence-icon-button:hover {
+  background: var(--color-surface0);
 }
 
 .obs-presence-labeled-row input {

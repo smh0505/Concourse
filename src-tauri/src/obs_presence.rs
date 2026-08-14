@@ -172,9 +172,8 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
     animation-duration: var(--marquee-duration, 6s);
   }}
   @keyframes marquee-scroll {{
-    0%, 10% {{ transform: translateX(0); }}
-    45%, 55% {{ transform: translateX(var(--marquee-distance, 0)); }}
-    90%, 100% {{ transform: translateX(0); }}
+    0% {{ transform: translateX(0); }}
+    100% {{ transform: translateX(var(--marquee-distance, 0)); }}
   }}
   .elapsed {{ font-size: 1.1rem; opacity: 0.8; font-variant-numeric: tabular-nums; }}
 </style>

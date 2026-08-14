@@ -532,39 +532,32 @@ Generalizes Milestone 28's Discord-only integration into a real multi-enable plu
 - [x] Title/elapsed stacked on two lines instead of one row; overflowing titles marquee
   instead of clipping (added ad hoc)
 
-**Candidate presence platforms researched, not built** (see devlog for the full per-platform
-auth research):
+**Candidate presence platforms - trimmed to the two that actually match the goal** (a persistent
+ambient status your friends see live, same mechanism as Discord - not a one-off social post, not
+a broadcast/channel-info overwrite, not workspace-scoped). See devlog for the full per-platform
+auth research, including everything dropped below.
 - [x] Discord - done (Milestone 28/29), one shared hardcoded `client_id`
-- [ ] Slack - technically ready to build (PKCE, safe to hardcode like Discord), but
-  deprioritized by the user - audience/atmosphere mismatch, not a technical one: far fewer
-  people use Slack for gaming-community chat than Discord, so a Slack presence feature would
-  reach almost nobody relevant. Not dropped as unviable, just parked, same as Matrix
-- [ ] Twitch - **correction**: live-checked `dev.twitch.tv`'s own current docs, the earlier
-  "PKCE, safe to hardcode" note was wrong. Authorization Code grant requires `client_secret`
-  unconditionally (confidential clients only) - no PKCE variant of it exists. Public clients are
-  restricted to the **Device Code Grant** flow instead (same shape as smart-TV/console pairing:
-  user visits a URL, enters a short code, app polls until approved) - still genuinely
-  secret-free and safe to hardcode a shared `client_id`, just a different UX pattern than
-  Discord/Slack's redirect-URI flow, no local HTTP listener needed at all. Best
-  livestreaming-platform fit found - **next up, pending user confirmation on the flow**
-- [ ] Bluesky (AT Protocol) - PKCE + DPoP, no shared secret, needs a hosted client-metadata URL
-- [ ] Chzzk, Kick, SOOP - need a real per-user `client_secret`, same friction as IGDB. SOOP also
-  gate-keeps API access behind a manual partnership application (~10 business days), on top of
-  the secret
-- [ ] Mastodon/Fediverse - researched: structurally different resolution than every other
-  candidate here (no single shared secret to protect at all), but not started. See devlog
-- [ ] Matrix protocol - strongest candidate found on paper (real protocol-level ambient
-  presence, secret-free PKCE path), but deprioritized by the user for now - unfamiliar
-  platform, and the dual auth-path requirement (new PKCE flow vs. legacy password fallback,
-  since homeserver adoption is still partial) makes it more setup than Slack/Twitch need. Not
-  dropped as unviable, just parked. See devlog
-- Dropped/not viable: Steam Rich Presence (needs a real Steamworks App ID), Telegram (no
-  free-text status), X/Twitter (API now pay-per-post), YouTube (Desktop-secret safety unclear),
-  Home Assistant (no real use case), ntfy.sh (user's call - no native outbound relay to other
-  platforms, only inbound push/email-in; forwarding elsewhere needs third-party glue tooling, no
-  real benefit over building the actual target platform's own plugin directly), Guilded (no
-  ambient-status/presence API exists to set a "now playing" indicator at all - doesn't fit
-  regardless of the auth question)
+- [ ] Matrix protocol - the only other real ambient-presence match found
+  (`PUT /_matrix/client/v3/presence/{userId}/status`, same set/clear shape as Discord).
+  Secret-free PKCE auth path exists but is still mid-rollout across homeservers, so a legacy
+  password-login fallback would be needed too. Parked, not dropped - unfamiliar platform, more
+  setup than a first build needs, revisit later
+
+**Dropped - wrong mechanism, wrong audience, or blocked by a real secret requirement:**
+- Twitch, Chzzk, Kick, SOOP - all overwrite a public *channel's* title/category (broadcast info),
+  not a personal status - "sync my channel to what I'm playing," not "notify my friends."
+  Chzzk/Kick/SOOP are also blocked outright (need a real per-user `client_secret`); Twitch's
+  Authorization Code grant needs one too (Device Code Grant is the only secret-free path, and
+  still risks clobbering an actual live stream's title)
+- Slack - right shape (ambient status), wrong audience (workspace/coworker-scoped, far fewer
+  people run a gaming-community Slack than Discord)
+- Bluesky, Mastodon/Fediverse - different feature shape entirely (a one-off public post per
+  session, not a persistent status) - genuinely reaches "anybody," just not the same mechanism
+  this milestone is actually building toward
+- Steam Rich Presence (needs a real Steamworks App ID), Telegram (no free-text status),
+  X/Twitter (API now pay-per-post), YouTube (Desktop-secret safety unclear), Home Assistant (no
+  real use case), ntfy.sh (no native outbound relay, third-party glue only), Guilded (no
+  ambient-status API exists at all)
 
 ## Milestone 30 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a

@@ -535,7 +535,7 @@ Generalizes Milestone 28's Discord-only integration into a real multi-enable plu
 **Candidate presence platforms researched, not built** (see devlog for the full per-platform
 auth research):
 - [x] Discord - done (Milestone 28/29), one shared hardcoded `client_id`
-- [ ] Slack - PKCE, safe to hardcode like Discord
+- [ ] Slack - PKCE, safe to hardcode like Discord - **in progress, see below**
 - [ ] Twitch - PKCE, safe to hardcode; best livestreaming-platform fit found
 - [ ] Bluesky (AT Protocol) - PKCE + DPoP, no shared secret, needs a hosted client-metadata URL
 - [ ] Chzzk, Kick, SOOP - need a real per-user `client_secret`, same friction as IGDB. SOOP also
@@ -543,12 +543,11 @@ auth research):
   the secret
 - [ ] Mastodon/Fediverse - researched: structurally different resolution than every other
   candidate here (no single shared secret to protect at all), but not started. See devlog
-- [ ] Matrix protocol - strongest candidate found: real protocol-level ambient presence
-  (`PUT /_matrix/client/v3/presence/{userId}/status`, same shape as Discord - not a one-off post
-  like Mastodon), OAuth2 + dynamic client registration + PKCE now required for new clients
-  (as of the current spec migration) - no shared secret at all. Caveat: still mid-rollout, many
-  homeservers may not support the new auth flow yet, forcing a legacy password-login fallback.
-  See devlog
+- [ ] Matrix protocol - strongest candidate found on paper (real protocol-level ambient
+  presence, secret-free PKCE path), but deprioritized by the user for now - unfamiliar
+  platform, and the dual auth-path requirement (new PKCE flow vs. legacy password fallback,
+  since homeserver adoption is still partial) makes it more setup than Slack/Twitch need. Not
+  dropped as unviable, just parked. See devlog
 - Dropped/not viable: Steam Rich Presence (needs a real Steamworks App ID), Telegram (no
   free-text status), X/Twitter (API now pay-per-post), YouTube (Desktop-secret safety unclear),
   Home Assistant (no real use case), ntfy.sh (user's call - no native outbound relay to other

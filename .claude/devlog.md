@@ -6676,3 +6676,28 @@ Neither started. Both added to the candidate list alongside Matrix rather than r
 TeamSpeak's mechanism is the strongest found, but audience trajectory is the opposite of every
 other candidate; worth weighing that trade-off explicitly before picking a next build, not
 assuming "closest to Discord" automatically means "best choice."
+
+### Milestone 29: Stoat's personal-account status question resolved
+
+Chased down the open question from Stoat's own research entry above - does `users.edit`'s
+`{ text, presence }` status work for a real personal account, or only a bot persona pretending
+to be the user. `developers.stoat.chat`'s own docs page fetched empty (JS-rendered SPA, no
+server-rendered content for WebFetch to read), so used `stoatpy` (a Python API wrapper)'s
+readthedocs pages instead, which document the same underlying REST API.
+
+**Resolved: yes, personal accounts genuinely can.** Auth is `login_with_email()` - email/
+password producing a session token, same 64-char token format as a bot token but a distinct,
+real path for actual personal accounts. Combined with the earlier finding that Stoat's public
+API is "powerful enough to be used by the official apps themselves," the official client must
+be setting your status through this exact same personal-session path when you change it in the
+app UI - not a bot-only capability as first suspected. The "represents the actual user" question
+this milestone's own research explicitly flagged as unresolved is now resolved, in the
+favorable direction.
+
+New trade-off this surfaces, though: the auth mechanism itself is direct email/password login,
+not OAuth. Every other confirmed-fit candidate in this milestone (Discord's local IPC, Matrix's
+PKCE flow) either needs no credential at all or a scoped, individually-revocable OAuth token.
+Storing a user's actual account password (or the long-lived session token it produces) is a
+materially weaker security shape than that - full account access, no scope limiting, no clean
+per-app revocation path the way OAuth tokens have. The presence *feature* now checks out; the
+*auth story* is the weakest of any confirmed-fit candidate researched so far.

@@ -552,11 +552,12 @@ auth research, including everything dropped below.
   shrinking audience, unlike Discord's own reach
 - [ ] Stoat (rebranded from Revolt, Oct 2025 - same codebase/API/architecture, cease-and-desist
   over the old name, not a fork or replacement) - open-source Discord-alternative, `users.edit`
-  supports a `{ text, presence }` status shape closely matching Discord's own. But what's
-  documented is *bot*-account auth (bot token, not OAuth) - unclear from what's findable whether/
-  how a real personal account (not a bot persona) sets its own status this way, so the
-  "represents the actual user" question isn't
-  resolved. Small, growing-but-niche audience even if the auth question resolves favorably
+  supports a `{ text, presence }` status shape closely matching Discord's own. **Confirmed**:
+  personal accounts genuinely can set this (not bot-only as first thought) - auth is
+  email/password login producing a session token, and the official Stoat client itself uses
+  this same path. Real trade-off though: that's direct password login, not OAuth - no scoped/
+  revocable token the way every other confirmed-fit candidate has, a meaningfully weaker
+  security shape despite the feature itself now checking out. Small, growing-but-niche audience
 
 **Dropped - wrong mechanism, wrong audience, or blocked by a real secret requirement:**
 - Twitch, Chzzk, Kick, SOOP - all overwrite a public *channel's* title/category (broadcast info),

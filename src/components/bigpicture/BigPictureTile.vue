@@ -45,6 +45,14 @@ const activeCardVisual = useActiveCardVisual();
      height, unlike the earlier max-height approach which grew the tile in flow and stretched
      every other tile sharing its grid row. */
   transition: transform 0.15s ease;
+  /* .tile-title sits absolutely positioned below this button's own box (see below), so it's
+     invisible to scrollIntoView's bounding-rect math - without this, "nearest" scrolling
+     (BigPictureGrid.vue) stops as soon as the cover art is visible, clipping the title right at
+     the viewport edge. Reserves room for the title's own height (line + margin-top gap). */
+  scroll-margin-bottom: 2.5rem;
+  /* Symmetrical breathing room at the top edge - the focus-lift transform below shifts the tile
+     up by 0.6rem, and without margin the lifted tile can sit flush against the viewport edge. */
+  scroll-margin-top: 1rem;
 }
 
 .tile:hover,

@@ -527,6 +527,8 @@ Generalizes Milestone 28's Discord-only integration into a real multi-enable plu
 - [x] Configurable, testable overlay port - "Configure Overlay" modal (added ad hoc)
 - [x] Overlay presentation options - alert-popup mode + minimal template
 - [x] Real `obs-websocket` integration - scene auto-switch on game launch/exit (`obws` crate)
+- [x] Configurable overlay corner - card anchors to any screen corner, cover art flips to the
+  near edge (added ad hoc)
 
 **Candidate presence platforms researched, not built** (see devlog for the full per-platform
 auth research):

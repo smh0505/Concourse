@@ -6420,3 +6420,28 @@ session.
 This closes every item on the original four-item OBS webhook follow-up sublist. The one
 remaining unstarted M29 item (detaching presence plugins into the WASM tier) stays separately
 flagged as its own not-started stretch item, unrelated to this sublist.
+
+### OBS webhook follow-up: configurable overlay corner
+
+Added ad hoc after the obs-websocket work, following real end-to-end testing of the scene-switch
+feature (confirmed working). New `Corner` enum (`TopLeft`/`TopRight`/`BottomLeft`/`BottomRight`)
+added to `OverlayStyle`, default `BottomLeft`. `#card` switched from the body's centering flex
+layout to `position: fixed` with per-corner `top`/`bottom`/`left`/`right` offsets computed in
+Rust (`Corner::css_position`) and injected as an inline style attribute - the idle placeholder
+still centers normally, since `position: fixed` removes `#card` from that flex flow entirely
+without needing to touch `body`'s own styling.
+
+Right-anchored corners (`TopRight`/`BottomRight`) add a `.info.reverse` class that flips
+`.info`'s `flex-direction` to `row-reverse`, so the cover art ends up nearest whichever screen
+edge the card itself is anchored to (previously cover was always first/leftmost regardless of
+where the card sat, which looked backwards once the card moved to a right-side corner).
+
+`set_obs_overlay_style` gained a fourth `corner` parameter, parsed the same
+`"top-left"`/`"top-right"`/`"bottom-left"`/`"bottom-right"` string-match way as `template`/
+`mode`. Settings UI: a third `DropdownMenu` alongside Template/Mode, built from a
+`Record<string, string>` mapping corner values to i18n keys and `v-for`'d over directly rather
+than four hand-written `<button>`s like Template/Mode have (the four corner options don't need
+per-item custom logic, so the generic loop stays simpler). New `cornerLabel`/`cornerTopLeft`/
+`cornerTopRight`/`cornerBottomLeft`/`cornerBottomRight` i18n keys across all 10 locales.
+Persisted/re-applied at boot the same way template/mode/alert-seconds already are
+(`applyPersistedObsStyle` in `presence.ts`).

@@ -2,9 +2,11 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { invoke } from "@tauri-apps/api/core";
+import { IconChevronDown } from "@tabler/icons-vue";
 
 import { settings as settingsRepo } from "@/db";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
+import { DropdownMenu } from "@/components/desktop/common";
 import {
   OBS_PRESENCE_ALERT_SECONDS_SETTING,
   OBS_PRESENCE_DEFAULT_ALERT_SECONDS,
@@ -35,6 +37,27 @@ const mode = ref(OBS_PRESENCE_DEFAULT_MODE);
 const alertSeconds = ref(OBS_PRESENCE_DEFAULT_ALERT_SECONDS);
 const styleStatus = ref<"idle" | "error">("idle");
 const styleMessage = ref("");
+const templateMenuOpen = ref(false);
+const modeMenuOpen = ref(false);
+
+const templateLabel = computed(() =>
+  template.value === "minimal" ? t("obsPresence.templateMinimal") : t("obsPresence.templateFull"),
+);
+const modeLabel = computed(() =>
+  mode.value === "alert" ? t("obsPresence.modeAlert") : t("obsPresence.modePersistent"),
+);
+
+function selectTemplate(value: string) {
+  template.value = value;
+  templateMenuOpen.value = false;
+  applyStyle();
+}
+
+function selectMode(value: string) {
+  mode.value = value;
+  modeMenuOpen.value = false;
+  applyStyle();
+}
 
 const wsEnabled = ref(false);
 const wsHost = ref(OBS_WS_DEFAULT_HOST);
@@ -293,20 +316,68 @@ async function testConnection() {
       </div>
 
       <div class="obs-presence-style">
-        <label class="obs-presence-field">
+        <div class="obs-presence-field">
           {{ t("obsPresence.templateLabel") }}
-          <select v-model="template" @change="applyStyle">
-            <option value="full">{{ t("obsPresence.templateFull") }}</option>
-            <option value="minimal">{{ t("obsPresence.templateMinimal") }}</option>
-          </select>
-        </label>
-        <label class="obs-presence-field">
+          <DropdownMenu v-model:open="templateMenuOpen" wrap-class="obs-presence-dropdown-wrap">
+            <template #trigger>
+              <button
+                type="button"
+                class="compact-button obs-presence-dropdown-trigger"
+                @click="templateMenuOpen = !templateMenuOpen"
+              >
+                {{ templateLabel }}
+                <IconChevronDown :size="14" :stroke-width="1.75" />
+              </button>
+            </template>
+            <button
+              type="button"
+              class="obs-presence-dropdown-item"
+              :class="{ active: template === 'full' }"
+              @click="selectTemplate('full')"
+            >
+              {{ t("obsPresence.templateFull") }}
+            </button>
+            <button
+              type="button"
+              class="obs-presence-dropdown-item"
+              :class="{ active: template === 'minimal' }"
+              @click="selectTemplate('minimal')"
+            >
+              {{ t("obsPresence.templateMinimal") }}
+            </button>
+          </DropdownMenu>
+        </div>
+        <div class="obs-presence-field">
           {{ t("obsPresence.modeLabel") }}
-          <select v-model="mode" @change="applyStyle">
-            <option value="persistent">{{ t("obsPresence.modePersistent") }}</option>
-            <option value="alert">{{ t("obsPresence.modeAlert") }}</option>
-          </select>
-        </label>
+          <DropdownMenu v-model:open="modeMenuOpen" wrap-class="obs-presence-dropdown-wrap">
+            <template #trigger>
+              <button
+                type="button"
+                class="compact-button obs-presence-dropdown-trigger"
+                @click="modeMenuOpen = !modeMenuOpen"
+              >
+                {{ modeLabel }}
+                <IconChevronDown :size="14" :stroke-width="1.75" />
+              </button>
+            </template>
+            <button
+              type="button"
+              class="obs-presence-dropdown-item"
+              :class="{ active: mode === 'persistent' }"
+              @click="selectMode('persistent')"
+            >
+              {{ t("obsPresence.modePersistent") }}
+            </button>
+            <button
+              type="button"
+              class="obs-presence-dropdown-item"
+              :class="{ active: mode === 'alert' }"
+              @click="selectMode('alert')"
+            >
+              {{ t("obsPresence.modeAlert") }}
+            </button>
+          </DropdownMenu>
+        </div>
         <label v-if="mode === 'alert'" class="obs-presence-field">
           {{ t("obsPresence.alertSecondsLabel") }}
           <input v-model.number="alertSeconds" type="number" min="1" max="120" @change="applyStyle" />
@@ -323,17 +394,19 @@ async function testConnection() {
         </label>
         <template v-if="wsEnabled">
           <label class="obs-presence-field">
-            {{ t("obsPresence.wsHostLabel") }}
-            <input v-model="wsHost" type="text" @change="saveWsSettings" />
-          </label>
-          <label class="obs-presence-field">
             {{ t("obsPresence.wsPortLabel") }}
             <input v-model="wsPort" type="number" min="1" max="65535" @change="saveWsSettings" />
           </label>
-          <label class="obs-presence-field">
-            {{ t("obsPresence.wsPasswordLabel") }}
-            <input v-model="wsPassword" type="password" @change="saveWsSettings" />
-          </label>
+          <div class="obs-presence-row">
+            <label class="obs-presence-field">
+              {{ t("obsPresence.wsHostLabel") }}
+              <input v-model="wsHost" type="text" @change="saveWsSettings" />
+            </label>
+            <label class="obs-presence-field">
+              {{ t("obsPresence.wsPasswordLabel") }}
+              <input v-model="wsPassword" type="password" @change="saveWsSettings" />
+            </label>
+          </div>
           <div class="obs-presence-actions">
             <button type="button" @click="fetchScenes">{{ t("obsPresence.wsFetchScenes") }}</button>
           </div>
@@ -384,6 +457,48 @@ async function testConnection() {
   flex-direction: column;
   gap: var(--space-1);
   font-size: 0.85rem;
+}
+
+.obs-presence-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.obs-presence-row .obs-presence-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.obs-presence-dropdown-wrap {
+  align-self: flex-start;
+}
+
+.obs-presence-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 10rem;
+}
+
+.obs-presence-dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.85rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.obs-presence-dropdown-item:hover {
+  background: var(--color-surface0);
+}
+
+.obs-presence-dropdown-item.active {
+  color: var(--color-accent);
 }
 
 .obs-presence-actions {

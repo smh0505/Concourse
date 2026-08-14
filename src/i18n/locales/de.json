@@ -323,8 +323,9 @@
     "applySuccess": "Angewendet. Lauscht jetzt auf Port {port}.",
     "alreadyApplied": "Lauscht bereits auf Port {port}.",
     "testSuccess": "Overlay hat auf Port {port} erfolgreich geantwortet.",
-    "applyFailure": "Anwenden fehlgeschlagen: {error}",
-    "testFailure": "Test fehlgeschlagen: {error}",
+    "errorBindFailed": "Port {port} konnte nicht gebunden werden.",
+    "errorUnreachable": "Keine Antwort von Port {port}.",
+    "errorBadStatus": "Port {port} antwortete mit einem unerwarteten Status ({status}).",
     "hint": "OBS-Browserquelle auf folgende Adresse richten:",
     "statusHint": "Für ein individuelles Overlay ist der rohe JSON-Status verfügbar unter:"
   }

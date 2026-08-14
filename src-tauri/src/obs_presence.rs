@@ -173,6 +173,19 @@ fn serve(app: AppHandle, server: Arc<Server>) {
     }
 }
 
+/// Structured so `ObsPresenceSettings.vue` can build its own localized "why" sentence instead of
+/// splicing an OS-language error string (Windows' own, not this app's i18n) into an otherwise-
+/// translated one. `raw` still carries the underlying OS/HTTP error text, shown as a secondary
+/// detail line rather than dropped - it's what actually let this session's port-1094/1420 cases
+/// get diagnosed, no reason to hide it, just not let it be the *only* message.
+#[derive(Serialize)]
+#[serde(tag = "kind")]
+pub enum ObsPresenceError {
+    BindFailed { port: u16, raw: String },
+    Unreachable { port: u16, raw: String },
+    BadStatus { port: u16, status: u16, raw: String },
+}
+
 /// Starts once in `.setup()` and just stays up for the app's whole lifetime - no start/stop
 /// lifecycle tied to a plugin being enabled, since the OBS plugin's activate/deactivate only
 /// ever change *what the already-running server reports*, not whether it's listening at all.
@@ -194,10 +207,10 @@ pub fn start(app: AppHandle, port: u16) {
 /// session). Binds the new port *before* tearing down the old one, so a port already in use by
 /// something else fails loudly without taking down the currently-working overlay.
 #[tauri::command]
-pub fn set_obs_presence_port(app: AppHandle, port: u16) -> Result<(), String> {
-    let new_server = Server::http(("127.0.0.1", port))
-        .map(Arc::new)
-        .map_err(|e| format!("Failed to bind port {port}: {e}"))?;
+pub fn set_obs_presence_port(app: AppHandle, port: u16) -> Result<(), ObsPresenceError> {
+    let new_server = Server::http(("127.0.0.1", port)).map(Arc::new).map_err(|e| {
+        ObsPresenceError::BindFailed { port, raw: e.to_string() }
+    })?;
 
     let old_server = {
         let state = app.state::<ObsPresenceState>();
@@ -217,16 +230,20 @@ pub fn set_obs_presence_port(app: AppHandle, port: u16) -> Result<(), String> {
 /// port, not just a "does something own this port" TCP probe, so it actually proves the overlay
 /// responds and not merely that some other process is squatting the port.
 #[tauri::command]
-pub fn test_obs_presence_port(port: u16) -> Result<(), String> {
+pub fn test_obs_presence_port(port: u16) -> Result<(), ObsPresenceError> {
     let url = format!("http://127.0.0.1:{port}/status");
     let response = reqwest::blocking::Client::new()
         .get(&url)
         .timeout(Duration::from_secs(3))
         .send()
-        .map_err(|e| format!("No response from {url}: {e}"))?;
+        .map_err(|e| ObsPresenceError::Unreachable { port, raw: e.to_string() })?;
     if response.status().is_success() {
         Ok(())
     } else {
-        Err(format!("{url} responded with status {}", response.status()))
+        Err(ObsPresenceError::BadStatus {
+            port,
+            status: response.status().as_u16(),
+            raw: response.status().to_string(),
+        })
     }
 }

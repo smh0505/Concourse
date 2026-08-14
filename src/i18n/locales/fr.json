@@ -323,8 +323,9 @@
     "applySuccess": "Appliqué. Écoute désormais sur le port {port}.",
     "alreadyApplied": "Écoute déjà sur le port {port}.",
     "testSuccess": "L'incrustation a répondu avec succès sur le port {port}.",
-    "applyFailure": "Échec de l'application : {error}",
-    "testFailure": "Échec du test : {error}",
+    "errorBindFailed": "Impossible de lier le port {port}.",
+    "errorUnreachable": "Aucune réponse du port {port}.",
+    "errorBadStatus": "Le port {port} a répondu avec un statut inattendu ({status}).",
     "hint": "Pointez une source navigateur OBS vers :",
     "statusHint": "Pour une incrustation personnalisée, le statut JSON brut est disponible à :"
   }

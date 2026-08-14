@@ -16,11 +16,42 @@ const portInput = ref(String(OBS_PRESENCE_DEFAULT_PORT));
 type Status = "idle" | "busy" | "success" | "error";
 const applyStatus = ref<Status>("idle");
 const applyMessage = ref("");
+const applyRaw = ref("");
 const testStatus = ref<Status>("idle");
 const testMessage = ref("");
+const testRaw = ref("");
 
 const overlayUrl = computed(() => `http://localhost:${appliedPort.value}/`);
 const statusUrl = computed(() => `http://localhost:${appliedPort.value}/status`);
+
+/** Mirrors obs_presence.rs's `ObsPresenceError` (`#[serde(tag = "kind")]`) - tauri's `invoke()`
+ *  rejects with the deserialized error object directly, not a wrapped JS `Error`. */
+type ObsPresenceError =
+  | { kind: "BindFailed"; port: number; raw: string }
+  | { kind: "Unreachable"; port: number; raw: string }
+  | { kind: "BadStatus"; port: number; status: number; raw: string };
+
+function isObsPresenceError(e: unknown): e is ObsPresenceError {
+  return typeof e === "object" && e !== null && "kind" in e;
+}
+
+/** Turns a rejected `invoke()` error into a localized "why" sentence plus the original OS/HTTP
+ *  error text as a separate raw detail - not dropped (it's what diagnosed both real cases hit
+ *  this session), just no longer the *only* thing shown. */
+function describeError(e: unknown): { message: string; raw: string } {
+  if (!isObsPresenceError(e)) return { message: String(e), raw: "" };
+  switch (e.kind) {
+    case "BindFailed":
+      return { message: t("obsPresence.errorBindFailed", { port: e.port }), raw: e.raw };
+    case "Unreachable":
+      return { message: t("obsPresence.errorUnreachable", { port: e.port }), raw: e.raw };
+    case "BadStatus":
+      return {
+        message: t("obsPresence.errorBadStatus", { port: e.port, status: e.status }),
+        raw: e.raw,
+      };
+  }
+}
 
 async function openModal() {
   const stored = await settingsRepo.get(OBS_PRESENCE_PORT_SETTING);
@@ -37,6 +68,7 @@ async function applyPort() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     applyStatus.value = "error";
     applyMessage.value = t("obsPresence.invalidPort");
+    applyRaw.value = "";
     return;
   }
   // Rebinding to the port already applied would bind the same port twice before releasing the
@@ -45,6 +77,7 @@ async function applyPort() {
   if (port === appliedPort.value) {
     applyStatus.value = "success";
     applyMessage.value = t("obsPresence.alreadyApplied", { port });
+    applyRaw.value = "";
     return;
   }
 
@@ -56,9 +89,12 @@ async function applyPort() {
     appliedPort.value = port;
     applyStatus.value = "success";
     applyMessage.value = t("obsPresence.applySuccess", { port });
+    applyRaw.value = "";
   } catch (e) {
     applyStatus.value = "error";
-    applyMessage.value = t("obsPresence.applyFailure", { error: String(e) });
+    const { message, raw } = describeError(e);
+    applyMessage.value = message;
+    applyRaw.value = raw;
   }
 }
 
@@ -70,6 +106,7 @@ async function testConnection() {
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     testStatus.value = "error";
     testMessage.value = t("obsPresence.invalidPort");
+    testRaw.value = "";
     return;
   }
 
@@ -78,9 +115,12 @@ async function testConnection() {
     await invoke("test_obs_presence_port", { port });
     testStatus.value = "success";
     testMessage.value = t("obsPresence.testSuccess", { port });
+    testRaw.value = "";
   } catch (e) {
     testStatus.value = "error";
-    testMessage.value = t("obsPresence.testFailure", { error: String(e) });
+    const { message, raw } = describeError(e);
+    testMessage.value = message;
+    testRaw.value = raw;
   }
 }
 </script>
@@ -100,12 +140,14 @@ async function testConnection() {
         <button type="button" @click="applyPort">{{ t("obsPresence.apply") }}</button>
         <button type="button" @click="testConnection">{{ t("obsPresence.test") }}</button>
       </div>
-      <p v-if="applyStatus !== 'idle'" class="obs-presence-status" :class="applyStatus">
-        {{ applyMessage }}
-      </p>
-      <p v-if="testStatus !== 'idle'" class="obs-presence-status" :class="testStatus">
-        {{ testMessage }}
-      </p>
+      <div v-if="applyStatus !== 'idle'" class="obs-presence-status" :class="applyStatus">
+        <p>{{ applyMessage }}</p>
+        <p v-if="applyRaw" class="obs-presence-status-raw">{{ applyRaw }}</p>
+      </div>
+      <div v-if="testStatus !== 'idle'" class="obs-presence-status" :class="testStatus">
+        <p>{{ testMessage }}</p>
+        <p v-if="testRaw" class="obs-presence-status-raw">{{ testRaw }}</p>
+      </div>
 
       <p class="obs-presence-hint">
         {{ t("obsPresence.hint") }}
@@ -140,16 +182,29 @@ async function testConnection() {
 }
 
 .obs-presence-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.obs-presence-status p {
   font-size: 0.8rem;
   margin: 0;
 }
 
-.obs-presence-status.success {
+.obs-presence-status.success p {
   color: var(--color-accent);
 }
 
-.obs-presence-status.error {
+.obs-presence-status.error p {
   color: var(--color-danger);
+}
+
+.obs-presence-status-raw {
+  font-family: monospace;
+  font-size: 0.7rem !important;
+  opacity: 0.7;
+  color: var(--color-text) !important;
 }
 
 .obs-presence-hint {

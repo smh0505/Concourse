@@ -323,8 +323,9 @@
     "applySuccess": "Применено. Теперь слушает порт {port}.",
     "alreadyApplied": "Уже слушает порт {port}.",
     "testSuccess": "Оверлей успешно ответил на порту {port}.",
-    "applyFailure": "Не удалось применить: {error}",
-    "testFailure": "Проверка не удалась: {error}",
+    "errorBindFailed": "Не удалось привязать порт {port}.",
+    "errorUnreachable": "Нет ответа от порта {port}.",
+    "errorBadStatus": "Порт {port} ответил неожиданным статусом ({status}).",
     "hint": "Укажите в источнике browser OBS адрес:",
     "statusHint": "Для собственного оверлея необработанный JSON-статус доступен по адресу:"
   }

@@ -323,8 +323,9 @@
     "applySuccess": "已应用。现在监听端口 {port}。",
     "alreadyApplied": "已在监听端口 {port}。",
     "testSuccess": "叠加层在端口 {port} 上响应成功。",
-    "applyFailure": "应用失败：{error}",
-    "testFailure": "测试失败：{error}",
+    "errorBindFailed": "无法绑定端口 {port}。",
+    "errorUnreachable": "端口 {port} 无响应。",
+    "errorBadStatus": "端口 {port} 返回了意外状态（{status}）。",
     "hint": "将 OBS 浏览器源指向：",
     "statusHint": "如需自定义叠加层，原始 JSON 状态可在以下地址获取："
   }

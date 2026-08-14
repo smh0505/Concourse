@@ -323,8 +323,9 @@
     "applySuccess": "適用しました。ポート {port} で待機中です。",
     "alreadyApplied": "既にポート {port} で待機中です。",
     "testSuccess": "ポート {port} でオーバーレイが正常に応答しました。",
-    "applyFailure": "適用に失敗しました: {error}",
-    "testFailure": "テストに失敗しました: {error}",
+    "errorBindFailed": "ポート {port} にバインドできませんでした。",
+    "errorUnreachable": "ポート {port} から応答がありません。",
+    "errorBadStatus": "ポート {port} が予期しないステータス（{status}）で応答しました。",
     "hint": "OBSのブラウザソースを次のURLに設定してください:",
     "statusHint": "カスタムオーバーレイ用に、生のJSONステータスは次のURLで取得できます:"
   }

@@ -323,8 +323,9 @@
     "applySuccess": "Applicato. Ora in ascolto sulla porta {port}.",
     "alreadyApplied": "Già in ascolto sulla porta {port}.",
     "testSuccess": "La sovrimpressione ha risposto correttamente sulla porta {port}.",
-    "applyFailure": "Applicazione non riuscita: {error}",
-    "testFailure": "Test non riuscito: {error}",
+    "errorBindFailed": "Impossibile associare la porta {port}.",
+    "errorUnreachable": "Nessuna risposta dalla porta {port}.",
+    "errorBadStatus": "La porta {port} ha risposto con uno stato imprevisto ({status}).",
     "hint": "Punta una Browser Source di OBS a:",
     "statusHint": "Per una sovrimpressione personalizzata, lo stato JSON grezzo è disponibile su:"
   }

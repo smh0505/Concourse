@@ -92,10 +92,13 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
   padding: var(--space-5);
   width: 90%;
   max-height: 85vh;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.modal-header {
+  flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -107,12 +110,18 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  /* Only the body scrolls - header/footer stay put. min-height: 0 is required for a flex child
+     to actually shrink below its content size instead of forcing the frame (and thus header/
+     footer) to grow past max-height along with it. */
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
+  flex-shrink: 0;
 }
 
 .modal-enter-active,

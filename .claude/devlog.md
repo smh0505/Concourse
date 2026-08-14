@@ -6629,3 +6629,41 @@ Real lesson worth keeping: verify live against current docs before asking the us
 external setup work, even for platforms already "researched" earlier in the same milestone -
 that earlier Twitch note was wrong for an unknown amount of time before this check caught it.
 Not started - pending user confirmation on whether the device-code UX pattern is acceptable.
+
+### Milestone 29: platforms closer to Discord specifically (mechanism + audience)
+
+Reframed the search: not "any platform with a status field," but specifically things sharing
+Discord's actual shape - a chat/community platform (not broadcast/streaming), genuine gaming-
+community audience, ideally the same local-trust auth model (no OAuth network round-trip at
+all) that makes Discord's own integration frictionless. Live-checked two.
+
+**TeamSpeak - the closest mechanism match found across all of M29's research, including
+Discord's own precedent.** The `ClientQuery` plugin, included and enabled by default in every
+TS3 client, exposes a local-only TCP socket (localhost-restricted by default) authenticated with
+an API key generated locally on install - the user finds and pastes it in once, same shape as
+Discord's local IPC in every way that matters: no OAuth, no redirect flow, no network round trip
+to any third party, nothing to hardcode or protect since the key is locally-generated per user.
+Supports setting a custom away-message field at runtime - a real, if slightly repurposed, "now
+playing" mechanism.
+
+Two honest caveats, not glossed over: the away-message field's actual purpose is signaling AFK
+status, not game presence - a user manually going away for a real reason would get silently
+overwritten by whatever Concourse last set, a genuine UX collision the Discord/Matrix status
+fields don't have (those are dedicated presence concepts, not repurposed). And TeamSpeak's
+gaming-community usage has been declining for years as Discord absorbed most of that audience -
+real but shrinking reach, the opposite trajectory from every platform researched so far.
+
+**Revolt - open-source Discord-alternative, auth question left unresolved.** `users.edit`
+supports a `{ text, presence }` status shape that maps directly onto Discord's own model. But
+what's documented and findable is bot-account authentication (a bot token, not real OAuth) -
+whether a user's actual personal account (not a separate bot persona) can set its own status
+this way isn't confirmed from what's available. Worth flagging as genuinely unresolved rather
+than assuming either way - unlike every other platform in this milestone's research, this one
+wasn't chased down to a clear yes/no on the exact question that matters (does this represent
+*you*, or a bot pretending to be you). Audience is real but small even if the question resolves
+well - Revolt is still a young, niche project relative to Discord or even TeamSpeak.
+
+Neither started. Both added to the candidate list alongside Matrix rather than replacing it -
+TeamSpeak's mechanism is the strongest found, but audience trajectory is the opposite of every
+other candidate; worth weighing that trade-off explicitly before picking a next build, not
+assuming "closest to Discord" automatically means "best choice."

@@ -542,6 +542,19 @@ auth research, including everything dropped below.
   Secret-free PKCE auth path exists but is still mid-rollout across homeservers, so a legacy
   password-login fallback would be needed too. Parked, not dropped - unfamiliar platform, more
   setup than a first build needs, revisit later
+- [ ] TeamSpeak - strongest Discord-*mechanism* match found: the built-in `ClientQuery` plugin is
+  a local-only TCP socket (localhost by default, on by every install), authenticated with a
+  locally-generated API key the user pastes in once - genuinely the same local-trust model as
+  Discord's IPC, not OAuth at all. Supports a custom away-message field settable at runtime,
+  which could carry "Playing X." Real caveats: (1) away-message semantics collide with the
+  field's actual purpose (a user manually going AFK would get overwritten), (2) TeamSpeak's
+  actual gaming-community usage has been declining in Discord's favor for years - real but
+  shrinking audience, unlike Discord's own reach
+- [ ] Revolt - open-source Discord-alternative, `users.edit` supports a `{ text, presence }`
+  status shape closely matching Discord's own. But what's documented is *bot*-account auth (bot
+  token, not OAuth) - unclear from what's findable whether/how a real personal account (not a
+  bot persona) sets its own status this way, so the "represents the actual user" question isn't
+  resolved. Small, growing-but-niche audience even if the auth question resolves favorably
 
 **Dropped - wrong mechanism, wrong audience, or blocked by a real secret requirement:**
 - Twitch, Chzzk, Kick, SOOP - all overwrite a public *channel's* title/category (broadcast info),

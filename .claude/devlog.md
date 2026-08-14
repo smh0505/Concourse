@@ -6464,3 +6464,62 @@ amount, `overflow / 30` seconds, floored at 3s so a barely-overflowing title doe
 fast to read) and adds a `.marquee` class triggering a `@keyframes` bounce (rest at 0, scroll to
 `--marquee-distance`, rest, scroll back) rather than a continuous unidirectional loop - a bounce
 reads more naturally for a short one-line title than a scrolling ticker does.
+
+Four quick follow-up fixes based on real testing, each superseding a detail above:
+1. Bounce replaced with a plain one-direction 0%/100% loop (user found the back-and-forth
+   confusing) - snaps back to start each cycle like a standard ticker instead of reversing.
+2. The 3s duration floor was removed - it sped up small-overflow titles to hit the floor while
+   long ones ran at the real `overflow / 30` rate, an inconsistent px/sec speed depending on
+   title length. Marquee now simply doesn't trigger below a 20px overflow threshold instead of
+   clamping duration, keeping the remaining ones at a truly constant speed.
+3. Travel distance changed from just `overflow` (stopping once the last character was barely
+   visible, causing a visible snap mid-title) to `wrapWidth + titleWidth` - starts fully
+   off-screen right, ends fully off-screen left, so the loop-back happens while invisible and
+   reads as one continuous flow.
+4. Root cause of "jumps back to its beginning" (most visible with Steam's longer folder-poll
+   detection window leaving a title on screen longer): `<meta http-equiv="refresh" content="15">`
+   reloaded the page - and thus restarted the marquee from scratch - unconditionally every 15s,
+   even when the title hadn't changed at all. Replaced with a 5s `/status` poll that only calls
+   `location.reload()` when the returned title actually differs from what's currently rendered
+   (compared against `titleInner.textContent`, `null` when idle) - a real title change still
+   correctly resets the marquee (expected, new title should start fresh), but the common case of
+   "still playing the same game" no longer disrupts anything.
+
+### Milestone 29 candidate research: Mastodon/Fediverse
+
+Filled in the "not researched yet" placeholder. Structurally different from every other
+candidate evaluated so far - the usual "does it need a `client_secret`" question doesn't quite
+apply the same way, because there's no single centralized API to register one shared `client_id`
+against in the first place.
+
+Mastodon's API requires per-*instance* app registration - each of the thousands of independent
+Fediverse servers runs its own copy of the software with its own user base and OAuth
+credentials, unlike Discord/Twitch/Slack's one central API a single hardcoded `client_id` can
+target forever. `POST /api/v1/apps` is Mastodon's standard mechanism for this: an unauthenticated
+endpoint any client can call at runtime to dynamically register itself against whichever
+instance the user actually has an account on, returning a `client_id`/`client_secret` pair
+scoped to that one instance. This is expected, normal Fediverse client behavior, not a workaround
+- every Mastodon app (including the official ones) does this.
+
+The practical effect: Concourse would never embed a static secret in its own source/binary at
+all for this integration - each user's `client_secret` is generated fresh, locally, the first
+time they connect a given instance, then stored in the local `settings` table the same way other
+per-user credentials already are. There's no "protect this shared secret" burden the earlier
+IGDB/Chzzk-style candidates raised, since nothing here is shared across Concourse's whole user
+base to begin with.
+
+Real open question instead: whether the *token exchange* itself needs that per-instance
+`client_secret` at all. Mastodon's OAuth server (Doorkeeper-based) historically required the
+classic confidential-client secret exchange; PKCE support for public/native clients is a more
+recent addition. Since Fediverse instances run independently and upgrade on their own schedules,
+a real implementation can't assume every instance a user might connect to is running a
+PKCE-capable version - would need the classic secret-based exchange as a working fallback
+regardless, which is fine here (the secret is locally-generated-and-owned per user, not a
+sensitive shared value, so sending it during token exchange isn't the same risk class as
+IGDB's real API key would be).
+
+This research is from established Mastodon/OAuth protocol knowledge, not verified live against
+a real instance - unlike platforms researched via their own current developer docs earlier in
+M29 (Twitch, Slack, Bluesky, Chzzk, Kick), no live doc/API check was done here. Worth confirming
+against a real instance's current `/api/v1/apps` and `/oauth/token` behavior before committing
+to an implementation plan, not just building from this summary alone. Not started.

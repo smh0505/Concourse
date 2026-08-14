@@ -124,7 +124,13 @@ watch(focusedTile, (el) => {
 </script>
 
 <template>
-  <div class="big-picture bp-surface" ref="rootRef" tabindex="0" @keydown="onKeydown">
+  <div
+    class="big-picture bp-surface"
+    :class="{ 'mouse-idle': !mouseActive }"
+    ref="rootRef"
+    tabindex="0"
+    @keydown="onKeydown"
+  >
     <Transition name="backdrop-fade">
       <div
         v-if="focusedBackgroundUrl"
@@ -165,6 +171,14 @@ watch(focusedTile, (el) => {
 
 .big-picture::-webkit-scrollbar {
   display: none;
+}
+
+/* Hides the real OS cursor once keyboard/gamepad nav has taken over (useMouseActivity.ts) -
+   otherwise it sits motionless over whatever tile it happened to land on, still visible and
+   still triggering that tile's native :hover styling (see BigPictureTile.vue) even though the
+   gamepad-driven highlight has moved elsewhere. Any real mousemove clears `mouse-idle` again. */
+.big-picture.mouse-idle {
+  cursor: none;
 }
 
 /* .bp-backdrop-overlay-base (shared, styles.css) supplies position/inset/z-index; the

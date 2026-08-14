@@ -55,7 +55,11 @@ const activeCardVisual = useActiveCardVisual();
   scroll-margin-top: 1rem;
 }
 
-.tile:hover,
+/* Real :hover is gated behind .big-picture:not(.mouse-idle) (BigPictureGrid.vue) - once
+   gamepad/keyboard nav takes over, the motionless real cursor can still sit over some other
+   tile, and without this gate that tile would keep lifting/showing its title even though the
+   controller-driven highlight (.tile-selected) has moved elsewhere. */
+.big-picture:not(.mouse-idle) .tile:hover,
 .tile.tile-selected {
   transform: translateY(-0.6rem);
 }
@@ -123,7 +127,7 @@ const activeCardVisual = useActiveCardVisual();
   transition: opacity 0.15s ease;
 }
 
-.tile:hover .tile-title,
+.big-picture:not(.mouse-idle) .tile:hover .tile-title,
 .tile.tile-selected .tile-title {
   opacity: 1;
 }

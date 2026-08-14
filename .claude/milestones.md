@@ -639,6 +639,36 @@ enabling a new metadata provider retroactively.
 - [ ] Rate-limit awareness - bulk-fetching against SGDB/IGDB/RAWG/etc. for every game at once
   risks hitting per-provider API rate limits
 
+## Milestone 39 — Borderless Window Wrapper Plugin (not started)
+Pseudo-fullscreen: strips a game window's border/title bar and resizes/repositions it to fill
+the display while preserving the game's own aspect ratio - letterbox/pillarbox filler bars fill
+the remaining margin instead of stretching the image, unlike a naive borderless-stretch. Same
+idea as third-party tools like Borderless Gaming. User-proposed, not scoped in code yet.
+
+Real architecture mismatch to resolve first: `WrapperPlugin`'s existing shape
+(`listProfiles(): LocaleProfile[]`, `launch(profileGuid, executablePath)`) is built around Locale
+Emulator's "launch *through* a substitute process" pattern - wrapper plugins are WASM-tier,
+built against a `wrapper-plugin-world` WIT interface with that exact shape
+(`wasm_plugin_runtime.rs`'s `instantiate_wrapper_from_paths`). Borderless-window doesn't launch
+anything itself (the game launches normally through the existing flow) and has no "profile"
+concept - it needs to act on the game's *window* after it appears, a different lifecycle hook
+than "launch substitution." Needs a real design decision before any code:
+- [ ] Decide interface shape: (a) generalize `WrapperPlugin`/the WIT world to also support a
+  post-launch-window-hook variant (touches the existing Locale Emulator plugin's contract too),
+  or (b) a distinct plugin kind (presence's `activate`/`deactivate`-style hook, keyed off the
+  game's window handle once found; single-active like theme/controller, since only one window
+  treatment applies at a time) that doesn't reuse `WrapperPlugin` at all
+- [ ] Windows-only mechanism (matches this project's other Windows-only pieces - `winreg`,
+  `steam.rs`'s registry reads): find the launched game's window from its known PID, strip
+  `WS_CAPTION`/`WS_THICKFRAME` via `SetWindowLongPtr`, `SetWindowPos` to full display bounds
+- [ ] Compute the letterboxed rect from the game's *original* aspect ratio (captured before
+  restyling) against the display's resolution - likely a separate always-black, click-through
+  overlay window behind the game, rather than painting into the game's own client area
+- [ ] Revert cleanly on `game-session-ended` - restore window style/rect, tear down the overlay
+- [ ] Multi-monitor targeting undecided (which display's bounds - the game's own, or primary?)
+- [ ] Research whether a game's true resolution/aspect ratio is knowable before render starts,
+  since some games change resolution *after* window creation
+
 ---
 
 # Icebox

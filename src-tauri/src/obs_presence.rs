@@ -153,7 +153,6 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
         r#"<!doctype html>
 <html><head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="15">
 <style>
   body {{ margin: 0; background: transparent; font-family: sans-serif; color: #fff;
           text-shadow: 0 1px 3px rgba(0,0,0,0.8); display: flex; align-items: center;
@@ -213,6 +212,18 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
       titleInner.classList.add("marquee");
     }}
   }}
+
+  // Reloads only when the title actually changes, instead of on a blind timer - a timed reload
+  // (the previous `<meta http-equiv="refresh">` approach) restarted the marquee/elapsed display
+  // from scratch even when nothing had changed, which read as a jarring reset.
+  const knownTitle = titleInner ? titleInner.textContent : null;
+  setInterval(async () => {{
+    try {{
+      const res = await fetch("/status");
+      const data = await res.json();
+      if (data.title !== knownTitle) location.reload();
+    }} catch {{}}
+  }}, 5000);
 </script>
 </body></html>"#
     )

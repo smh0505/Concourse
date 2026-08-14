@@ -445,14 +445,14 @@ async function testConnection() {
             <p>{{ wsFetchMessage }}</p>
             <p v-if="wsFetchRaw" class="obs-presence-status-raw">{{ wsFetchRaw }}</p>
           </div>
-          <label class="obs-presence-field">
-            {{ t("obsPresence.wsStartSceneLabel") }}
+          <div class="obs-presence-row">
+            <span class="obs-presence-row-label-flex">{{ t("obsPresence.wsStartSceneLabel") }}</span>
+            <span class="obs-presence-row-label-flex">{{ t("obsPresence.wsEndSceneLabel") }}</span>
+          </div>
+          <div class="obs-presence-row">
             <input v-model="wsStartScene" type="text" list="obs-ws-scenes" @change="saveWsSettings" />
-          </label>
-          <label class="obs-presence-field">
-            {{ t("obsPresence.wsEndSceneLabel") }}
             <input v-model="wsEndScene" type="text" list="obs-ws-scenes" @change="saveWsSettings" />
-          </label>
+          </div>
           <datalist id="obs-ws-scenes">
             <option v-for="scene in wsScenes" :key="scene" :value="scene" />
           </datalist>
@@ -493,9 +493,15 @@ async function testConnection() {
   gap: var(--space-3);
 }
 
-.obs-presence-row .obs-presence-field {
+.obs-presence-row .obs-presence-field,
+.obs-presence-row > input,
+.obs-presence-row-label-flex {
   flex: 1;
   min-width: 0;
+}
+
+.obs-presence-row-label-flex {
+  font-size: 0.85rem;
 }
 
 .obs-presence-labeled-row {

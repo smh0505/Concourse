@@ -6653,15 +6653,24 @@ fields don't have (those are dedicated presence concepts, not repurposed). And T
 gaming-community usage has been declining for years as Discord absorbed most of that audience -
 real but shrinking reach, the opposite trajectory from every platform researched so far.
 
-**Revolt - open-source Discord-alternative, auth question left unresolved.** `users.edit`
-supports a `{ text, presence }` status shape that maps directly onto Discord's own model. But
-what's documented and findable is bot-account authentication (a bot token, not real OAuth) -
-whether a user's actual personal account (not a separate bot persona) can set its own status
-this way isn't confirmed from what's available. Worth flagging as genuinely unresolved rather
-than assuming either way - unlike every other platform in this milestone's research, this one
-wasn't chased down to a clear yes/no on the exact question that matters (does this represent
-*you*, or a bot pretending to be you). Audience is real but small even if the question resolves
-well - Revolt is still a young, niche project relative to Discord or even TeamSpeak.
+**Revolt (now Stoat) - open-source Discord-alternative, auth question left unresolved.**
+Correction, caught by the user right after this was first written: the "stoatchat" GitHub org
+that showed up in the original search results wasn't a separate unrelated project - Revolt
+rebranded to Stoat on October 1st, 2025, after receiving a cease-and-desist over the "Revolt"
+name. Same codebase, same API, same maintainers/architecture, GitHub org moved `revoltchat` →
+`stoatchat`, now live at `stoat.chat` - not a fork, not a competing project, just a new name.
+Confirmed via Stoat's own wiki (`wiki.rvlt.gg`) and contemporary coverage, not assumed from the
+GitHub org name alone this time.
+
+Findings below are unaffected by the rename (same underlying platform): `users.edit` supports a
+`{ text, presence }` status shape that maps directly onto Discord's own model. But what's
+documented and findable is bot-account authentication (a bot token, not real OAuth) - whether a
+user's actual personal account (not a separate bot persona) can set its own status this way
+isn't confirmed from what's available. Worth flagging as genuinely unresolved rather than
+assuming either way - unlike every other platform in this milestone's research, this one wasn't
+chased down to a clear yes/no on the exact question that matters (does this represent *you*, or
+a bot pretending to be you). Audience is real but small even if the question resolves well -
+still a young, niche project relative to Discord or even TeamSpeak.
 
 Neither started. Both added to the candidate list alongside Matrix rather than replacing it -
 TeamSpeak's mechanism is the strongest found, but audience trajectory is the opposite of every

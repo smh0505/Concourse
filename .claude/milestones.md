@@ -550,10 +550,12 @@ auth research, including everything dropped below.
   field's actual purpose (a user manually going AFK would get overwritten), (2) TeamSpeak's
   actual gaming-community usage has been declining in Discord's favor for years - real but
   shrinking audience, unlike Discord's own reach
-- [ ] Revolt - open-source Discord-alternative, `users.edit` supports a `{ text, presence }`
-  status shape closely matching Discord's own. But what's documented is *bot*-account auth (bot
-  token, not OAuth) - unclear from what's findable whether/how a real personal account (not a
-  bot persona) sets its own status this way, so the "represents the actual user" question isn't
+- [ ] Stoat (rebranded from Revolt, Oct 2025 - same codebase/API/architecture, cease-and-desist
+  over the old name, not a fork or replacement) - open-source Discord-alternative, `users.edit`
+  supports a `{ text, presence }` status shape closely matching Discord's own. But what's
+  documented is *bot*-account auth (bot token, not OAuth) - unclear from what's findable whether/
+  how a real personal account (not a bot persona) sets its own status this way, so the
+  "represents the actual user" question isn't
   resolved. Small, growing-but-niche audience even if the auth question resolves favorably
 
 **Dropped - wrong mechanism, wrong audience, or blocked by a real secret requirement:**

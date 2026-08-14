@@ -1,12 +1,10 @@
 //! Milestone 39 - borderless pseudo-fullscreen. Built-in feature, not a plugin (see
-//! milestones.md for why): strips a game window's border/title bar and resizes it to fit the
-//! display it opened on while preserving its own aspect ratio, filling the remaining margin
-//! with a plain black overlay window instead of stretching the image.
+//! milestones.md). Strips a game window's border/title bar, resizes it to fit its display while
+//! preserving aspect ratio, and fills the margin with a black overlay instead of stretching.
 //!
-//! Everything here runs synchronously on whichever background thread already owns tracking that
-//! game's session (`launcher.rs`'s `launch_game`/`track_folder_playtime` threads) - the `HWND`s
-//! involved are raw pointers (not `Send`), so this deliberately never needs to cross threads
-//! except via the dedicated overlay-window thread `spawn_overlay` owns internally.
+//! Runs synchronously on whichever thread already tracks that game's session (`launcher.rs`).
+//! `HWND`s never cross threads except via `spawn_overlay`'s own channel handoff - they wrap raw
+//! pointers, not `Send`.
 
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -56,13 +54,9 @@ fn find_window_for_pid(pid: u32) -> Option<HWND> {
     state.1.map(|raw| HWND(raw as *mut _))
 }
 
-/// Retries for ~5s, re-evaluating `candidate_pids` fresh on every attempt rather than fixing on
-/// one PID up front. For a folder-tracked (URI-launched) game, "the process running under this
-/// install folder" is frequently *not* the one process that owns the actual game window - a
-/// launcher stub, an anti-cheat helper, or a 32-bit bootstrap can share the same folder and get
-/// matched first, and none of those own any window at all. Checking every currently-running
-/// candidate each tick (not just the first one ever seen) finds the real one once it exists,
-/// even if it starts after some other process under the same folder already has.
+/// Retries for ~5s, re-evaluating `candidate_pids` fresh each attempt rather than fixing on one
+/// PID up front - the first process matched under a folder is often a launcher stub or helper
+/// with no window at all, and the real one may not exist yet.
 fn wait_for_window(mut candidate_pids: impl FnMut() -> Vec<u32>) -> Option<HWND> {
     for _ in 0..20 {
         for pid in candidate_pids() {
@@ -102,10 +96,9 @@ extern "system" fn overlay_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
 
 const OVERLAY_CLASS_NAME: PCWSTR = w!("ConcoursePseudoFullscreenOverlay");
 
-/// Runs a full window + message-loop lifecycle on its own dedicated thread - a Win32 window must
-/// be pumped from the thread that created it, and that thread can't be the one already busy
-/// waiting on the game process in `launcher.rs`. `PostMessageW(WM_CLOSE)` from outside this
-/// thread is how the caller asks it to tear down and exit.
+/// A Win32 window must be pumped by the thread that created it, which can't be the one already
+/// tracking the game process - runs the whole window + message-loop lifecycle on its own
+/// dedicated thread instead. `PostMessageW(WM_CLOSE)` from outside asks it to tear down.
 fn spawn_overlay(bounds: RECT, insert_after: HWND) -> (isize, JoinHandle<()>) {
     let (tx, rx) = std::sync::mpsc::channel::<isize>();
     let insert_after_raw = insert_after.0 as isize;
@@ -169,9 +162,8 @@ fn spawn_overlay(bounds: RECT, insert_after: HWND) -> (isize, JoinHandle<()>) {
     (hwnd, thread)
 }
 
-/// Strips `hwnd`'s title bar/border, resizes it (not stretches - the game's own client content
-/// keeps its real aspect ratio, read once here) to fit letterboxed within whichever display it
-/// opened on, and drops a black overlay behind it to cover the margin.
+/// Strips `hwnd`'s title bar/border, resizes it (not stretches) to fit letterboxed within
+/// whichever display it opened on, and drops a black overlay behind it to cover the margin.
 fn apply_to_hwnd(hwnd: HWND) -> PseudoFullscreenState {
     unsafe {
         let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
@@ -214,18 +206,14 @@ fn apply_to_hwnd(hwnd: HWND) -> PseudoFullscreenState {
     }
 }
 
-/// Finds the game's window and applies borderless letterboxing to it. Returns `None` (a no-op)
-/// if no window turns up among `candidate_pids` within ~5s - never blocks the caller's own
-/// session tracking indefinitely. `candidate_pids` is re-evaluated on every retry tick (see
-/// `wait_for_window`) - pass a closure that returns just the one known PID for a direct-exe
-/// launch, or one that re-scans for every process under an install folder for a URI-launched one.
+/// Finds the game's window and applies borderless letterboxing. `None` if no window turns up
+/// among `candidate_pids` within ~5s - never blocks indefinitely.
 pub fn apply(candidate_pids: impl FnMut() -> Vec<u32>) -> Option<PseudoFullscreenState> {
     wait_for_window(candidate_pids).map(apply_to_hwnd)
 }
 
 /// Tears down the overlay and, if the window is still alive, restores its original style/rect.
-/// Safe to call on an already-invalid handle - restoring a destroyed window's style/rect is
-/// skipped rather than attempted, since there's nothing left to restore.
+/// Safe to call on an already-invalid handle.
 fn teardown(state: PseudoFullscreenState) {
     unsafe {
         let hwnd = HWND(state.game_hwnd as *mut _);
@@ -251,19 +239,16 @@ fn teardown(state: PseudoFullscreenState) {
 }
 
 /// Restores the game window's original style/position and tears down the overlay - called once
-/// the session is actually ending. Safe to call even if the game already closed its window.
+/// the session is actually ending.
 pub fn revert(state: PseudoFullscreenState) {
     teardown(state);
 }
 
-/// Called periodically (piggybacked on the caller's own existing exit-polling loop, not a
-/// separate timer) to catch a launcher window closing and being replaced by the real game
-/// window - a real, observed case (see milestones.md/devlog), and one even the reference tool
-/// for this feature (Borderless Gaming) handles by detecting the old window's disappearance and
-/// re-applying to whatever new one appears, rather than trying to track one window's identity
-/// forever. No-ops (returns `state` unchanged) if the current window is still alive - this is
-/// deliberately a single lookup attempt per call, not `apply()`'s multi-second retry, since it's
-/// already being called repeatedly by the caller's own loop.
+/// Called periodically off the caller's own existing poll loop to catch a launcher window
+/// closing and being replaced by the real game window (Borderless Gaming, the reference tool,
+/// handles this the same way - re-detect and reapply rather than tracking one window forever).
+/// No-ops if the current window is still alive; a single lookup attempt per call, not
+/// `apply()`'s multi-second retry, since this is already called repeatedly.
 pub fn refresh(
     state: Option<PseudoFullscreenState>,
     mut candidate_pids: impl FnMut() -> Vec<u32>,

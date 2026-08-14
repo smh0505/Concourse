@@ -40,20 +40,17 @@ pub fn launch_game(
     let start_time = unix_timestamp(start);
 
     std::thread::spawn(move || {
-        // Milestone 39 - applied here (not before spawn returns) since it needs the game's own
-        // window, which doesn't exist until moments after the process starts.
-        let fullscreen_state = if pseudo_fullscreen {
+        // Applied here, not before spawn returns - needs the game's own window, which doesn't
+        // exist until moments after the process starts.
+        let mut fullscreen_state = if pseudo_fullscreen {
             crate::pseudo_fullscreen::apply(|| vec![pid])
         } else {
             None
         };
 
-        let mut fullscreen_state = fullscreen_state;
         if pseudo_fullscreen {
             // Polls instead of a single blocking child.wait() so a launcher window closing and
-            // being replaced by the real game window (same process, new HWND) still gets caught
-            // - see pseudo_fullscreen::refresh's own doc comment for why this can't just track
-            // one window's identity for the whole session.
+            // being replaced by the real game window (same process, new HWND) still gets caught.
             loop {
                 match child.try_wait() {
                     Ok(Some(_)) => break,
@@ -116,11 +113,10 @@ fn find_process_under_folder(system: &mut System, install_dir: &str) -> Option<u
     all_processes_under_folder(system, install_dir).into_iter().next()
 }
 
-/// Every currently-running PID under the install folder, not just the first one found -
-/// Milestone 39's window search needs to try all of them, since the process a folder match
-/// happens to return first (a launcher stub, an anti-cheat helper) frequently isn't the one that
-/// actually owns the game's window. `find_process_under_folder`'s single-PID version stays
-/// separate (fine for the game-session-started emit, which just needs "something is running").
+/// Every currently-running PID under the install folder, not just the first - the pseudo-
+/// fullscreen window search needs to try all of them, since the first match (a launcher stub,
+/// an anti-cheat helper) frequently doesn't own the game's window. `find_process_under_folder`'s
+/// single-PID version stays separate (fine for the game-session-started emit).
 fn all_processes_under_folder(system: &mut System, install_dir: &str) -> Vec<u32> {
     system.refresh_processes(ProcessesToUpdate::All, true);
     system
@@ -193,10 +189,7 @@ pub fn track_folder_playtime(
         loop {
             std::thread::sleep(POLL_INTERVAL);
             if pseudo_fullscreen {
-                // Piggybacked on this same poll tick rather than a separate timer - catches a
-                // launcher window closing and being replaced by the real game window. See
-                // pseudo_fullscreen::refresh's own doc comment for why this can't just track one
-                // window's identity for the whole session.
+                // Piggybacked on this same poll tick rather than a separate timer.
                 fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || {
                     all_processes_under_folder(&mut system, &install_dir)
                 });

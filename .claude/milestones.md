@@ -695,36 +695,22 @@ the remaining margin instead of stretching the image, unlike a naive borderless-
 idea as third-party tools like Borderless Gaming. User-proposed.
 
 Built as a **built-in feature, not a plugin** - same call Milestone 28 made for Discord presence
-before OBS gave it a second real target to justify generalizing (see M29). Exactly one
-implementation exists here too, and `WrapperPlugin`'s existing shape (`listProfiles`/`launch`,
-WASM-tier, built for Locale Emulator's launch-substitution pattern) doesn't fit a post-launch
-window-styling hook anyway - forcing it in would mean changing the shared WIT interface's
-contract (affecting the existing Locale Emulator plugin) for a single, unproven consumer.
-Revisit as a real plugin kind only if a second such window-hook idea actually gets built (see
-the stretch list below for candidates).
-- [x] Settings toggle - per-game opt-in (user's explicit pick over a global setting): some games
-  already run real exclusive fullscreen fine and don't need this
-- [x] Windows-only mechanism (`windows` crate, matches this project's other Windows-only pieces -
-  `winreg`, `steam.rs`'s registry reads): finds the launched game's window from its known PID,
-  strips `WS_CAPTION`/`WS_THICKFRAME` via `SetWindowLongPtrW`, resizes (not stretches) via
-  `SetWindowPos`
-- [x] Letterboxed rect computed from the game's own client size (`GetClientRect`, read at the
-  moment its window is found) against the target display's bounds - a dedicated black `WS_POPUP`
-  overlay window (own OS thread, own message loop) fills the margin, placed directly behind the
-  game window in z-order rather than painting into its own client area
-- [x] Reverts cleanly - `launcher.rs`'s existing tracking threads call `revert()` right before
-  their `game-session-ended` emit, restoring the original window style/rect and tearing down the
-  overlay
-- [x] Multi-monitor targeting resolved - the game's own display (`MonitorFromWindow`), per user's
-  explicit pick over always-primary
-- [x] Handles a launcher window closing and being replaced by the real game window (same
-  process, new `HWND`) - `pseudo_fullscreen::refresh()`, checked periodically off each tracking
-  thread's own existing poll tick. Confirmed via research this matches how Borderless Gaming
-  (the reference tool for this feature) itself handles the same scenario
-- [ ] Known limitation, not solved (same as Borderless Gaming - confirmed via reading its own
-  source, not assumed): the letterbox ratio is computed once from whatever client size the
-  window has at the moment styling is applied - a game resizing its *own still-alive* window
-  later isn't caught, only a window closing/being replaced is
+before OBS justified generalizing (M29). `WrapperPlugin`'s shape doesn't fit a post-launch
+window-styling hook anyway. Revisit as a plugin kind only if a second window-hook idea gets
+built (see the stretch list below). See devlog for the full design/research rationale.
+- [x] Settings toggle - per-game opt-in, not global (some games already run exclusive fullscreen
+  fine)
+- [x] Windows-only mechanism (`windows` crate): finds the game's window by PID, strips
+  `WS_CAPTION`/`WS_THICKFRAME`, resizes (not stretches) via `SetWindowPos`
+- [x] Letterboxed rect from the game's own client size against the target display's bounds - a
+  black `WS_POPUP` overlay (own thread/message loop) fills the margin behind the game window
+- [x] Reverts cleanly on `game-session-ended` - restores style/rect, tears down the overlay
+- [x] Multi-monitor targeting - the game's own display (`MonitorFromWindow`), not always-primary
+- [x] Handles a launcher window closing and being replaced by the real game window
+  (`pseudo_fullscreen::refresh()`, piggybacked on each tracking thread's own poll tick) - matches
+  how Borderless Gaming (the reference tool) itself handles this, confirmed by reading its source
+- [ ] Known limitation, not solved (same as Borderless Gaming): a game resizing its own
+  still-alive window later isn't caught, only a window closing/being replaced is
 
 **Window behavior, stretch - speculative, none started, no tab/kind unless one of these is
 actually built.** Grouped here since they'd share the same "act on the game's window after

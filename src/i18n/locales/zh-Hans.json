@@ -328,6 +328,7 @@
     "modeAlert": "提醒弹窗（淡出）",
     "alertSecondsLabel": "提醒持续时间（秒）",
     "wsEnabledLabel": "游戏开始/结束时切换 OBS 场景",
+    "wsIpAddressLabel": "IP 地址",
     "wsHostLabel": "主机",
     "wsPortLabel": "端口",
     "wsPasswordLabel": "密码",

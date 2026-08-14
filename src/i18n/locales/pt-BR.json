@@ -328,6 +328,7 @@
     "modeAlert": "Pop-up de alerta (desaparece)",
     "alertSecondsLabel": "Duração do alerta (segundos)",
     "wsEnabledLabel": "Trocar cenas do OBS ao iniciar/encerrar o jogo",
+    "wsIpAddressLabel": "Endereço IP",
     "wsHostLabel": "Host",
     "wsPortLabel": "Porta",
     "wsPasswordLabel": "Senha",

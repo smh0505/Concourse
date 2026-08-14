@@ -393,19 +393,26 @@ async function testConnection() {
           {{ t("obsPresence.wsEnabledLabel") }}
         </label>
         <template v-if="wsEnabled">
-          <label class="obs-presence-field">
-            {{ t("obsPresence.wsPortLabel") }}
-            <input v-model="wsPort" type="number" min="1" max="65535" @change="saveWsSettings" />
-          </label>
-          <div class="obs-presence-row">
-            <label class="obs-presence-field">
-              {{ t("obsPresence.wsHostLabel") }}
-              <input v-model="wsHost" type="text" @change="saveWsSettings" />
-            </label>
-            <label class="obs-presence-field">
-              {{ t("obsPresence.wsPasswordLabel") }}
-              <input v-model="wsPassword" type="password" @change="saveWsSettings" />
-            </label>
+          <div class="obs-presence-labeled-row">
+            <span class="obs-presence-row-label">{{ t("obsPresence.wsIpAddressLabel") }}</span>
+            <input
+              v-model="wsHost"
+              type="text"
+              :placeholder="t('obsPresence.wsHostLabel')"
+              @change="saveWsSettings"
+            />
+            <input
+              v-model="wsPort"
+              type="number"
+              min="1"
+              max="65535"
+              :placeholder="t('obsPresence.wsPortLabel')"
+              @change="saveWsSettings"
+            />
+          </div>
+          <div class="obs-presence-labeled-row">
+            <span class="obs-presence-row-label">{{ t("obsPresence.wsPasswordLabel") }}</span>
+            <input v-model="wsPassword" type="password" @change="saveWsSettings" />
           </div>
           <div class="obs-presence-actions">
             <button type="button" @click="fetchScenes">{{ t("obsPresence.wsFetchScenes") }}</button>
@@ -465,6 +472,23 @@ async function testConnection() {
 }
 
 .obs-presence-row .obs-presence-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.obs-presence-labeled-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+}
+
+.obs-presence-row-label {
+  flex-shrink: 0;
+  width: 5rem;
+}
+
+.obs-presence-labeled-row input {
   flex: 1;
   min-width: 0;
 }

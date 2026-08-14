@@ -328,6 +328,7 @@
     "modeAlert": "Alarm-Popup (verblasst)",
     "alertSecondsLabel": "Alarmdauer (Sekunden)",
     "wsEnabledLabel": "OBS-Szenen beim Spielstart/-ende wechseln",
+    "wsIpAddressLabel": "IP-Adresse",
     "wsHostLabel": "Host",
     "wsPortLabel": "Port",
     "wsPasswordLabel": "Passwort",

@@ -328,6 +328,7 @@
     "modeAlert": "알림 팝업 (서서히 사라짐)",
     "alertSecondsLabel": "알림 지속 시간 (초)",
     "wsEnabledLabel": "게임 시작/종료 시 OBS 씬 전환",
+    "wsIpAddressLabel": "IP 주소",
     "wsHostLabel": "호스트",
     "wsPortLabel": "포트",
     "wsPasswordLabel": "비밀번호",

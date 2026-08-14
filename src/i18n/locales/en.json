@@ -328,6 +328,7 @@
     "modeAlert": "Alert popup (fades out)",
     "alertSecondsLabel": "Alert duration (seconds)",
     "wsEnabledLabel": "Switch OBS scenes on game start/end",
+    "wsIpAddressLabel": "IP Address",
     "wsHostLabel": "Host",
     "wsPortLabel": "Port",
     "wsPasswordLabel": "Password",

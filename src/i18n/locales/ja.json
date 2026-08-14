@@ -328,6 +328,7 @@
     "modeAlert": "アラートポップアップ（フェードアウト）",
     "alertSecondsLabel": "アラート表示時間（秒）",
     "wsEnabledLabel": "ゲーム開始/終了時にOBSのシーンを切り替える",
+    "wsIpAddressLabel": "IPアドレス",
     "wsHostLabel": "ホスト",
     "wsPortLabel": "ポート",
     "wsPasswordLabel": "パスワード",

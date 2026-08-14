@@ -328,6 +328,7 @@
     "modeAlert": "Popup di avviso (sfuma)",
     "alertSecondsLabel": "Durata avviso (secondi)",
     "wsEnabledLabel": "Cambia le scene di OBS all'avvio/fine del gioco",
+    "wsIpAddressLabel": "Indirizzo IP",
     "wsHostLabel": "Host",
     "wsPortLabel": "Porta",
     "wsPasswordLabel": "Password",

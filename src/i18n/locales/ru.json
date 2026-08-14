@@ -328,6 +328,7 @@
     "modeAlert": "Всплывающее уведомление (затухает)",
     "alertSecondsLabel": "Длительность уведомления (сек.)",
     "wsEnabledLabel": "Переключать сцены OBS при запуске/завершении игры",
+    "wsIpAddressLabel": "IP-адрес",
     "wsHostLabel": "Хост",
     "wsPortLabel": "Порт",
     "wsPasswordLabel": "Пароль",

@@ -328,6 +328,7 @@
     "modeAlert": "Aviso emergente (se desvanece)",
     "alertSecondsLabel": "Duración del aviso (segundos)",
     "wsEnabledLabel": "Cambiar escenas de OBS al iniciar/finalizar el juego",
+    "wsIpAddressLabel": "Dirección IP",
     "wsHostLabel": "Host",
     "wsPortLabel": "Puerto",
     "wsPasswordLabel": "Contraseña",

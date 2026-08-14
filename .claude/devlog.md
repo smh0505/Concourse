@@ -6814,3 +6814,25 @@ not solved this pass.
 Verified via `cargo check` (both the Rust module and its `launcher.rs` integration) and
 `bun run build` (frontend). Not yet manually tested against a real game - Windows GUI behavior
 like this can't be verified from this environment; the user will need to confirm it visually.
+
+### Milestone 39 follow-up: fixed for Steam/URI-launched games specifically
+
+User's first real test confirmed it worked for a direct-exe launch but not a Steam-installed
+one. Root cause: `track_folder_playtime`'s window search used `find_process_under_folder`'s
+*first* matched PID under the install folder - a fine signal for "is anything running" playtime
+detection, but frequently the wrong process for window-finding specifically, since Steam titles
+commonly have a launcher stub, anti-cheat helper, or 32-bit bootstrap sharing the same install
+folder as the real game exe, none of which own any window at all.
+
+Fixed by changing `pseudo_fullscreen::apply()`'s signature from a fixed `pid: u32` to a
+`candidate_pids: impl FnMut() -> Vec<u32>` closure, re-evaluated on every retry tick inside
+`wait_for_window` rather than fixed once up front. `launch_game` (direct-exe) passes a trivial
+`|| vec![pid]` (still just the one real spawned process, unaffected). `track_folder_playtime`
+passes a closure that calls a new `all_processes_under_folder` helper (a sibling of
+`find_process_under_folder`, filtering the same way but collecting every match instead of
+`.next()`-ing the first) - re-scanning `sysinfo`'s process list fresh each tick, so a real game
+process that starts *after* some helper process under the same folder still gets found once it
+exists, not just whatever existed at the single moment Phase 1 first detected "something."
+
+Confirmed working after this fix. Manual end-to-end verification (direct-exe launch, then a real
+Steam title) both pass.

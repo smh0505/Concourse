@@ -6,6 +6,7 @@ mod discord_presence;
 mod image_utils;
 mod launcher;
 mod obs_presence;
+mod obs_websocket;
 mod plugin_installer;
 mod plugin_registry;
 mod plugin_verification;
@@ -53,6 +54,8 @@ pub fn run() {
             obs_presence::set_obs_presence_port,
             obs_presence::test_obs_presence_port,
             obs_presence::set_obs_overlay_style,
+            obs_websocket::obs_ws_list_scenes,
+            obs_websocket::obs_ws_switch_scene,
             plugin_installer::fetch_plugin_preview,
             plugin_installer::install_plugin,
             plugin_installer::list_data_themes,

@@ -45,6 +45,9 @@ sigstore-types = "0.1"
 # for why: llama.cpp's own prebuilt server binary is downloaded and run as a subprocess instead,
 # talked to over HTTP, rather than linking any ML engine into this binary).
 tokio = { version = "1", features = ["fs", "io-util", "sync", "process", "time"] }
+# obs-websocket v5 client, for obs_websocket.rs's scene-switch-on-launch feature - not the same
+# thing as obs_presence.rs's tiny_http overlay server, which stays a passive Browser Source page.
+obws = "0.15"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

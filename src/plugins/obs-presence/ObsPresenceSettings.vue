@@ -14,6 +14,14 @@ import {
   OBS_PRESENCE_MODE_SETTING,
   OBS_PRESENCE_PORT_SETTING,
   OBS_PRESENCE_TEMPLATE_SETTING,
+  OBS_WS_DEFAULT_HOST,
+  OBS_WS_DEFAULT_PORT,
+  OBS_WS_ENABLED_SETTING,
+  OBS_WS_END_SCENE_SETTING,
+  OBS_WS_HOST_SETTING,
+  OBS_WS_PASSWORD_SETTING,
+  OBS_WS_PORT_SETTING,
+  OBS_WS_START_SCENE_SETTING,
 } from "./index";
 
 const { t } = useI18n();
@@ -27,6 +35,17 @@ const mode = ref(OBS_PRESENCE_DEFAULT_MODE);
 const alertSeconds = ref(OBS_PRESENCE_DEFAULT_ALERT_SECONDS);
 const styleStatus = ref<"idle" | "error">("idle");
 const styleMessage = ref("");
+
+const wsEnabled = ref(false);
+const wsHost = ref(OBS_WS_DEFAULT_HOST);
+const wsPort = ref(String(OBS_WS_DEFAULT_PORT));
+const wsPassword = ref("");
+const wsStartScene = ref("");
+const wsEndScene = ref("");
+const wsScenes = ref<string[]>([]);
+const wsFetchStatus = ref<"idle" | "busy" | "success" | "error">("idle");
+const wsFetchMessage = ref("");
+const wsFetchRaw = ref("");
 
 type Status = "idle" | "busy" | "success" | "error";
 const applyStatus = ref<Status>("idle");
@@ -68,6 +87,67 @@ function describeError(e: unknown): { message: string; raw: string } {
   }
 }
 
+/** Mirrors obs_websocket.rs's `ObsWsError`. */
+type ObsWsError = { kind: "ConnectFailed" | "RequestFailed"; raw: string };
+
+function isObsWsError(e: unknown): e is ObsWsError {
+  return typeof e === "object" && e !== null && "kind" in e;
+}
+
+function describeWsError(e: unknown): { message: string; raw: string } {
+  if (!isObsWsError(e)) return { message: String(e), raw: "" };
+  switch (e.kind) {
+    case "ConnectFailed":
+      return { message: t("obsPresence.wsErrorConnectFailed"), raw: e.raw };
+    case "RequestFailed":
+      return { message: t("obsPresence.wsErrorRequestFailed"), raw: e.raw };
+  }
+}
+
+/** No connect-time failure mode from just typing (only Fetch Scenes actually opens a
+ *  connection), and `switchObsScene` (index.ts) reads these fresh from settingsRepo on every
+ *  game launch anyway - so plain instant-persist on change, same as the style section above. */
+async function saveWsSettings() {
+  await Promise.all([
+    settingsRepo.set(OBS_WS_ENABLED_SETTING, String(wsEnabled.value)),
+    settingsRepo.set(OBS_WS_HOST_SETTING, wsHost.value || OBS_WS_DEFAULT_HOST),
+    settingsRepo.set(OBS_WS_PORT_SETTING, wsPort.value || String(OBS_WS_DEFAULT_PORT)),
+    settingsRepo.set(OBS_WS_PASSWORD_SETTING, wsPassword.value),
+    settingsRepo.set(OBS_WS_START_SCENE_SETTING, wsStartScene.value),
+    settingsRepo.set(OBS_WS_END_SCENE_SETTING, wsEndScene.value),
+  ]);
+}
+
+/** Populates the start/end scene fields' autocomplete list and doubles as a connectivity test -
+ *  same "Fetch"-as-test idea `testConnection` above uses for the overlay port. */
+async function fetchScenes() {
+  const port = Number(wsPort.value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    wsFetchStatus.value = "error";
+    wsFetchMessage.value = t("obsPresence.invalidPort");
+    wsFetchRaw.value = "";
+    return;
+  }
+
+  wsFetchStatus.value = "busy";
+  try {
+    const scenes = await invoke<string[]>("obs_ws_list_scenes", {
+      host: wsHost.value || OBS_WS_DEFAULT_HOST,
+      port,
+      password: wsPassword.value || null,
+    });
+    wsScenes.value = scenes;
+    wsFetchStatus.value = "success";
+    wsFetchMessage.value = t("obsPresence.wsFetchSuccess", { count: scenes.length });
+    wsFetchRaw.value = "";
+  } catch (e) {
+    wsFetchStatus.value = "error";
+    const { message, raw } = describeWsError(e);
+    wsFetchMessage.value = message;
+    wsFetchRaw.value = raw;
+  }
+}
+
 async function openModal() {
   const stored = await settingsRepo.get(OBS_PRESENCE_PORT_SETTING);
   const storedPort = stored ? Number(stored) : OBS_PRESENCE_DEFAULT_PORT;
@@ -89,6 +169,24 @@ async function openModal() {
       ? parsedAlertSeconds
       : OBS_PRESENCE_DEFAULT_ALERT_SECONDS;
   styleStatus.value = "idle";
+
+  const [storedWsEnabled, storedWsHost, storedWsPort, storedWsPassword, storedStartScene, storedEndScene] =
+    await Promise.all([
+      settingsRepo.get(OBS_WS_ENABLED_SETTING),
+      settingsRepo.get(OBS_WS_HOST_SETTING),
+      settingsRepo.get(OBS_WS_PORT_SETTING),
+      settingsRepo.get(OBS_WS_PASSWORD_SETTING),
+      settingsRepo.get(OBS_WS_START_SCENE_SETTING),
+      settingsRepo.get(OBS_WS_END_SCENE_SETTING),
+    ]);
+  wsEnabled.value = storedWsEnabled === "true";
+  wsHost.value = storedWsHost || OBS_WS_DEFAULT_HOST;
+  wsPort.value = storedWsPort || String(OBS_WS_DEFAULT_PORT);
+  wsPassword.value = storedWsPassword ?? "";
+  wsStartScene.value = storedStartScene ?? "";
+  wsEndScene.value = storedEndScene ?? "";
+  wsScenes.value = [];
+  wsFetchStatus.value = "idle";
 
   modalOpen.value = true;
 }
@@ -225,6 +323,49 @@ async function testConnection() {
         </div>
       </div>
 
+      <div class="obs-presence-style">
+        <label class="obs-presence-checkbox">
+          <input type="checkbox" v-model="wsEnabled" @change="saveWsSettings" />
+          {{ t("obsPresence.wsEnabledLabel") }}
+        </label>
+        <template v-if="wsEnabled">
+          <label class="obs-presence-field">
+            {{ t("obsPresence.wsHostLabel") }}
+            <input v-model="wsHost" type="text" @change="saveWsSettings" />
+          </label>
+          <label class="obs-presence-field">
+            {{ t("obsPresence.wsPortLabel") }}
+            <input v-model="wsPort" type="number" min="1" max="65535" @change="saveWsSettings" />
+          </label>
+          <label class="obs-presence-field">
+            {{ t("obsPresence.wsPasswordLabel") }}
+            <input v-model="wsPassword" type="password" @change="saveWsSettings" />
+          </label>
+          <div class="obs-presence-actions">
+            <button type="button" @click="fetchScenes">{{ t("obsPresence.wsFetchScenes") }}</button>
+          </div>
+          <div
+            v-if="wsFetchStatus === 'success' || wsFetchStatus === 'error'"
+            class="obs-presence-status"
+            :class="wsFetchStatus"
+          >
+            <p>{{ wsFetchMessage }}</p>
+            <p v-if="wsFetchRaw" class="obs-presence-status-raw">{{ wsFetchRaw }}</p>
+          </div>
+          <label class="obs-presence-field">
+            {{ t("obsPresence.wsStartSceneLabel") }}
+            <input v-model="wsStartScene" type="text" list="obs-ws-scenes" @change="saveWsSettings" />
+          </label>
+          <label class="obs-presence-field">
+            {{ t("obsPresence.wsEndSceneLabel") }}
+            <input v-model="wsEndScene" type="text" list="obs-ws-scenes" @change="saveWsSettings" />
+          </label>
+          <datalist id="obs-ws-scenes">
+            <option v-for="scene in wsScenes" :key="scene" :value="scene" />
+          </datalist>
+        </template>
+      </div>
+
       <p class="obs-presence-hint">
         {{ t("obsPresence.hint") }}
         <code>{{ overlayUrl }}</code>
@@ -281,6 +422,13 @@ async function testConnection() {
   font-size: 0.7rem !important;
   opacity: 0.7;
   color: var(--color-text) !important;
+}
+
+.obs-presence-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
 }
 
 .obs-presence-style {

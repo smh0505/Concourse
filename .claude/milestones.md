@@ -728,6 +728,25 @@ right now. Revive by moving an entry back into the numbered sequence above (give
 milestone number reflecting whenever it's actually picked up, don't reuse the old one) if that
 ever changes.
 
+## Structured Errors Across Rust Commands
+Every `#[tauri::command]` outside `obs_presence.rs` still returns `Result<_, String>` -
+`plugin_installer.rs`/`wasm_plugin_runtime.rs`/`wasm_plugins.rs` alone account for 20+ of them,
+spanning genuinely different failure domains (network, filesystem, zip extraction, wasmtime
+instantiation, Sigstore verification, process spawn). M29's OBS overlay follow-up gave
+`set_obs_presence_port`/`test_obs_presence_port` a real `#[derive(Serialize)]` enum
+(`ObsPresenceError`) instead, so the frontend builds a localized "why" sentence via i18n instead
+of splicing a raw (non-i18n'd) OS/HTTP error string into an otherwise-translated message - but
+that only covers 2 commands out of the whole backend. Iceboxed rather than started: no
+`thiserror` dependency needed (confirmed - this project has done exact this pattern by hand
+before), but a shared type spanning every command's error domain is real architecture work
+(one kitchen-sink enum, or a `ConcourseError::Plugin(PluginError)`-style hierarchy per module)
+much bigger than a follow-up, and nothing outside OBS has actually hit user confusion serious
+enough to justify it yet.
+- [ ] Design the enum shape (flat vs. per-module hierarchy) before touching any command
+- [ ] Migrate `plugin_installer.rs`/`wasm_plugin_runtime.rs`/`wasm_plugins.rs` (largest cluster)
+- [ ] Migrate the rest (`translation.rs`, `plugin_registry.rs`, `zip_install.rs`,
+  `plugin_verification.rs`, `image_utils.rs`, `launcher.rs`, `quick_launch.rs`)
+
 ## Additional Source Plugins: Emulator/ROM Scanner
 Carried over from Milestone 7, then parked here (no milestone number - see this section's own
 intro) - every other Post-1.0 source plugin (Milestone 15's Xbox/EA/Ubisoft) got built against

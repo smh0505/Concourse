@@ -69,7 +69,8 @@
     "revokeTitleOnly": "タイトルの翻訳を取り消す",
     "revokeContentOnly": "内容の翻訳を取り消す",
     "revokeBoth": "タイトルと内容の翻訳を取り消す",
-    "skipPresence": "このゲームをプレゼンス連携から除外する"
+    "skipPresence": "このゲームをプレゼンス連携から除外する",
+    "pseudoFullscreen": "ボーダーレス擬似フルスクリーンで実行"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

@@ -34,6 +34,9 @@ export interface Game {
   /** SQLite boolean (0/1) - per-game opt-out from every enabled presence plugin (Milestone 29 -
    *  Discord, a local OBS overlay, etc.), not just Discord specifically. */
   skip_presence: number;
+  /** SQLite boolean (0/1) - Milestone 39's per-game opt-in for borderless pseudo-fullscreen
+   *  (built-in feature, not a plugin). Off by default - not every game benefits. */
+  pseudo_fullscreen: number;
 }
 
 export type GameEditFields = Pick<
@@ -49,6 +52,7 @@ export type GameEditFields = Pick<
   | "locale_profile_guid"
   | "locale_wrapper"
   | "skip_presence"
+  | "pseudo_fullscreen"
 >;
 
 /** The title to show for `game` under the current UI `locale` - a valid cached translation, or

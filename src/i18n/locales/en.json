@@ -69,7 +69,8 @@
     "revokeTitleOnly": "Revoke Title Translation",
     "revokeContentOnly": "Revoke Content Translation",
     "revokeBoth": "Revoke Title and Content Translation",
-    "skipPresence": "Hide this game from presence integrations"
+    "skipPresence": "Hide this game from presence integrations",
+    "pseudoFullscreen": "Run in borderless pseudo-fullscreen"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

@@ -443,6 +443,7 @@ export const useLibraryStore = defineStore("library", () => {
           gameId: game.id,
           executablePath: game.executable_path,
           title: game.title,
+          pseudoFullscreen: game.pseudo_fullscreen === 1,
         });
         return;
       }
@@ -455,6 +456,7 @@ export const useLibraryStore = defineStore("library", () => {
           gameId: game.id,
           installDir,
           title: game.title,
+          pseudoFullscreen: game.pseudo_fullscreen === 1,
         });
       }
     } catch (e) {

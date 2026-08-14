@@ -88,12 +88,13 @@ export class GameRepository {
          locale_profile_guid = $9,
          locale_wrapper = $10,
          skip_presence = $11,
+         pseudo_fullscreen = $12,
          translated_title = NULL,
          translated_description = NULL,
          translated_locale = NULL,
          show_translated_title = 0,
          show_translated_description = 0
-       WHERE id = $12`,
+       WHERE id = $13`,
       [
         fields.title,
         fields.executable_path,
@@ -106,6 +107,7 @@ export class GameRepository {
         fields.locale_profile_guid,
         fields.locale_wrapper,
         fields.skip_presence,
+        fields.pseudo_fullscreen,
         id,
       ],
     );

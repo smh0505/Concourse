@@ -173,5 +173,16 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 8,
+            description: "add_pseudo_fullscreen",
+            sql: r#"
+            -- Milestone 39 - per-game opt-in for borderless pseudo-fullscreen (built-in feature,
+            -- not a plugin; see milestones.md for why). Off by default since not every game
+            -- benefits (some already run real exclusive fullscreen fine).
+            ALTER TABLE games ADD COLUMN pseudo_fullscreen INTEGER NOT NULL DEFAULT 0;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

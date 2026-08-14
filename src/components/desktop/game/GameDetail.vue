@@ -53,6 +53,7 @@ const form = ref<GameEditFields>({
   locale_profile_guid: "",
   locale_wrapper: null,
   skip_presence: 0,
+  pseudo_fullscreen: 0,
 });
 
 function resetForm() {
@@ -68,6 +69,7 @@ function resetForm() {
     locale_profile_guid: game.value.locale_profile_guid ?? "",
     locale_wrapper: game.value.locale_wrapper,
     skip_presence: game.value.skip_presence,
+    pseudo_fullscreen: game.value.pseudo_fullscreen,
   };
 }
 
@@ -431,6 +433,7 @@ async function onSave() {
     locale_profile_guid: form.value.locale_profile_guid?.trim() || null,
     locale_wrapper: form.value.locale_wrapper,
     skip_presence: form.value.skip_presence,
+    pseudo_fullscreen: form.value.pseudo_fullscreen,
   });
   editing.value = false;
 }
@@ -689,6 +692,14 @@ async function onDelete() {
                 @change="form.skip_presence = ($event.target as HTMLInputElement).checked ? 1 : 0"
               />
               {{ t("gameDetail.skipPresence") }}
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                :checked="form.pseudo_fullscreen === 1"
+                @change="form.pseudo_fullscreen = ($event.target as HTMLInputElement).checked ? 1 : 0"
+              />
+              {{ t("gameDetail.pseudoFullscreen") }}
             </label>
             <label>
               {{ t("gameDetail.wrapperProfile") }}

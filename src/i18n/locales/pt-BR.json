@@ -69,7 +69,8 @@
     "revokeTitleOnly": "Revogar tradução do título",
     "revokeContentOnly": "Revogar tradução do conteúdo",
     "revokeBoth": "Revogar tradução do título e conteúdo",
-    "skipPresence": "Ocultar este jogo das integrações de presença"
+    "skipPresence": "Ocultar este jogo das integrações de presença",
+    "pseudoFullscreen": "Executar em pseudo tela cheia sem bordas"
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",

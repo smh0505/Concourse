@@ -69,7 +69,8 @@
     "revokeTitleOnly": "Revocar traducción del título",
     "revokeContentOnly": "Revocar traducción del contenido",
     "revokeBoth": "Revocar traducción de título y contenido",
-    "skipPresence": "Ocultar este juego de las integraciones de presencia"
+    "skipPresence": "Ocultar este juego de las integraciones de presencia",
+    "pseudoFullscreen": "Ejecutar en pantalla completa simulada sin bordes"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

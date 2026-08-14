@@ -69,7 +69,8 @@
     "revokeTitleOnly": "Titelübersetzung widerrufen",
     "revokeContentOnly": "Inhaltsübersetzung widerrufen",
     "revokeBoth": "Titel- und Inhaltsübersetzung widerrufen",
-    "skipPresence": "Dieses Spiel aus Präsenz-Integrationen ausblenden"
+    "skipPresence": "Dieses Spiel aus Präsenz-Integrationen ausblenden",
+    "pseudoFullscreen": "Im rahmenlosen Pseudo-Vollbild ausführen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

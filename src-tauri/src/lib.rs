@@ -10,6 +10,7 @@ mod obs_websocket;
 mod plugin_installer;
 mod plugin_registry;
 mod plugin_verification;
+mod pseudo_fullscreen;
 mod quick_launch;
 mod translation;
 mod tray;

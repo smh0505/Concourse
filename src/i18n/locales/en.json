@@ -323,6 +323,8 @@
     "applySuccess": "Applied. Now listening on port {port}.",
     "alreadyApplied": "Already listening on port {port}.",
     "testSuccess": "Overlay responded successfully on port {port}.",
+    "applyFailure": "Failed to apply: {error}",
+    "testFailure": "Test failed: {error}",
     "hint": "Point an OBS Browser Source at:",
     "statusHint": "For a custom overlay, raw JSON status is available at:"
   }

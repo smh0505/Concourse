@@ -58,7 +58,7 @@ async function applyPort() {
     applyMessage.value = t("obsPresence.applySuccess", { port });
   } catch (e) {
     applyStatus.value = "error";
-    applyMessage.value = String(e);
+    applyMessage.value = t("obsPresence.applyFailure", { error: String(e) });
   }
 }
 
@@ -80,7 +80,7 @@ async function testConnection() {
     testMessage.value = t("obsPresence.testSuccess", { port });
   } catch (e) {
     testStatus.value = "error";
-    testMessage.value = String(e);
+    testMessage.value = t("obsPresence.testFailure", { error: String(e) });
   }
 }
 </script>

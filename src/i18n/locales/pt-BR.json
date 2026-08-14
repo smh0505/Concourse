@@ -323,6 +323,8 @@
     "applySuccess": "Aplicado. Agora ouvindo na porta {port}.",
     "alreadyApplied": "Já ouvindo na porta {port}.",
     "testSuccess": "A sobreposição respondeu com sucesso na porta {port}.",
+    "applyFailure": "Falha ao aplicar: {error}",
+    "testFailure": "Falha no teste: {error}",
     "hint": "Aponte uma Fonte de Navegador do OBS para:",
     "statusHint": "Para uma sobreposição personalizada, o status JSON bruto está disponível em:"
   }

@@ -323,6 +323,8 @@
     "applySuccess": "Applicato. Ora in ascolto sulla porta {port}.",
     "alreadyApplied": "Già in ascolto sulla porta {port}.",
     "testSuccess": "La sovrimpressione ha risposto correttamente sulla porta {port}.",
+    "applyFailure": "Applicazione non riuscita: {error}",
+    "testFailure": "Test non riuscito: {error}",
     "hint": "Punta una Browser Source di OBS a:",
     "statusHint": "Per una sovrimpressione personalizzata, lo stato JSON grezzo è disponibile su:"
   }

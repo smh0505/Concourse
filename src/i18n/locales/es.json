@@ -323,6 +323,8 @@
     "applySuccess": "Aplicado. Ahora escuchando en el puerto {port}.",
     "alreadyApplied": "Ya está escuchando en el puerto {port}.",
     "testSuccess": "La superposición respondió correctamente en el puerto {port}.",
+    "applyFailure": "Error al aplicar: {error}",
+    "testFailure": "La prueba falló: {error}",
     "hint": "Apunta una fuente de navegador de OBS a:",
     "statusHint": "Para una superposición personalizada, el estado JSON en bruto está disponible en:"
   }

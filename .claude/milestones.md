@@ -539,7 +539,14 @@ auth research):
   deprioritized by the user - audience/atmosphere mismatch, not a technical one: far fewer
   people use Slack for gaming-community chat than Discord, so a Slack presence feature would
   reach almost nobody relevant. Not dropped as unviable, just parked, same as Matrix
-- [ ] Twitch - PKCE, safe to hardcode; best livestreaming-platform fit found - **next up**
+- [ ] Twitch - **correction**: live-checked `dev.twitch.tv`'s own current docs, the earlier
+  "PKCE, safe to hardcode" note was wrong. Authorization Code grant requires `client_secret`
+  unconditionally (confidential clients only) - no PKCE variant of it exists. Public clients are
+  restricted to the **Device Code Grant** flow instead (same shape as smart-TV/console pairing:
+  user visits a URL, enters a short code, app polls until approved) - still genuinely
+  secret-free and safe to hardcode a shared `client_id`, just a different UX pattern than
+  Discord/Slack's redirect-URI flow, no local HTTP listener needed at all. Best
+  livestreaming-platform fit found - **next up, pending user confirmation on the flow**
 - [ ] Bluesky (AT Protocol) - PKCE + DPoP, no shared secret, needs a hosted client-metadata URL
 - [ ] Chzzk, Kick, SOOP - need a real per-user `client_secret`, same friction as IGDB. SOOP also
   gate-keeps API access behind a manual partnership application (~10 business days), on top of

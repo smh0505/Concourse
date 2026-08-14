@@ -6602,3 +6602,30 @@ party server on the open internet, not something running on the user's own machi
 candidate in the first place. Self-hosting ntfy would restore that property; using the public
 instance is a deliberate trade of privacy for zero setup. Worth flagging explicitly rather than
 assuming it's as clean as the OBS case just because the request itself needs no credentials.
+
+### Milestone 29: Slack parked (audience fit), Twitch's auth model corrected
+
+User decided against building Slack despite it being technically ready - not a viability
+question, an audience one: Slack's presence feature is built for "away at lunch"/coworker-status
+use, and far fewer people run a gaming-community Slack than a gaming-community Discord. A
+correctly-built feature nobody's audience would see isn't worth building first. Parked, not
+dropped - the OAuth/PKCE research already done stays valid if this changes later.
+
+Moved to Twitch as the next candidate - and caught a real error in the process. Before sending
+the user through Twitch app setup, re-verified live against `dev.twitch.tv`'s current docs
+(the original "Twitch - PKCE, safe to hardcode" note in the M29 candidate list predates this
+session's live-check discipline and turned out to be wrong). Twitch's Authorization Code grant
+requires `client_secret` unconditionally - confidential clients only, no PKCE variant exists for
+it at all, unlike Slack/Discord. Public clients (a desktop app with no way to protect a secret,
+like Concourse) are restricted to a completely different flow: **Device Code Grant** -
+`POST /oauth2/device` returns a short user-facing code and verification URL, the user approves
+on Twitch's own site (any device/browser), Concourse polls `/oauth2/token` until approved. Same
+UX shape as pairing a smart TV or game console. Still genuinely secret-free and safe to hardcode
+a shared `client_id` - just structurally different from the redirect-URI + PKCE pattern
+Discord/Slack/OBS's own OAuth-shaped pieces all use, and notably needs no local HTTP listener at
+all (simpler infrastructure than Slack's plan would have needed).
+
+Real lesson worth keeping: verify live against current docs before asking the user to do
+external setup work, even for platforms already "researched" earlier in the same milestone -
+that earlier Twitch note was wrong for an unknown amount of time before this check caught it.
+Not started - pending user confirmation on whether the device-code UX pattern is acceptable.

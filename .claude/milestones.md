@@ -717,9 +717,14 @@ the stretch list below for candidates).
   overlay
 - [x] Multi-monitor targeting resolved - the game's own display (`MonitorFromWindow`), per user's
   explicit pick over always-primary
-- [ ] Known limitation, not solved: the letterbox ratio is computed from whatever client size the
-  window has *at the moment it's found*, which may be before a game changes its own resolution
-  post-launch - no general fix attempted this pass
+- [x] Handles a launcher window closing and being replaced by the real game window (same
+  process, new `HWND`) - `pseudo_fullscreen::refresh()`, checked periodically off each tracking
+  thread's own existing poll tick. Confirmed via research this matches how Borderless Gaming
+  (the reference tool for this feature) itself handles the same scenario
+- [ ] Known limitation, not solved (same as Borderless Gaming - confirmed via reading its own
+  source, not assumed): the letterbox ratio is computed once from whatever client size the
+  window has at the moment styling is applied - a game resizing its *own still-alive* window
+  later isn't caught, only a window closing/being replaced is
 
 **Window behavior, stretch - speculative, none started, no tab/kind unless one of these is
 actually built.** Grouped here since they'd share the same "act on the game's window after

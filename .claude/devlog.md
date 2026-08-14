@@ -6836,3 +6836,50 @@ exists, not just whatever existed at the single moment Phase 1 first detected "s
 
 Confirmed working after this fix. Manual end-to-end verification (direct-exe launch, then a real
 Steam title) both pass.
+
+### Milestone 39 follow-up: window-replacement handling, scoped by research first
+
+User raised two real edge cases against the documented "known limitation" - what if a game's
+resolution changes minutes into a session (not caught by a short post-launch stabilization
+check), and what if the initial window closes entirely to open a different real game window.
+Asked to research how existing tools handle both before building anything, rather than guessing
+at scope.
+
+Read the actual source of `andrewmd5/Borderless-Gaming` (a fork of the original `Codeusa`
+project, GPL-2.0, the de facto reference tool for this exact feature) directly - both
+`Manipulation.cs` (the styling logic) and `Core/ProcessWatcher.cs` (`UpdateProcesses()`).
+Findings, not assumed:
+
+- **Late resolution change on an already-styled, still-alive window**: confirmed unsolved even
+  there. `MakeWindowBorderless` applies once; no `WM_SIZE` hook, no timer, no re-check. A
+  `MadeBorderlessAttempts` counter exists only to avoid retrying a *failed* attempt, not to
+  catch a legitimate later resize. This is the accepted, industry-standard limitation - not a
+  gap unique to this implementation. Left as-is, documented rather than "solved" with something
+  more elaborate than the reference tool itself attempts.
+- **Window replaced (launcher closes, real game window opens)**: this one they *do* handle,
+  via periodic re-scanning rather than tracking one window's identity - `ProcessWatcher.
+  UpdateProcesses()` runs on a timer, prunes any tracked window that closed or changed title
+  (cleaning up its borderless state), and separately detects brand-new matching windows as fresh
+  entries.
+
+Recalibrated the fix to match that scope exactly, rather than the originally-proposed full
+continuous resize-tracking monitor (which would have been *more* than the reference tool itself
+attempts - not a fix to actually apply). `apply()`'s styling logic split out into
+`apply_to_hwnd(hwnd)`; new `refresh(state, candidate_pids)` checks whether the tracked `HWND` is
+still valid (`IsWindow`) and, only if not, tears down the orphaned overlay and re-searches
+`candidate_pids` for whatever window exists now, applying fresh styling to it. Deliberately a
+single lookup attempt per call (not `apply()`'s multi-second first-launch retry), since it's
+already being called repeatedly.
+
+Wired into both tracking threads' *existing* poll ticks rather than a new timer -
+`track_folder_playtime`'s Phase 2 loop already runs every 3s, so `refresh()` just piggybacks on
+that. `launch_game` didn't have an equivalent tick (it used a single blocking `child.wait()`) -
+changed to poll via `child.try_wait()` in a 3s loop instead, but only when `pseudo_fullscreen`
+is actually enabled for that launch, preserving the simpler blocking-wait behavior (no added
+CPU/wakeup overhead) for the common case where it isn't.
+
+License note, since research meant reading a GPL-2.0 project's source directly: no impact on
+Concourse's own MIT license. Nothing was copied - only the *behavior* was read and understood,
+then reimplemented independently in Rust against a completely different API (`windows` crate vs.
+.NET P/Invoke). GPL's copyleft applies to copying/deriving code, not to reading public source for
+research and writing an unrelated independent implementation.

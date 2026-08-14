@@ -722,6 +722,29 @@ after launch" mechanism as pseudo-fullscreen above.
 - [ ] Forced resolution/DPI override at launch - not started, riskiest of the three (global
   desktop-resolution side effects vs. a separate per-process DPI-awareness mechanism)
 
+## Milestone 40 — Real-Time Game Upscaling (not started)
+Like Lossless Scaling: capture a running game's frames live and upscale them via GPU shaders to
+fill the display, rather than the game rendering natively at full resolution. User-proposed.
+
+Genuinely different kind of feature from M39's family - not Win32 window manipulation, a live
+GPU rendering pipeline. No precedent anywhere in this codebase (no D3D/`wgpu` dependency exists
+yet). Real open questions before any code, not a quick stretch item:
+- [ ] Capture mechanism: Windows.Graphics.Capture (WinRT, per-window, Windows 10 1903+) is almost
+  certainly right over DXGI Desktop Duplication (whole-output only, can't target one window)
+- [ ] Upscaling algorithm: FSR 1.0 (open-source, spatial-only - FSR 2+ needs motion vectors from
+  the game itself, not available for an arbitrary third-party game) vs. NIS (also open, spatial,
+  vendor-agnostic despite the branding) vs. a much simpler bicubic/Lanczos filter (lower quality,
+  far smaller lift)
+- [ ] Render pipeline/dependency choice: raw `windows` crate D3D11 bindings vs. a higher-level
+  crate like `wgpu` - a real new category of dependency for this project
+- [ ] UX fit: a smarter fill for pseudo-fullscreen's existing letterbox margin, or a fully
+  separate capture-and-replace mode closer to how Lossless Scaling itself presents
+- [ ] Latency/GPU cost: real-time capture+upscale+present adds real overhead on top of the
+  game's own rendering - worth deciding upfront whether this targets relaxed/single-player games
+  only or is meant as a general-purpose feature
+- [ ] Per-game opt-in likely (same reasoning as pseudo_fullscreen/always_on_top), given the
+  latency/GPU cost tradeoff isn't something every game should pay
+
 ---
 
 # Icebox

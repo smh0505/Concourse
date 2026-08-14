@@ -688,11 +688,11 @@ enabling a new metadata provider retroactively.
 - [ ] Rate-limit awareness - bulk-fetching against SGDB/IGDB/RAWG/etc. for every game at once
   risks hitting per-provider API rate limits
 
-## Milestone 39 — Borderless Window Pseudo-Fullscreen (not started)
+## Milestone 39 — Borderless Window Pseudo-Fullscreen
 Pseudo-fullscreen: strips a game window's border/title bar and resizes/repositions it to fill
 the display while preserving the game's own aspect ratio - letterbox/pillarbox filler bars fill
 the remaining margin instead of stretching the image, unlike a naive borderless-stretch. Same
-idea as third-party tools like Borderless Gaming. User-proposed, not scoped in code yet.
+idea as third-party tools like Borderless Gaming. User-proposed.
 
 Built as a **built-in feature, not a plugin** - same call Milestone 28 made for Discord presence
 before OBS gave it a second real target to justify generalizing (see M29). Exactly one
@@ -702,17 +702,24 @@ window-styling hook anyway - forcing it in would mean changing the shared WIT in
 contract (affecting the existing Locale Emulator plugin) for a single, unproven consumer.
 Revisit as a real plugin kind only if a second such window-hook idea actually gets built (see
 the stretch list below for candidates).
-- [ ] Settings toggle (global or per-game, TBD) to enable pseudo-fullscreen for a launch
-- [ ] Windows-only mechanism (matches this project's other Windows-only pieces - `winreg`,
-  `steam.rs`'s registry reads): find the launched game's window from its known PID, strip
-  `WS_CAPTION`/`WS_THICKFRAME` via `SetWindowLongPtr`, `SetWindowPos` to full display bounds
-- [ ] Compute the letterboxed rect from the game's *original* aspect ratio (captured before
-  restyling) against the display's resolution - likely a separate always-black, click-through
-  overlay window behind the game, rather than painting into the game's own client area
-- [ ] Revert cleanly on `game-session-ended` - restore window style/rect, tear down the overlay
-- [ ] Multi-monitor targeting undecided (which display's bounds - the game's own, or primary?)
-- [ ] Research whether a game's true resolution/aspect ratio is knowable before render starts,
-  since some games change resolution *after* window creation
+- [x] Settings toggle - per-game opt-in (user's explicit pick over a global setting): some games
+  already run real exclusive fullscreen fine and don't need this
+- [x] Windows-only mechanism (`windows` crate, matches this project's other Windows-only pieces -
+  `winreg`, `steam.rs`'s registry reads): finds the launched game's window from its known PID,
+  strips `WS_CAPTION`/`WS_THICKFRAME` via `SetWindowLongPtrW`, resizes (not stretches) via
+  `SetWindowPos`
+- [x] Letterboxed rect computed from the game's own client size (`GetClientRect`, read at the
+  moment its window is found) against the target display's bounds - a dedicated black `WS_POPUP`
+  overlay window (own OS thread, own message loop) fills the margin, placed directly behind the
+  game window in z-order rather than painting into its own client area
+- [x] Reverts cleanly - `launcher.rs`'s existing tracking threads call `revert()` right before
+  their `game-session-ended` emit, restoring the original window style/rect and tearing down the
+  overlay
+- [x] Multi-monitor targeting resolved - the game's own display (`MonitorFromWindow`), per user's
+  explicit pick over always-primary
+- [ ] Known limitation, not solved: the letterbox ratio is computed from whatever client size the
+  window has *at the moment it's found*, which may be before a game changes its own resolution
+  post-launch - no general fix attempted this pass
 
 **Window behavior, stretch - speculative, none started, no tab/kind unless one of these is
 actually built.** Grouped here since they'd share the same "act on the game's window after

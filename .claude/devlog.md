@@ -6738,3 +6738,79 @@ positioning avoiding third-party integration surface. A "GameVox API v1" hit on 
 (`gamevoxapi.docs.apiary.io`) couldn't be confirmed as belonging to this specific platform
 (Apiary hosts many abandoned/generic docs under reused names) and returned no usable content
 regardless - not treated as evidence either way, just inconclusive. No credible path found.
+
+## Milestone 39 — Borderless Window Pseudo-Fullscreen
+
+Two product decisions confirmed with the user before any code: per-game opt-in (not global -
+some games already run real exclusive fullscreen fine), and target whichever display the game's
+own window opened on (not always-primary). Both directly shaped the implementation below.
+
+New `pseudo_fullscreen.rs`, added the `windows` crate (`0.62`, Windows-only target dependency,
+features: `Win32_Foundation`/`Win32_UI_WindowsAndMessaging`/`Win32_Graphics_Gdi`/
+`Win32_System_Threading`/`Win32_System_LibraryLoader`) after confirming exact function
+signatures by reading the crate's own generated source directly (same discipline as checking
+`tiny_http`/`obws` earlier this session) rather than guessing at an unfamiliar, code-genned
+binding crate's API shape.
+
+**Finding the game's window.** `EnumWindows` with a callback matching `GetWindowThreadProcessId`
+against the game's known PID (from `child.id()` for direct-exe launches, or the PID
+`launcher.rs`'s Phase 1 folder-poll already finds for URI-launched ones - `find_process_under_folder`
+is a new PID-returning sibling of the existing bool-returning `any_process_under_folder`, kept
+separate rather than changing that function's signature and touching its other caller). Wrapped
+in a short retry loop (`wait_for_window`, up to 20 attempts × 250ms) since a game's real
+top-level window can take a moment to exist even after its process is confirmed running.
+
+**Resizing, not stretching.** `GetClientRect` at the moment the window is found gives the game's
+own content dimensions; `letterbox_rect` contain-fits that aspect ratio within the target
+monitor's bounds (`MonitorFromWindow` → `GetMonitorInfoW`), centered. `WS_CAPTION`/
+`WS_THICKFRAME` stripped from the window's style (`GetWindowLongPtrW`/`SetWindowLongPtrW`
+around `GWL_STYLE`), then `SetWindowPos` moves/resizes to the letterboxed rect with
+`SWP_FRAMECHANGED` (forces the style change to actually take visual effect). The game's own
+rendered content keeps its real aspect ratio; it just isn't stretched to fill the monitor.
+
+**The letterbox margin itself.** A plain black `WS_POPUP` overlay window covers the full monitor
+bounds, `SetWindowPos`'d with `hwndInsertAfter` set to the game's own `HWND` - Win32 places a
+window immediately *after* (i.e. visually behind) whatever `HWND` is passed there, so this puts
+the overlay directly behind the game window without needing any other z-order gymnastics.
+`WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE` keeps it out of the taskbar/alt-tab and stops it from ever
+stealing focus.
+
+**Why the overlay needs its own thread.** A Win32 window must be pumped (`GetMessageW`/
+`DispatchMessageW`) by the exact OS thread that created it - and the thread available here is
+already busy inside `launcher.rs`'s existing `child.wait()`/folder-poll loop tracking the game's
+process, which can't also block in a message loop simultaneously. `spawn_overlay` runs the
+window's entire lifecycle (class registration, creation, positioning, message loop) on a
+dedicated thread, reporting its `HWND` back to the caller over a one-shot channel once created.
+Teardown: the tracking thread calls `PostMessageW(overlay_hwnd, WM_CLOSE, ...)` from outside;
+`DefWindowProcW`'s default `WM_CLOSE` handling calls `DestroyWindow`, which triggers `WM_DESTROY`,
+whose handler in `overlay_wndproc` calls `PostQuitMessage` - that's what makes `GetMessageW`
+return `false` and the message-loop thread actually exit. `revert()` joins that thread before
+returning, so cleanup is synchronous from the tracking thread's point of view.
+
+**Wiring, deliberately minimal.** No event, no plugin, no store round-trip - `launch_game`/
+`track_folder_playtime` each gained a plain `pseudo_fullscreen: bool` parameter (`library.ts`
+passes `game.pseudo_fullscreen === 1` straight through), and call `pseudo_fullscreen::apply()`/
+`revert()` directly inside their own existing tracking threads, right after the PID is known and
+right before their existing `game-session-ended` emit respectively. No extensibility need here
+(unlike presence, which genuinely needed multiple swappable implementations) - matches the
+"built-in, not a plugin" call made before writing any code.
+
+**HWNDs never cross threads except through the one deliberate channel handoff above** - `HWND`
+wraps a raw pointer (`*mut c_void`), not `Send`. Every other use of a game's `HWND` (finding it,
+styling it, computing its rect, tearing things down) happens synchronously within whichever
+single thread already owns that lifecycle stage, by design - never stored in shared/managed
+state, never passed to `tauri::State`.
+
+New `pseudo_fullscreen` column (migration v8) - per-game, defaults off. `GameDetail.vue` gained a
+checkbox mirroring `skip_presence`'s existing pattern exactly.
+
+Known limitation, called out rather than silently accepted: the letterbox aspect ratio is
+computed from whatever `GetClientRect` reports *at the moment the window is found*, which for
+some games may be before they change their own resolution post-launch. No general fix attempted
+- would need either polling until the client rect stabilizes across a few checks, or a
+game-specific signal this project has no way to observe generically. Left as a documented gap,
+not solved this pass.
+
+Verified via `cargo check` (both the Rust module and its `launcher.rs` integration) and
+`bun run build` (frontend). Not yet manually tested against a real game - Windows GUI behavior
+like this can't be verified from this environment; the user will need to confirm it visually.

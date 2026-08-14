@@ -313,6 +313,7 @@
     "noMatches": "Nenhum jogo correspondente."
   },
   "obsPresence": {
-    "hint": "Aponte uma Fonte de Navegador do OBS para:"
+    "hint": "Aponte uma Fonte de Navegador do OBS para:",
+    "statusHint": "Para uma sobreposição personalizada, o status JSON bruto está disponível em:"
   }
 }

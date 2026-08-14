@@ -313,6 +313,7 @@
     "noMatches": "Keine passenden Spiele."
   },
   "obsPresence": {
-    "hint": "OBS-Browserquelle auf folgende Adresse richten:"
+    "hint": "OBS-Browserquelle auf folgende Adresse richten:",
+    "statusHint": "Für ein individuelles Overlay ist der rohe JSON-Status verfügbar unter:"
   }
 }

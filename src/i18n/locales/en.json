@@ -313,6 +313,7 @@
     "noMatches": "No matching games."
   },
   "obsPresence": {
-    "hint": "Point an OBS Browser Source at:"
+    "hint": "Point an OBS Browser Source at:",
+    "statusHint": "For a custom overlay, raw JSON status is available at:"
   }
 }

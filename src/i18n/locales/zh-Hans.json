@@ -313,6 +313,7 @@
     "noMatches": "没有匹配的游戏。"
   },
   "obsPresence": {
-    "hint": "将 OBS 浏览器源指向："
+    "hint": "将 OBS 浏览器源指向：",
+    "statusHint": "如需自定义叠加层，原始 JSON 状态可在以下地址获取："
   }
 }

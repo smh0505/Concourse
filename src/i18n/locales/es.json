@@ -313,6 +313,7 @@
     "noMatches": "No hay juegos coincidentes."
   },
   "obsPresence": {
-    "hint": "Apunta una fuente de navegador de OBS a:"
+    "hint": "Apunta una fuente de navegador de OBS a:",
+    "statusHint": "Para una superposición personalizada, el estado JSON en bruto está disponible en:"
   }
 }

@@ -1,8 +1,9 @@
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use serde::Serialize;
 use tauri::{AppHandle, Manager};
-use tiny_http::{Header, Response, Server};
+use tiny_http::{Header, Method, Response, Server};
 
 /// Fixed for this pass (not user-configurable in Settings yet) - the OBS plugin's own
 /// settingsComponent shows this URL for the user to paste into a Browser Source.
@@ -106,6 +107,27 @@ fn render_page(now_playing: &Option<NowPlaying>) -> String {
     )
 }
 
+/// JSON shape for `/status` - lets a streamer build a fully custom overlay in their own HTML/
+/// CSS/JS instead of being stuck with `render_page`'s fixed layout.
+#[derive(Serialize)]
+struct NowPlayingStatus {
+    title: Option<String>,
+    cover_url: Option<String>,
+    started_at: Option<u64>,
+}
+
+fn render_status_json(now_playing: &Option<NowPlaying>) -> String {
+    let status = match now_playing {
+        Some(np) => NowPlayingStatus {
+            title: Some(np.title.clone()),
+            cover_url: np.cover_url.clone(),
+            started_at: Some(np.started_at),
+        },
+        None => NowPlayingStatus { title: None, cover_url: None, started_at: None },
+    };
+    serde_json::to_string(&status).unwrap_or_else(|_| "{}".to_string())
+}
+
 fn html_escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -138,10 +160,20 @@ pub fn start(app: AppHandle) {
                     started_at: np.started_at,
                 })
             };
-            let html = render_page(&now_playing_snapshot);
-            let header = Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..])
-                .expect("static header is valid");
-            let _ = request.respond(Response::from_string(html).with_header(header));
+            let is_status = *request.method() == Method::Get && request.url() == "/status";
+            if is_status {
+                let json = render_status_json(&now_playing_snapshot);
+                let header =
+                    Header::from_bytes(&b"Content-Type"[..], &b"application/json; charset=utf-8"[..])
+                        .expect("static header is valid");
+                let _ = request.respond(Response::from_string(json).with_header(header));
+            } else {
+                let html = render_page(&now_playing_snapshot);
+                let header =
+                    Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..])
+                        .expect("static header is valid");
+                let _ = request.respond(Response::from_string(html).with_header(header));
+            }
         }
     });
 }

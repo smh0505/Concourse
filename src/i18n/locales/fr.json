@@ -313,6 +313,7 @@
     "noMatches": "Aucun jeu correspondant."
   },
   "obsPresence": {
-    "hint": "Pointez une source navigateur OBS vers :"
+    "hint": "Pointez une source navigateur OBS vers :",
+    "statusHint": "Pour une incrustation personnalisée, le statut JSON brut est disponible à :"
   }
 }

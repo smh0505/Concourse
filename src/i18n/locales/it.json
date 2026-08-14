@@ -313,6 +313,7 @@
     "noMatches": "Nessun gioco corrispondente."
   },
   "obsPresence": {
-    "hint": "Punta una Browser Source di OBS a:"
+    "hint": "Punta una Browser Source di OBS a:",
+    "statusHint": "Per una sovrimpressione personalizzata, lo stato JSON grezzo è disponibile su:"
   }
 }

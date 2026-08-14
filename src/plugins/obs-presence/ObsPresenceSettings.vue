@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 // Must match src-tauri/src/obs_presence.rs's PORT constant - fixed for this pass, not
 // user-configurable yet (Milestone 29's own explicitly-deferred scope).
 const OBS_PRESENCE_URL = "http://localhost:47474/";
+const OBS_PRESENCE_STATUS_URL = "http://localhost:47474/status";
 
 const { t } = useI18n();
 </script>
@@ -12,6 +13,10 @@ const { t } = useI18n();
   <p class="obs-presence-hint">
     {{ t("obsPresence.hint") }}
     <code>{{ OBS_PRESENCE_URL }}</code>
+  </p>
+  <p class="obs-presence-hint">
+    {{ t("obsPresence.statusHint") }}
+    <code>{{ OBS_PRESENCE_STATUS_URL }}</code>
   </p>
 </template>
 

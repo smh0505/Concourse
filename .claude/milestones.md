@@ -529,6 +529,8 @@ Generalizes Milestone 28's Discord-only integration into a real multi-enable plu
 - [x] Real `obs-websocket` integration - scene auto-switch on game launch/exit (`obws` crate)
 - [x] Configurable overlay corner - card anchors to any screen corner, cover art flips to the
   near edge (added ad hoc)
+- [x] Title/elapsed stacked on two lines instead of one row; overflowing titles marquee
+  instead of clipping (added ad hoc)
 
 **Candidate presence platforms researched, not built** (see devlog for the full per-platform
 auth research):

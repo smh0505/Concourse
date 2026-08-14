@@ -6445,3 +6445,22 @@ per-item custom logic, so the generic loop stays simpler). New `cornerLabel`/`co
 `cornerTopRight`/`cornerBottomLeft`/`cornerBottomRight` i18n keys across all 10 locales.
 Persisted/re-applied at boot the same way template/mode/alert-seconds already are
 (`applyPersistedObsStyle` in `presence.ts`).
+
+### OBS webhook follow-up: two-line title/elapsed, marquee for overflowing titles
+
+Added ad hoc after noticing title and elapsed time sat side-by-side in one row rather than
+stacked. Restructured `.info`'s children from `[cover, title, elapsed]` to `[cover, .text]`,
+where `.text` (`flex-direction: column`) holds `.title-wrap`/`.title-inner` and `.elapsed` -
+gives the two-line stack for free, and the existing right-corner `.info.reverse` flip still
+works unchanged (still just two flex items to reverse: cover and the whole text column).
+
+Marquee: `.title-wrap` gets a fixed `max-width: 16rem; overflow: hidden; white-space: nowrap`;
+`.title-inner` is the actual scrolling element inside it. A short script block (added to the
+existing `<script>`, runs once on page load, not on the `tick()` interval - title only changes
+via the page's own meta-refresh reload anyway, never live via JS) compares
+`titleInner.scrollWidth` against `titleWrap.clientWidth` - if it overflows, sets
+`--marquee-distance`/`--marquee-duration` CSS custom properties (duration scaled to overflow
+amount, `overflow / 30` seconds, floored at 3s so a barely-overflowing title doesn't animate too
+fast to read) and adds a `.marquee` class triggering a `@keyframes` bounce (rest at 0, scroll to
+`--marquee-distance`, rest, scroll back) rather than a continuous unidirectional loop - a bounce
+reads more naturally for a short one-line title than a scrolling ticker does.

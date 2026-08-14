@@ -6701,3 +6701,40 @@ Storing a user's actual account password (or the long-lived session token it pro
 materially weaker security shape than that - full account access, no scope limiting, no clean
 per-app revocation path the way OAuth tokens have. The presence *feature* now checks out; the
 *auth story* is the weakest of any confirmed-fit candidate researched so far.
+
+### Milestone 29: three more from a Reddit thread (Fluxer, Nerimity, GameVox)
+
+Couldn't fetch the actual Reddit thread the user pointed at (`reddit.com` refused for WebFetch
+across `www.`, the `.json` API path, and `old.reddit.com` - fully blocked in this environment,
+not just rate-limited). User pasted the three platform names from a screenshot instead once the
+image itself proved too low-res to read reliably.
+
+**Fluxer - not viable today, same shape as Twitch/Chzzk/Kick.** A newer open-source Discord
+clone (Erlang/OTP backend, explicitly built "inspired by Discord's architecture"). Live-checked
+its own Mintlify docs (`fluxerapp-fluxer.mintlify.app`) - the general OAuth2 flow (`identify`/
+`email`/`guilds` scopes) requires `client_secret` in the token exchange, confidential-client
+only, no PKCE variant found. More importantly, Fluxer has no Discord-Rich-Presence-style local
+mechanism at all yet - confirmed via their own GitHub issue #131 ("Make something like Discord
+Rich Presence"), open and unimplemented. Nothing to build against today.
+
+**Nerimity - the most promising new find, parked alongside Matrix/TeamSpeak/Stoat.** Unlike
+Fluxer, Nerimity's desktop app genuinely exposes a local RPC WebSocket server for third-party
+rich-presence integration - same trust shape as Discord's IPC (local-only, no OAuth, nothing to
+hardcode/protect). This isn't speculative: a real community-maintained browser extension
+(`Nerimity/nerimity-rpc-extension`) and a Python library (`neripresence` on PyPI) already use
+this exact mechanism for sharing Spotify/YouTube activity. Couldn't pin down the precise
+port/handshake/message-format details though - `docs.nerimity.com` and the extension's own
+README are JS-rendered/incomplete for WebFetch, and the PyPI project page for `neripresence`
+also failed to load meaningfully. Confident the mechanism exists and is the right shape;
+would need to actually run the Nerimity desktop app and inspect the real protocol (or read
+`neripresence`'s source directly via its GitHub repo rather than its PyPI page) before
+implementing - noted as a concrete next step if this gets picked up.
+
+**GameVox - no usable developer API found.** A privacy-first voice-chat app (TeamSpeak/Mumble
+successor, not a Discord-shaped text+voice platform), currently in open beta. Its own marketing
+copy states "no bots and no API setup required" for its core feature (broadcasting to a server) -
+read as a deliberate design choice, not just missing docs, consistent with its privacy-first
+positioning avoiding third-party integration surface. A "GameVox API v1" hit on Apiary
+(`gamevoxapi.docs.apiary.io`) couldn't be confirmed as belonging to this specific platform
+(Apiary hosts many abandoned/generic docs under reused names) and returned no usable content
+regardless - not treated as evidence either way, just inconclusive. No credible path found.

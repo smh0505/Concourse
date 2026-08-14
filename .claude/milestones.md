@@ -560,6 +560,13 @@ auth research, including everything dropped below.
   this same path. Real trade-off though: that's direct password login, not OAuth - no scoped/
   revocable token the way every other confirmed-fit candidate has, a meaningfully weaker
   security shape despite the feature itself now checking out. Small, growing-but-niche audience
+- [ ] Nerimity - parked, not dropped. Confirmed real local RPC WebSocket server on the desktop
+  app, same shape as Discord's IPC (no OAuth, no shared secret) - a real community extension
+  (browser RPC extension) and a Python library (`neripresence`) already use it for Spotify/
+  YouTube activity sharing, so the mechanism is proven, not speculative. Exact port/handshake
+  details weren't pinned down from what's fetchable (docs site is JS-rendered, empty for
+  WebFetch) - would need hands-on verification against the real desktop app before building.
+  Newer/smaller platform than Discord or even TeamSpeak
 
 **Dropped - wrong mechanism, wrong audience, or blocked by a real secret requirement:**
 - Twitch, Chzzk, Kick, SOOP - all overwrite a public *channel's* title/category (broadcast info),
@@ -575,7 +582,12 @@ auth research, including everything dropped below.
 - Steam Rich Presence (needs a real Steamworks App ID), Telegram (no free-text status),
   X/Twitter (API now pay-per-post), YouTube (Desktop-secret safety unclear), Home Assistant (no
   real use case), ntfy.sh (no native outbound relay, third-party glue only), Guilded (no
-  ambient-status API exists at all)
+  ambient-status API exists at all), Fluxer (no Rich-Presence-style local mechanism exists yet -
+  it's an open, unimplemented feature request on their own repo; only path today is general
+  OAuth2, which requires a real `client_secret`, same friction as Chzzk/Kick/SOOP), GameVox (no
+  usable developer/presence API found - marketing copy explicitly says "no bots and no API setup
+  required," suggesting no third-party integration surface by design; a stale/unrelated Apiary
+  doc hit wasn't confirmed as this platform's own)
 
 ## Milestone 30 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a

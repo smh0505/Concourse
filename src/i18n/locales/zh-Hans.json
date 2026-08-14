@@ -321,6 +321,7 @@
     "close": "关闭",
     "invalidPort": "请输入 1 到 65535 之间的端口。",
     "applySuccess": "已应用。现在监听端口 {port}。",
+    "alreadyApplied": "已在监听端口 {port}。",
     "testSuccess": "叠加层在端口 {port} 上响应成功。",
     "hint": "将 OBS 浏览器源指向：",
     "statusHint": "如需自定义叠加层，原始 JSON 状态可在以下地址获取："

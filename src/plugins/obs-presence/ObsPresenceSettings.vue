@@ -39,6 +39,14 @@ async function applyPort() {
     applyMessage.value = t("obsPresence.invalidPort");
     return;
   }
+  // Rebinding to the port already applied would bind the same port twice before releasing the
+  // old listener (set_obs_presence_port always binds new-then-drops-old, so a bad port can't
+  // take down a working overlay) - a guaranteed self-collision, not a real failure.
+  if (port === appliedPort.value) {
+    applyStatus.value = "success";
+    applyMessage.value = t("obsPresence.alreadyApplied", { port });
+    return;
+  }
 
   applyStatus.value = "busy";
   testStatus.value = "idle";

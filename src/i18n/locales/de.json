@@ -321,6 +321,7 @@
     "close": "Schließen",
     "invalidPort": "Gib einen Port zwischen 1 und 65535 ein.",
     "applySuccess": "Angewendet. Lauscht jetzt auf Port {port}.",
+    "alreadyApplied": "Lauscht bereits auf Port {port}.",
     "testSuccess": "Overlay hat auf Port {port} erfolgreich geantwortet.",
     "hint": "OBS-Browserquelle auf folgende Adresse richten:",
     "statusHint": "Für ein individuelles Overlay ist der rohe JSON-Status verfügbar unter:"

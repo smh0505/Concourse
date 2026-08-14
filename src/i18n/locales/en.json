@@ -321,6 +321,7 @@
     "close": "Close",
     "invalidPort": "Enter a port between 1 and 65535.",
     "applySuccess": "Applied. Now listening on port {port}.",
+    "alreadyApplied": "Already listening on port {port}.",
     "testSuccess": "Overlay responded successfully on port {port}.",
     "hint": "Point an OBS Browser Source at:",
     "statusHint": "For a custom overlay, raw JSON status is available at:"

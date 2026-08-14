@@ -549,15 +549,13 @@ auth research):
   (as of the current spec migration) - no shared secret at all. Caveat: still mid-rollout, many
   homeservers may not support the new auth flow yet, forcing a legacy password-login fallback.
   See devlog
-- [ ] Guilded - researched, weak fit: bot-token model (like a Discord bot token, not real OAuth),
-  no documented ambient-status/presence API to actually set a "now playing" indicator
-- [ ] ntfy.sh - different category entirely (personal push notification, not a social platform) -
-  zero-auth by default, just an HTTP POST to a topic. But the public `ntfy.sh` service is a real
-  third party, not local, unlike the OBS webhook idea - would need self-hosting to match that
-  "nothing leaves the machine" bar, or be accepted as a deliberate exception. See devlog
 - Dropped/not viable: Steam Rich Presence (needs a real Steamworks App ID), Telegram (no
   free-text status), X/Twitter (API now pay-per-post), YouTube (Desktop-secret safety unclear),
-  Home Assistant (no real use case)
+  Home Assistant (no real use case), ntfy.sh (user's call - no native outbound relay to other
+  platforms, only inbound push/email-in; forwarding elsewhere needs third-party glue tooling, no
+  real benefit over building the actual target platform's own plugin directly), Guilded (no
+  ambient-status/presence API exists to set a "now playing" indicator at all - doesn't fit
+  regardless of the auth question)
 
 ## Milestone 30 — Multi-Library / Profile Support (not started)
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a

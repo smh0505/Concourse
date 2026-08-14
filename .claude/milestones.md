@@ -538,7 +538,9 @@ auth research):
 - [ ] Slack - PKCE, safe to hardcode like Discord
 - [ ] Twitch - PKCE, safe to hardcode; best livestreaming-platform fit found
 - [ ] Bluesky (AT Protocol) - PKCE + DPoP, no shared secret, needs a hosted client-metadata URL
-- [ ] Chzzk, Kick - need a real per-user `client_secret`, same friction as IGDB
+- [ ] Chzzk, Kick, SOOP - need a real per-user `client_secret`, same friction as IGDB. SOOP also
+  gate-keeps API access behind a manual partnership application (~10 business days), on top of
+  the secret
 - [ ] Mastodon/Fediverse - researched: structurally different resolution than every other
   candidate here (no single shared secret to protect at all), but not started. See devlog
 - Dropped/not viable: Steam Rich Presence (needs a real Steamworks App ID), Telegram (no

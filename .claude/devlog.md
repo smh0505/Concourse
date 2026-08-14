@@ -6523,3 +6523,25 @@ a real instance - unlike platforms researched via their own current developer do
 M29 (Twitch, Slack, Bluesky, Chzzk, Kick), no live doc/API check was done here. Worth confirming
 against a real instance's current `/api/v1/apps` and `/oauth/token` behavior before committing
 to an implementation plan, not just building from this summary alone. Not started.
+
+### Milestone 29 candidate research: SOOP (formerly AfreecaTV)
+
+Live-verified via SOOP's own current API docs (`openapi.sooplive.com/apidoc`, fetched directly),
+same rigor as the Twitch/Slack/Bluesky/Chzzk/Kick research earlier in M29.
+
+**Confirmed not viable without per-user credentials or a server-side proxy** - same category as
+Chzzk/Kick. Token endpoint is `POST https://openapi.sooplive.com/auth/token`, and the docs state
+plainly that `client_secret` is a required parameter alongside `client_id`/`grant_type`/`code`
+for the authorization-code exchange - no PKCE, no `code_challenge`/`code_verifier`, no public-
+client mechanism anywhere in the documented flow. Standard confidential-client-only OAuth 2.0.
+
+Worse friction than Chzzk on one axis: API access itself is gated behind a manual "Partnership
+Application" review (`Support > Partnership Application` in SOOP's developer portal), with SOOP
+stating up to 10 business days turnaround before an API key is even issued - this is a
+per-*application* gate (i.e. Concourse itself would need to apply and wait), separate from and
+in addition to the per-*user* `client_secret` friction every user would still individually hit
+even after that. Two layers of friction stacked, not one.
+
+Scopes weren't clearly enumerated in what's publicly documented - moot anyway given the
+confidential-client requirement already rules this out on the same grounds as Chzzk/Kick.
+Not started, not a strong candidate.

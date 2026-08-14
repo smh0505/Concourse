@@ -101,7 +101,26 @@ function setTileRef(index: number, el: Element | ComponentPublicInstance | null)
   }
 }
 
-watch(focusedTile, (el) => el?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+/** Plain `scrollIntoView({ block: "nearest" })` stops as soon as the tile itself is visible - it
+ *  has no notion of `.big-picture`'s own padding beyond the tile's bounding box, so the last bit
+ *  of top/bottom padding never scrolls into view once the tile no longer needs it to. Force the
+ *  container to its true scroll extremes when the focused tile is in the first/last row instead. */
+watch(focusedTile, (el) => {
+  if (!el) return;
+  const container = rootRef.value;
+  const cols = Math.max(1, columns.value);
+  const count = library.games.length;
+  const row = Math.floor(focusedIndex.value / cols);
+  const lastRow = Math.floor((count - 1) / cols);
+
+  if (container && row === 0) {
+    container.scrollTo({ top: 0, behavior: "smooth" });
+  } else if (container && row === lastRow) {
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+  } else {
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+});
 </script>
 
 <template>

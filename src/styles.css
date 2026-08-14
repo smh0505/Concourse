@@ -180,7 +180,7 @@ small {
    aesthetic) via its own scoped rules, which win over this global one on specificity. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-surface1) var(--color-base);
+  scrollbar-color: var(--color-surface1) transparent;
 }
 
 ::-webkit-scrollbar {

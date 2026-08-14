@@ -639,25 +639,21 @@ enabling a new metadata provider retroactively.
 - [ ] Rate-limit awareness - bulk-fetching against SGDB/IGDB/RAWG/etc. for every game at once
   risks hitting per-provider API rate limits
 
-## Milestone 39 — Borderless Window Wrapper Plugin (not started)
+## Milestone 39 — Borderless Window Pseudo-Fullscreen (not started)
 Pseudo-fullscreen: strips a game window's border/title bar and resizes/repositions it to fill
 the display while preserving the game's own aspect ratio - letterbox/pillarbox filler bars fill
 the remaining margin instead of stretching the image, unlike a naive borderless-stretch. Same
 idea as third-party tools like Borderless Gaming. User-proposed, not scoped in code yet.
 
-Real architecture mismatch to resolve first: `WrapperPlugin`'s existing shape
-(`listProfiles(): LocaleProfile[]`, `launch(profileGuid, executablePath)`) is built around Locale
-Emulator's "launch *through* a substitute process" pattern - wrapper plugins are WASM-tier,
-built against a `wrapper-plugin-world` WIT interface with that exact shape
-(`wasm_plugin_runtime.rs`'s `instantiate_wrapper_from_paths`). Borderless-window doesn't launch
-anything itself (the game launches normally through the existing flow) and has no "profile"
-concept - it needs to act on the game's *window* after it appears, a different lifecycle hook
-than "launch substitution." Needs a real design decision before any code:
-- [ ] Decide interface shape: (a) generalize `WrapperPlugin`/the WIT world to also support a
-  post-launch-window-hook variant (touches the existing Locale Emulator plugin's contract too),
-  or (b) a distinct plugin kind (presence's `activate`/`deactivate`-style hook, keyed off the
-  game's window handle once found; single-active like theme/controller, since only one window
-  treatment applies at a time) that doesn't reuse `WrapperPlugin` at all
+Built as a **built-in feature, not a plugin** - same call Milestone 28 made for Discord presence
+before OBS gave it a second real target to justify generalizing (see M29). Exactly one
+implementation exists here too, and `WrapperPlugin`'s existing shape (`listProfiles`/`launch`,
+WASM-tier, built for Locale Emulator's launch-substitution pattern) doesn't fit a post-launch
+window-styling hook anyway - forcing it in would mean changing the shared WIT interface's
+contract (affecting the existing Locale Emulator plugin) for a single, unproven consumer.
+Revisit as a real plugin kind only if a second such window-hook idea actually gets built (see
+the stretch list below for candidates).
+- [ ] Settings toggle (global or per-game, TBD) to enable pseudo-fullscreen for a launch
 - [ ] Windows-only mechanism (matches this project's other Windows-only pieces - `winreg`,
   `steam.rs`'s registry reads): find the launched game's window from its known PID, strip
   `WS_CAPTION`/`WS_THICKFRAME` via `SetWindowLongPtr`, `SetWindowPos` to full display bounds
@@ -668,6 +664,13 @@ than "launch substitution." Needs a real design decision before any code:
 - [ ] Multi-monitor targeting undecided (which display's bounds - the game's own, or primary?)
 - [ ] Research whether a game's true resolution/aspect ratio is knowable before render starts,
   since some games change resolution *after* window creation
+
+**Window behavior, stretch - speculative, none started, no tab/kind unless one of these is
+actually built.** Grouped here since they'd share the same "act on the game's window after
+launch" mechanism as pseudo-fullscreen above, not because any is planned yet.
+- [ ] Always-on-top pinning for the game window
+- [ ] Remembered window position/size per game (restore where you last left it)
+- [ ] Forced resolution/DPI override at launch
 
 ---
 

@@ -709,8 +709,10 @@ built (see the stretch list below). See devlog for the full design/research rati
 - [x] Handles a launcher window closing and being replaced by the real game window
   (`pseudo_fullscreen::refresh()`, piggybacked on each tracking thread's own poll tick) - matches
   how Borderless Gaming (the reference tool) itself handles this, confirmed by reading its source
-- [ ] Known limitation, not solved (same as Borderless Gaming): a game resizing its own
-  still-alive window later isn't caught, only a window closing/being replaced is
+
+Known limitation (same as Borderless Gaming - not solved there either): a game resizing its own
+still-alive window later isn't caught, only a window closing/being replaced is. Iceboxed, see
+below - not an active TODO on this milestone.
 
 **Window behavior, stretch - speculative, none started, no tab/kind unless one of these is
 actually built.** Grouped here since they'd share the same "act on the game's window after
@@ -739,6 +741,16 @@ architecture work (one enum or a per-module hierarchy), no `thiserror` needed. S
 - [ ] Migrate `plugin_installer.rs`/`wasm_plugin_runtime.rs`/`wasm_plugins.rs` (largest cluster)
 - [ ] Migrate the rest (`translation.rs`, `plugin_registry.rs`, `zip_install.rs`,
   `plugin_verification.rs`, `image_utils.rs`, `launcher.rs`, `quick_launch.rs`)
+
+## Pseudo-Fullscreen: Late In-Session Resolution Changes
+From Milestone 39 - a game resizing its own still-alive window well into a session (not a
+launcher-window-replaced case, already handled) isn't caught; the letterbox ratio stays whatever
+it was computed as when styling was first applied. Same unsolved limitation as Borderless
+Gaming, the reference tool for this feature (confirmed by reading its source, not assumed) - no
+general fix attempted, iceboxed rather than treated as an active gap.
+- [ ] Research whether polling `GetClientRect` periodically (not just once) and reapplying the
+  letterbox on a real change is worth the extra overhead, or whether a genuine per-frame signal
+  (e.g. a `WM_SIZE` hook via window subclassing) is needed for it to feel responsive
 
 ## Additional Source Plugins: Emulator/ROM Scanner
 Carried over from Milestone 7, then parked here (no milestone number - see this section's own

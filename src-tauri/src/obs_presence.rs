@@ -204,9 +204,12 @@ fn render_page(now_playing: &Option<NowPlaying>, style: &OverlayStyle) -> String
   const titleInner = document.querySelector(".title-inner");
   if (titleWrap && titleInner) {{
     const overflow = titleInner.scrollWidth - titleWrap.clientWidth;
-    if (overflow > 0) {{
+    // Skip the marquee entirely below a small overflow rather than clamping duration to a
+    // minimum - a duration floor would speed up short overflows to hit it, breaking the
+    // constant-speed (px/sec) scaling every other overflow amount gets.
+    if (overflow > 20) {{
       titleInner.style.setProperty("--marquee-distance", `-${{overflow}}px`);
-      titleInner.style.setProperty("--marquee-duration", `${{Math.max(3, overflow / 30)}}s`);
+      titleInner.style.setProperty("--marquee-duration", `${{overflow / 30}}s`);
       titleInner.classList.add("marquee");
     }}
   }}

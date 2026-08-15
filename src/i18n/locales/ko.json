@@ -151,7 +151,11 @@
     "submit": "게임 추가"
   },
   "bigPicture": {
-    "emptyLibrary": "라이브러리에 게임이 없습니다."
+    "emptyLibrary": "라이브러리에 게임이 없습니다.",
+    "keyboardShift": "Shift",
+    "keyboardShiftOn": "Shift (켜짐)",
+    "keyboardSpace": "스페이스",
+    "keyboardBackspace": "백스페이스"
   },
   "addPlugin": {
     "curatedIntro": "선별된 플러그인 (검토 완료, 해시 고정 - 참고:",

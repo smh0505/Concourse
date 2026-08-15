@@ -32,7 +32,7 @@ import {
 import { AddGame, CandidatePicker } from "./components/desktop/modalForms";
 import { ToastContainer } from "./components/desktop/common";
 import { GameDetail } from "./components/desktop/game";
-import { BigPictureGrid, BigPictureSlideshow } from "./components/bigpicture";
+import { BigPictureGrid, BigPictureSlideshow, BigPictureProfileSwitcher } from "./components/bigpicture";
 import { ProfileSwitcher } from "./components/desktop/profiles";
 
 const { t } = useI18n();
@@ -145,6 +145,14 @@ async function initLibraryAndPlugins() {
 
 onMounted(async () => {
   await appSettings.init();
+  // Real OS fullscreen engages immediately, before a profile is even picked, when the user has
+  // opted into launching straight into Big Picture - the profile picker itself then renders in
+  // Big Picture's own fullscreen console style (BigPictureProfileSwitcher.vue) instead of the
+  // small windowed ProfileSwitcher.vue. Big Picture's palette is hardcoded independent of
+  // theme (see bp-surface's own comment elsewhere), so this doesn't need to wait on theme.init()
+  // below. initLibraryAndPlugins() below still sets this too, for the "profile already
+  // remembered" fast path - harmless to set twice.
+  if (appSettings.autoLaunchBigPicture) bigPicture.value = true;
   await theme.init();
   await profiles.init();
   if (profiles.activeProfileId !== null) await initLibraryAndPlugins();
@@ -184,7 +192,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <ProfileSwitcher v-if="profiles.activeProfileId === null" />
+  <BigPictureProfileSwitcher v-if="profiles.activeProfileId === null && bigPicture" />
+  <ProfileSwitcher v-else-if="profiles.activeProfileId === null" />
 
   <template v-else>
   <div v-if="!bigPicture" class="app-window">

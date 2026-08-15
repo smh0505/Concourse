@@ -151,7 +151,11 @@
     "submit": "Ajouter le jeu"
   },
   "bigPicture": {
-    "emptyLibrary": "Aucun jeu dans la bibliothèque."
+    "emptyLibrary": "Aucun jeu dans la bibliothèque.",
+    "keyboardShift": "Maj",
+    "keyboardShiftOn": "Maj (activé)",
+    "keyboardSpace": "Espace",
+    "keyboardBackspace": "Retour arrière"
   },
   "addPlugin": {
     "curatedIntro": "Plugins sélectionnés (revus, hash figé - voir",

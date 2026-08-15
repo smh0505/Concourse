@@ -151,7 +151,11 @@
     "submit": "Spiel hinzufügen"
   },
   "bigPicture": {
-    "emptyLibrary": "Keine Spiele in der Bibliothek."
+    "emptyLibrary": "Keine Spiele in der Bibliothek.",
+    "keyboardShift": "Umschalt",
+    "keyboardShiftOn": "Umschalt (an)",
+    "keyboardSpace": "Leertaste",
+    "keyboardBackspace": "Rücktaste"
   },
   "addPlugin": {
     "curatedIntro": "Kuratierte Plugins (geprüft, Hash-gepinnt - siehe",

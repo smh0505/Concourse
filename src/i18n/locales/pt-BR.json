@@ -151,7 +151,11 @@
     "submit": "Adicionar jogo"
   },
   "bigPicture": {
-    "emptyLibrary": "Nenhum jogo na biblioteca."
+    "emptyLibrary": "Nenhum jogo na biblioteca.",
+    "keyboardShift": "Shift",
+    "keyboardShiftOn": "Shift (ativado)",
+    "keyboardSpace": "Espaço",
+    "keyboardBackspace": "Backspace"
   },
   "addPlugin": {
     "curatedIntro": "Plugins selecionados (revisados, com hash fixado - veja",

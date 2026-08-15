@@ -17,16 +17,23 @@ function isDirectionActive(
 
 type Direction = "up" | "down" | "left" | "right";
 
-export interface UseGamepadNavOptions {
-  itemCount: () => number;
-  columns: () => number;
-  onSelect: (index: number) => void;
+export interface UseGamepadDirectionsOptions {
+  onUp?: () => void;
+  onDown?: () => void;
+  onLeft?: () => void;
+  onRight?: () => void;
+  onConfirm?: () => void;
   onCancel?: () => void;
 }
 
-export function useGamepadNav(options: UseGamepadNavOptions) {
+/** Low-level building block behind `useGamepadNav` below - raw directional/confirm/cancel
+ *  events with the same held-repeat timing (`repeatDelayMs`/`repeatIntervalMs` from the active
+ *  controller mapping), but no assumption about a uniform grid. `useGamepadNav`'s `move()`
+ *  (index ± columns) is exactly one way to consume these events; `OnScreenKeyboard.vue` is
+ *  another - its rows aren't all the same length, so it tracks its own row/column state off
+ *  these same onUp/onDown/onLeft/onRight calls instead. */
+export function useGamepadDirections(options: UseGamepadDirectionsOptions) {
   const controllerMapping = useControllerMappingStore();
-  const focusedIndex = ref(0);
 
   const heldSince: Partial<Record<Direction, number>> = {};
   let lastRepeatAt: Partial<Record<Direction, number>> = {};
@@ -34,42 +41,36 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
   let cancelWasPressed = false;
   let frameHandle: number | undefined;
 
-  function move(direction: Direction) {
-    const count = options.itemCount();
-    if (count === 0) return;
-    const cols = Math.max(1, options.columns());
-    const current = Math.min(focusedIndex.value, count - 1);
-    const col = current % cols;
-
-    let next = current;
-    if (direction === "up" && current - cols >= 0) next = current - cols;
-    else if (direction === "down" && current + cols < count) next = current + cols;
-    else if (direction === "left" && col > 0) next = current - 1;
-    else if (direction === "right" && col < cols - 1 && current + 1 < count) next = current + 1;
-
-    suppressMouseActivity();
-    focusedIndex.value = next;
-  }
+  const directionHandlers: Record<Direction, (() => void) | undefined> = {
+    up: options.onUp,
+    down: options.onDown,
+    left: options.onLeft,
+    right: options.onRight,
+  };
 
   function handleDirection(direction: Direction, active: boolean, now: number) {
     const { repeatDelayMs = 350, repeatIntervalMs = 130 } = controllerMapping.activeMapping;
+    const handler = directionHandlers[direction];
 
     if (!active) {
       delete heldSince[direction];
       delete lastRepeatAt[direction];
       return;
     }
+    if (!handler) return;
     if (heldSince[direction] === undefined) {
       heldSince[direction] = now;
       lastRepeatAt[direction] = now;
-      move(direction);
+      suppressMouseActivity();
+      handler();
       return;
     }
     const held = now - heldSince[direction]!;
     const sinceLastRepeat = now - (lastRepeatAt[direction] ?? now);
     if (held >= repeatDelayMs && sinceLastRepeat >= repeatIntervalMs) {
       lastRepeatAt[direction] = now;
-      move(direction);
+      suppressMouseActivity();
+      handler();
     }
   }
 
@@ -88,7 +89,7 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
 
       const confirmPressed = isDirectionActive(mapping.buttonConfirm, pad, axisThreshold);
       if (confirmPressed && !confirmWasPressed) {
-        options.onSelect(focusedIndex.value);
+        options.onConfirm?.();
       }
       confirmWasPressed = confirmPressed;
 
@@ -108,6 +109,45 @@ export function useGamepadNav(options: UseGamepadNavOptions) {
 
   onUnmounted(() => {
     if (frameHandle !== undefined) cancelAnimationFrame(frameHandle);
+  });
+}
+
+export interface UseGamepadNavOptions {
+  itemCount: () => number;
+  columns: () => number;
+  onSelect: (index: number) => void;
+  onCancel?: () => void;
+}
+
+/** Uniform-grid gamepad navigation (every row has exactly `columns()` items) - BigPictureGrid.vue,
+ *  BigPictureProfileSwitcher.vue's tile grid. For a ragged/non-uniform layout (OnScreenKeyboard.vue's
+ *  keyboard rows), use `useGamepadDirections` directly instead. */
+export function useGamepadNav(options: UseGamepadNavOptions) {
+  const focusedIndex = ref(0);
+
+  function move(direction: Direction) {
+    const count = options.itemCount();
+    if (count === 0) return;
+    const cols = Math.max(1, options.columns());
+    const current = Math.min(focusedIndex.value, count - 1);
+    const col = current % cols;
+
+    let next = current;
+    if (direction === "up" && current - cols >= 0) next = current - cols;
+    else if (direction === "down" && current + cols < count) next = current + cols;
+    else if (direction === "left" && col > 0) next = current - 1;
+    else if (direction === "right" && col < cols - 1 && current + 1 < count) next = current + 1;
+
+    focusedIndex.value = next;
+  }
+
+  useGamepadDirections({
+    onUp: () => move("up"),
+    onDown: () => move("down"),
+    onLeft: () => move("left"),
+    onRight: () => move("right"),
+    onConfirm: () => options.onSelect(focusedIndex.value),
+    onCancel: options.onCancel,
   });
 
   return { focusedIndex };

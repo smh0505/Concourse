@@ -151,7 +151,11 @@
     "submit": "ゲームを追加"
   },
   "bigPicture": {
-    "emptyLibrary": "ライブラリにゲームがありません。"
+    "emptyLibrary": "ライブラリにゲームがありません。",
+    "keyboardShift": "シフト",
+    "keyboardShiftOn": "シフト(オン)",
+    "keyboardSpace": "スペース",
+    "keyboardBackspace": "バックスペース"
   },
   "addPlugin": {
     "curatedIntro": "厳選プラグイン(レビュー済み、ハッシュ固定 - 参照:",

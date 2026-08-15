@@ -151,7 +151,11 @@
     "submit": "Add Game"
   },
   "bigPicture": {
-    "emptyLibrary": "No games in library."
+    "emptyLibrary": "No games in library.",
+    "keyboardShift": "Shift",
+    "keyboardShiftOn": "Shift (on)",
+    "keyboardSpace": "Space",
+    "keyboardBackspace": "Backspace"
   },
   "addPlugin": {
     "curatedIntro": "Curated plugins (reviewed, hash-pinned - see",

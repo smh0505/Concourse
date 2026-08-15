@@ -151,7 +151,11 @@
     "submit": "添加游戏"
   },
   "bigPicture": {
-    "emptyLibrary": "库中没有游戏。"
+    "emptyLibrary": "库中没有游戏。",
+    "keyboardShift": "Shift",
+    "keyboardShiftOn": "Shift(开)",
+    "keyboardSpace": "空格",
+    "keyboardBackspace": "退格"
   },
   "addPlugin": {
     "curatedIntro": "精选插件(已审核,哈希锁定 - 参见",

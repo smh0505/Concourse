@@ -637,6 +637,14 @@ codebase's existing scoped-settings convention).
 **Step 3 (not started)** - kids mode: a per-profile tag/age-rating hide-list filter, applied on
 top of that profile's own library view.
 
+**Big Picture extension (done).** "Launch into Big Picture on startup" now engages real OS
+fullscreen immediately, before a profile is even picked - `BigPictureProfileSwitcher.vue`
+renders the picker in Big Picture's own console style instead of the small windowed
+ProfileSwitcher.vue, with full gamepad navigation (`useGamepadNav.ts` was refactored to expose
+a lower-level `useGamepadDirections` for this) and a gamepad/mouse/keyboard-navigable
+`OnScreenKeyboard.vue` for PIN entry and profile creation (PINs aren't numeral-only, so a plain
+numpad wasn't enough).
+
 ## Milestone 31 — Custom Launch Arguments Per Game (not started)
 `launcher.rs`'s `launch_game` spawns `executable_path` bare - some games need `-windowed`,
 mod-loader flags, or other CLI args that currently have no home.

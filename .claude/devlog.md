@@ -7226,3 +7226,52 @@ profile is permanently id 1 regardless of later renames, so this can't be spoofe
 profile to "Admin"), gating `ProfilesPanel` out of Settings entirely for every other profile.
 "Switch Profile" in `TitleBar.vue` stays available to all profiles - that's normal navigation
 (stepping back to the picker), not a management action.
+
+### Milestone 30: profile switcher extended to Big Picture mode
+
+User wants "auto-launch into Big Picture" to mean real fullscreen engaging immediately, with the
+profile picker itself rendered in Big Picture's own console style - not the small windowed
+ProfileSwitcher.vue shown first and Big Picture only engaging after a profile's picked. Scoped
+three real design questions with the user before building: full gamepad navigation (yes, matches
+BigPictureGrid/Slideshow), how PIN entry works without an assumed physical keyboard (on-screen
+keyboard - user's PINs aren't numeral-only, so a numpad wasn't enough), and fullscreen timing
+(immediately, before profile selection, not after).
+
+**`useGamepadNav.ts` refactor.** The existing composable only supports a uniform grid (every row
+exactly `columns()` items) - fine for a tile grid, but an on-screen QWERTY keyboard has ragged
+row lengths (10/10/9/9/5). Extracted the low-level piece (`useGamepadDirections`) - raw
+onUp/onDown/onLeft/onRight/onConfirm/onCancel with the same held-repeat timing, no grid
+assumption - and rewrote `useGamepadNav` as a thin wrapper over it for the uniform-grid case.
+Existing consumers (BigPictureGrid.vue, BigPictureSlideshow.vue) needed no changes - same public
+API, purely additive.
+
+**`OnScreenKeyboard.vue`.** A single reusable field-entry screen (v-model'd string, `masked`
+prop for PINs), five rows (digits, qwerty, asdf, zxcv, actions: shift/space/backspace/cancel/
+done) navigated via `useGamepadDirections` directly - row/column state clamps the column to the
+target row's own length on up/down, rather than needing every row artificially padded to the
+same width. Real physical-keyboard typing still works too (a desktop user with a keyboard
+attached to a Big Picture session shouldn't be forced through the on-screen grid) - same "both
+work" pattern BigPictureGrid.vue's own onKeydown fallback already established.
+
+**`BigPictureProfileSwitcher.vue`.** Mirrors BigPictureGrid.vue's shell (gamepad/keyboard grid
+nav over tiles, mouse-idle cursor hiding, ResizeObserver-driven column count) over profile tiles
+instead of game tiles, plus a trailing "+ New Profile" tile. Locked-profile PIN entry and new-
+profile creation both open OnScreenKeyboard.vue as a full-screen overlay. Profile creation is a
+multi-step wizard (name -> optional PIN -> confirm PIN) since the keyboard is a single-field
+screen, unlike ProfileCreateForm.vue's all-fields-at-once desktop card - each step reuses the
+same keyboard component with a different label/mask/handler.
+
+Real bug caught before shipping: while the keyboard overlay is open, it runs its own
+`useGamepadDirections` poll against the same physical gamepad concurrently with the tile grid's
+own `useGamepadNav` poll (both mounted for the whole component's lifetime, not torn down when
+the overlay opens). `itemCount: () => keyboardOpen ? 0 : tileCount` already no-ops the grid's
+own movement, but `onSelect` fires unconditionally on every confirm-button press regardless of
+itemCount - one A-button press while the keyboard was open would have fired both the tile grid's
+`onTileSelect` and the keyboard's own `activateFocused` at once. Fixed by also gating the
+`onSelect` callback itself on `!keyboardOpen`.
+
+**`App.vue`.** `bigPicture.value = true` now also sets right after `appSettings.init()` (not just
+inside `initLibraryAndPlugins()`, which only runs once a profile is active) when
+`autoLaunchBigPicture` is on - real OS fullscreen engages before `profiles.init()` even runs, so
+whichever picker actually renders (`BigPictureProfileSwitcher` if `bigPicture` is already true at
+that point, else the desktop `ProfileSwitcher`) is decided correctly from the start.

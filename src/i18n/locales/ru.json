@@ -151,7 +151,11 @@
     "submit": "Добавить игру"
   },
   "bigPicture": {
-    "emptyLibrary": "В библиотеке нет игр."
+    "emptyLibrary": "В библиотеке нет игр.",
+    "keyboardShift": "Shift",
+    "keyboardShiftOn": "Shift (вкл)",
+    "keyboardSpace": "Пробел",
+    "keyboardBackspace": "Backspace"
   },
   "addPlugin": {
     "curatedIntro": "Проверенные плагины (проверены, хеш зафиксирован - см.",

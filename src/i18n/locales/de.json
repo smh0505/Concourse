@@ -20,7 +20,7 @@
     "translationEngine": "Übersetzungs-Engine",
     "downloadingEngine": "Wird heruntergeladen...",
     "remove": "Entfernen",
-    "quickLaunch": "Schnellstart",
+    "launchOptions": "Startoptionen",
     "quickLaunchHotkey": "Globale Tastenkombination",
     "pressKeys": "Tasten drücken...",
     "closeToTray": "In die Taskleiste minimieren statt beenden"

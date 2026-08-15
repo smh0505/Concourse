@@ -20,7 +20,7 @@
     "translationEngine": "번역 엔진",
     "downloadingEngine": "다운로드 중...",
     "remove": "삭제",
-    "quickLaunch": "퀵 런치",
+    "launchOptions": "실행 옵션",
     "quickLaunchHotkey": "전역 단축키",
     "pressKeys": "키를 누르세요...",
     "closeToTray": "종료 대신 트레이로 최소화"

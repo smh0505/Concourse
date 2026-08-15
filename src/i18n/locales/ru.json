@@ -20,7 +20,7 @@
     "translationEngine": "Движок перевода",
     "downloadingEngine": "Загрузка...",
     "remove": "Удалить",
-    "quickLaunch": "Быстрый запуск",
+    "launchOptions": "Параметры запуска",
     "quickLaunchHotkey": "Глобальная горячая клавиша",
     "pressKeys": "Нажмите клавиши...",
     "closeToTray": "Сворачивать в трей вместо закрытия"

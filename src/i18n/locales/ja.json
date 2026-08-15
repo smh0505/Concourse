@@ -20,7 +20,7 @@
     "translationEngine": "翻訳エンジン",
     "downloadingEngine": "ダウンロード中...",
     "remove": "削除",
-    "quickLaunch": "クイックランチ",
+    "launchOptions": "起動オプション",
     "quickLaunchHotkey": "グローバルホットキー",
     "pressKeys": "キーを押してください...",
     "closeToTray": "終了せずにトレイに格納する"

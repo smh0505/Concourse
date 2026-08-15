@@ -20,7 +20,7 @@
     "downloadingEngine": "Downloading...",
     "download": "Download",
     "remove": "Remove",
-    "quickLaunch": "Quick Launch",
+    "launchOptions": "Launch Options",
     "quickLaunchHotkey": "Global hotkey",
     "pressKeys": "Press keys...",
     "closeToTray": "Close to tray instead of quitting"

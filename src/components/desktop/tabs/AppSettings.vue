@@ -110,17 +110,6 @@ onBeforeUnmount(stopListeningForHotkey);
       <h2>{{ t("common.settings") }}</h2>
     </div>
 
-    <label class="checkbox-label">
-      <input
-        type="checkbox"
-        :checked="appSettings.autoLaunchBigPicture"
-        @change="
-          appSettings.setAutoLaunchBigPicture(($event.target as HTMLInputElement).checked)
-        "
-      />
-      {{ t("settings.autoLaunchBigPicture") }}
-    </label>
-
     <div class="language-row">
       {{ t("settings.language") }}
       <DropdownMenu
@@ -151,23 +140,19 @@ onBeforeUnmount(stopListeningForHotkey);
       </DropdownMenu>
     </div>
 
-    <div v-if="profiles.isAdmin" class="translation-section">
-      <ProfilesPanel />
-    </div>
-
     <div class="translation-section">
-      <h3>{{ t("settings.quickLaunch") }}</h3>
+      <h3>{{ t("settings.launchOptions") }}</h3>
 
-      <div class="model-row">
-        <span class="model-name">{{ t("settings.quickLaunchHotkey") }}</span>
-        <button
-          type="button"
-          class="compact-button"
-          @click="listeningForHotkey ? stopListeningForHotkey() : startListeningForHotkey()"
-        >
-          {{ listeningForHotkey ? t("settings.pressKeys") : appSettings.quickLaunchHotkey }}
-        </button>
-      </div>
+      <label class="checkbox-label">
+        <input
+          type="checkbox"
+          :checked="appSettings.autoLaunchBigPicture"
+          @change="
+            appSettings.setAutoLaunchBigPicture(($event.target as HTMLInputElement).checked)
+          "
+        />
+        {{ t("settings.autoLaunchBigPicture") }}
+      </label>
 
       <label class="checkbox-label model-row-spaced">
         <input
@@ -177,6 +162,21 @@ onBeforeUnmount(stopListeningForHotkey);
         />
         {{ t("settings.closeToTray") }}
       </label>
+
+      <div class="model-row model-row-spaced">
+        <span class="model-name">{{ t("settings.quickLaunchHotkey") }}</span>
+        <button
+          type="button"
+          class="compact-button"
+          @click="listeningForHotkey ? stopListeningForHotkey() : startListeningForHotkey()"
+        >
+          {{ listeningForHotkey ? t("settings.pressKeys") : appSettings.quickLaunchHotkey }}
+        </button>
+      </div>
+    </div>
+
+    <div v-if="profiles.isAdmin" class="translation-section">
+      <ProfilesPanel />
     </div>
 
     <div class="translation-section">

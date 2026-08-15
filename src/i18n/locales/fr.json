@@ -20,7 +20,7 @@
     "translationEngine": "Moteur de traduction",
     "downloadingEngine": "Téléchargement...",
     "remove": "Supprimer",
-    "quickLaunch": "Lancement rapide",
+    "launchOptions": "Options de lancement",
     "quickLaunchHotkey": "Raccourci global",
     "pressKeys": "Appuyez sur des touches...",
     "closeToTray": "Réduire dans la barre système au lieu de quitter"

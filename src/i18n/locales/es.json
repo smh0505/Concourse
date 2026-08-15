@@ -20,7 +20,7 @@
     "translationEngine": "Motor de traducción",
     "downloadingEngine": "Descargando...",
     "remove": "Eliminar",
-    "quickLaunch": "Inicio rápido",
+    "launchOptions": "Opciones de inicio",
     "quickLaunchHotkey": "Atajo global",
     "pressKeys": "Pulsa las teclas...",
     "closeToTray": "Minimizar a la bandeja en lugar de cerrar"

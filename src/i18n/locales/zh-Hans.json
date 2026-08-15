@@ -20,7 +20,7 @@
     "translationEngine": "翻译引擎",
     "downloadingEngine": "下载中...",
     "remove": "删除",
-    "quickLaunch": "快速启动",
+    "launchOptions": "启动选项",
     "quickLaunchHotkey": "全局快捷键",
     "pressKeys": "请按键...",
     "closeToTray": "关闭时最小化到托盘而非退出"

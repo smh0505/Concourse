@@ -4,11 +4,15 @@ import { useI18n } from "vue-i18n";
 import { IconCheck, IconLock, IconLockOpen, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
+import { useToastStore } from "@/stores/toasts";
 
 const { t } = useI18n();
 const profiles = useProfilesStore();
+const toasts = useToastStore();
 
 const newName = ref("");
+const newPin = ref("");
+const newPinConfirm = ref("");
 const editingId = ref<number | null>(null);
 const editingValue = ref("");
 
@@ -20,8 +24,19 @@ const pinError = ref("");
 async function onCreate() {
   const name = newName.value.trim();
   if (!name) return;
-  await profiles.createProfile(name);
-  newName.value = "";
+  if (newPin.value !== newPinConfirm.value) {
+    toasts.push(t("profiles.pinMismatch"), "error");
+    return;
+  }
+  try {
+    const id = await profiles.createProfile(name);
+    if (newPin.value) await profiles.setPin(id, newPin.value);
+    newName.value = "";
+    newPin.value = "";
+    newPinConfirm.value = "";
+  } catch (e) {
+    toasts.push(String(e), "error");
+  }
 }
 
 function startEdit(id: number, name: string) {
@@ -64,12 +79,24 @@ async function confirmPinEdit() {
     pinError.value = t("profiles.pinMismatch");
     return;
   }
-  if (pinValue.value) await profiles.setPin(pinEditingId.value, pinValue.value);
-  cancelPinEdit();
+  if (!pinValue.value) {
+    cancelPinEdit();
+    return;
+  }
+  try {
+    await profiles.setPin(pinEditingId.value, pinValue.value);
+    cancelPinEdit();
+  } catch (e) {
+    pinError.value = String(e);
+  }
 }
 
 async function removePin(id: number) {
-  await profiles.clearPin(id);
+  try {
+    await profiles.clearPin(id);
+  } catch (e) {
+    toasts.push(String(e), "error");
+  }
 }
 
 /** A profile switch changes which library.db rows every store reads (Milestone 30) - rather
@@ -90,6 +117,21 @@ async function switchProfile(id: number) {
 
     <form class="add-form" @submit.prevent="onCreate">
       <input v-model="newName" :placeholder="t('profiles.newProfileName')" />
+      <input
+        v-model="newPin"
+        type="password"
+        inputmode="numeric"
+        class="pin-optional-input"
+        :placeholder="t('profiles.optionalPin')"
+      />
+      <input
+        v-if="newPin"
+        v-model="newPinConfirm"
+        type="password"
+        inputmode="numeric"
+        class="pin-optional-input"
+        :placeholder="t('profiles.confirmPin')"
+      />
       <button type="submit">{{ t("profiles.addProfile") }}</button>
     </form>
 
@@ -199,6 +241,10 @@ async function switchProfile(id: number) {
 }
 
 .pin-edit-form input {
+  max-width: 8rem;
+}
+
+.pin-optional-input {
   max-width: 8rem;
 }
 </style>

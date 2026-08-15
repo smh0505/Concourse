@@ -101,7 +101,8 @@
     "confirmPin": "PIN 확인",
     "pinMismatch": "PIN이 일치하지 않습니다",
     "enterPin": "PIN 입력",
-    "wrongPin": "PIN이 틀렸습니다"
+    "wrongPin": "PIN이 틀렸습니다",
+    "optionalPin": "PIN (선택 사항)"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

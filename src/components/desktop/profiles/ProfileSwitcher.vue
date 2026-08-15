@@ -12,6 +12,8 @@ const profiles = useProfilesStore();
 
 const creating = ref(false);
 const newName = ref("");
+const newPin = ref("");
+const newPinConfirm = ref("");
 const error = ref("");
 
 const pendingPinProfile = ref<Profile | null>(null);
@@ -56,12 +58,19 @@ async function confirmCreate() {
   const name = newName.value.trim();
   if (!name) return;
   error.value = "";
+  if (newPin.value !== newPinConfirm.value) {
+    error.value = t("profiles.pinMismatch");
+    return;
+  }
   try {
     // No ToastContainer available yet here - App.vue only mounts it once a profile is active
     // (see App.vue's v-else), so any failure needs its own visible surface, not a silent
     // console-only swallow.
     const id = await profiles.createProfile(name);
+    if (newPin.value) await profiles.setPin(id, newPin.value);
     newName.value = "";
+    newPin.value = "";
+    newPinConfirm.value = "";
     creating.value = false;
     await select(id);
   } catch (e) {
@@ -96,6 +105,14 @@ async function confirmCreate() {
             autofocus
             :placeholder="t('profiles.newProfileName')"
             @keyup.esc="creating = false"
+          />
+          <input v-model="newPin" type="password" inputmode="numeric" :placeholder="t('profiles.optionalPin')" />
+          <input
+            v-if="newPin"
+            v-model="newPinConfirm"
+            type="password"
+            inputmode="numeric"
+            :placeholder="t('profiles.confirmPin')"
           />
           <div class="creating-actions">
             <button type="submit" class="icon-button" :title="t('common.save')">

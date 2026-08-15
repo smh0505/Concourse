@@ -101,7 +101,8 @@
     "confirmPin": "Подтвердите PIN",
     "pinMismatch": "PIN-коды не совпадают",
     "enterPin": "Введите PIN",
-    "wrongPin": "Неверный PIN"
+    "wrongPin": "Неверный PIN",
+    "optionalPin": "PIN (необязательно)"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

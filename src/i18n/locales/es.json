@@ -101,7 +101,8 @@
     "confirmPin": "Confirmar PIN",
     "pinMismatch": "Los PIN no coinciden",
     "enterPin": "Introduce el PIN",
-    "wrongPin": "PIN incorrecto"
+    "wrongPin": "PIN incorrecto",
+    "optionalPin": "PIN (opcional)"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

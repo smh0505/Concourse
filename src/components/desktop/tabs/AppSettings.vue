@@ -309,6 +309,7 @@ onBeforeUnmount(stopListeningForHotkey);
    model does. */
 .language-menu-wrap {
   flex: none;
+  margin-left: auto;
 }
 
 /* All entries stacked in the same grid cell - the cell (and so .language-trigger-sizer itself)

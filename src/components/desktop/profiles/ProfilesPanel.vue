@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconCheck, IconLock, IconPencil, IconPlus, IconTrash, IconX } from "@tabler/icons-vue";
+import { IconLock, IconPencil, IconPlus, IconTrash } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
@@ -143,19 +143,14 @@ async function onPinSubmit() {
     <ul class="item-list">
       <li v-for="profile in profiles.profiles" :key="profile.id" class="item-row list-row-shell">
         <template v-if="editingId === profile.id">
-          <input
-            v-model="editingValue"
-            class="edit-input"
-            @keyup.enter="confirmEdit"
-            @keyup.esc="cancelEdit"
-          />
-          <div class="row-controls">
-            <button class="icon-button" :title="t('common.save')" @click="confirmEdit">
-              <IconCheck :size="15" :stroke-width="1.75" />
-            </button>
-            <button class="icon-button" :title="t('common.cancel')" @click="cancelEdit">
-              <IconX :size="15" :stroke-width="1.75" />
-            </button>
+          <div class="profile-row-content">
+            <input
+              v-model="editingValue"
+              class="edit-input"
+              @keyup.enter="confirmEdit"
+              @keyup.esc="cancelEdit"
+            />
+            <small class="form-hint">{{ t("profiles.enterEscHint") }}</small>
           </div>
         </template>
         <template v-else>
@@ -181,7 +176,7 @@ async function onPinSubmit() {
                   @keyup.esc="cancelPinEdit"
                 />
               </form>
-              <div class="row-controls">
+              <div v-if="pinEditingId !== profile.id" class="row-controls">
                 <button
                   v-if="profile.id !== 1"
                   class="icon-button"

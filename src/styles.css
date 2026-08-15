@@ -374,6 +374,38 @@ small {
   color: var(--color-danger);
 }
 
+/* Milestone 30 - the round letter-avatar used for a profile, on both ProfileSwitcher.vue's
+   cards and ProfileCreateForm.vue's live-updating one while typing a name - promoted here since
+   a child component's own elements don't pick up a parent's scoped styles (only its root does),
+   so this couldn't stay scoped to just one of the two components that need it. */
+.profile-avatar {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface0);
+  font-size: 1.8rem;
+}
+
+.profile-avatar-lock {
+  position: absolute;
+  right: -0.15rem;
+  bottom: -0.15rem;
+  padding: 0.2rem;
+  border-radius: 50%;
+  background: var(--color-surface1);
+  color: var(--color-text);
+}
+
+.profile-avatar-add {
+  border: 2px dashed var(--color-surface1);
+  background: none;
+  opacity: 0.7;
+}
+
 /* Icon-only square toggle button - App.vue's Big Picture grid/slideshow toggle, GameFilters.vue's
    grid/list toggle. Both used this class name already, but only GameFilters had the real square
    treatment (fixed width, zero padding) - promoted the correct version here for both. */

@@ -88,9 +88,9 @@ async function onCreateSubmit(name: string, pin: string) {
             class="profile-card creating"
             @submit.prevent="confirmUnlock"
           >
-            <div class="avatar">
+            <div class="profile-avatar">
               {{ profile.name.charAt(0).toUpperCase() }}
-              <IconLock :size="14" :stroke-width="2" class="lock-badge" />
+              <IconLock :size="14" :stroke-width="2" class="profile-avatar-lock" />
             </div>
             <input
               :ref="(el) => (pinInputEl = el as HTMLInputElement | null)"
@@ -111,9 +111,9 @@ async function onCreateSubmit(name: string, pin: string) {
             </div>
           </form>
           <button v-else type="button" class="profile-card" @click="onCardClick(profile)">
-            <div class="avatar">
+            <div class="profile-avatar">
               {{ profile.name.charAt(0).toUpperCase() }}
-              <IconLock v-if="profile.pin_hash" :size="14" :stroke-width="2" class="lock-badge" />
+              <IconLock v-if="profile.pin_hash" :size="14" :stroke-width="2" class="profile-avatar-lock" />
             </div>
             <span class="name">{{ profile.name }}</span>
           </button>
@@ -137,7 +137,7 @@ async function onCreateSubmit(name: string, pin: string) {
           </div>
         </ProfileCreateForm>
         <button v-else type="button" class="profile-card add-card" @click="creating = true">
-          <div class="avatar add-avatar">+</div>
+          <div class="profile-avatar profile-avatar-add">+</div>
           <span class="name">{{ t("profiles.newProfile") }}</span>
         </button>
       </div>
@@ -192,34 +192,6 @@ h1 {
 .profile-card:hover,
 .profile-card:focus-visible {
   background: color-mix(in srgb, currentColor 8%, transparent);
-}
-
-.avatar {
-  position: relative;
-  width: 4.5rem;
-  height: 4.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-surface0);
-  font-size: 1.8rem;
-}
-
-.lock-badge {
-  position: absolute;
-  right: -0.15rem;
-  bottom: -0.15rem;
-  padding: 0.2rem;
-  border-radius: 50%;
-  background: var(--color-surface1);
-  color: var(--color-text);
-}
-
-.add-avatar {
-  border: 2px dashed var(--color-surface1);
-  background: none;
-  opacity: 0.7;
 }
 
 .name {

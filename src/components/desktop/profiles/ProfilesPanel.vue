@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconCheck, IconLock, IconLockOpen, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
 
@@ -15,10 +15,15 @@ const createFormRef = ref<InstanceType<typeof ProfileCreateForm> | null>(null);
 const editingId = ref<number | null>(null);
 const editingValue = ref("");
 
+// Same single-field, two-stage entry as ProfileCreateForm.vue's PIN field (and
+// ProfileSwitcher.vue's unlock form) - the confirmation re-uses this one field, blanked and
+// re-labeled, rather than showing a second field alongside it.
 const pinEditingId = ref<number | null>(null);
-const pinValue = ref("");
-const pinConfirmValue = ref("");
+const pinInput = ref("");
+const pendingPin = ref("");
+const confirmingPin = ref(false);
 const pinError = ref("");
+const pinInputEl = ref<HTMLInputElement | null>(null);
 
 async function onCreateSubmit(name: string, pin: string) {
   try {
@@ -50,32 +55,53 @@ async function onDelete(id: number) {
   await profiles.deleteProfile(id);
 }
 
-function startPinEdit(id: number) {
+async function startPinEdit(id: number) {
   pinEditingId.value = id;
-  pinValue.value = "";
-  pinConfirmValue.value = "";
+  pinInput.value = "";
+  pendingPin.value = "";
+  confirmingPin.value = false;
   pinError.value = "";
+  await nextTick();
+  pinInputEl.value?.focus();
 }
 
 function cancelPinEdit() {
   pinEditingId.value = null;
-  pinValue.value = "";
-  pinConfirmValue.value = "";
+  pinInput.value = "";
+  pendingPin.value = "";
+  confirmingPin.value = false;
   pinError.value = "";
 }
 
-async function confirmPinEdit() {
+async function onPinSubmit() {
   if (pinEditingId.value === null) return;
-  if (pinValue.value !== pinConfirmValue.value) {
+
+  if (!confirmingPin.value) {
+    if (!pinInput.value) {
+      // Nothing typed - Enter here just closes the form rather than saving an empty PIN.
+      cancelPinEdit();
+      return;
+    }
+    // Stage one done - stash what was typed, blank the (same) field, and ask for it again
+    // instead of showing a second field alongside the first.
+    pendingPin.value = pinInput.value;
+    pinInput.value = "";
+    confirmingPin.value = true;
+    pinError.value = "";
+    return;
+  }
+
+  if (pinInput.value !== pendingPin.value) {
+    // Mismatch - back to a clean step-one field, not a half-filled step-two one.
+    confirmingPin.value = false;
+    pendingPin.value = "";
+    pinInput.value = "";
     pinError.value = t("profiles.pinMismatch");
     return;
   }
-  if (!pinValue.value) {
-    cancelPinEdit();
-    return;
-  }
+
   try {
-    await profiles.setPin(pinEditingId.value, pinValue.value);
+    await profiles.setPin(pinEditingId.value, pendingPin.value);
     cancelPinEdit();
   } catch (e) {
     pinError.value = String(e);
@@ -129,10 +155,26 @@ async function switchProfile(id: number) {
           </div>
         </template>
         <template v-else>
-          <span class="item-name">{{ profile.name }}</span>
-          <span v-if="profile.id === profiles.activeProfileId" class="item-count">
-            {{ t("profiles.active") }}
-          </span>
+          <div class="name-column">
+            <div class="name-row">
+              <span class="item-name">{{ profile.name }}</span>
+              <span v-if="profile.id === profiles.activeProfileId" class="item-count">
+                {{ t("profiles.active") }}
+              </span>
+            </div>
+            <form v-if="pinEditingId === profile.id" class="pin-inline" @submit.prevent="onPinSubmit">
+              <input
+                :ref="(el) => (pinInputEl = el as HTMLInputElement | null)"
+                v-model="pinInput"
+                type="password"
+                inputmode="numeric"
+                :placeholder="confirmingPin ? t('profiles.confirmPin') : t('profiles.newPin')"
+                @keyup.esc="cancelPinEdit"
+              />
+              <span v-if="pinError" class="error-text">{{ pinError }}</span>
+              <small class="form-hint">{{ t("profiles.enterEscHint") }}</small>
+            </form>
+          </div>
           <div class="row-controls">
             <button
               v-if="profile.id !== profiles.activeProfileId"
@@ -176,26 +218,6 @@ async function switchProfile(id: number) {
           </div>
         </template>
       </li>
-      <li v-if="pinEditingId !== null" class="item-row list-row-shell">
-        <form class="pin-edit-form" @submit.prevent="confirmPinEdit">
-          <input v-model="pinValue" type="password" inputmode="numeric" :placeholder="t('profiles.newPin')" />
-          <input
-            v-model="pinConfirmValue"
-            type="password"
-            inputmode="numeric"
-            :placeholder="t('profiles.confirmPin')"
-          />
-          <span v-if="pinError" class="error-text">{{ pinError }}</span>
-          <div class="row-controls">
-            <button type="submit" class="icon-button" :title="t('common.save')">
-              <IconCheck :size="15" :stroke-width="1.75" />
-            </button>
-            <button type="button" class="icon-button" :title="t('common.cancel')" @click="cancelPinEdit">
-              <IconX :size="15" :stroke-width="1.75" />
-            </button>
-          </div>
-        </form>
-      </li>
     </ul>
   </div>
 </template>
@@ -209,14 +231,30 @@ async function switchProfile(id: number) {
   gap: var(--space-3);
 }
 
-.pin-edit-form {
+/* Takes over .item-name's usual flex:1 slot in the row, so the inline PIN form below can stack
+   under the name instead of sitting beside it in the same horizontal line. */
+.name-column {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
 }
 
-.pin-edit-form input {
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pin-inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: flex-start;
+}
+
+.pin-inline input {
   max-width: 8rem;
 }
 </style>

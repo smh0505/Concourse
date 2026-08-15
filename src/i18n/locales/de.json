@@ -71,7 +71,8 @@
     "revokeBoth": "Titel- und Inhaltsübersetzung widerrufen",
     "skipPresence": "Dieses Spiel aus Präsenz-Integrationen ausblenden",
     "pseudoFullscreen": "Im rahmenlosen Pseudo-Vollbild ausführen",
-    "alwaysOnTop": "Fenster immer im Vordergrund halten"
+    "alwaysOnTop": "Fenster immer im Vordergrund halten",
+    "rememberWindow": "Fensterposition und -größe merken"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

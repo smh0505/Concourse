@@ -71,7 +71,8 @@
     "revokeBoth": "Revoke Title and Content Translation",
     "skipPresence": "Hide this game from presence integrations",
     "pseudoFullscreen": "Run in borderless pseudo-fullscreen",
-    "alwaysOnTop": "Keep window always on top"
+    "alwaysOnTop": "Keep window always on top",
+    "rememberWindow": "Remember window position and size"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

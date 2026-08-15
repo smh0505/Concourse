@@ -40,6 +40,16 @@ export interface Game {
   /** SQLite boolean (0/1) - Milestone 39 stretch, per-game opt-in to keep the game window
    *  pinned above every other window for the session. Independent of pseudo_fullscreen. */
   always_on_top: number;
+  /** SQLite boolean (0/1) - Milestone 39 stretch, per-game opt-in to restore the game window's
+   *  last position/size on the next launch. */
+  remember_window: number;
+  /** Captured automatically at session end when remember_window is on - not user-editable via
+   *  the edit form, so not part of GameEditFields. NULL until a session has actually captured
+   *  one. */
+  window_x: number | null;
+  window_y: number | null;
+  window_width: number | null;
+  window_height: number | null;
 }
 
 export type GameEditFields = Pick<
@@ -57,6 +67,7 @@ export type GameEditFields = Pick<
   | "skip_presence"
   | "pseudo_fullscreen"
   | "always_on_top"
+  | "remember_window"
 >;
 
 /** The title to show for `game` under the current UI `locale` - a valid cached translation, or

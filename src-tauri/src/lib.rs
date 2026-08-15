@@ -13,6 +13,7 @@ mod plugin_registry;
 mod plugin_verification;
 mod pseudo_fullscreen;
 mod quick_launch;
+mod remembered_window;
 mod translation;
 mod tray;
 mod wasm_plugin_runtime;

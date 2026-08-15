@@ -87,6 +87,10 @@ interface GameSessionEnded {
   start_time: string;
   end_time: string;
   duration_seconds: number;
+  window_x: number | null;
+  window_y: number | null;
+  window_width: number | null;
+  window_height: number | null;
 }
 
 export const useLibraryStore = defineStore("library", () => {
@@ -445,6 +449,11 @@ export const useLibraryStore = defineStore("library", () => {
           title: game.title,
           pseudoFullscreen: game.pseudo_fullscreen === 1,
           alwaysOnTop: game.always_on_top === 1,
+          rememberWindow: game.remember_window === 1,
+          windowX: game.window_x,
+          windowY: game.window_y,
+          windowWidth: game.window_width,
+          windowHeight: game.window_height,
         });
         return;
       }
@@ -459,6 +468,11 @@ export const useLibraryStore = defineStore("library", () => {
           title: game.title,
           pseudoFullscreen: game.pseudo_fullscreen === 1,
           alwaysOnTop: game.always_on_top === 1,
+          rememberWindow: game.remember_window === 1,
+          windowX: game.window_x,
+          windowY: game.window_y,
+          windowWidth: game.window_width,
+          windowHeight: game.window_height,
         });
       }
     } catch (e) {
@@ -481,8 +495,14 @@ export const useLibraryStore = defineStore("library", () => {
     await refresh();
 
     unlistenSessionEnded = await listen<GameSessionEnded>("game-session-ended", async (event) => {
-      const { game_id, start_time, end_time, duration_seconds } = event.payload;
+      const { game_id, start_time, end_time, duration_seconds, window_x, window_y, window_width, window_height } =
+        event.payload;
       await playtimeRepo.recordSession(game_id, start_time, end_time, duration_seconds);
+      // Only set when remember_window was on and the window was still findable at session end -
+      // see launcher.rs's GameSessionEnded.
+      if (window_x !== null && window_y !== null && window_width !== null && window_height !== null) {
+        await gameRepo.updateWindowRect(game_id, window_x, window_y, window_width, window_height);
+      }
       await refresh();
     });
   }

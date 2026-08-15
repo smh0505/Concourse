@@ -13,6 +13,12 @@ pub struct GameSessionEnded {
     start_time: String,
     end_time: String,
     duration_seconds: i64,
+    /// Only set when remember_window was enabled and the window was still findable at session
+    /// end - library.ts persists these back to the game's row if present.
+    window_x: Option<i32>,
+    window_y: Option<i32>,
+    window_width: Option<i32>,
+    window_height: Option<i32>,
 }
 
 #[tauri::command]
@@ -23,6 +29,11 @@ pub fn launch_game(
     title: String,
     pseudo_fullscreen: bool,
     always_on_top: bool,
+    remember_window: bool,
+    window_x: Option<i32>,
+    window_y: Option<i32>,
+    window_width: Option<i32>,
+    window_height: Option<i32>,
 ) -> Result<(), String> {
     let mut child = std::process::Command::new(&executable_path)
         .stdout(std::process::Stdio::null())
@@ -49,8 +60,14 @@ pub fn launch_game(
             None
         };
         let mut topmost_state = if always_on_top { crate::always_on_top::apply(|| vec![pid]) } else { None };
+        let mut window_state = if remember_window {
+            let saved = saved_rect(window_x, window_y, window_width, window_height);
+            crate::remembered_window::apply(|| vec![pid], saved)
+        } else {
+            None
+        };
 
-        if pseudo_fullscreen || always_on_top {
+        if pseudo_fullscreen || always_on_top || remember_window {
             // Polls instead of a single blocking child.wait() so a launcher window closing and
             // being replaced by the real game window (same process, new HWND) still gets caught.
             loop {
@@ -63,6 +80,9 @@ pub fn launch_game(
                         if always_on_top {
                             topmost_state = crate::always_on_top::refresh(topmost_state, || vec![pid]);
                         }
+                        if remember_window {
+                            window_state = crate::remembered_window::refresh(window_state, || vec![pid]);
+                        }
                         std::thread::sleep(std::time::Duration::from_secs(3));
                     }
                     Err(_) => break,
@@ -71,6 +91,10 @@ pub fn launch_game(
         } else {
             let _ = child.wait();
         }
+
+        // Captured before reverting the other two treatments, in case restoring the fullscreen/
+        // topmost state would itself change the window's position/size.
+        let captured_rect = window_state.as_ref().and_then(crate::remembered_window::capture);
 
         if let Some(state) = fullscreen_state {
             crate::pseudo_fullscreen::revert(state);
@@ -92,11 +116,24 @@ pub fn launch_game(
                 start_time,
                 end_time: unix_timestamp(end),
                 duration_seconds,
+                window_x: captured_rect.as_ref().map(|r| r.x),
+                window_y: captured_rect.as_ref().map(|r| r.y),
+                window_width: captured_rect.as_ref().map(|r| r.width),
+                window_height: captured_rect.as_ref().map(|r| r.height),
             },
         );
     });
 
     Ok(())
+}
+
+fn saved_rect(
+    x: Option<i32>,
+    y: Option<i32>,
+    width: Option<i32>,
+    height: Option<i32>,
+) -> Option<crate::remembered_window::SavedRect> {
+    Some(crate::remembered_window::SavedRect { x: x?, y: y?, width: width?, height: height? })
 }
 
 fn unix_timestamp(t: std::time::SystemTime) -> String {
@@ -154,6 +191,11 @@ pub fn track_folder_playtime(
     title: String,
     pseudo_fullscreen: bool,
     always_on_top: bool,
+    remember_window: bool,
+    window_x: Option<i32>,
+    window_y: Option<i32>,
+    window_width: Option<i32>,
+    window_height: Option<i32>,
 ) {
     let install_dir = normalize_path_for_comparison(&install_dir);
 
@@ -196,6 +238,15 @@ pub fn track_folder_playtime(
         } else {
             None
         };
+        let mut window_state = if remember_window {
+            let saved = saved_rect(window_x, window_y, window_width, window_height);
+            crate::remembered_window::apply(
+                || all_processes_under_folder(&mut system, &install_dir),
+                saved,
+            )
+        } else {
+            None
+        };
 
         let start = std::time::SystemTime::now();
         let start_time = unix_timestamp(start);
@@ -215,6 +266,11 @@ pub fn track_folder_playtime(
                     all_processes_under_folder(&mut system, &install_dir)
                 });
             }
+            if remember_window {
+                window_state = crate::remembered_window::refresh(window_state, || {
+                    all_processes_under_folder(&mut system, &install_dir)
+                });
+            }
             if any_process_under_folder(&mut system, &install_dir) {
                 missing_polls = 0;
             } else {
@@ -224,6 +280,8 @@ pub fn track_folder_playtime(
                 }
             }
         }
+
+        let captured_rect = window_state.as_ref().and_then(crate::remembered_window::capture);
 
         if let Some(state) = fullscreen_state {
             crate::pseudo_fullscreen::revert(state);
@@ -245,6 +303,10 @@ pub fn track_folder_playtime(
                 start_time,
                 end_time: unix_timestamp(end),
                 duration_seconds,
+                window_x: captured_rect.as_ref().map(|r| r.x),
+                window_y: captured_rect.as_ref().map(|r| r.y),
+                window_width: captured_rect.as_ref().map(|r| r.width),
+                window_height: captured_rect.as_ref().map(|r| r.height),
             },
         );
     });

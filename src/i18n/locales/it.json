@@ -71,7 +71,8 @@
     "revokeBoth": "Revoca traduzione di titolo e contenuto",
     "skipPresence": "Nascondi questo gioco dalle integrazioni di presenza",
     "pseudoFullscreen": "Esegui in pseudo schermo intero senza bordi",
-    "alwaysOnTop": "Mantieni la finestra sempre in primo piano"
+    "alwaysOnTop": "Mantieni la finestra sempre in primo piano",
+    "rememberWindow": "Ricorda posizione e dimensione della finestra"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

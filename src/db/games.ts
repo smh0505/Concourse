@@ -90,12 +90,13 @@ export class GameRepository {
          skip_presence = $11,
          pseudo_fullscreen = $12,
          always_on_top = $13,
+         remember_window = $14,
          translated_title = NULL,
          translated_description = NULL,
          translated_locale = NULL,
          show_translated_title = 0,
          show_translated_description = 0
-       WHERE id = $14`,
+       WHERE id = $15`,
       [
         fields.title,
         fields.executable_path,
@@ -110,8 +111,19 @@ export class GameRepository {
         fields.skip_presence,
         fields.pseudo_fullscreen,
         fields.always_on_top,
+        fields.remember_window,
         id,
       ],
+    );
+  }
+
+  /** Captured automatically at session end (Milestone 39 stretch) - separate from update() since
+   *  this isn't part of the user-facing edit form, it's system-maintained state. */
+  async updateWindowRect(id: number, x: number, y: number, width: number, height: number): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      "UPDATE games SET window_x = $1, window_y = $2, window_width = $3, window_height = $4 WHERE id = $5",
+      [x, y, width, height, id],
     );
   }
 

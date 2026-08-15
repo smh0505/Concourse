@@ -195,5 +195,20 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 10,
+            description: "add_remember_window",
+            sql: r#"
+            -- Milestone 39 stretch - per-game opt-in to restore the game window's last position/
+            -- size on the next launch. window_x/y/width/height stay NULL until a session with
+            -- this enabled actually ends and captures one - nothing to restore before that.
+            ALTER TABLE games ADD COLUMN remember_window INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE games ADD COLUMN window_x INTEGER;
+            ALTER TABLE games ADD COLUMN window_y INTEGER;
+            ALTER TABLE games ADD COLUMN window_width INTEGER;
+            ALTER TABLE games ADD COLUMN window_height INTEGER;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

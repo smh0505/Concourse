@@ -71,7 +71,8 @@
     "revokeBoth": "タイトルと内容の翻訳を取り消す",
     "skipPresence": "このゲームをプレゼンス連携から除外する",
     "pseudoFullscreen": "ボーダーレス擬似フルスクリーンで実行",
-    "alwaysOnTop": "ウィンドウを常に最前面に表示"
+    "alwaysOnTop": "ウィンドウを常に最前面に表示",
+    "rememberWindow": "ウィンドウの位置とサイズを記憶する"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

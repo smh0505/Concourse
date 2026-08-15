@@ -71,7 +71,8 @@
     "revokeBoth": "撤销标题和内容翻译",
     "skipPresence": "在在线状态集成中隐藏此游戏",
     "pseudoFullscreen": "以无边框伪全屏运行",
-    "alwaysOnTop": "窗口始终置顶"
+    "alwaysOnTop": "窗口始终置顶",
+    "rememberWindow": "记住窗口位置和大小"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

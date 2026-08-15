@@ -718,7 +718,8 @@ below - not an active TODO on this milestone.
 after launch" mechanism as pseudo-fullscreen above.
 - [x] Always-on-top pinning for the game window - `always_on_top.rs`, per-game opt-in
   (migration v9), independent of pseudo-fullscreen
-- [ ] Remembered window position/size per game (restore where you last left it) - not started
+- [x] Remembered window position/size per game - `remembered_window.rs`, per-game opt-in
+  (migration v10); saved rect validated against the currently-connected monitors before applying
 - [ ] Forced resolution/DPI override at launch - not started, riskiest of the three (global
   desktop-resolution side effects vs. a separate per-process DPI-awareness mechanism)
 

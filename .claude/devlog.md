@@ -6905,3 +6905,34 @@ thread's existing poll tick rather than a new timer) - `launch_game`/`track_fold
 applying/refreshing/reverting each independently within the same loop iteration. New
 `always_on_top` column (migration v9), `GameDetail.vue` checkbox mirroring the existing pattern
 exactly.
+
+### Milestone 39 stretch: remembered window position/size
+
+Second of the three window-behavior stretch items. Same reused-window-finding shape as
+`always_on_top.rs`, but with a real extra wrinkle the other two didn't have: this feature needs
+to *write* data back (the captured rect), and this codebase's Rust side has no DB access at all
+(`tauri-plugin-sql` is JS-only here - the same fact that shaped `presence.ts`'s
+`applyPersistedObsPort`/`applyPersistedObsStyle` design earlier this session). So the captured
+rect can't be persisted from inside `remembered_window.rs` or `launcher.rs` directly - it rides
+back through `GameSessionEnded`'s event payload instead (four new optional fields), and
+`library.ts`'s existing `game-session-ended` listener (already the place that records playtime)
+persists it via a new `GameRepository.updateWindowRect()`, kept separate from the main edit-form
+`update()` since this is system-captured state a user never directly edits.
+
+Capture happens once, right before the session-end event fires (`remembered_window::capture`),
+reading whatever the tracked window's position/size currently is - not just what was applied at
+launch, so moving/resizing the window mid-session gets saved correctly. Captured *before*
+reverting the fullscreen/always-on-top treatments (if either was also enabled for the same game),
+since restoring those could itself move/resize the window and corrupt what gets saved.
+
+Real edge case handled, not glossed over: a saved rect from a monitor that's since been
+unplugged, or had its resolution changed, could place the window somewhere entirely unreachable.
+`apply()` checks `MonitorFromRect` against the saved rect before ever calling `SetWindowPos` -
+if it doesn't land on any currently-connected display, the saved rect is simply not applied,
+leaving the window wherever the OS/game placed it by default instead of forcing it off-screen.
+
+New `remember_window` + nullable `window_x`/`window_y`/`window_width`/`window_height` columns
+(migration v10) - the four rect columns stay `NULL` until a session with this enabled has
+actually ended and captured one, nothing to restore before that. Per-game opt-in, independent of
+`pseudo_fullscreen`/`always_on_top` - any combination of the three treatments can be active for
+the same game simultaneously.

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconCheck, IconLock, IconX } from "@tabler/icons-vue";
+import { IconLock } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
@@ -101,14 +101,6 @@ async function onCreateSubmit(name: string, pin: string) {
               @keyup.esc="cancelUnlock"
             />
             <p v-if="pinError" class="error-text">{{ pinError }}</p>
-            <div class="creating-actions">
-              <button type="submit" class="icon-button" :title="t('common.continue')">
-                <IconCheck :size="15" :stroke-width="1.75" />
-              </button>
-              <button type="button" class="icon-button" :title="t('common.cancel')" @click="cancelUnlock">
-                <IconX :size="15" :stroke-width="1.75" />
-              </button>
-            </div>
           </form>
           <button v-else type="button" class="profile-card" @click="onCardClick(profile)">
             <div class="profile-avatar">
@@ -126,16 +118,7 @@ async function onCreateSubmit(name: string, pin: string) {
           layout="vertical"
           @submit="onCreateSubmit"
           @keyup.esc="creating = false"
-        >
-          <div class="creating-actions">
-            <button type="submit" class="icon-button" :title="t('common.save')">
-              <IconCheck :size="15" :stroke-width="1.75" />
-            </button>
-            <button type="button" class="icon-button" :title="t('common.cancel')" @click="creating = false">
-              <IconX :size="15" :stroke-width="1.75" />
-            </button>
-          </div>
-        </ProfileCreateForm>
+        />
         <button v-else type="button" class="profile-card add-card" @click="creating = true">
           <div class="profile-avatar profile-avatar-add">+</div>
           <span class="name">{{ t("profiles.newProfile") }}</span>
@@ -214,8 +197,4 @@ h1 {
   text-align: center;
 }
 
-.creating-actions {
-  display: flex;
-  gap: var(--space-2);
-}
 </style>

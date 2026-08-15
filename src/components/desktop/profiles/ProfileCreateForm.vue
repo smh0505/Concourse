@@ -94,7 +94,6 @@ defineExpose({ reset, setError: (message: string) => (error.value = message) });
       :placeholder="confirming ? t('profiles.confirmPin') : t('profiles.optionalPin')"
     />
     <p v-if="error" class="error-text">{{ error }}</p>
-    <small v-if="props.layout === 'vertical'" class="form-hint">{{ t("profiles.enterEscHint") }}</small>
     <slot />
   </form>
 </template>

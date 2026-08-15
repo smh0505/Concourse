@@ -81,6 +81,7 @@ async function onCreateSubmit(name: string, pin: string) {
   <div class="switcher">
     <div class="panel">
       <h1>{{ t("profiles.switcherTitle") }}</h1>
+      <small v-if="creating || unlockingId !== null" class="form-hint">{{ t("profiles.enterEscHint") }}</small>
       <div class="grid">
         <template v-for="profile in profiles.profiles" :key="profile.id">
           <form
@@ -101,7 +102,6 @@ async function onCreateSubmit(name: string, pin: string) {
               @keyup.esc="cancelUnlock"
             />
             <p v-if="pinError" class="error-text">{{ pinError }}</p>
-            <small class="form-hint">{{ t("profiles.enterEscHint") }}</small>
           </form>
           <button v-else type="button" class="profile-card" @click="onCardClick(profile)">
             <div class="profile-avatar">

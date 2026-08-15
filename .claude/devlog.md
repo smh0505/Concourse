@@ -6936,3 +6936,26 @@ New `remember_window` + nullable `window_x`/`window_y`/`window_width`/`window_he
 actually ended and captured one, nothing to restore before that. Per-game opt-in, independent of
 `pseudo_fullscreen`/`always_on_top` - any combination of the three treatments can be active for
 the same game simultaneously.
+
+### Milestone 39 stretch follow-up: fixed capture timing for remembered window
+
+Real bug caught by the user's own question about capture ordering: `capture()` was only ever
+called after exit was confirmed, and by that point the game's window is almost always already
+destroyed (process cleanup tears down its own windows) - the feature silently saved nothing most
+of the time it ran. Fixed by capturing periodically into a `last_known_rect` while the game is
+still confirmed running, piggybacked on the exact same poll tick `refresh()` already uses for the
+other two treatments - one extra cheap `GetWindowRect` call per existing tick, not a new
+mechanism. Session end now falls back to that last successful read instead of relying on one
+now-almost-certainly-too-late capture.
+
+Explicitly considered and rejected doing *more* than this (e.g. a separate faster-polling timer
+just for capture) - same "don't build more than the reference tool/the actual gap needs"
+discipline as the pseudo-fullscreen resize-tracking scoping earlier. This one differs from that
+case though: it's fixing a genuinely broken feature, not adding speculative robustness to a
+working one - the fact that it now works at all is the point, not a nice-to-have refinement.
+
+Also discussed (not acted on): whether saving *size* alongside position is worth it at all,
+since most games already remember their own resolution/windowed setting internally. Concluded
+the real value is position specifically (most games don't remember which monitor/desktop
+position they were last at, especially on multi-monitor setups) - size is likely redundant in
+practice but harmless to also restore, so left as one combined rect rather than narrowing scope.

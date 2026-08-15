@@ -42,9 +42,18 @@ export const useProfilesStore = defineStore("profiles", () => {
   /** Reads the last-active profile from settings and adopts it if it still exists - most users
    *  never explicitly "log out", so this makes a single-profile (or "same person every time")
    *  setup just as zero-friction as before Milestone 30, rather than forcing the picker on every
-   *  launch regardless of profile count. */
-  async function init() {
+   *  launch regardless of profile count.
+   *
+   *  `adoptRemembered: false` (App.vue passes this whenever auto-launching straight into Big
+   *  Picture) skips that entirely, always landing on `null` - a console's "who's playing" boot
+   *  screen should show every time in that mode, not silently resume whoever used it last, even
+   *  though the desktop launch path deliberately does the opposite for the same setting. */
+  async function init(options?: { adoptRemembered?: boolean }) {
     await loadProfiles();
+    if (options?.adoptRemembered === false) {
+      activeProfileId.value = null;
+      return;
+    }
     const stored = await settingsRepo.get(ACTIVE_PROFILE_SETTING);
     const storedId = stored ? Number(stored) : null;
     activeProfileId.value =

@@ -160,11 +160,13 @@ onMounted(async () => {
   // mistaken for a genuine fresh launch - both reach here via the exact same onMounted, but a
   // switch was only ever reachable from the desktop window, not something that should suddenly
   // throw the user into Big Picture just because that startup preference happens to be on.
-  if (appSettings.autoLaunchBigPicture && !profiles.consumeSkipAutoBigPictureOnce()) {
-    bigPicture.value = true;
-  }
+  const enteringBigPicture = appSettings.autoLaunchBigPicture && !profiles.consumeSkipAutoBigPictureOnce();
+  if (enteringBigPicture) bigPicture.value = true;
   await theme.init();
-  await profiles.init();
+  // adoptRemembered: false when auto-launching into Big Picture - always show its own picker
+  // as a console "who's playing" boot screen, not desktop's "remember last user" convenience,
+  // even if a profile was in fact remembered from last session (see profiles.ts's own comment).
+  await profiles.init({ adoptRemembered: !enteringBigPicture });
   if (profiles.activeProfileId !== null) await initLibraryAndPlugins();
 });
 

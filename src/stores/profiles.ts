@@ -68,6 +68,9 @@ export const useProfilesStore = defineStore("profiles", () => {
   }
 
   async function renameProfile(id: number, name: string) {
+    // Same belt-and-suspenders reasoning as deleteProfile's id-1 guard - ProfilesPanel.vue
+    // already hides the rename button for it, this doesn't rely on that alone.
+    if (id === 1) throw new Error("The Admin profile can't be renamed.");
     await profileRepo.rename(id, name);
     await loadProfiles();
   }

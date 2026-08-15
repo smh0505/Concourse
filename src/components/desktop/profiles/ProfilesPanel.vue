@@ -143,6 +143,7 @@ async function switchProfile(id: number) {
               {{ t("profiles.switchTo") }}
             </button>
             <button
+              v-if="profile.id !== 1"
               class="icon-button"
               :title="t('profiles.rename')"
               @click="startEdit(profile.id, profile.name)"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
@@ -13,6 +13,8 @@ import {
   IconX,
 } from "@tabler/icons-vue";
 
+import { useProfilesStore } from "@/stores/profiles";
+
 defineProps<{
   sidebarCollapsed: boolean;
 }>();
@@ -24,8 +26,18 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const profiles = useProfilesStore();
 const appWindow = getCurrentWindow();
 const maximized = ref(false);
+
+// "Concourse" is the product's actual name (proper noun, not translated per-locale) - unlike
+// the old generic "Game Library" wording this replaces, which was. Falls back to just
+// "Concourse" if somehow rendered before a profile is active (shouldn't happen - TitleBar only
+// mounts inside App.vue's post-profile-selection branch).
+const windowTitle = computed(() => {
+  const activeProfile = profiles.profiles.find((p) => p.id === profiles.activeProfileId);
+  return activeProfile ? `Concourse - ${activeProfile.name}` : "Concourse";
+});
 
 async function refreshMaximized() {
   maximized.value = await appWindow.isMaximized();
@@ -67,7 +79,7 @@ onMounted(async () => {
       <button class="titlebar-button" :title="t('titleBar.switchProfile')" @click="emit('switchProfile')">
         <IconUsers :size="17" :stroke-width="1.75" />
       </button>
-      <span class="titlebar-title" data-tauri-drag-region>{{ t("titleBar.appName") }}</span>
+      <span class="titlebar-title" data-tauri-drag-region>{{ windowTitle }}</span>
     </div>
     <div class="titlebar-controls">
       <button class="titlebar-button" :title="t('titleBar.minimize')" @click="onMinimize">

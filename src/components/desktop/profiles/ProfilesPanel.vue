@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconCheck, IconLock, IconLockOpen, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
+import { IconCheck, IconLock, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
@@ -77,13 +77,9 @@ async function onPinSubmit() {
   if (pinEditingId.value === null) return;
 
   if (!confirmingPin.value) {
-    if (!pinInput.value) {
-      // Nothing typed - Enter here just closes the form rather than saving an empty PIN.
-      cancelPinEdit();
-      return;
-    }
-    // Stage one done - stash what was typed, blank the (same) field, and ask for it again
-    // instead of showing a second field alongside the first.
+    // Stage one done (even if left blank - an empty PIN confirmed empty again means "unset
+    // it", not "cancel", see below) - stash what was typed, blank the (same) field, and ask
+    // for it again instead of showing a second field alongside the first.
     pendingPin.value = pinInput.value;
     pinInput.value = "";
     confirmingPin.value = true;
@@ -101,29 +97,17 @@ async function onPinSubmit() {
   }
 
   try {
-    await profiles.setPin(pinEditingId.value, pendingPin.value);
+    // Both entries blank and matching means "remove the PIN", the only way to do that now
+    // that there's no separate remove button.
+    if (pendingPin.value) {
+      await profiles.setPin(pinEditingId.value, pendingPin.value);
+    } else {
+      await profiles.clearPin(pinEditingId.value);
+    }
     cancelPinEdit();
   } catch (e) {
     pinError.value = String(e);
   }
-}
-
-async function removePin(id: number) {
-  try {
-    await profiles.clearPin(id);
-  } catch (e) {
-    toasts.push(String(e), "error");
-  }
-}
-
-/** A profile switch changes which library.db rows every store reads (Milestone 30) - rather
- *  than threading a lighter-weight re-init path through every one of them (library, tags,
- *  collections, stats, plugin enablement...), a full reload just re-runs App.vue's own
- *  onMounted from scratch against the newly-active profile, the same as a normal app restart
- *  would. Simple and correct, if not the snappiest possible transition. */
-async function switchProfile(id: number) {
-  await profiles.switchTo(id);
-  window.location.reload();
 }
 </script>
 
@@ -165,14 +149,6 @@ async function switchProfile(id: number) {
               </div>
               <div class="row-controls">
                 <button
-                  v-if="profile.id !== profiles.activeProfileId"
-                  class="icon-button"
-                  :title="t('profiles.switchTo')"
-                  @click="switchProfile(profile.id)"
-                >
-                  {{ t("profiles.switchTo") }}
-                </button>
-                <button
                   v-if="profile.id !== 1"
                   class="icon-button"
                   :title="t('profiles.rename')"
@@ -186,14 +162,6 @@ async function switchProfile(id: number) {
                   @click="startPinEdit(profile.id)"
                 >
                   <IconLock :size="15" :stroke-width="1.75" />
-                </button>
-                <button
-                  v-if="profile.pin_hash"
-                  class="icon-button"
-                  :title="t('profiles.removePin')"
-                  @click="removePin(profile.id)"
-                >
-                  <IconLockOpen :size="15" :stroke-width="1.75" />
                 </button>
                 <button
                   v-if="profile.id !== 1 && profiles.profiles.length > 1"

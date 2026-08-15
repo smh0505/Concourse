@@ -7057,3 +7057,21 @@ game's current remember_window position) and shows them as a single `width x hei
 dropdown rather than three separate number fields.
 
 Milestone 39 (core + all three stretch items) is now fully complete.
+
+### Fix: quick-launch overlay showing no games
+
+User reported the quick-launch overlay's game list not matching the real library (empty, or
+close to it). Root cause: `QuickLaunchOverlay.vue`'s `onMounted` awaited `appSettings.init()`,
+then `resetAndFocus()` awaited `theme.init()`, both *before* `library.refresh()` ever ran - any
+throw in either (a DB read, or one of several `invoke` calls neither of which the game list
+actually depends on) aborted the async chain and skipped `library.refresh()` entirely, leaving
+`library.games` stuck at its empty initial value. Since the overlay window is created once and
+reused (never destroyed), the same failure repeated on every subsequent show with no retry path -
+this window's core purpose (showing the real library) was silently hostage to two unrelated
+subsystems' initialization succeeding first.
+
+Fixed by reordering so `library.refresh()` always runs first and unconditionally, with
+`appSettings.init()`/`theme.init()` each wrapped in their own try/catch (logged, not fatal) -
+theming and quick-launch-hotkey persistence are nice-to-haves for this window, not the actual
+feature, so neither should be able to block the game list again regardless of what breaks inside
+them later.

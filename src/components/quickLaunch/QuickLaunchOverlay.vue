@@ -54,11 +54,20 @@ async function resetAndFocus() {
   search.value = "";
   selectedIndex.value = 0;
   visibleCount.value = BATCH_SIZE;
-  // Re-applied on every show (not just once on mount) - the overlay window is created once and
-  // reused (hidden/shown, never destroyed), so a theme changed in Settings while it was hidden
-  // needs to be picked up the next time it's shown, not just at first launch.
-  await theme.init();
+  // library.refresh() runs first and on its own - this window's whole purpose is showing the
+  // real library, so a failure in something unrelated (theming) must never leave it silently
+  // stuck on an empty list. Previously theme.init() ran first and unguarded; any throw there
+  // (or in appSettings.init(), see onMounted below) skipped this call entirely every time the
+  // overlay was shown, with no retry - exactly the "quick-launch shows no games" symptom.
   await library.refresh();
+  try {
+    // Re-applied on every show (not just once on mount) - the overlay window is created once
+    // and reused (hidden/shown, never destroyed), so a theme changed in Settings while it was
+    // hidden needs to be picked up the next time it's shown, not just at first launch.
+    await theme.init();
+  } catch (e) {
+    console.error("quick-launch: theme init failed, continuing without it", e);
+  }
   await nextTick();
   inputEl.value?.focus();
   // The first batch might not actually overflow the results container (a short list, or a
@@ -98,7 +107,11 @@ function onKeydown(e: KeyboardEvent) {
 let unlistenShown: UnlistenFn | undefined;
 
 onMounted(async () => {
-  await appSettings.init();
+  try {
+    await appSettings.init();
+  } catch (e) {
+    console.error("quick-launch: appSettings init failed, continuing without it", e);
+  }
   await resetAndFocus();
   unlistenShown = await listen("quick-launch-shown", resetAndFocus);
 });

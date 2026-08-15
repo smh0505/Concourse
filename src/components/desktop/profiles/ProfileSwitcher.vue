@@ -5,16 +5,14 @@ import { IconCheck, IconLock, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { BaseModal } from "@/components/desktop/common";
+import ProfileCreateForm from "./ProfileCreateForm.vue";
 import type { Profile } from "@/db";
 
 const { t } = useI18n();
 const profiles = useProfilesStore();
 
 const creating = ref(false);
-const newName = ref("");
-const newPin = ref("");
-const newPinConfirm = ref("");
-const error = ref("");
+const createFormRef = ref<InstanceType<typeof ProfileCreateForm> | null>(null);
 
 const pendingPinProfile = ref<Profile | null>(null);
 const pinValue = ref("");
@@ -54,28 +52,19 @@ async function confirmPin() {
   await select(id);
 }
 
-async function confirmCreate() {
-  const name = newName.value.trim();
-  if (!name) return;
-  error.value = "";
-  if (newPin.value !== newPinConfirm.value) {
-    error.value = t("profiles.pinMismatch");
-    return;
-  }
+async function onCreateSubmit(name: string, pin: string) {
   try {
     // No ToastContainer available yet here - App.vue only mounts it once a profile is active
     // (see App.vue's v-else), so any failure needs its own visible surface, not a silent
-    // console-only swallow.
+    // console-only swallow - setError below, not a toast.
     const id = await profiles.createProfile(name);
-    if (newPin.value) await profiles.setPin(id, newPin.value);
-    newName.value = "";
-    newPin.value = "";
-    newPinConfirm.value = "";
+    if (pin) await profiles.setPin(id, pin);
+    createFormRef.value?.reset();
     creating.value = false;
     await select(id);
   } catch (e) {
     console.error("Failed to create profile:", e);
-    error.value = String(e);
+    createFormRef.value?.setError(String(e));
   }
 }
 </script>
@@ -99,21 +88,14 @@ async function confirmCreate() {
           <span class="name">{{ profile.name }}</span>
         </button>
 
-        <form v-if="creating" class="profile-card creating" @submit.prevent="confirmCreate">
-          <input
-            v-model="newName"
-            autofocus
-            :placeholder="t('profiles.newProfileName')"
-            @keyup.esc="creating = false"
-          />
-          <input v-model="newPin" type="password" inputmode="numeric" :placeholder="t('profiles.optionalPin')" />
-          <input
-            v-if="newPin"
-            v-model="newPinConfirm"
-            type="password"
-            inputmode="numeric"
-            :placeholder="t('profiles.confirmPin')"
-          />
+        <ProfileCreateForm
+          v-if="creating"
+          ref="createFormRef"
+          class="profile-card creating"
+          layout="vertical"
+          @submit="onCreateSubmit"
+          @keyup.esc="creating = false"
+        >
           <div class="creating-actions">
             <button type="submit" class="icon-button" :title="t('common.save')">
               <IconCheck :size="15" :stroke-width="1.75" />
@@ -122,13 +104,12 @@ async function confirmCreate() {
               <IconX :size="15" :stroke-width="1.75" />
             </button>
           </div>
-        </form>
+        </ProfileCreateForm>
         <button v-else type="button" class="profile-card add-card" @click="creating = true">
           <div class="avatar add-avatar">+</div>
           <span class="name">{{ t("profiles.newProfile") }}</span>
         </button>
       </div>
-      <p v-if="error" class="error-text">{{ error }}</p>
     </div>
 
     <BaseModal
@@ -240,11 +221,6 @@ h1 {
 
 .creating {
   cursor: default;
-}
-
-.creating input {
-  width: 100%;
-  text-align: center;
 }
 
 .creating-actions {

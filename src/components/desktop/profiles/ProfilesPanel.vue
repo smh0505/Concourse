@@ -5,14 +5,13 @@ import { IconCheck, IconLock, IconLockOpen, IconPencil, IconTrash, IconX } from 
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
+import ProfileCreateForm from "./ProfileCreateForm.vue";
 
 const { t } = useI18n();
 const profiles = useProfilesStore();
 const toasts = useToastStore();
 
-const newName = ref("");
-const newPin = ref("");
-const newPinConfirm = ref("");
+const createFormRef = ref<InstanceType<typeof ProfileCreateForm> | null>(null);
 const editingId = ref<number | null>(null);
 const editingValue = ref("");
 
@@ -21,19 +20,11 @@ const pinValue = ref("");
 const pinConfirmValue = ref("");
 const pinError = ref("");
 
-async function onCreate() {
-  const name = newName.value.trim();
-  if (!name) return;
-  if (newPin.value !== newPinConfirm.value) {
-    toasts.push(t("profiles.pinMismatch"), "error");
-    return;
-  }
+async function onCreateSubmit(name: string, pin: string) {
   try {
     const id = await profiles.createProfile(name);
-    if (newPin.value) await profiles.setPin(id, newPin.value);
-    newName.value = "";
-    newPin.value = "";
-    newPinConfirm.value = "";
+    if (pin) await profiles.setPin(id, pin);
+    createFormRef.value?.reset();
   } catch (e) {
     toasts.push(String(e), "error");
   }
@@ -115,25 +106,9 @@ async function switchProfile(id: number) {
     <h3>{{ t("profiles.title") }}</h3>
     <small>{{ t("profiles.description") }}</small>
 
-    <form class="add-form" @submit.prevent="onCreate">
-      <input v-model="newName" :placeholder="t('profiles.newProfileName')" />
-      <input
-        v-model="newPin"
-        type="password"
-        inputmode="numeric"
-        class="pin-optional-input"
-        :placeholder="t('profiles.optionalPin')"
-      />
-      <input
-        v-if="newPin"
-        v-model="newPinConfirm"
-        type="password"
-        inputmode="numeric"
-        class="pin-optional-input"
-        :placeholder="t('profiles.confirmPin')"
-      />
+    <ProfileCreateForm ref="createFormRef" class="add-form" layout="horizontal" @submit="onCreateSubmit">
       <button type="submit">{{ t("profiles.addProfile") }}</button>
-    </form>
+    </ProfileCreateForm>
 
     <ul class="item-list">
       <li v-for="profile in profiles.profiles" :key="profile.id" class="item-row list-row-shell">
@@ -241,10 +216,6 @@ async function switchProfile(id: number) {
 }
 
 .pin-edit-form input {
-  max-width: 8rem;
-}
-
-.pin-optional-input {
   max-width: 8rem;
 }
 </style>

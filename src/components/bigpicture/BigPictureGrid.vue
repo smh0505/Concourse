@@ -138,7 +138,7 @@ watch(focusedTile, (el) => {
       />
     </Transition>
     <div class="backdrop-overlay bp-backdrop-overlay-base" />
-    <div class="tile-grid" ref="gridRef">
+    <div v-if="library.games.length > 0" class="tile-grid" ref="gridRef">
       <BigPictureTile
         v-for="(game, index) in library.games"
         :key="game.id"
@@ -148,10 +148,10 @@ watch(focusedTile, (el) => {
         @select="library.launchGame(game)"
         @hover="onTileHover(index)"
       />
-      <div v-if="library.games.length === 0" class="empty bp-empty-state">
-        <IconInboxOff :size="48" :stroke-width="1.5" />
-        <p>{{ t("bigPicture.emptyLibrary") }}</p>
-      </div>
+    </div>
+    <div v-else class="empty bp-empty-state">
+      <IconInboxOff :size="48" :stroke-width="1.5" />
+      <p>{{ t("bigPicture.emptyLibrary") }}</p>
     </div>
   </div>
 </template>
@@ -191,10 +191,16 @@ watch(focusedTile, (el) => {
   gap: var(--space-6, 2rem);
 }
 
-/* .bp-empty-state (shared, styles.css) supplies the shared look; this layers the
-   grid-specific full-width span and centered text on top. */
+/* .bp-empty-state (shared, styles.css) supplies the shared look; this layers full-viewport
+   centering on top (no longer a grid item since Milestone-era refactor moved it outside
+   .tile-grid - centering it as a grid row centered it horizontally but left it pinned to the
+   top vertically). 6rem subtracted matches .big-picture's own 3rem top+bottom padding, since
+   .bp-surface's fixed inset:0 means 100vh is this element's own full height already. */
 .empty {
-  grid-column: 1 / -1;
+  position: relative;
+  z-index: 2;
+  height: calc(100vh - 6rem);
+  justify-content: center;
   text-align: center;
 }
 </style>

@@ -165,7 +165,7 @@ async function switchProfile(id: number) {
               <IconLockOpen :size="15" :stroke-width="1.75" />
             </button>
             <button
-              v-if="profiles.profiles.length > 1"
+              v-if="profile.id !== 1 && profiles.profiles.length > 1"
               class="icon-button"
               :title="t('profiles.delete')"
               @click="onDelete(profile.id)"

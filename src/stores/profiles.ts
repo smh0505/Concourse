@@ -100,6 +100,10 @@ export const useProfilesStore = defineStore("profiles", () => {
    *  activeProfileId so App.vue falls back to the picker rather than pointing at a profile that
    *  no longer exists. */
   async function deleteProfile(id: number) {
+    // Belt-and-suspenders against the delete button ProfilesPanel.vue already hides for id 1 -
+    // this store method has no other caller today, but shouldn't rely on UI-level hiding alone
+    // to keep the permanent Admin profile from being wiped.
+    if (id === 1) throw new Error("The Admin profile can't be deleted.");
     await gameRepo.deleteByProfile(id);
     await tagRepo.deleteAllForProfile(id);
     await collectionRepo.deleteAllForProfile(id);

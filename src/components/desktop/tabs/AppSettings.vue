@@ -293,7 +293,7 @@ onBeforeUnmount(stopListeningForHotkey);
 }
 
 .language-menu-trigger {
-  width: fit-content;
+  width: max-content;
   justify-content: space-between;
 }
 

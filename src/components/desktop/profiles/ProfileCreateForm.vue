@@ -86,13 +86,24 @@ defineExpose({ reset, setError: (message: string) => (error.value = message) });
 <template>
   <form :class="props.layout" @submit.prevent="onSubmit">
     <div v-if="props.layout === 'vertical'" class="profile-avatar">{{ avatarLetter }}</div>
+    <!-- @keyup.enter on each input, not just @submit.prevent on the form - browsers only
+         implicitly submit a form on Enter when it has a single text-like field or an explicit
+         submit button; this form has neither (two fields, no button since the confirm/cancel
+         icons were dropped), so Enter would otherwise silently do nothing. -->
     <div class="fields">
-      <input v-model="name" autofocus :disabled="confirming" :placeholder="t('profiles.newProfileName')" />
+      <input
+        v-model="name"
+        autofocus
+        :disabled="confirming"
+        :placeholder="t('profiles.newProfileName')"
+        @keyup.enter="onSubmit"
+      />
       <input
         v-model="pinInput"
         type="password"
         inputmode="numeric"
         :placeholder="confirming ? t('profiles.confirmPin') : t('profiles.optionalPin')"
+        @keyup.enter="onSubmit"
       />
     </div>
     <p v-if="error" class="error-text">{{ error }}</p>

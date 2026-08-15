@@ -103,7 +103,8 @@
     "enterPin": "Entrez le code PIN",
     "wrongPin": "Code PIN incorrect",
     "optionalPin": "Code PIN (facultatif)",
-    "enterEscHint": "Entrée pour confirmer, Échap pour annuler"
+    "enterEscHint": "Entrée pour confirmer, Échap pour annuler",
+    "pinPatternHint": "Lettres et chiffres uniquement"
   },
   "candidatePicker": {
     "title": "Plusieurs correspondances trouvées",

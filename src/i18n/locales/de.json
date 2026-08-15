@@ -103,7 +103,8 @@
     "enterPin": "PIN eingeben",
     "wrongPin": "Falsche PIN",
     "optionalPin": "PIN (optional)",
-    "enterEscHint": "Eingabetaste zum Bestätigen, Esc zum Abbrechen"
+    "enterEscHint": "Eingabetaste zum Bestätigen, Esc zum Abbrechen",
+    "pinPatternHint": "Nur Buchstaben und Zahlen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

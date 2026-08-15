@@ -2,8 +2,6 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { sanitizePin } from "@/utils/pin";
-
 // No layout/visual opinions of its own beyond arranging its own fields - the root <form> picks
 // up whatever class the caller passes via normal attrs fallthrough (ProfileSwitcher.vue passes
 // "profile-card creating", ProfilesPanel.vue passes "item-row list-row-shell"), so each
@@ -30,6 +28,7 @@ const pinInput = ref("");
 const pendingPin = ref("");
 const confirming = ref(false);
 const error = ref("");
+const pinInputEl = ref<HTMLInputElement | null>(null);
 
 const avatarLetter = computed(() => name.value.trim().charAt(0).toUpperCase() || "?");
 
@@ -49,6 +48,16 @@ function reset() {
 function onSubmit() {
   const trimmed = name.value.trim();
   if (!trimmed) return;
+
+  // The PIN field's own `pattern` attribute is what actually restricts it to alphanumeric -
+  // this just has to check it explicitly, since Enter here calls onSubmit() directly rather
+  // than going through a real "submit" event (browsers won't implicitly submit a 2-field form
+  // with no submit button, see the input's own comment below), which is the only place native
+  // constraint validation normally runs and blocks on its own.
+  if (!pinInputEl.value?.checkValidity()) {
+    pinInputEl.value?.reportValidity();
+    return;
+  }
 
   if (!confirming.value) {
     if (!pinInput.value) {
@@ -101,10 +110,12 @@ defineExpose({ reset, setError: (message: string) => (error.value = message) });
         @keyup.enter="onSubmit"
       />
       <input
-        :value="pinInput"
+        ref="pinInputEl"
+        v-model="pinInput"
         type="password"
+        pattern="[a-zA-Z0-9]*"
+        :title="t('profiles.pinPatternHint')"
         :placeholder="confirming ? t('profiles.confirmPin') : t('profiles.optionalPin')"
-        @input="pinInput = sanitizePin(($event.target as HTMLInputElement).value)"
         @keyup.enter="onSubmit"
       />
     </div>

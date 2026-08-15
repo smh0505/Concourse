@@ -103,7 +103,8 @@
     "enterPin": "Введите PIN",
     "wrongPin": "Неверный PIN",
     "optionalPin": "PIN (необязательно)",
-    "enterEscHint": "Enter — подтвердить, Esc — отменить"
+    "enterEscHint": "Enter — подтвердить, Esc — отменить",
+    "pinPatternHint": "Только буквы и цифры"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

@@ -103,7 +103,8 @@
     "enterPin": "Introduce el PIN",
     "wrongPin": "PIN incorrecto",
     "optionalPin": "PIN (opcional)",
-    "enterEscHint": "Enter para confirmar, Esc para cancelar"
+    "enterEscHint": "Enter para confirmar, Esc para cancelar",
+    "pinPatternHint": "Solo letras y números"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

@@ -128,7 +128,6 @@ async function initLibraryAndPlugins() {
   await wrapperPlugins.init();
   await translation.init();
   await presence.init();
-  if (appSettings.autoLaunchBigPicture) bigPicture.value = true;
 
   // Two of the three update-check moments (app start, app focus) - the third (install-plugin
   // modal open) lives in AddPlugin.vue. Not awaited - a failed/slow update check shouldn't
@@ -148,10 +147,15 @@ onMounted(async () => {
   // Real OS fullscreen engages immediately, before a profile is even picked, when the user has
   // opted into launching straight into Big Picture - the profile picker itself then renders in
   // Big Picture's own fullscreen console style (BigPictureProfileSwitcher.vue) instead of the
-  // small windowed ProfileSwitcher.vue. Big Picture's palette is hardcoded independent of
-  // theme (see bp-surface's own comment elsewhere), so this doesn't need to wait on theme.init()
-  // below. initLibraryAndPlugins() below still sets this too, for the "profile already
-  // remembered" fast path - harmless to set twice.
+  // small windowed ProfileSwitcher.vue. Big Picture's palette is hardcoded independent of theme
+  // (see bp-surface's own comment elsewhere), so this doesn't need to wait on theme.init() below.
+  // This is the ONLY place bigPicture gets set from the setting - initLibraryAndPlugins() below
+  // deliberately doesn't also check it (it used to, which was the actual bug: that copy fired
+  // unconditionally every time a profile became active, including via ProfileSwitcher's own
+  // desktop picker or App.vue's onSwitchProfile reload, silently dragging the user into Big
+  // Picture mid-session even though neither of those is reachable from Big Picture mode in the
+  // first place). Mode switches now only ever happen here (real fresh launch) or via the
+  // explicit toggle buttons (TitleBar's Big Picture button, the exit button inside it).
   // consumeSkipAutoBigPictureOnce() guards a mid-session "switch profile" reload from being
   // mistaken for a genuine fresh launch - both reach here via the exact same onMounted, but a
   // switch was only ever reachable from the desktop window, not something that should suddenly

@@ -4,7 +4,6 @@ import { useI18n } from "vue-i18n";
 import { IconLock } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
-import { sanitizePin } from "@/utils/pin";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
 import type { Profile } from "@/db";
 
@@ -101,10 +100,11 @@ async function onCreateSubmit(name: string, pin: string) {
             </div>
             <input
               :ref="(el) => (pinInputEl = el as HTMLInputElement | null)"
-              :value="pinValue"
+              v-model="pinValue"
               type="password"
+              pattern="[a-zA-Z0-9]*"
+              :title="t('profiles.pinPatternHint')"
               :placeholder="t('profiles.enterPin')"
-              @input="pinValue = sanitizePin(($event.target as HTMLInputElement).value)"
               @keyup.esc="cancelUnlock"
             />
             <p v-if="pinError" class="error-text">{{ pinError }}</p>

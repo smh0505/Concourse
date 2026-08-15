@@ -103,7 +103,8 @@
     "enterPin": "Inserisci il PIN",
     "wrongPin": "PIN errato",
     "optionalPin": "PIN (facoltativo)",
-    "enterEscHint": "Invio per confermare, Esc per annullare"
+    "enterEscHint": "Invio per confermare, Esc per annullare",
+    "pinPatternHint": "Solo lettere e numeri"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

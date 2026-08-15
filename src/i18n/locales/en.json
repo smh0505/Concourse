@@ -103,7 +103,8 @@
     "enterPin": "Enter PIN",
     "wrongPin": "Wrong PIN",
     "optionalPin": "PIN (optional)",
-    "enterEscHint": "Enter to confirm, Esc to cancel"
+    "enterEscHint": "Enter to confirm, Esc to cancel",
+    "pinPatternHint": "Letters and numbers only"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

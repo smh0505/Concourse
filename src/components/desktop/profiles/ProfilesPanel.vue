@@ -5,7 +5,6 @@ import { IconLock, IconPencil, IconPlus, IconTrash } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
-import { sanitizePin } from "@/utils/pin";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
 
 const { t } = useI18n();
@@ -159,10 +158,11 @@ async function onPinSubmit() {
               >
                 <input
                   :ref="(el) => (pinInputEl = el as HTMLInputElement | null)"
-                  :value="pinInput"
+                  v-model="pinInput"
                   type="password"
+                  pattern="[a-zA-Z0-9]*"
+                  :title="t('profiles.pinPatternHint')"
                   :placeholder="confirmingPin ? t('profiles.confirmPin') : t('profiles.newPin')"
-                  @input="pinInput = sanitizePin(($event.target as HTMLInputElement).value)"
                   @keyup.esc="cancelPinEdit"
                 />
               </form>

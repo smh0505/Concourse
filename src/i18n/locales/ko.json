@@ -103,7 +103,8 @@
     "enterPin": "PIN 입력",
     "wrongPin": "PIN이 틀렸습니다",
     "optionalPin": "PIN (선택 사항)",
-    "enterEscHint": "Enter로 확인, Esc로 취소"
+    "enterEscHint": "Enter로 확인, Esc로 취소",
+    "pinPatternHint": "영문자와 숫자만 가능"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

@@ -152,7 +152,13 @@ onMounted(async () => {
   // theme (see bp-surface's own comment elsewhere), so this doesn't need to wait on theme.init()
   // below. initLibraryAndPlugins() below still sets this too, for the "profile already
   // remembered" fast path - harmless to set twice.
-  if (appSettings.autoLaunchBigPicture) bigPicture.value = true;
+  // consumeSkipAutoBigPictureOnce() guards a mid-session "switch profile" reload from being
+  // mistaken for a genuine fresh launch - both reach here via the exact same onMounted, but a
+  // switch was only ever reachable from the desktop window, not something that should suddenly
+  // throw the user into Big Picture just because that startup preference happens to be on.
+  if (appSettings.autoLaunchBigPicture && !profiles.consumeSkipAutoBigPictureOnce()) {
+    bigPicture.value = true;
+  }
   await theme.init();
   await profiles.init();
   if (profiles.activeProfileId !== null) await initLibraryAndPlugins();
@@ -163,6 +169,7 @@ onMounted(async () => {
  *  profile-scoped store. Unlike that one, this doesn't pick a new profile at all, just clears
  *  the remembered one so the reload lands back on ProfileSwitcher. */
 async function onSwitchProfile() {
+  profiles.skipAutoBigPictureOnce();
   await profiles.backToPicker();
   window.location.reload();
 }

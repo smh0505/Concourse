@@ -2,6 +2,8 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { sanitizePin } from "@/utils/pin";
+
 // No layout/visual opinions of its own beyond arranging its own fields - the root <form> picks
 // up whatever class the caller passes via normal attrs fallthrough (ProfileSwitcher.vue passes
 // "profile-card creating", ProfilesPanel.vue passes "item-row list-row-shell"), so each
@@ -99,10 +101,10 @@ defineExpose({ reset, setError: (message: string) => (error.value = message) });
         @keyup.enter="onSubmit"
       />
       <input
-        v-model="pinInput"
+        :value="pinInput"
         type="password"
-        inputmode="numeric"
         :placeholder="confirming ? t('profiles.confirmPin') : t('profiles.optionalPin')"
+        @input="pinInput = sanitizePin(($event.target as HTMLInputElement).value)"
         @keyup.enter="onSubmit"
       />
     </div>

@@ -12,6 +12,10 @@ import {
 } from "@/db";
 
 const ACTIVE_PROFILE_SETTING = "active_profile_id";
+// sessionStorage (not a Pinia ref) - survives the window.location.reload() every "switch
+// profile" flow uses (ProfilesPanel.vue's switchProfile, App.vue's onSwitchProfile), unlike
+// in-memory state which a reload wipes entirely.
+const SKIP_AUTO_BIG_PICTURE_ONCE_KEY = "skip_auto_big_picture_once";
 
 /** Milestone 30, step 1 - which library (profile_id) is currently active. Deliberately its own
  *  store, not folded into appSettings - profile switching drives a full library reload
@@ -59,6 +63,23 @@ export const useProfilesStore = defineStore("profiles", () => {
   async function backToPicker() {
     activeProfileId.value = null;
     await settingsRepo.delete(ACTIVE_PROFILE_SETTING);
+  }
+
+  /** Call right before a "switch profile" reload (App.vue's onSwitchProfile,
+   *  ProfilesPanel.vue's switchProfile) - App.vue's onMounted otherwise has no way to tell that
+   *  reload apart from a genuine fresh app launch, and would wrongly re-apply
+   *  autoLaunchBigPicture on every mid-session profile switch even though the user was sitting
+   *  in the desktop window (the only place either of those actions is reachable from) when they
+   *  triggered it. */
+  function skipAutoBigPictureOnce() {
+    sessionStorage.setItem(SKIP_AUTO_BIG_PICTURE_ONCE_KEY, "1");
+  }
+
+  /** Consumes (clears) the flag - a one-shot check, not a persistent setting. */
+  function consumeSkipAutoBigPictureOnce(): boolean {
+    const skip = sessionStorage.getItem(SKIP_AUTO_BIG_PICTURE_ONCE_KEY) === "1";
+    if (skip) sessionStorage.removeItem(SKIP_AUTO_BIG_PICTURE_ONCE_KEY);
+    return skip;
   }
 
   async function createProfile(name: string): Promise<number> {
@@ -126,6 +147,8 @@ export const useProfilesStore = defineStore("profiles", () => {
     loadProfiles,
     switchTo,
     backToPicker,
+    skipAutoBigPictureOnce,
+    consumeSkipAutoBigPictureOnce,
     createProfile,
     renameProfile,
     deleteProfile,

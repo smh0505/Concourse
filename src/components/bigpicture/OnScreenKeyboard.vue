@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useGamepadDirections } from "@/composables/useGamepadNav";
+import { isPinChar } from "@/utils/pin";
 
 /** Milestone 30 - Big Picture profile creation/unlock needs text entry (names, PINs that aren't
  *  numeral-only) without assuming a physical keyboard is attached. Gamepad/mouse-navigable grid
@@ -64,6 +65,10 @@ function moveCol(delta: number) {
 }
 
 function activate(key: Key) {
+  // masked (PIN entry) restricts to letters/digits - "," "." and space stay in the key grid
+  // for profile-name entry (unmasked) but are no-ops here instead of removing them and
+  // reshuffling every row's own length/nav math for the masked case alone.
+  if (props.masked && ((key.kind === "char" && !isPinChar(key.value)) || key.kind === "space")) return;
   if (key.kind === "char") value.value += key.value;
   else if (key.kind === "space") value.value += " ";
   else if (key.kind === "backspace") value.value = value.value.slice(0, -1);
@@ -96,7 +101,7 @@ function onKeydown(event: KeyboardEvent) {
   else if (event.key === "Enter") emit("confirm");
   else if (event.key === "Escape") emit("cancel");
   else if (event.key === "Backspace") value.value = value.value.slice(0, -1);
-  else if (event.key.length === 1) value.value += event.key;
+  else if (event.key.length === 1 && (!props.masked || isPinChar(event.key))) value.value += event.key;
   else return;
   event.preventDefault();
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconCheck, IconLock, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
+import { IconCheck, IconLock, IconPencil, IconPlus, IconTrash, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
@@ -11,6 +11,7 @@ const { t } = useI18n();
 const profiles = useProfilesStore();
 const toasts = useToastStore();
 
+const creating = ref(false);
 const createFormRef = ref<InstanceType<typeof ProfileCreateForm> | null>(null);
 const editingId = ref<number | null>(null);
 const editingValue = ref("");
@@ -30,6 +31,7 @@ async function onCreateSubmit(name: string, pin: string) {
     const id = await profiles.createProfile(name);
     if (pin) await profiles.setPin(id, pin);
     createFormRef.value?.reset();
+    creating.value = false;
   } catch (e) {
     toasts.push(String(e), "error");
   }
@@ -113,10 +115,28 @@ async function onPinSubmit() {
 
 <template>
   <div class="profiles-section">
-    <h3>{{ t("profiles.title") }}</h3>
+    <div class="section-title-row">
+      <h3>{{ t("profiles.title") }}</h3>
+      <button
+        v-if="!creating"
+        type="button"
+        class="icon-button"
+        :title="t('profiles.addProfile')"
+        @click="creating = true"
+      >
+        <IconPlus :size="15" :stroke-width="1.75" />
+      </button>
+    </div>
     <small>{{ t("profiles.description") }}</small>
 
-    <ProfileCreateForm ref="createFormRef" class="add-form" layout="horizontal" @submit="onCreateSubmit">
+    <ProfileCreateForm
+      v-if="creating"
+      ref="createFormRef"
+      class="add-form"
+      layout="horizontal"
+      @submit="onCreateSubmit"
+      @keyup.esc="creating = false"
+    >
       <button type="submit">{{ t("profiles.addProfile") }}</button>
     </ProfileCreateForm>
 
@@ -199,6 +219,16 @@ async function onPinSubmit() {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-title-row h3 {
+  margin: 0;
 }
 
 /* Takes over .item-row's usual flex:1 slot, so the inline PIN form below can span the row's

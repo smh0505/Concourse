@@ -4,7 +4,6 @@ import { useI18n } from "vue-i18n";
 import { IconCheck, IconLock, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
-import { BaseModal } from "@/components/desktop/common";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
 import type { Profile } from "@/db";
 
@@ -14,7 +13,10 @@ const profiles = useProfilesStore();
 const creating = ref(false);
 const createFormRef = ref<InstanceType<typeof ProfileCreateForm> | null>(null);
 
-const pendingPinProfile = ref<Profile | null>(null);
+// A locked profile's card transforms in place into a PIN-entry form - same "click reveals an
+// inline form on the card itself" pattern as the "+ New Profile" card above, rather than a
+// separate modal popup (per user request, matching the two flows' UX).
+const unlockingId = ref<number | null>(null);
 const pinValue = ref("");
 const pinError = ref("");
 const pinInputEl = ref<HTMLInputElement | null>(null);
@@ -23,32 +25,38 @@ async function select(id: number) {
   await profiles.switchTo(id);
 }
 
-/** PIN-less profiles switch immediately on click; a PIN-protected one opens the prompt modal
- *  instead - `select` itself stays the one place that actually flips activeProfileId, whether
- *  it's reached directly or after a successful verifyPin below. */
+/** PIN-less profiles switch immediately on click; a PIN-protected one reveals the inline
+ *  unlock form instead - `select` itself stays the one place that actually flips
+ *  activeProfileId, whether it's reached directly or after a successful confirmUnlock below. */
 async function onCardClick(profile: Profile) {
   if (!profile.pin_hash) {
     await select(profile.id);
     return;
   }
-  pendingPinProfile.value = profile;
+  unlockingId.value = profile.id;
   pinValue.value = "";
   pinError.value = "";
   await nextTick();
   pinInputEl.value?.focus();
 }
 
-async function confirmPin() {
-  if (!pendingPinProfile.value) return;
-  const ok = await profiles.verifyPin(pendingPinProfile.value.id, pinValue.value);
+function cancelUnlock() {
+  unlockingId.value = null;
+  pinValue.value = "";
+  pinError.value = "";
+}
+
+async function confirmUnlock() {
+  if (unlockingId.value === null) return;
+  const ok = await profiles.verifyPin(unlockingId.value, pinValue.value);
   if (!ok) {
     pinError.value = t("profiles.wrongPin");
     pinValue.value = "";
     pinInputEl.value?.focus();
     return;
   }
-  const id = pendingPinProfile.value.id;
-  pendingPinProfile.value = null;
+  const id = unlockingId.value;
+  unlockingId.value = null;
   await select(id);
 }
 
@@ -74,19 +82,42 @@ async function onCreateSubmit(name: string, pin: string) {
     <div class="panel">
       <h1>{{ t("profiles.switcherTitle") }}</h1>
       <div class="grid">
-        <button
-          v-for="profile in profiles.profiles"
-          :key="profile.id"
-          type="button"
-          class="profile-card"
-          @click="onCardClick(profile)"
-        >
-          <div class="avatar">
-            {{ profile.name.charAt(0).toUpperCase() }}
-            <IconLock v-if="profile.pin_hash" :size="14" :stroke-width="2" class="lock-badge" />
-          </div>
-          <span class="name">{{ profile.name }}</span>
-        </button>
+        <template v-for="profile in profiles.profiles" :key="profile.id">
+          <form
+            v-if="unlockingId === profile.id"
+            class="profile-card creating"
+            @submit.prevent="confirmUnlock"
+          >
+            <div class="avatar">
+              {{ profile.name.charAt(0).toUpperCase() }}
+              <IconLock :size="14" :stroke-width="2" class="lock-badge" />
+            </div>
+            <input
+              :ref="(el) => (pinInputEl = el as HTMLInputElement | null)"
+              v-model="pinValue"
+              type="password"
+              inputmode="numeric"
+              :placeholder="t('profiles.enterPin')"
+              @keyup.esc="cancelUnlock"
+            />
+            <p v-if="pinError" class="error-text">{{ pinError }}</p>
+            <div class="creating-actions">
+              <button type="submit" class="icon-button" :title="t('common.continue')">
+                <IconCheck :size="15" :stroke-width="1.75" />
+              </button>
+              <button type="button" class="icon-button" :title="t('common.cancel')" @click="cancelUnlock">
+                <IconX :size="15" :stroke-width="1.75" />
+              </button>
+            </div>
+          </form>
+          <button v-else type="button" class="profile-card" @click="onCardClick(profile)">
+            <div class="avatar">
+              {{ profile.name.charAt(0).toUpperCase() }}
+              <IconLock v-if="profile.pin_hash" :size="14" :stroke-width="2" class="lock-badge" />
+            </div>
+            <span class="name">{{ profile.name }}</span>
+          </button>
+        </template>
 
         <ProfileCreateForm
           v-if="creating"
@@ -111,25 +142,6 @@ async function onCreateSubmit(name: string, pin: string) {
         </button>
       </div>
     </div>
-
-    <BaseModal
-      :open="pendingPinProfile !== null"
-      :title="pendingPinProfile?.name"
-      max-width="300px"
-      @close="pendingPinProfile = null"
-    >
-      <form class="pin-form" @submit.prevent="confirmPin">
-        <input
-          ref="pinInputEl"
-          v-model="pinValue"
-          type="password"
-          inputmode="numeric"
-          :placeholder="t('profiles.enterPin')"
-        />
-        <p v-if="pinError" class="error-text">{{ pinError }}</p>
-        <button type="submit">{{ t("common.continue") }}</button>
-      </form>
-    </BaseModal>
   </div>
 </template>
 
@@ -223,19 +235,15 @@ h1 {
   cursor: default;
 }
 
+/* Only the hand-rolled unlock <form> below needs this - ProfileCreateForm.vue styles its own
+   inputs internally (its layout="vertical" prop), invisible to this scoped selector. */
+.creating input {
+  width: 100%;
+  text-align: center;
+}
+
 .creating-actions {
   display: flex;
   gap: var(--space-2);
-}
-
-.pin-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.pin-form input {
-  text-align: center;
-  letter-spacing: 0.3em;
 }
 </style>

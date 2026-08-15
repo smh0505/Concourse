@@ -10,6 +10,7 @@ const profiles = useProfilesStore();
 
 const creating = ref(false);
 const newName = ref("");
+const error = ref("");
 
 async function select(id: number) {
   await profiles.switchTo(id);
@@ -18,10 +19,19 @@ async function select(id: number) {
 async function confirmCreate() {
   const name = newName.value.trim();
   if (!name) return;
-  const id = await profiles.createProfile(name);
-  newName.value = "";
-  creating.value = false;
-  await select(id);
+  error.value = "";
+  try {
+    // No ToastContainer available yet here - App.vue only mounts it once a profile is active
+    // (see App.vue's v-else), so any failure needs its own visible surface, not a silent
+    // console-only swallow.
+    const id = await profiles.createProfile(name);
+    newName.value = "";
+    creating.value = false;
+    await select(id);
+  } catch (e) {
+    console.error("Failed to create profile:", e);
+    error.value = String(e);
+  }
 }
 </script>
 
@@ -62,6 +72,7 @@ async function confirmCreate() {
           <span class="name">{{ t("profiles.newProfile") }}</span>
         </button>
       </div>
+      <p v-if="error" class="error-text">{{ error }}</p>
     </div>
   </div>
 </template>

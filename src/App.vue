@@ -253,13 +253,17 @@ onUnmounted(() => {
     <BigPictureSlideshow v-else @close="bigPicture = false" />
   </div>
 
-  <ToastContainer />
   <CandidatePicker
     :open="metadataProviders.pendingCandidateSections !== null"
     :sections="metadataProviders.pendingCandidateSections ?? []"
     :on-submit="metadataProviders.submitCandidateSelections"
   />
   </template>
+
+  <!-- Always mounted, unlike CandidatePicker above - a toast can fire before a profile is even
+       selected (e.g. ProfileSwitcher's own creation flow), not just from post-login library
+       actions. -->
+  <ToastContainer />
 </template>
 
 <style scoped>

@@ -7205,3 +7205,24 @@ without picking a replacement, then the same reload-based approach `ProfilesPane
 scratch, landing back on `ProfileSwitcher`. Consistent with step 1's existing reasoning for not
 threading a lighter-weight re-init path through every profile-scoped store for an action a user
 takes rarely.
+
+### Milestone 30: admin-only profile management, plus several UX iterations
+
+A run of small follow-up requests after the PIN feature landed, each committed separately:
+fixing the two-migration-failure fallout (dev `library.db` needed a clean reset after v13/v14
+both hit real SQLite errors mid-development - see milestones.md); consolidating
+ProfileSwitcher's and ProfilesPanel's create-forms into one `ProfileCreateForm.vue` (shared
+name/PIN/confirm-PIN state and validation, each caller keeping its own outer shape via attrs
+fallthrough and a `layout` prop); replacing the PIN-entry `BaseModal` with the same inline
+card-transform pattern the create form already used; a live avatar preview tracking the typed
+name; reusing a single PIN field for confirmation (blank-and-relabel on submit) instead of
+showing two fields at once; dropping the redundant check/x buttons in favor of native Enter-
+submit/Esc-cancel, with one hint line under the switcher title; fixing `creating`/`unlockingId`
+not being mutually exclusive (clicking an existing profile while the create form was open left
+both visible).
+
+Last one: `useProfilesStore` gained `isAdmin` (`activeProfileId === 1` - the migration-seeded
+profile is permanently id 1 regardless of later renames, so this can't be spoofed by renaming a
+profile to "Admin"), gating `ProfilesPanel` out of Settings entirely for every other profile.
+"Switch Profile" in `TitleBar.vue` stays available to all profiles - that's normal navigation
+(stepping back to the picker), not a management action.

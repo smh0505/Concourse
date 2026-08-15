@@ -5,6 +5,7 @@ import { IconChevronDown } from "@tabler/icons-vue";
 
 import { useAppSettingsStore } from "@/stores/appSettings";
 import { useTranslationStore } from "@/stores/translation";
+import { useProfilesStore } from "@/stores/profiles";
 import { DropdownMenu } from "@/components/desktop/common";
 import { messages } from "@/i18n";
 import PluginSettings from "./PluginSettings.vue";
@@ -13,6 +14,7 @@ import { ProfilesPanel } from "@/components/desktop/profiles";
 const { t } = useI18n();
 const appSettings = useAppSettingsStore();
 const translation = useTranslationStore();
+const profiles = useProfilesStore();
 const localeOptions = Object.keys(messages) as (keyof typeof messages)[];
 const localeNames: Record<string, string> = {
   en: "English",
@@ -149,7 +151,7 @@ onBeforeUnmount(stopListeningForHotkey);
       </DropdownMenu>
     </div>
 
-    <div class="translation-section">
+    <div v-if="profiles.isAdmin" class="translation-section">
       <ProfilesPanel />
     </div>
 

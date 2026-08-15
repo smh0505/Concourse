@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
 import {
@@ -24,6 +24,12 @@ export const useProfilesStore = defineStore("profiles", () => {
   // profile was deleted from a different install of the same library.db, or just deleted here
   // and nothing else picked yet).
   const activeProfileId = ref<number | null>(null);
+
+  // The seeded profile (migration v13 always inserts it as id 1, "Admin") is the one permanent
+  // admin - not a renameable/reassignable flag, since renaming a profile's display name (e.g.
+  // back to "Default") must not accidentally strip or grant this. Gates profile management
+  // (ProfilesPanel) out of Settings for every other profile.
+  const isAdmin = computed(() => activeProfileId.value === 1);
 
   async function loadProfiles() {
     profiles.value = await profileRepo.list();
@@ -108,6 +114,7 @@ export const useProfilesStore = defineStore("profiles", () => {
   return {
     profiles,
     activeProfileId,
+    isAdmin,
     init,
     loadProfiles,
     switchTo,

@@ -80,8 +80,10 @@ async function onCreateSubmit(name: string, pin: string) {
 <template>
   <div class="switcher">
     <div class="panel">
-      <h1>{{ t("profiles.switcherTitle") }}</h1>
-      <small v-if="creating || unlockingId !== null" class="form-hint">{{ t("profiles.enterEscHint") }}</small>
+      <div class="header">
+        <h1>{{ t("profiles.switcherTitle") }}</h1>
+        <small v-if="creating || unlockingId !== null" class="form-hint">{{ t("profiles.enterEscHint") }}</small>
+      </div>
       <div class="grid">
         <template v-for="profile in profiles.profiles" :key="profile.id">
           <form
@@ -144,6 +146,13 @@ async function onCreateSubmit(name: string, pin: string) {
   flex-direction: column;
   align-items: center;
   gap: var(--space-6);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 h1 {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { IconCheck, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 
@@ -48,8 +49,12 @@ async function confirmCreate() {
             @keyup.esc="creating = false"
           />
           <div class="creating-actions">
-            <button type="submit">{{ t("common.save") }}</button>
-            <button type="button" @click="creating = false">{{ t("common.cancel") }}</button>
+            <button type="submit" class="icon-button" :title="t('common.save')">
+              <IconCheck :size="15" :stroke-width="1.75" />
+            </button>
+            <button type="button" class="icon-button" :title="t('common.cancel')" @click="creating = false">
+              <IconX :size="15" :stroke-width="1.75" />
+            </button>
           </div>
         </form>
         <button v-else type="button" class="profile-card add-card" @click="creating = true">

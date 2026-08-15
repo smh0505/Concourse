@@ -331,6 +331,7 @@ onBeforeUnmount(stopListeningForHotkey);
 .language-menu-trigger {
   width: 100%;
   justify-content: space-between;
+  text-align: right;
 }
 
 /* No right:0 override (unlike PluginSettings.vue's tabs-dropdown-panel) - that stretched the

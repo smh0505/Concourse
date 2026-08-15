@@ -40,6 +40,15 @@ export function useGamepadDirections(options: UseGamepadDirectionsOptions) {
   let confirmWasPressed = false;
   let cancelWasPressed = false;
   let frameHandle: number | undefined;
+  // Polling (unlike a DOM keydown/click) has no natural "this press already happened" edge -
+  // whatever's still physically held on this composable's very first tick looks identical to a
+  // fresh press. That matters here specifically because a confirm/select press on one screen
+  // routinely mounts a brand new consumer of this composable in reaction (BigPictureProfileSwitcher
+  // selecting a locked profile mounts OnScreenKeyboard.vue, still while that same button is
+  // held) - without this, its first poll would see "confirm held, wasn't held before" and fire
+  // immediately, e.g. inserting a stray character the instant the keyboard opens. The first
+  // tick only records the current state as the baseline; real input starts on the next one.
+  let firstPoll = true;
 
   const directionHandlers: Record<Direction, (() => void) | undefined> = {
     up: options.onUp,
@@ -82,22 +91,29 @@ export function useGamepadDirections(options: UseGamepadDirectionsOptions) {
       const axisThreshold = mapping.axisThreshold ?? 0.5;
       const now = performance.now();
 
-      handleDirection("up", isDirectionActive(mapping.dpadUp, pad, axisThreshold), now);
-      handleDirection("down", isDirectionActive(mapping.dpadDown, pad, axisThreshold), now);
-      handleDirection("left", isDirectionActive(mapping.dpadLeft, pad, axisThreshold), now);
-      handleDirection("right", isDirectionActive(mapping.dpadRight, pad, axisThreshold), now);
-
       const confirmPressed = isDirectionActive(mapping.buttonConfirm, pad, axisThreshold);
-      if (confirmPressed && !confirmWasPressed) {
-        options.onConfirm?.();
-      }
-      confirmWasPressed = confirmPressed;
-
       const cancelPressed = isDirectionActive(mapping.buttonCancel, pad, axisThreshold);
-      if (cancelPressed && !cancelWasPressed) {
-        options.onCancel?.();
+
+      if (firstPoll) {
+        confirmWasPressed = confirmPressed;
+        cancelWasPressed = cancelPressed;
+        firstPoll = false;
+      } else {
+        handleDirection("up", isDirectionActive(mapping.dpadUp, pad, axisThreshold), now);
+        handleDirection("down", isDirectionActive(mapping.dpadDown, pad, axisThreshold), now);
+        handleDirection("left", isDirectionActive(mapping.dpadLeft, pad, axisThreshold), now);
+        handleDirection("right", isDirectionActive(mapping.dpadRight, pad, axisThreshold), now);
+
+        if (confirmPressed && !confirmWasPressed) {
+          options.onConfirm?.();
+        }
+        confirmWasPressed = confirmPressed;
+
+        if (cancelPressed && !cancelWasPressed) {
+          options.onCancel?.();
+        }
+        cancelWasPressed = cancelPressed;
       }
-      cancelWasPressed = cancelPressed;
     }
 
     frameHandle = requestAnimationFrame(poll);

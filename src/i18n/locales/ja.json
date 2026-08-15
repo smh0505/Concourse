@@ -21,7 +21,7 @@
     "downloadingEngine": "ダウンロード中...",
     "remove": "削除",
     "launchOptions": "起動オプション",
-    "quickLaunchHotkey": "グローバルホットキー",
+    "quickLaunchHotkey": "クイックランチのグローバルホットキー",
     "pressKeys": "キーを押してください...",
     "closeToTray": "終了せずにトレイに格納する"
   },

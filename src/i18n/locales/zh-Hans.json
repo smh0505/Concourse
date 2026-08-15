@@ -21,7 +21,7 @@
     "downloadingEngine": "下载中...",
     "remove": "删除",
     "launchOptions": "启动选项",
-    "quickLaunchHotkey": "全局快捷键",
+    "quickLaunchHotkey": "快速启动全局快捷键",
     "pressKeys": "请按键...",
     "closeToTray": "关闭时最小化到托盘而非退出"
   },

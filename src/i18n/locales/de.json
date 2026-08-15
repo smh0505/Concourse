@@ -21,7 +21,7 @@
     "downloadingEngine": "Wird heruntergeladen...",
     "remove": "Entfernen",
     "launchOptions": "Startoptionen",
-    "quickLaunchHotkey": "Globale Tastenkombination",
+    "quickLaunchHotkey": "Globale Tastenkombination für Quick Launch",
     "pressKeys": "Tasten drücken...",
     "closeToTray": "In die Taskleiste minimieren statt beenden"
   },

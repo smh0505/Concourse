@@ -21,7 +21,7 @@
     "download": "Download",
     "remove": "Remove",
     "launchOptions": "Launch Options",
-    "quickLaunchHotkey": "Global hotkey",
+    "quickLaunchHotkey": "Quick Launch global hotkey",
     "pressKeys": "Press keys...",
     "closeToTray": "Close to tray instead of quitting"
   },

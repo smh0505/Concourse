@@ -723,8 +723,10 @@ after launch" mechanism as pseudo-fullscreen above.
 - [x] Per-game DPI-awareness override - `dpi_override.rs`, per-game opt-in (migration v11); a
   persistent per-exe registry setting (`AppCompatFlags\Layers`, same mechanism as Explorer's
   own "Change high DPI settings" dialog), applied on save, not launch
-- [ ] Resolution switching at launch - not started, the remaining (riskier) half; global
-  `ChangeDisplaySettings` side effects, needs a resolution-picker UI and crash-safe revert
+- [x] Resolution switching at launch - `resolution_override.rs`, per-game opt-in (migration v12);
+  orchestrated from `library.ts` (not `launcher.rs`, needs to apply before the process spawns),
+  targets the monitor from remember_window's saved position if available, else primary; reverts
+  on `game-session-ended`, with a crash-safety net restoring on next app start if it didn't
 
 ## Milestone 40 — Real-Time Game Upscaling (not started)
 Like Lossless Scaling: capture a running game's frames live and upscale them via GPU shaders to

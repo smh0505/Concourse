@@ -21,6 +21,54 @@ import { useCollectionsStore } from "./collections";
 
 const VIEW_MODE_SETTING = "view_mode";
 const SORT_OPTION_SETTING = "sort_option";
+// Milestone 39 stretch - resolution switching has to apply before the process spawns (many
+// games query the desktop resolution at their own startup), so unlike the other three window
+// treatments it's orchestrated from here, not launcher.rs. This key holds the one currently-
+// active override (device name + which game set it) so it can be reverted on session end, or
+// restored on the next app start if the app/game crashed before that could happen.
+const RESOLUTION_RESTORE_SETTING = "pending_resolution_restore";
+
+interface PendingResolutionRestore {
+  gameId: number;
+  deviceName: string | null;
+}
+
+/** Applies `game`'s forced resolution (no-op if not enabled/configured) and records what to
+ *  restore. Targets the monitor `game`'s last remembered window position falls on, if
+ *  remember_window has one - otherwise the primary display (see resolution_override.rs). */
+async function applyForcedResolution(game: Game): Promise<void> {
+  if (
+    game.force_resolution !== 1 ||
+    game.resolution_width == null ||
+    game.resolution_height == null ||
+    game.resolution_refresh == null
+  ) {
+    return;
+  }
+  const hasRememberedPosition = game.remember_window === 1 && game.window_x != null && game.window_y != null;
+  const deviceName = await invoke<string | null>("apply_display_mode", {
+    x: hasRememberedPosition ? game.window_x : undefined,
+    y: hasRememberedPosition ? game.window_y : undefined,
+    width: game.resolution_width,
+    height: game.resolution_height,
+    refresh: game.resolution_refresh,
+  });
+  await settingsRepo.set(
+    RESOLUTION_RESTORE_SETTING,
+    JSON.stringify({ gameId: game.id, deviceName } satisfies PendingResolutionRestore),
+  );
+}
+
+/** Only reverts if the pending record belongs to `gameId` - a second game's session ending first
+ *  (force_resolution is a single global slot, not per-game) must not consume it. */
+async function revertForcedResolution(gameId: number): Promise<void> {
+  const raw = await settingsRepo.get(RESOLUTION_RESTORE_SETTING);
+  if (!raw) return;
+  const pending = JSON.parse(raw) as PendingResolutionRestore;
+  if (pending.gameId !== gameId) return;
+  await invoke("revert_display_mode", { deviceName: pending.deviceName ?? undefined });
+  await settingsRepo.delete(RESOLUTION_RESTORE_SETTING);
+}
 
 /** Parent folder of a real filesystem executable path; null for URIs, which have none. */
 function parentDir(executablePath: string): string | null {
@@ -406,6 +454,8 @@ export const useLibraryStore = defineStore("library", () => {
   async function launchGame(game: Game) {
     const toasts = useToastStore();
     try {
+      await applyForcedResolution(game);
+
       // A URI (e.g. "steam://rungameid/730") can't be spawned as a process - hand it to the
       // OS's protocol handler instead. GOG has no registered URI scheme that launches a
       // specific installed game (it does register goggalaxy://, but not documented/used for
@@ -488,6 +538,20 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   async function init() {
+    // Crash-safety net: no session survives an app restart, so any pending resolution override
+    // left over from before (app or game crashed before game-session-ended could revert it) is
+    // definitely stale - restore it unconditionally rather than waiting for a session that will
+    // never end.
+    const pendingResolutionRestore = await settingsRepo.get(RESOLUTION_RESTORE_SETTING);
+    if (pendingResolutionRestore) {
+      try {
+        const pending = JSON.parse(pendingResolutionRestore) as PendingResolutionRestore;
+        await invoke("revert_display_mode", { deviceName: pending.deviceName ?? undefined });
+      } finally {
+        await settingsRepo.delete(RESOLUTION_RESTORE_SETTING);
+      }
+    }
+
     const storedViewMode = await settingsRepo.get(VIEW_MODE_SETTING);
     if (storedViewMode === "grid" || storedViewMode === "list") viewMode.value = storedViewMode;
     const storedSortOption = await settingsRepo.get(SORT_OPTION_SETTING);
@@ -510,6 +574,7 @@ export const useLibraryStore = defineStore("library", () => {
       if (window_x !== null && window_y !== null && window_width !== null && window_height !== null) {
         await gameRepo.updateWindowRect(game_id, window_x, window_y, window_width, window_height);
       }
+      await revertForcedResolution(game_id);
       await refresh();
     });
   }

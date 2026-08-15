@@ -55,6 +55,13 @@ export interface Game {
    *  same mechanism as Explorer's own "Change high DPI settings" dialog) - applied by invoking
    *  set_dpi_override when saved, not tied to launch/exit like the other three. */
   dpi_override: string;
+  /** SQLite boolean (0/1) - Milestone 39 stretch, per-game opt-in to switch the target display
+   *  to resolution_width/height/refresh before launch, reverting after the session ends. Unlike
+   *  dpi_override this is a real session-lifecycle treatment (see resolution_override.rs). */
+  force_resolution: number;
+  resolution_width: number | null;
+  resolution_height: number | null;
+  resolution_refresh: number | null;
 }
 
 export type GameEditFields = Pick<
@@ -74,6 +81,10 @@ export type GameEditFields = Pick<
   | "always_on_top"
   | "remember_window"
   | "dpi_override"
+  | "force_resolution"
+  | "resolution_width"
+  | "resolution_height"
+  | "resolution_refresh"
 >;
 
 /** The title to show for `game` under the current UI `locale` - a valid cached translation, or

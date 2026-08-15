@@ -77,7 +77,11 @@
     "dpiOverrideNone": "默认(不覆盖)",
     "dpiOverrideApplication": "应用程序(应用自行缩放)",
     "dpiOverrideSystem": "系统(Windows 缩放窗口)",
-    "dpiOverrideSystemEnhanced": "系统(增强)"
+    "dpiOverrideSystemEnhanced": "系统(增强)",
+    "forceResolution": "启动时强制指定显示分辨率",
+    "resolution": "分辨率",
+    "resolutionNone": "未选择",
+    "noDisplayModes": "未找到此显示器的可用显示模式。"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

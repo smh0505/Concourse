@@ -223,5 +223,21 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 12,
+            description: "add_force_resolution",
+            sql: r#"
+            -- Milestone 39 stretch - per-game forced resolution at launch, the remaining half of
+            -- "forced resolution/DPI override" (dpi_override above shipped the DPI half). Unlike
+            -- that column, this one runs a real session-lifecycle apply/revert (resolution_x/y/
+            -- refresh applied before launch, reverted after game-session-ended) - see
+            -- resolution_override.rs and library.ts's launchGame/init.
+            ALTER TABLE games ADD COLUMN force_resolution INTEGER NOT NULL DEFAULT 0;
+            ALTER TABLE games ADD COLUMN resolution_width INTEGER;
+            ALTER TABLE games ADD COLUMN resolution_height INTEGER;
+            ALTER TABLE games ADD COLUMN resolution_refresh INTEGER;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

@@ -17,4 +17,9 @@ export class SettingsRepository {
       [key, value],
     );
   }
+
+  async delete(key: string): Promise<void> {
+    const db = await getDb();
+    await db.execute("DELETE FROM settings WHERE key = $1", [key]);
+  }
 }

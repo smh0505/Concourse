@@ -15,6 +15,7 @@ mod plugin_verification;
 mod pseudo_fullscreen;
 mod quick_launch;
 mod remembered_window;
+mod resolution_override;
 mod translation;
 mod tray;
 mod wasm_plugin_runtime;
@@ -55,6 +56,9 @@ pub fn run() {
             discord_presence::set_discord_presence,
             discord_presence::clear_discord_presence,
             dpi_override::set_dpi_override,
+            resolution_override::get_display_modes,
+            resolution_override::apply_display_mode,
+            resolution_override::revert_display_mode,
             obs_presence::set_now_playing,
             obs_presence::set_obs_presence_port,
             obs_presence::test_obs_presence_port,

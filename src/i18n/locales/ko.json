@@ -77,7 +77,11 @@
     "dpiOverrideNone": "기본값(재정의 없음)",
     "dpiOverrideApplication": "애플리케이션(앱이 직접 크기 조정)",
     "dpiOverrideSystem": "시스템(Windows가 창 크기 조정)",
-    "dpiOverrideSystemEnhanced": "시스템(향상됨)"
+    "dpiOverrideSystemEnhanced": "시스템(향상됨)",
+    "forceResolution": "실행 시 화면 해상도 강제 적용",
+    "resolution": "해상도",
+    "resolutionNone": "선택 안 함",
+    "noDisplayModes": "이 모니터에 대한 디스플레이 모드를 찾을 수 없습니다."
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

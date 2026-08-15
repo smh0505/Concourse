@@ -77,7 +77,11 @@
     "dpiOverrideNone": "По умолчанию (без переопределения)",
     "dpiOverrideApplication": "Приложение (масштабируется само)",
     "dpiOverrideSystem": "Система (Windows масштабирует окно)",
-    "dpiOverrideSystemEnhanced": "Система (улучшенная)"
+    "dpiOverrideSystemEnhanced": "Система (улучшенная)",
+    "forceResolution": "Принудительно задать разрешение экрана при запуске",
+    "resolution": "Разрешение",
+    "resolutionNone": "Не выбрано",
+    "noDisplayModes": "Для этого монитора не найдено ни одного видеорежима."
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

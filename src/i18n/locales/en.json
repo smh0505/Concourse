@@ -77,7 +77,11 @@
     "dpiOverrideNone": "Default (no override)",
     "dpiOverrideApplication": "Application (app scales itself)",
     "dpiOverrideSystem": "System (Windows scales the window)",
-    "dpiOverrideSystemEnhanced": "System (Enhanced)"
+    "dpiOverrideSystemEnhanced": "System (Enhanced)",
+    "forceResolution": "Force a display resolution at launch",
+    "resolution": "Resolution",
+    "resolutionNone": "None selected",
+    "noDisplayModes": "No display modes found for this monitor."
   },
   "candidatePicker": {
     "title": "Multiple matches found",

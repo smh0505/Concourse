@@ -7007,3 +7007,53 @@ New `dpi_override` TEXT column (migration v11, default `'none'`) stores the mode
 save time - if the user later edits the executable path, the old registry entry for the old path
 is left in place (a harmless dangling flag on a since-changed path, not worth chasing given the
 low consequence - can always be cleared via the same "Default" option or Explorer's own dialog).
+
+### Milestone 39 stretch: resolution switching at launch
+
+The last item on M39's stretch list, closing the milestone. Real design fork surfaced before any
+code: user asked how the target monitor gets picked, comparing it to remember_window's own
+per-window `MonitorFromWindow` targeting. The difference is timing - remember_window acts *after*
+the game's window exists, so it can just ask Windows which monitor that window is on. Resolution
+switching has to apply *before* the process even spawns (plenty of games read the desktop
+resolution at their own startup, not just at fullscreen-toggle time), so there's no window yet to
+ask. Resolved by mixing the two candidate approaches user was offered (primary-only vs.
+per-game-picker): if the game has remember_window on with a saved position, target whichever
+monitor that point falls on (`MonitorFromPoint`); otherwise fall back to the primary display.
+
+This timing difference also means resolution switching couldn't reuse the other three
+treatments' shape (a Rust thread piggybacked on `launcher.rs`'s poll loop, applying after spawn).
+It's orchestrated entirely from `library.ts` instead: `launchGame()` calls `apply_display_mode`
+*before* any of the launch branches (direct-exe, URI, wrapper, GOG/Xbox pseudo-URI) run, and the
+existing `game-session-ended` listener calls `revert_display_mode` after - `launcher.rs` never
+knows this feature exists, matching how `dpi_override` also stays out of the session-lifecycle
+code path.
+
+Mechanism: `ChangeDisplaySettingsExW` with `CDS_FULLSCREEN` (a dynamic, non-persisted mode
+change) rather than `CDS_UPDATEREGISTRY` - deliberately, so the registry never stops reflecting
+the display's actual default mode. This makes reverting trivial and driftproof: pass
+`lpdevmode: None` and Windows restores whatever's in the registry on its own, so there's no need
+to manually capture/restore a width/height/refresh triple at all - only the resolved device name
+(`None` = primary) needs to be remembered for the revert call.
+
+Crash safety: unlike the other three treatments (worst case on a crash: a stale window position
+or leftover topmost flag, low consequence), leaving the desktop stuck at a forced low resolution
+after a crash is bad enough to be worth a real safety net. `library.ts` persists
+`{ gameId, deviceName }` to the `settings` table (new `SettingsRepository.delete`) right after
+applying, keyed as a single global `pending_resolution_restore` slot rather than per-game -
+simpler, and the realistic case is one force-resolution game running at a time. The
+`game-session-ended` listener only reverts if the pending record's `gameId` matches the game that
+just ended, so a second, unrelated game's session ending first can't consume it. `init()` checks
+for a leftover pending record on every app startup and restores unconditionally if found (no
+session survives a restart, so anything still there is definitely stale) - this is what actually
+makes a crash mid-session recoverable instead of leaving the user stuck until they manually fix
+their resolution.
+
+`get_display_modes`/`apply_display_mode`/`revert_display_mode` all live in
+`resolution_override.rs`, reusing `EnumDisplaySettingsW`/`ChangeDisplaySettingsExW`/
+`MonitorFromPoint`/`GetMonitorInfoW` - all already covered by the existing `Win32_Graphics_Gdi`
+feature, no new `windows` crate feature needed. `GameDetail.vue` fetches the target display's
+modes via `get_display_modes` when edit mode opens (resolved the same way apply does, from the
+game's current remember_window position) and shows them as a single `width x height @ refreshHz`
+dropdown rather than three separate number fields.
+
+Milestone 39 (core + all three stretch items) is now fully complete.

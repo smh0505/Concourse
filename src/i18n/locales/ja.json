@@ -77,7 +77,11 @@
     "dpiOverrideNone": "既定(上書きしない)",
     "dpiOverrideApplication": "アプリケーション(アプリ自身が拡大縮小)",
     "dpiOverrideSystem": "システム(Windowsがウィンドウを拡大縮小)",
-    "dpiOverrideSystemEnhanced": "システム(拡張)"
+    "dpiOverrideSystemEnhanced": "システム(拡張)",
+    "forceResolution": "起動時に画面解像度を強制する",
+    "resolution": "解像度",
+    "resolutionNone": "未選択",
+    "noDisplayModes": "このモニターで利用可能な表示モードが見つかりません。"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

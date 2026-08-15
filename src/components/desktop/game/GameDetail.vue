@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { invoke } from "@tauri-apps/api/core";
 import {
   IconArrowLeft,
   IconDeviceGamepad2,
@@ -57,6 +58,45 @@ const form = ref<GameEditFields>({
   always_on_top: 0,
   remember_window: 0,
   dpi_override: "none",
+  force_resolution: 0,
+  resolution_width: null,
+  resolution_height: null,
+  resolution_refresh: null,
+});
+
+/** Populated when editing starts (see startEdit) - the target display's supported modes, for
+ *  the forced-resolution picker below. Resolved from the game's remembered window position the
+ *  same way apply_display_mode itself resolves it at launch (see library.ts), falling back to
+ *  the primary display otherwise. */
+const displayModes = ref<{ width: number; height: number; refresh: number }[]>([]);
+
+async function loadDisplayModes() {
+  const hasRememberedPosition =
+    game.value.remember_window === 1 && game.value.window_x != null && game.value.window_y != null;
+  displayModes.value = await invoke<{ width: number; height: number; refresh: number }[]>("get_display_modes", {
+    x: hasRememberedPosition ? game.value.window_x : undefined,
+    y: hasRememberedPosition ? game.value.window_y : undefined,
+  });
+}
+
+const resolutionSelection = computed({
+  get: () =>
+    form.value.resolution_width != null && form.value.resolution_height != null && form.value.resolution_refresh != null
+      ? `${form.value.resolution_width}x${form.value.resolution_height}@${form.value.resolution_refresh}`
+      : "",
+  set: (value: string) => {
+    if (!value) {
+      form.value.resolution_width = null;
+      form.value.resolution_height = null;
+      form.value.resolution_refresh = null;
+      return;
+    }
+    const [res, refresh] = value.split("@");
+    const [width, height] = res.split("x");
+    form.value.resolution_width = Number(width);
+    form.value.resolution_height = Number(height);
+    form.value.resolution_refresh = Number(refresh);
+  },
 });
 
 function resetForm() {
@@ -76,6 +116,10 @@ function resetForm() {
     always_on_top: game.value.always_on_top,
     remember_window: game.value.remember_window,
     dpi_override: game.value.dpi_override,
+    force_resolution: game.value.force_resolution,
+    resolution_width: game.value.resolution_width,
+    resolution_height: game.value.resolution_height,
+    resolution_refresh: game.value.resolution_refresh,
   };
 }
 
@@ -415,6 +459,7 @@ function startEdit() {
   resetForm();
   error.value = "";
   editing.value = true;
+  loadDisplayModes();
 }
 
 function cancelEdit() {
@@ -443,6 +488,10 @@ async function onSave() {
     always_on_top: form.value.always_on_top,
     remember_window: form.value.remember_window,
     dpi_override: form.value.dpi_override,
+    force_resolution: form.value.force_resolution,
+    resolution_width: form.value.resolution_width,
+    resolution_height: form.value.resolution_height,
+    resolution_refresh: form.value.resolution_refresh,
   });
   editing.value = false;
 }
@@ -734,6 +783,26 @@ async function onDelete() {
                 <option value="system">{{ t("gameDetail.dpiOverrideSystem") }}</option>
                 <option value="system_enhanced">{{ t("gameDetail.dpiOverrideSystemEnhanced") }}</option>
               </select>
+            </label>
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                :checked="form.force_resolution === 1"
+                @change="form.force_resolution = ($event.target as HTMLInputElement).checked ? 1 : 0"
+              />
+              {{ t("gameDetail.forceResolution") }}
+            </label>
+            <label v-if="form.force_resolution === 1">
+              {{ t("gameDetail.resolution") }}
+              <select v-model="resolutionSelection">
+                <option value="">{{ t("gameDetail.resolutionNone") }}</option>
+                <option v-for="mode in displayModes" :key="`${mode.width}x${mode.height}@${mode.refresh}`" :value="`${mode.width}x${mode.height}@${mode.refresh}`">
+                  {{ mode.width }}x{{ mode.height }} @ {{ mode.refresh }}Hz
+                </option>
+              </select>
+              <small v-if="displayModes.length === 0">
+                {{ t("gameDetail.noDisplayModes") }}
+              </small>
             </label>
             <label>
               {{ t("gameDetail.wrapperProfile") }}

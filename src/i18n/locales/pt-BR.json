@@ -77,7 +77,11 @@
     "dpiOverrideNone": "Padrão (sem substituição)",
     "dpiOverrideApplication": "Aplicativo (o app se dimensiona sozinho)",
     "dpiOverrideSystem": "Sistema (o Windows dimensiona a janela)",
-    "dpiOverrideSystemEnhanced": "Sistema (aprimorado)"
+    "dpiOverrideSystemEnhanced": "Sistema (aprimorado)",
+    "forceResolution": "Forçar uma resolução de tela ao iniciar",
+    "resolution": "Resolução",
+    "resolutionNone": "Nenhuma selecionada",
+    "noDisplayModes": "Nenhum modo de exibição encontrado para este monitor."
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",

@@ -92,12 +92,16 @@ export class GameRepository {
          always_on_top = $13,
          remember_window = $14,
          dpi_override = $15,
+         force_resolution = $16,
+         resolution_width = $17,
+         resolution_height = $18,
+         resolution_refresh = $19,
          translated_title = NULL,
          translated_description = NULL,
          translated_locale = NULL,
          show_translated_title = 0,
          show_translated_description = 0
-       WHERE id = $16`,
+       WHERE id = $20`,
       [
         fields.title,
         fields.executable_path,
@@ -114,6 +118,10 @@ export class GameRepository {
         fields.always_on_top,
         fields.remember_window,
         fields.dpi_override,
+        fields.force_resolution,
+        fields.resolution_width,
+        fields.resolution_height,
+        fields.resolution_refresh,
         id,
       ],
     );

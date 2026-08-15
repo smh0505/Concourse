@@ -289,18 +289,17 @@ onBeforeUnmount(stopListeningForHotkey);
    native <select>, so the currently-active language reads the same way the active translation
    model does. */
 .language-menu-wrap {
-  flex: 1;
-  min-width: 0;
+  flex: none;
 }
 
 .language-menu-trigger {
-  width: 100%;
+  width: fit-content;
   justify-content: space-between;
 }
 
-.language-menu-wrap :deep(.language-menu-panel) {
-  right: 0;
-}
+/* No right:0 override (unlike PluginSettings.vue's tabs-dropdown-panel) - that stretched the
+   panel to match a full-width trigger. This trigger is fit-content now, so the panel should be
+   free to size to its own (usually wider) content via DropdownMenu.vue's own left:0 default. */
 
 .language-menu-item {
   display: block;

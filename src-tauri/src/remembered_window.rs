@@ -15,6 +15,7 @@ pub struct RememberedWindowState {
 }
 
 /// A previously-saved rect, `None` until a session with this enabled has actually captured one.
+#[derive(Clone, Copy)]
 pub struct SavedRect {
     pub x: i32,
     pub y: i32,
@@ -75,9 +76,12 @@ pub fn refresh(
         .map(|hwnd| RememberedWindowState { hwnd: hwnd.0 as isize })
 }
 
-/// Reads the tracked window's current position/size - called once right before the session ends,
-/// so whatever the user last had it at (moved/resized mid-session or not) gets saved. `None` if
-/// the window's already gone by the time this runs.
+/// Reads the tracked window's current position/size. A game's window is usually already
+/// destroyed by the time a session is confirmed ended (process cleanup tears it down along with
+/// everything else), so this is meant to be called periodically *while the game is still
+/// running* (piggybacked on the same poll tick `refresh` runs on) to keep a "last known good"
+/// rect, not just once at the very end when it's likely too late. `None` if the window's already
+/// gone.
 pub fn capture(state: &RememberedWindowState) -> Option<SavedRect> {
     let hwnd = HWND(state.hwnd as *mut _);
     if !unsafe { IsWindow(Some(hwnd)) }.as_bool() {

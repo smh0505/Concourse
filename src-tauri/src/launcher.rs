@@ -66,6 +66,7 @@ pub fn launch_game(
         } else {
             None
         };
+        let mut last_known_rect = window_state.as_ref().and_then(crate::remembered_window::capture);
 
         if pseudo_fullscreen || always_on_top || remember_window {
             // Polls instead of a single blocking child.wait() so a launcher window closing and
@@ -82,6 +83,14 @@ pub fn launch_game(
                         }
                         if remember_window {
                             window_state = crate::remembered_window::refresh(window_state, || vec![pid]);
+                            // Captured here, while the game is still confirmed running - the
+                            // window is usually already destroyed by the time exit is detected
+                            // below, too late to read its final position/size.
+                            if let Some(rect) =
+                                window_state.as_ref().and_then(crate::remembered_window::capture)
+                            {
+                                last_known_rect = Some(rect);
+                            }
                         }
                         std::thread::sleep(std::time::Duration::from_secs(3));
                     }
@@ -92,9 +101,12 @@ pub fn launch_game(
             let _ = child.wait();
         }
 
-        // Captured before reverting the other two treatments, in case restoring the fullscreen/
-        // topmost state would itself change the window's position/size.
-        let captured_rect = window_state.as_ref().and_then(crate::remembered_window::capture);
+        // A final live read in case the window somehow still exists, falling back to the last
+        // one successfully captured while the game was confirmed running.
+        let captured_rect = window_state
+            .as_ref()
+            .and_then(crate::remembered_window::capture)
+            .or(last_known_rect);
 
         if let Some(state) = fullscreen_state {
             crate::pseudo_fullscreen::revert(state);
@@ -247,6 +259,7 @@ pub fn track_folder_playtime(
         } else {
             None
         };
+        let mut last_known_rect = window_state.as_ref().and_then(crate::remembered_window::capture);
 
         let start = std::time::SystemTime::now();
         let start_time = unix_timestamp(start);
@@ -270,6 +283,12 @@ pub fn track_folder_playtime(
                 window_state = crate::remembered_window::refresh(window_state, || {
                     all_processes_under_folder(&mut system, &install_dir)
                 });
+                // Captured here, while the game is still confirmed running - the window is
+                // usually already destroyed by the time exit is detected below, too late to
+                // read its final position/size.
+                if let Some(rect) = window_state.as_ref().and_then(crate::remembered_window::capture) {
+                    last_known_rect = Some(rect);
+                }
             }
             if any_process_under_folder(&mut system, &install_dir) {
                 missing_polls = 0;
@@ -281,7 +300,12 @@ pub fn track_folder_playtime(
             }
         }
 
-        let captured_rect = window_state.as_ref().and_then(crate::remembered_window::capture);
+        // A final live read in case the window somehow still exists, falling back to the last
+        // one successfully captured while the game was confirmed running.
+        let captured_rect = window_state
+            .as_ref()
+            .and_then(crate::remembered_window::capture)
+            .or(last_known_rect);
 
         if let Some(state) = fullscreen_state {
             crate::pseudo_fullscreen::revert(state);

@@ -167,6 +167,20 @@ async function onPinSubmit() {
                   {{ t("profiles.active") }}
                 </span>
               </div>
+              <form
+                v-if="pinEditingId === profile.id"
+                class="pin-inline-row"
+                @submit.prevent="onPinSubmit"
+              >
+                <input
+                  :ref="(el) => (pinInputEl = el as HTMLInputElement | null)"
+                  v-model="pinInput"
+                  type="password"
+                  inputmode="numeric"
+                  :placeholder="confirmingPin ? t('profiles.confirmPin') : t('profiles.newPin')"
+                  @keyup.esc="cancelPinEdit"
+                />
+              </form>
               <div class="row-controls">
                 <button
                   v-if="profile.id !== 1"
@@ -193,18 +207,10 @@ async function onPinSubmit() {
                 </button>
               </div>
             </div>
-            <form v-if="pinEditingId === profile.id" class="pin-inline" @submit.prevent="onPinSubmit">
-              <input
-                :ref="(el) => (pinInputEl = el as HTMLInputElement | null)"
-                v-model="pinInput"
-                type="password"
-                inputmode="numeric"
-                :placeholder="confirmingPin ? t('profiles.confirmPin') : t('profiles.newPin')"
-                @keyup.esc="cancelPinEdit"
-              />
+            <div v-if="pinEditingId === profile.id" class="pin-inline-notice">
               <span v-if="pinError" class="error-text">{{ pinError }}</span>
               <small class="form-hint">{{ t("profiles.enterEscHint") }}</small>
-            </form>
+            </div>
           </div>
         </template>
       </li>
@@ -246,12 +252,12 @@ async function onPinSubmit() {
   min-width: 0;
 }
 
-/* Name and the button row stay aligned on one horizontal line, name on the left taking up the
-   slack, buttons on the right - unaffected by whether the PIN form below is showing. */
+/* Name, the inline PIN field (when active), and the button row all stay aligned on one
+   horizontal line - name and PIN field share the available space equally (flex: 1 1 0 each),
+   buttons stay a fixed-size trailing group. */
 .row-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
   width: 100%;
 }
@@ -260,18 +266,22 @@ async function onPinSubmit() {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
 }
 
-.pin-inline {
+.pin-inline-row {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.pin-inline-row input {
+  width: 100%;
+}
+
+.pin-inline-notice {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  align-items: stretch;
-}
-
-.pin-inline input {
-  width: 100%;
 }
 </style>

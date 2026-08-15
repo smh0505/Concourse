@@ -118,14 +118,33 @@ onBeforeUnmount(stopListeningForHotkey);
         panel-class="language-menu-panel"
       >
         <template #trigger>
-          <button
-            type="button"
-            class="compact-button language-menu-trigger"
-            @click="languageMenuOpen = !languageMenuOpen"
-          >
-            {{ localeNames[appSettings.locale] ?? appSettings.locale }}
-            <IconChevronDown :size="14" :stroke-width="1.75" />
-          </button>
+          <div class="language-trigger-sizer">
+            <!-- Invisible, stacked via grid (not display:none - that would drop them from
+                 intrinsic sizing entirely) so the grid track sizes to the widest locale name
+                 rather than the currently-selected one, keeping the trigger's width constant
+                 across every language instead of resizing on each switch. Same button classes/
+                 icon as the real trigger so the reserved width matches exactly, chevron
+                 included. -->
+            <button
+              v-for="code in localeOptions"
+              :key="code"
+              type="button"
+              class="compact-button language-menu-trigger sizer-ghost"
+              tabindex="-1"
+              aria-hidden="true"
+            >
+              {{ localeNames[code] ?? code }}
+              <IconChevronDown :size="14" :stroke-width="1.75" />
+            </button>
+            <button
+              type="button"
+              class="compact-button language-menu-trigger"
+              @click="languageMenuOpen = !languageMenuOpen"
+            >
+              {{ localeNames[appSettings.locale] ?? appSettings.locale }}
+              <IconChevronDown :size="14" :stroke-width="1.75" />
+            </button>
+          </div>
         </template>
         <button
           v-for="code in localeOptions"
@@ -292,8 +311,24 @@ onBeforeUnmount(stopListeningForHotkey);
   flex: none;
 }
 
+/* All entries stacked in the same grid cell - the cell (and so .language-trigger-sizer itself)
+   sizes to the widest one via CSS Grid's normal auto-track sizing, while only the real
+   (non-ghost) trigger is actually visible. */
+.language-trigger-sizer {
+  display: grid;
+}
+
+.language-trigger-sizer > * {
+  grid-area: 1 / 1;
+}
+
+.sizer-ghost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .language-menu-trigger {
-  width: max-content;
+  width: 100%;
   justify-content: space-between;
 }
 

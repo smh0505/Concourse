@@ -342,7 +342,7 @@ onBeforeUnmount(stopListeningForHotkey);
   width: 100%;
   padding: var(--space-2) var(--space-3);
   font-size: 0.85rem;
-  text-align: left;
+  text-align: right;
   border: none;
   background: none;
   cursor: pointer;

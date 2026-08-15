@@ -2,8 +2,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { computed, onMounted, ref, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
+import { IconChevronDown } from "@tabler/icons-vue";
 
 import { usePluginStore } from "@/stores/plugins";
+import { DropdownMenu } from "@/components/desktop/common";
 import { useThemeStore } from "@/stores/theme";
 import { useMetadataProviderStore } from "@/stores/metadataProviders";
 import { useControllerMappingStore } from "@/stores/controllerMapping";
@@ -38,6 +40,23 @@ const pluginUpdates = usePluginUpdatesStore();
 
 const activeTab = ref<Tab>("source");
 const showAddPluginModal = ref(false);
+
+// Below 640px of the panel's own available width (a `@container` query, not `@media` - the
+// window itself is normally already wider than that; what actually narrows this panel is the
+// sidebar being expanded, not the OS window shrinking) the six tab buttons stop fitting on one
+// line, so a DropdownMenu (same trigger/panel shape as AppSettings.vue's language picker) takes
+// over instead. Both markups always render; CSS alone decides which is visible, so there's no
+// layout thrash re-measuring on every sidebar toggle.
+const tabMenuOpen = ref(false);
+const tabs = computed<{ id: Tab; label: string }[]>(() => [
+  { id: "source", label: t("pluginSettings.tabs.source") },
+  { id: "theme", label: t("pluginSettings.tabs.theme") },
+  { id: "metadata", label: t("pluginSettings.tabs.metadata") },
+  { id: "controller", label: t("pluginSettings.tabs.controller") },
+  { id: "wrapper", label: t("pluginSettings.tabs.wrapper") },
+  { id: "presence", label: t("pluginSettings.tabs.presence") },
+]);
+const activeTabLabel = computed(() => tabs.value.find((tab) => tab.id === activeTab.value)?.label);
 
 // shallowRef, not ref - these hold loaded plugin instances (including settingsComponent, a
 // live Vue component definition) that only ever get swapped wholesale in onMounted below, never
@@ -150,37 +169,43 @@ onMounted(async () => {
         {{ t("pluginSettings.addPlugin") }}
       </button>
     </div>
-    <div class="tabs">
-      <button :class="{ 'accent-active': activeTab === 'source' }" @click="activeTab = 'source'">
-        {{ t("pluginSettings.tabs.source") }}
-      </button>
-      <button :class="{ 'accent-active': activeTab === 'theme' }" @click="activeTab = 'theme'">
-        {{ t("pluginSettings.tabs.theme") }}
-      </button>
-      <button
-        :class="{ 'accent-active': activeTab === 'metadata' }"
-        @click="activeTab = 'metadata'"
+    <div class="tabs-container">
+      <div class="tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="{ 'accent-active': activeTab === tab.id }"
+          @click="activeTab = tab.id"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <DropdownMenu
+        v-model:open="tabMenuOpen"
+        wrap-class="tabs-dropdown-wrap"
+        panel-class="tabs-dropdown-panel"
       >
-        {{ t("pluginSettings.tabs.metadata") }}
-      </button>
-      <button
-        :class="{ 'accent-active': activeTab === 'controller' }"
-        @click="activeTab = 'controller'"
-      >
-        {{ t("pluginSettings.tabs.controller") }}
-      </button>
-      <button
-        :class="{ 'accent-active': activeTab === 'wrapper' }"
-        @click="activeTab = 'wrapper'"
-      >
-        {{ t("pluginSettings.tabs.wrapper") }}
-      </button>
-      <button
-        :class="{ 'accent-active': activeTab === 'presence' }"
-        @click="activeTab = 'presence'"
-      >
-        {{ t("pluginSettings.tabs.presence") }}
-      </button>
+        <template #trigger>
+          <button
+            type="button"
+            class="compact-button tabs-dropdown-trigger"
+            @click="tabMenuOpen = !tabMenuOpen"
+          >
+            {{ activeTabLabel }}
+            <IconChevronDown :size="14" :stroke-width="1.75" />
+          </button>
+        </template>
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          type="button"
+          class="tabs-dropdown-item"
+          :class="{ active: activeTab === tab.id }"
+          @click="activeTab = tab.id; tabMenuOpen = false"
+        >
+          {{ tab.label }}
+        </button>
+      </DropdownMenu>
     </div>
 
     <div v-if="activeTab === 'source'" class="tab-panel">
@@ -477,10 +502,61 @@ onMounted(async () => {
   margin: 0;
 }
 
+/* Container query, not a media query - the OS window is normally already wider than 640px;
+   what actually narrows this panel is the sidebar being expanded (NavSidebar.vue), not the
+   window shrinking, so this needs to react to the panel's own available width. */
+.tabs-container {
+  container-type: inline-size;
+  margin-bottom: 0.75rem;
+}
+
 .tabs {
   display: flex;
   gap: var(--space-2);
-  margin-bottom: 0.75rem;
+}
+
+.tabs-dropdown-wrap {
+  display: none;
+}
+
+@container (max-width: 640px) {
+  .tabs {
+    display: none;
+  }
+
+  .tabs-dropdown-wrap {
+    display: block;
+  }
+}
+
+.tabs-dropdown-trigger {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.tabs-dropdown-wrap :deep(.tabs-dropdown-panel) {
+  right: 0;
+  left: 0;
+}
+
+.tabs-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.85rem;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.tabs-dropdown-item:hover {
+  background: var(--color-surface0);
+}
+
+.tabs-dropdown-item.active {
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 /* .accent-active (shared, styles.css) supplies this rule's entire look. */

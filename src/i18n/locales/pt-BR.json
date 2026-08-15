@@ -102,7 +102,8 @@
     "pinMismatch": "Os PINs não coincidem",
     "enterPin": "Digite o PIN",
     "wrongPin": "PIN incorreto",
-    "optionalPin": "PIN (opcional)"
+    "optionalPin": "PIN (opcional)",
+    "enterEscHint": "Enter para confirmar, Esc para cancelar"
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",

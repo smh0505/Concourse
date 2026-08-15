@@ -102,7 +102,8 @@
     "pinMismatch": "PINが一致しません",
     "enterPin": "PINを入力",
     "wrongPin": "PINが間違っています",
-    "optionalPin": "PIN(任意)"
+    "optionalPin": "PIN(任意)",
+    "enterEscHint": "Enterで確定、Escでキャンセル"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

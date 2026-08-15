@@ -101,6 +101,7 @@ async function onCreateSubmit(name: string, pin: string) {
               @keyup.esc="cancelUnlock"
             />
             <p v-if="pinError" class="error-text">{{ pinError }}</p>
+            <small class="form-hint">{{ t("profiles.enterEscHint") }}</small>
           </form>
           <button v-else type="button" class="profile-card" @click="onCardClick(profile)">
             <div class="profile-avatar">

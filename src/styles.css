@@ -374,6 +374,16 @@ small {
   color: var(--color-danger);
 }
 
+/* Milestone 30 - "Enter to confirm, Esc to cancel" hint under ProfileSwitcher.vue's button-less
+   inline forms (create/unlock) - global for the same reason .profile-avatar is (see below):
+   ProfileCreateForm.vue's own template needs it too, and a child component's elements don't
+   inherit a parent's scoped styles. */
+.form-hint {
+  opacity: 0.6;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
 /* Milestone 30 - the round letter-avatar used for a profile, on both ProfileSwitcher.vue's
    cards and ProfileCreateForm.vue's live-updating one while typing a name - promoted here since
    a child component's own elements don't pick up a parent's scoped styles (only its root does),

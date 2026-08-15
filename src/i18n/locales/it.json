@@ -102,7 +102,8 @@
     "pinMismatch": "I PIN non corrispondono",
     "enterPin": "Inserisci il PIN",
     "wrongPin": "PIN errato",
-    "optionalPin": "PIN (facoltativo)"
+    "optionalPin": "PIN (facoltativo)",
+    "enterEscHint": "Invio per confermare, Esc per annullare"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

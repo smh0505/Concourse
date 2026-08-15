@@ -102,7 +102,8 @@
     "pinMismatch": "两次输入的 PIN 不一致",
     "enterPin": "输入 PIN",
     "wrongPin": "PIN 错误",
-    "optionalPin": "PIN(可选)"
+    "optionalPin": "PIN(可选)",
+    "enterEscHint": "按 Enter 确认,按 Esc 取消"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

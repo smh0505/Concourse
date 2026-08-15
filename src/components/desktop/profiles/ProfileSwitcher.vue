@@ -29,6 +29,9 @@ async function select(id: number) {
  *  unlock form instead - `select` itself stays the one place that actually flips
  *  activeProfileId, whether it's reached directly or after a successful confirmUnlock below. */
 async function onCardClick(profile: Profile) {
+  // Only one inline form active at a time - clicking an existing profile while the "+ New
+  // Profile" card is open should close it, not leave both showing at once.
+  creating.value = false;
   if (!profile.pin_hash) {
     await select(profile.id);
     return;
@@ -122,7 +125,12 @@ async function onCreateSubmit(name: string, pin: string) {
           @submit="onCreateSubmit"
           @keyup.esc="creating = false"
         />
-        <button v-else type="button" class="profile-card add-card" @click="creating = true">
+        <button
+          v-else
+          type="button"
+          class="profile-card add-card"
+          @click="cancelUnlock(); creating = true"
+        >
           <div class="profile-avatar profile-avatar-add">+</div>
           <span class="name">{{ t("profiles.newProfile") }}</span>
         </button>

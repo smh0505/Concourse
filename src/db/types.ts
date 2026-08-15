@@ -50,6 +50,11 @@ export interface Game {
   window_y: number | null;
   window_width: number | null;
   window_height: number | null;
+  /** Milestone 39 stretch - DPI-awareness compatibility override, one of "none" | "application" |
+   *  "system" | "system_enhanced". Persistent per-exe registry setting (AppCompatFlags\Layers,
+   *  same mechanism as Explorer's own "Change high DPI settings" dialog) - applied by invoking
+   *  set_dpi_override when saved, not tied to launch/exit like the other three. */
+  dpi_override: string;
 }
 
 export type GameEditFields = Pick<
@@ -68,6 +73,7 @@ export type GameEditFields = Pick<
   | "pseudo_fullscreen"
   | "always_on_top"
   | "remember_window"
+  | "dpi_override"
 >;
 
 /** The title to show for `game` under the current UI `locale` - a valid cached translation, or

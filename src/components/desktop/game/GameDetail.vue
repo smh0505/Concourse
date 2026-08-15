@@ -56,6 +56,7 @@ const form = ref<GameEditFields>({
   pseudo_fullscreen: 0,
   always_on_top: 0,
   remember_window: 0,
+  dpi_override: "none",
 });
 
 function resetForm() {
@@ -74,6 +75,7 @@ function resetForm() {
     pseudo_fullscreen: game.value.pseudo_fullscreen,
     always_on_top: game.value.always_on_top,
     remember_window: game.value.remember_window,
+    dpi_override: game.value.dpi_override,
   };
 }
 
@@ -440,6 +442,7 @@ async function onSave() {
     pseudo_fullscreen: form.value.pseudo_fullscreen,
     always_on_top: form.value.always_on_top,
     remember_window: form.value.remember_window,
+    dpi_override: form.value.dpi_override,
   });
   editing.value = false;
 }
@@ -722,6 +725,15 @@ async function onDelete() {
                 @change="form.remember_window = ($event.target as HTMLInputElement).checked ? 1 : 0"
               />
               {{ t("gameDetail.rememberWindow") }}
+            </label>
+            <label>
+              {{ t("gameDetail.dpiOverride") }}
+              <select v-model="form.dpi_override">
+                <option value="none">{{ t("gameDetail.dpiOverrideNone") }}</option>
+                <option value="application">{{ t("gameDetail.dpiOverrideApplication") }}</option>
+                <option value="system">{{ t("gameDetail.dpiOverrideSystem") }}</option>
+                <option value="system_enhanced">{{ t("gameDetail.dpiOverrideSystemEnhanced") }}</option>
+              </select>
             </label>
             <label>
               {{ t("gameDetail.wrapperProfile") }}

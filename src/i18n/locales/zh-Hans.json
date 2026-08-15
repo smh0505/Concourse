@@ -72,7 +72,12 @@
     "skipPresence": "在在线状态集成中隐藏此游戏",
     "pseudoFullscreen": "以无边框伪全屏运行",
     "alwaysOnTop": "窗口始终置顶",
-    "rememberWindow": "记住窗口位置和大小"
+    "rememberWindow": "记住窗口位置和大小",
+    "dpiOverride": "DPI 兼容性",
+    "dpiOverrideNone": "默认(不覆盖)",
+    "dpiOverrideApplication": "应用程序(应用自行缩放)",
+    "dpiOverrideSystem": "系统(Windows 缩放窗口)",
+    "dpiOverrideSystemEnhanced": "系统(增强)"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

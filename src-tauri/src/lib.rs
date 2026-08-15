@@ -4,6 +4,7 @@ use tauri::Manager;
 mod always_on_top;
 mod db;
 mod discord_presence;
+mod dpi_override;
 mod image_utils;
 mod launcher;
 mod obs_presence;
@@ -53,6 +54,7 @@ pub fn run() {
             quick_launch::hide_quick_launch,
             discord_presence::set_discord_presence,
             discord_presence::clear_discord_presence,
+            dpi_override::set_dpi_override,
             obs_presence::set_now_playing,
             obs_presence::set_obs_presence_port,
             obs_presence::test_obs_presence_port,

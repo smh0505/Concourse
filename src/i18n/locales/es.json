@@ -72,7 +72,12 @@
     "skipPresence": "Ocultar este juego de las integraciones de presencia",
     "pseudoFullscreen": "Ejecutar en pantalla completa simulada sin bordes",
     "alwaysOnTop": "Mantener la ventana siempre encima",
-    "rememberWindow": "Recordar la posición y el tamaño de la ventana"
+    "rememberWindow": "Recordar la posición y el tamaño de la ventana",
+    "dpiOverride": "Compatibilidad de PPP",
+    "dpiOverrideNone": "Predeterminado (sin anulación)",
+    "dpiOverrideApplication": "Aplicación (la app se escala a sí misma)",
+    "dpiOverrideSystem": "Sistema (Windows escala la ventana)",
+    "dpiOverrideSystemEnhanced": "Sistema (mejorado)"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

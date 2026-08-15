@@ -72,7 +72,12 @@
     "skipPresence": "Ocultar este jogo das integrações de presença",
     "pseudoFullscreen": "Executar em pseudo tela cheia sem bordas",
     "alwaysOnTop": "Manter a janela sempre no topo",
-    "rememberWindow": "Lembrar a posição e o tamanho da janela"
+    "rememberWindow": "Lembrar a posição e o tamanho da janela",
+    "dpiOverride": "Compatibilidade de DPI",
+    "dpiOverrideNone": "Padrão (sem substituição)",
+    "dpiOverrideApplication": "Aplicativo (o app se dimensiona sozinho)",
+    "dpiOverrideSystem": "Sistema (o Windows dimensiona a janela)",
+    "dpiOverrideSystemEnhanced": "Sistema (aprimorado)"
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",

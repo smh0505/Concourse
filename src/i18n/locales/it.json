@@ -72,7 +72,12 @@
     "skipPresence": "Nascondi questo gioco dalle integrazioni di presenza",
     "pseudoFullscreen": "Esegui in pseudo schermo intero senza bordi",
     "alwaysOnTop": "Mantieni la finestra sempre in primo piano",
-    "rememberWindow": "Ricorda posizione e dimensione della finestra"
+    "rememberWindow": "Ricorda posizione e dimensione della finestra",
+    "dpiOverride": "Compatibilità DPI",
+    "dpiOverrideNone": "Predefinito (nessuna sostituzione)",
+    "dpiOverrideApplication": "Applicazione (l'app si adatta da sé)",
+    "dpiOverrideSystem": "Sistema (Windows adatta la finestra)",
+    "dpiOverrideSystemEnhanced": "Sistema (migliorato)"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

@@ -72,7 +72,12 @@
     "skipPresence": "Masquer ce jeu des intégrations de présence",
     "pseudoFullscreen": "Exécuter en pseudo plein écran sans bordure",
     "alwaysOnTop": "Garder la fenêtre toujours au premier plan",
-    "rememberWindow": "Mémoriser la position et la taille de la fenêtre"
+    "rememberWindow": "Mémoriser la position et la taille de la fenêtre",
+    "dpiOverride": "Compatibilité PPP",
+    "dpiOverrideNone": "Par défaut (aucune substitution)",
+    "dpiOverrideApplication": "Application (l'appli se met à l'échelle elle-même)",
+    "dpiOverrideSystem": "Système (Windows met la fenêtre à l'échelle)",
+    "dpiOverrideSystemEnhanced": "Système (amélioré)"
   },
   "candidatePicker": {
     "title": "Plusieurs correspondances trouvées",

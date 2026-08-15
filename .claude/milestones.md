@@ -720,8 +720,11 @@ after launch" mechanism as pseudo-fullscreen above.
   (migration v9), independent of pseudo-fullscreen
 - [x] Remembered window position/size per game - `remembered_window.rs`, per-game opt-in
   (migration v10); saved rect validated against the currently-connected monitors before applying
-- [ ] Forced resolution/DPI override at launch - not started, riskiest of the three (global
-  desktop-resolution side effects vs. a separate per-process DPI-awareness mechanism)
+- [x] Per-game DPI-awareness override - `dpi_override.rs`, per-game opt-in (migration v11); a
+  persistent per-exe registry setting (`AppCompatFlags\Layers`, same mechanism as Explorer's
+  own "Change high DPI settings" dialog), applied on save, not launch
+- [ ] Resolution switching at launch - not started, the remaining (riskier) half; global
+  `ChangeDisplaySettings` side effects, needs a resolution-picker UI and crash-safe revert
 
 ## Milestone 40 — Real-Time Game Upscaling (not started)
 Like Lossless Scaling: capture a running game's frames live and upscale them via GPU shaders to

@@ -210,5 +210,18 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 11,
+            description: "add_dpi_override",
+            sql: r#"
+            -- Milestone 39 stretch - per-game DPI-awareness compatibility override, applied via
+            -- the same AppCompatFlags\Layers registry mechanism as Explorer's own "Change high
+            -- DPI settings" dialog. Unlike pseudo_fullscreen/always_on_top/remember_window this
+            -- isn't a session-lifecycle treatment - it's a persistent per-exe registry flag,
+            -- written/cleared once when the setting is saved, not on every launch.
+            ALTER TABLE games ADD COLUMN dpi_override TEXT NOT NULL DEFAULT 'none';
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

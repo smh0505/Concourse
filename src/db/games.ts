@@ -91,12 +91,13 @@ export class GameRepository {
          pseudo_fullscreen = $12,
          always_on_top = $13,
          remember_window = $14,
+         dpi_override = $15,
          translated_title = NULL,
          translated_description = NULL,
          translated_locale = NULL,
          show_translated_title = 0,
          show_translated_description = 0
-       WHERE id = $15`,
+       WHERE id = $16`,
       [
         fields.title,
         fields.executable_path,
@@ -112,6 +113,7 @@ export class GameRepository {
         fields.pseudo_fullscreen,
         fields.always_on_top,
         fields.remember_window,
+        fields.dpi_override,
         id,
       ],
     );

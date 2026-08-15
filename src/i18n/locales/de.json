@@ -72,7 +72,12 @@
     "skipPresence": "Dieses Spiel aus Präsenz-Integrationen ausblenden",
     "pseudoFullscreen": "Im rahmenlosen Pseudo-Vollbild ausführen",
     "alwaysOnTop": "Fenster immer im Vordergrund halten",
-    "rememberWindow": "Fensterposition und -größe merken"
+    "rememberWindow": "Fensterposition und -größe merken",
+    "dpiOverride": "DPI-Kompatibilität",
+    "dpiOverrideNone": "Standard (keine Überschreibung)",
+    "dpiOverrideApplication": "Anwendung (App skaliert selbst)",
+    "dpiOverrideSystem": "System (Windows skaliert das Fenster)",
+    "dpiOverrideSystemEnhanced": "System (Erweitert)"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

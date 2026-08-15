@@ -72,7 +72,12 @@
     "skipPresence": "Скрыть эту игру из интеграций присутствия",
     "pseudoFullscreen": "Запускать в псевдополноэкранном режиме без рамки",
     "alwaysOnTop": "Всегда поверх других окон",
-    "rememberWindow": "Запоминать положение и размер окна"
+    "rememberWindow": "Запоминать положение и размер окна",
+    "dpiOverride": "Совместимость DPI",
+    "dpiOverrideNone": "По умолчанию (без переопределения)",
+    "dpiOverrideApplication": "Приложение (масштабируется само)",
+    "dpiOverrideSystem": "Система (Windows масштабирует окно)",
+    "dpiOverrideSystemEnhanced": "Система (улучшенная)"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

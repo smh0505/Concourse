@@ -72,7 +72,12 @@
     "skipPresence": "Hide this game from presence integrations",
     "pseudoFullscreen": "Run in borderless pseudo-fullscreen",
     "alwaysOnTop": "Keep window always on top",
-    "rememberWindow": "Remember window position and size"
+    "rememberWindow": "Remember window position and size",
+    "dpiOverride": "DPI compatibility",
+    "dpiOverrideNone": "Default (no override)",
+    "dpiOverrideApplication": "Application (app scales itself)",
+    "dpiOverrideSystem": "System (Windows scales the window)",
+    "dpiOverrideSystemEnhanced": "System (Enhanced)"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

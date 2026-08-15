@@ -360,6 +360,13 @@ export const useLibraryStore = defineStore("library", () => {
   async function saveEdit(fields: GameEditFields) {
     if (!viewingGame.value) return;
     await gameRepo.update(viewingGame.value.id, fields);
+    // Registry write, not a DB column read-back - keyed by the (possibly just-edited)
+    // executable_path itself, applied once here rather than on every launch like the
+    // session-lifecycle treatments (pseudo_fullscreen/always_on_top/remember_window).
+    await invoke("set_dpi_override", {
+      executablePath: fields.executable_path,
+      mode: fields.dpi_override,
+    });
     await refresh();
   }
 

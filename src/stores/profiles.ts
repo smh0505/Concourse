@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 
 import {
   profiles as profileRepo,
@@ -45,6 +46,15 @@ export const useProfilesStore = defineStore("profiles", () => {
     await settingsRepo.set(ACTIVE_PROFILE_SETTING, String(id));
   }
 
+  /** Clears the remembered active profile without picking a new one - the caller (a "Switch
+   *  Profile" nav action) is expected to reload the window right after, same as
+   *  ProfilesPanel.vue's own switchProfile, so App.vue's onMounted re-runs from scratch and
+   *  lands on ProfileSwitcher instead of re-adopting the same profile it just backed out of. */
+  async function backToPicker() {
+    activeProfileId.value = null;
+    await settingsRepo.delete(ACTIVE_PROFILE_SETTING);
+  }
+
   async function createProfile(name: string): Promise<number> {
     const id = await profileRepo.create(name);
     await loadProfiles();
@@ -54,6 +64,27 @@ export const useProfilesStore = defineStore("profiles", () => {
   async function renameProfile(id: number, name: string) {
     await profileRepo.rename(id, name);
     await loadProfiles();
+  }
+
+  /** The raw PIN is only ever hashed Rust-side (`hash_profile_pin`) - this repo/store never
+   *  writes a plaintext PIN anywhere, including in transit to the DB layer. */
+  async function setPin(id: number, pin: string) {
+    const hash = await invoke<string>("hash_profile_pin", { pin });
+    await profileRepo.setPinHash(id, hash);
+    await loadProfiles();
+  }
+
+  async function clearPin(id: number) {
+    await profileRepo.setPinHash(id, null);
+    await loadProfiles();
+  }
+
+  /** No PIN set on `id` trivially verifies true - ProfileSwitcher only needs to prompt at all
+   *  when this profile actually has one. */
+  async function verifyPin(id: number, pin: string): Promise<boolean> {
+    const profile = profiles.value.find((p) => p.id === id);
+    if (!profile?.pin_hash) return true;
+    return invoke<boolean>("verify_profile_pin", { pin, stored: profile.pin_hash });
   }
 
   /** Deletes the profile's entire library (games/tags/collections - playtime_sessions cascade
@@ -80,8 +111,12 @@ export const useProfilesStore = defineStore("profiles", () => {
     init,
     loadProfiles,
     switchTo,
+    backToPicker,
     createProfile,
     renameProfile,
     deleteProfile,
+    setPin,
+    clearPin,
+    verifyPin,
   };
 });

@@ -93,7 +93,15 @@
     "active": "Aktiv",
     "switchTo": "Wechseln",
     "rename": "Umbenennen",
-    "delete": "Löschen"
+    "delete": "Löschen",
+    "setPin": "PIN festlegen",
+    "changePin": "PIN ändern",
+    "removePin": "PIN entfernen",
+    "newPin": "Neue PIN",
+    "confirmPin": "PIN bestätigen",
+    "pinMismatch": "PINs stimmen nicht überein",
+    "enterPin": "PIN eingeben",
+    "wrongPin": "Falsche PIN"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",
@@ -112,6 +120,7 @@
     "showSidebar": "Seitenleiste anzeigen",
     "hideSidebar": "Seitenleiste ausblenden",
     "bigPictureMode": "Big-Picture-Modus",
+    "switchProfile": "Profil wechseln",
     "appName": "Spielebibliothek",
     "minimize": "Minimieren",
     "maximize": "Maximieren",

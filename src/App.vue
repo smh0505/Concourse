@@ -150,6 +150,15 @@ onMounted(async () => {
   if (profiles.activeProfileId !== null) await initLibraryAndPlugins();
 });
 
+/** Same reload-based approach as ProfilesPanel.vue's own switchProfile - see that component's
+ *  comment for why a full reload beats threading a lighter re-init path through every
+ *  profile-scoped store. Unlike that one, this doesn't pick a new profile at all, just clears
+ *  the remembered one so the reload lands back on ProfileSwitcher. */
+async function onSwitchProfile() {
+  await profiles.backToPicker();
+  window.location.reload();
+}
+
 // Fires once, the moment a profile first becomes active (either ProfileSwitcher's initial pick,
 // or - since profiles.init() already adopted a remembered profile before this component ever
 // mounted its watcher - never, in the common case where onMounted's own check above already
@@ -183,6 +192,7 @@ onUnmounted(() => {
       :sidebar-collapsed="sidebarCollapsed"
       @toggle-sidebar="sidebarCollapsed = !sidebarCollapsed"
       @big-picture="bigPicture = true"
+      @switch-profile="onSwitchProfile"
     />
     <div class="app-shell">
       <Transition name="sidebar">

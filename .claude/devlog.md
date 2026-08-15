@@ -7152,3 +7152,56 @@ orchestrates it explicitly: `GameRepository.deleteByProfile` (which does cascade
 `game_tags`/`game_collections`/`playtime_sessions` via their own existing `ON DELETE CASCADE`,
 same as any single-game delete) then `TagRepository`/`CollectionRepository.deleteAllForProfile`
 for the now-orphaned `tags`/`collections` rows themselves, then the `profiles` row last.
+
+### Migration v13 fix: SQLite forbids REFERENCES + non-NULL DEFAULT on ALTER TABLE ADD COLUMN
+
+User hit this live: `error returned from database: (code: 1) Cannot add a REFERENCES column
+with non-NULL default value` when v13 actually ran. `games.profile_id` was originally `ALTER
+TABLE games ADD COLUMN profile_id INTEGER NOT NULL DEFAULT 1 REFERENCES profiles(id)` - SQLite
+allows that combination fine in `CREATE TABLE` (which is why `tags_new`/`collections_new` were
+never affected, they define `profile_id` at table-creation time), but rejects it specifically on
+`ALTER TABLE ADD COLUMN`. Fixed by dropping the `REFERENCES` clause from just the `games` column
+- the FK relationship still holds logically, just isn't schema-enforced for that one column.
+Edited v13 in place rather than adding a v15 patch, since it had never successfully applied
+anywhere (the error meant SQLite rolled the whole migration back) - no shipped-migration hash to
+preserve, unlike a normally-append-only migration change.
+
+Also renamed the seed profile from "Default" to "Admin" per user request, and fixed a second,
+unrelated bug the user found immediately after: `ProfileSwitcher.vue`'s PIN-creation flow (see
+below) had no visible error path at all - `ToastContainer` only mounted once `App.vue`'s
+`v-else` branch was reached (i.e. only after a profile was already active), so any exception
+during profile creation failed completely silently, no error, no navigation, nothing. Fixed by
+giving `ProfileSwitcher.vue` its own local error display and moving `ToastContainer` to always
+mount regardless of profile state.
+
+### Milestone 30: optional per-profile PIN + "Switch Profile" button
+
+Two follow-up requests after step 1 shipped: a way to return to `ProfileSwitcher` without going
+through Settings, and the ability to lock a profile (renamed "Default" to "Admin" specifically
+to set up "keep the admin/parent profile away from casual switching" as the real target use
+case). Scoped the PIN feature with the user first: optional per-profile (not admin-only, not
+mandatory on every profile), hashed rather than plaintext.
+
+`auth.rs` is deliberately a salted SHA-256, not a full password KDF (argon2/bcrypt) - the actual
+threat model for a local PIN like this is "stop another household member from casually switching
+into a profile that isn't theirs," not "defend against offline brute force at scale" (`library.db`
+is a plain file on the same machine regardless - real filesystem access defeats any hash choice
+here). `hash_profile_pin`/`verify_profile_pin` are the only two Rust commands added; the raw PIN
+is never written to `library.db` or held in the JS layer beyond the single `invoke` call that
+hashes/verifies it. Stored format is `"<salt_hex>:<hash_hex>"` (migration v14, `profiles.pin_hash`,
+nullable - `NULL` means no PIN, the default). No `hex` crate pulled in for a two-function need;
+`auth.rs` hand-rolls `hex_encode`/`hex_decode` instead.
+
+`ProfileSwitcher.vue`: a profile card with a PIN shows a small lock badge; clicking it opens a
+`BaseModal` PIN prompt instead of switching immediately. `select()` itself stays the one place
+that actually flips `activeProfileId`, reached either directly (no PIN) or after
+`profiles.verifyPin` succeeds. `ProfilesPanel.vue` (Settings) got matching set/change/remove PIN
+controls per row, mirroring the existing rename inline-edit pattern.
+
+"Switch Profile": added as a new icon button in `TitleBar.vue`, next to the existing Big Picture
+toggle. `profiles.backToPicker()` just clears `activeProfileId` (and the persisted setting)
+without picking a replacement, then the same reload-based approach `ProfilesPanel.vue`'s own
+`switchProfile` already used - `window.location.reload()` re-runs `App.vue`'s `onMounted` from
+scratch, landing back on `ProfileSwitcher`. Consistent with step 1's existing reasoning for not
+threading a lighter-weight re-init path through every profile-scoped store for an action a user
+takes rarely.

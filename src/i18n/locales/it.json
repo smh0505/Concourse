@@ -93,7 +93,15 @@
     "active": "Attivo",
     "switchTo": "Cambia",
     "rename": "Rinomina",
-    "delete": "Elimina"
+    "delete": "Elimina",
+    "setPin": "Imposta PIN",
+    "changePin": "Cambia PIN",
+    "removePin": "Rimuovi PIN",
+    "newPin": "Nuovo PIN",
+    "confirmPin": "Conferma PIN",
+    "pinMismatch": "I PIN non corrispondono",
+    "enterPin": "Inserisci il PIN",
+    "wrongPin": "PIN errato"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",
@@ -112,6 +120,7 @@
     "showSidebar": "Mostra barra laterale",
     "hideSidebar": "Nascondi barra laterale",
     "bigPictureMode": "Modalità Big Picture",
+    "switchProfile": "Cambia profilo",
     "appName": "Libreria giochi",
     "minimize": "Riduci a icona",
     "maximize": "Ingrandisci",

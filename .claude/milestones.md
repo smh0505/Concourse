@@ -609,7 +609,9 @@ Scoping decided with the user up front:
   collections rebuilt (not just ALTER ADD COLUMN) since their UNIQUE(name) constraint had to
   become UNIQUE(name, profile_id) - two profiles can each have their own "Co-op" tag.
   playtime_sessions stays un-touched, scoped transitively through game_id via a join.
-  Every pre-M30 row backfills onto profile 1 ("Default") - upgrading is transparent.
+  Every pre-M30 row backfills onto profile 1 ("Admin") - upgrading is transparent. (SQLite
+  forbids REFERENCES + non-NULL DEFAULT on ALTER TABLE ADD COLUMN - the games.profile_id column
+  drops the REFERENCES clause, CREATE TABLE-based tags_new/collections_new keep theirs.)
 - [x] `ProfileRepository` + `profiles` store (`activeProfileId`, create/rename/delete);
   deleting a profile also deletes its games/tags/collections (playtime cascades via games'
   own FK) - an orphaned library nobody could ever see again would just be dead DB weight.
@@ -619,10 +621,14 @@ Scoping decided with the user up front:
   (the two global settings) init before the switcher shows, so it's already themed/localized.
 - [x] `ProfilesPanel.vue` (Settings) - create/rename/delete, plus an explicit "Switch" that
   reloads the window against the newly-active profile rather than threading a lighter re-init
-  path through every store.
+  path through every store. TitleBar also gained its own "Switch Profile" button (back to the
+  picker without picking a specific profile first) - `profiles.backToPicker()` + reload.
 - [x] Every game/tag/collection/playtime repo method threaded with `profileId`
   (games/tags/collections/playtime/library/stats stores) - filtered reads, profile-scoped
   writes.
+- [x] Optional per-profile PIN (migration v14, `profiles.pin_hash`) - salted SHA-256 hashed/
+  verified Rust-side (`auth.rs`), never a plaintext PIN in the DB or JS layer. ProfileSwitcher
+  prompts for it on a locked profile's card; ProfilesPanel manages set/change/remove.
 
 **Step 2 (not started)** - move plugin enablement/settings + controller mapping from global
 `settings` keys to per-profile-scoped ones (a `profile:{id}:{key}` prefix, matching this

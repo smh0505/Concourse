@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconCheck, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
+import { IconCheck, IconLock, IconLockOpen, IconPencil, IconTrash, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 
@@ -11,6 +11,11 @@ const profiles = useProfilesStore();
 const newName = ref("");
 const editingId = ref<number | null>(null);
 const editingValue = ref("");
+
+const pinEditingId = ref<number | null>(null);
+const pinValue = ref("");
+const pinConfirmValue = ref("");
+const pinError = ref("");
 
 async function onCreate() {
   const name = newName.value.trim();
@@ -37,6 +42,34 @@ async function confirmEdit() {
 
 async function onDelete(id: number) {
   await profiles.deleteProfile(id);
+}
+
+function startPinEdit(id: number) {
+  pinEditingId.value = id;
+  pinValue.value = "";
+  pinConfirmValue.value = "";
+  pinError.value = "";
+}
+
+function cancelPinEdit() {
+  pinEditingId.value = null;
+  pinValue.value = "";
+  pinConfirmValue.value = "";
+  pinError.value = "";
+}
+
+async function confirmPinEdit() {
+  if (pinEditingId.value === null) return;
+  if (pinValue.value !== pinConfirmValue.value) {
+    pinError.value = t("profiles.pinMismatch");
+    return;
+  }
+  if (pinValue.value) await profiles.setPin(pinEditingId.value, pinValue.value);
+  cancelPinEdit();
+}
+
+async function removePin(id: number) {
+  await profiles.clearPin(id);
 }
 
 /** A profile switch changes which library.db rows every store reads (Milestone 30) - rather
@@ -100,6 +133,21 @@ async function switchProfile(id: number) {
               <IconPencil :size="15" :stroke-width="1.75" />
             </button>
             <button
+              class="icon-button"
+              :title="profile.pin_hash ? t('profiles.changePin') : t('profiles.setPin')"
+              @click="startPinEdit(profile.id)"
+            >
+              <IconLock :size="15" :stroke-width="1.75" />
+            </button>
+            <button
+              v-if="profile.pin_hash"
+              class="icon-button"
+              :title="t('profiles.removePin')"
+              @click="removePin(profile.id)"
+            >
+              <IconLockOpen :size="15" :stroke-width="1.75" />
+            </button>
+            <button
               v-if="profiles.profiles.length > 1"
               class="icon-button"
               :title="t('profiles.delete')"
@@ -109,6 +157,26 @@ async function switchProfile(id: number) {
             </button>
           </div>
         </template>
+      </li>
+      <li v-if="pinEditingId !== null" class="item-row list-row-shell">
+        <form class="pin-edit-form" @submit.prevent="confirmPinEdit">
+          <input v-model="pinValue" type="password" inputmode="numeric" :placeholder="t('profiles.newPin')" />
+          <input
+            v-model="pinConfirmValue"
+            type="password"
+            inputmode="numeric"
+            :placeholder="t('profiles.confirmPin')"
+          />
+          <span v-if="pinError" class="error-text">{{ pinError }}</span>
+          <div class="row-controls">
+            <button type="submit" class="icon-button" :title="t('common.save')">
+              <IconCheck :size="15" :stroke-width="1.75" />
+            </button>
+            <button type="button" class="icon-button" :title="t('common.cancel')" @click="cancelPinEdit">
+              <IconX :size="15" :stroke-width="1.75" />
+            </button>
+          </div>
+        </form>
       </li>
     </ul>
   </div>
@@ -121,5 +189,16 @@ async function switchProfile(id: number) {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.pin-edit-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.pin-edit-form input {
+  max-width: 8rem;
 }
 </style>

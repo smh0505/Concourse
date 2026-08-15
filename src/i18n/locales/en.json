@@ -93,7 +93,15 @@
     "active": "Active",
     "switchTo": "Switch",
     "rename": "Rename",
-    "delete": "Delete"
+    "delete": "Delete",
+    "setPin": "Set PIN",
+    "changePin": "Change PIN",
+    "removePin": "Remove PIN",
+    "newPin": "New PIN",
+    "confirmPin": "Confirm PIN",
+    "pinMismatch": "PINs don't match",
+    "enterPin": "Enter PIN",
+    "wrongPin": "Wrong PIN"
   },
   "candidatePicker": {
     "title": "Multiple matches found",
@@ -112,6 +120,7 @@
     "showSidebar": "Show sidebar",
     "hideSidebar": "Hide sidebar",
     "bigPictureMode": "Big Picture Mode",
+    "switchProfile": "Switch Profile",
     "appName": "Game Library",
     "minimize": "Minimize",
     "maximize": "Maximize",

@@ -2,6 +2,7 @@
 use tauri::Manager;
 
 mod always_on_top;
+mod auth;
 mod db;
 mod discord_presence;
 mod dpi_override;
@@ -56,6 +57,8 @@ pub fn run() {
             discord_presence::set_discord_presence,
             discord_presence::clear_discord_presence,
             dpi_override::set_dpi_override,
+            auth::hash_profile_pin,
+            auth::verify_profile_pin,
             resolution_override::get_display_modes,
             resolution_override::apply_display_mode,
             resolution_override::revert_display_mode,

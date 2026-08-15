@@ -36,6 +36,9 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 bytes = "1"
 sha2 = "0.10"
+# For auth.rs's per-profile PIN salt (Milestone 30) - genuine randomness, not a hand-rolled
+# time-based salt generator.
+rand = "0.8"
 image = "0.25"
 sigstore-verify = "0.1"
 sigstore-trust-root = "0.1"

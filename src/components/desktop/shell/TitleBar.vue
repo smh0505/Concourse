@@ -9,6 +9,7 @@ import {
   IconLayoutSidebarLeftExpand,
   IconMinus,
   IconSquare,
+  IconUsers,
   IconX,
 } from "@tabler/icons-vue";
 
@@ -19,6 +20,7 @@ defineProps<{
 const emit = defineEmits<{
   toggleSidebar: [];
   bigPicture: [];
+  switchProfile: [];
 }>();
 
 const { t } = useI18n();
@@ -61,6 +63,9 @@ onMounted(async () => {
       </button>
       <button class="titlebar-button" :title="t('titleBar.bigPictureMode')" @click="emit('bigPicture')">
         <IconDeviceTv :size="17" :stroke-width="1.75" />
+      </button>
+      <button class="titlebar-button" :title="t('titleBar.switchProfile')" @click="emit('switchProfile')">
+        <IconUsers :size="17" :stroke-width="1.75" />
       </button>
       <span class="titlebar-title" data-tauri-drag-region>{{ t("titleBar.appName") }}</span>
     </div>

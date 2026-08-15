@@ -93,7 +93,15 @@
     "active": "사용 중",
     "switchTo": "전환",
     "rename": "이름 변경",
-    "delete": "삭제"
+    "delete": "삭제",
+    "setPin": "PIN 설정",
+    "changePin": "PIN 변경",
+    "removePin": "PIN 제거",
+    "newPin": "새 PIN",
+    "confirmPin": "PIN 확인",
+    "pinMismatch": "PIN이 일치하지 않습니다",
+    "enterPin": "PIN 입력",
+    "wrongPin": "PIN이 틀렸습니다"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",
@@ -112,6 +120,7 @@
     "showSidebar": "사이드바 표시",
     "hideSidebar": "사이드바 숨기기",
     "bigPictureMode": "빅픽처 모드",
+    "switchProfile": "프로필 전환",
     "appName": "게임 라이브러리",
     "minimize": "최소화",
     "maximize": "최대화",

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconCheck, IconX } from "@tabler/icons-vue";
+import { IconCheck, IconLock, IconX } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
+import { BaseModal } from "@/components/desktop/common";
+import type { Profile } from "@/db";
 
 const { t } = useI18n();
 const profiles = useProfilesStore();
@@ -12,8 +14,42 @@ const creating = ref(false);
 const newName = ref("");
 const error = ref("");
 
+const pendingPinProfile = ref<Profile | null>(null);
+const pinValue = ref("");
+const pinError = ref("");
+const pinInputEl = ref<HTMLInputElement | null>(null);
+
 async function select(id: number) {
   await profiles.switchTo(id);
+}
+
+/** PIN-less profiles switch immediately on click; a PIN-protected one opens the prompt modal
+ *  instead - `select` itself stays the one place that actually flips activeProfileId, whether
+ *  it's reached directly or after a successful verifyPin below. */
+async function onCardClick(profile: Profile) {
+  if (!profile.pin_hash) {
+    await select(profile.id);
+    return;
+  }
+  pendingPinProfile.value = profile;
+  pinValue.value = "";
+  pinError.value = "";
+  await nextTick();
+  pinInputEl.value?.focus();
+}
+
+async function confirmPin() {
+  if (!pendingPinProfile.value) return;
+  const ok = await profiles.verifyPin(pendingPinProfile.value.id, pinValue.value);
+  if (!ok) {
+    pinError.value = t("profiles.wrongPin");
+    pinValue.value = "";
+    pinInputEl.value?.focus();
+    return;
+  }
+  const id = pendingPinProfile.value.id;
+  pendingPinProfile.value = null;
+  await select(id);
 }
 
 async function confirmCreate() {
@@ -45,9 +81,12 @@ async function confirmCreate() {
           :key="profile.id"
           type="button"
           class="profile-card"
-          @click="select(profile.id)"
+          @click="onCardClick(profile)"
         >
-          <div class="avatar">{{ profile.name.charAt(0).toUpperCase() }}</div>
+          <div class="avatar">
+            {{ profile.name.charAt(0).toUpperCase() }}
+            <IconLock v-if="profile.pin_hash" :size="14" :stroke-width="2" class="lock-badge" />
+          </div>
           <span class="name">{{ profile.name }}</span>
         </button>
 
@@ -74,6 +113,25 @@ async function confirmCreate() {
       </div>
       <p v-if="error" class="error-text">{{ error }}</p>
     </div>
+
+    <BaseModal
+      :open="pendingPinProfile !== null"
+      :title="pendingPinProfile?.name"
+      max-width="300px"
+      @close="pendingPinProfile = null"
+    >
+      <form class="pin-form" @submit.prevent="confirmPin">
+        <input
+          ref="pinInputEl"
+          v-model="pinValue"
+          type="password"
+          inputmode="numeric"
+          :placeholder="t('profiles.enterPin')"
+        />
+        <p v-if="pinError" class="error-text">{{ pinError }}</p>
+        <button type="submit">{{ t("common.continue") }}</button>
+      </form>
+    </BaseModal>
   </div>
 </template>
 
@@ -127,6 +185,7 @@ h1 {
 }
 
 .avatar {
+  position: relative;
   width: 4.5rem;
   height: 4.5rem;
   border-radius: 50%;
@@ -135,6 +194,16 @@ h1 {
   justify-content: center;
   background: var(--color-surface0);
   font-size: 1.8rem;
+}
+
+.lock-badge {
+  position: absolute;
+  right: -0.15rem;
+  bottom: -0.15rem;
+  padding: 0.2rem;
+  border-radius: 50%;
+  background: var(--color-surface1);
+  color: var(--color-text);
 }
 
 .add-avatar {
@@ -164,5 +233,16 @@ h1 {
 .creating-actions {
   display: flex;
   gap: var(--space-2);
+}
+
+.pin-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pin-form input {
+  text-align: center;
+  letter-spacing: 0.3em;
 }
 </style>

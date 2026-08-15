@@ -3,6 +3,9 @@ import { getDb } from "./client";
 export interface Profile {
   id: number;
   name: string;
+  /** "<salt_hex>:<hash_hex>" from Rust's hash_profile_pin, or null if this profile has no PIN
+   *  set (the default - ProfileSwitcher switches into it with no prompt). */
+  pin_hash: string | null;
 }
 
 export class ProfileRepository {
@@ -20,6 +23,13 @@ export class ProfileRepository {
   async rename(id: number, name: string): Promise<void> {
     const db = await getDb();
     await db.execute("UPDATE profiles SET name = $1 WHERE id = $2", [name, id]);
+  }
+
+  /** `hash` is a pre-hashed "<salt_hex>:<hash_hex>" string (see auth.rs's hash_profile_pin) -
+   *  this repo never sees the raw PIN. `null` clears it. */
+  async setPinHash(id: number, hash: string | null): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE profiles SET pin_hash = $1 WHERE id = $2", [hash, id]);
   }
 
   /** Cascades nowhere on its own - games/tags/collections reference profile_id without

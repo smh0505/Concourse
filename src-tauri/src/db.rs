@@ -250,7 +250,7 @@ pub fn migrations() -> Vec<Migration> {
             -- settings (hotkey, close-to-tray) stay global - see milestones.md for the scoping
             -- decision.
             --
-            -- Every existing row backfills onto profile 1 ("Default") via DEFAULT 1, so an
+            -- Every existing row backfills onto profile 1 ("Admin") via DEFAULT 1, so an
             -- upgrade from a pre-M30 single-library install is transparent - nothing needs to
             -- migrate data between profiles, there's just one profile holding everything that
             -- was already there.
@@ -258,7 +258,7 @@ pub fn migrations() -> Vec<Migration> {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL
             );
-            INSERT INTO profiles (id, name) VALUES (1, 'Default');
+            INSERT INTO profiles (id, name) VALUES (1, 'Admin');
 
             -- No REFERENCES clause here - SQLite's ALTER TABLE ADD COLUMN forbids combining a
             -- REFERENCES clause with a non-NULL DEFAULT (allowed fine in CREATE TABLE, which is
@@ -292,6 +292,20 @@ pub fn migrations() -> Vec<Migration> {
             INSERT INTO collections_new (id, name, profile_id) SELECT id, name, 1 FROM collections;
             DROP TABLE collections;
             ALTER TABLE collections_new RENAME TO collections;
+        "#,
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 14,
+            description: "add_profile_pin",
+            sql: r#"
+            -- Milestone 30 - optional per-profile PIN. NULL means no PIN set (the common case -
+            -- switching to that profile from ProfileSwitcher needs no prompt). Format is
+            -- "<salt_hex>:<hash_hex>" (see auth.rs) - a salted SHA-256, not a real security
+            -- boundary against someone with filesystem access to library.db, just enough to stop
+            -- casual profile-switching by another household member, which is the actual threat
+            -- model for a local PIN like this.
+            ALTER TABLE profiles ADD COLUMN pin_hash TEXT;
         "#,
             kind: MigrationKind::Up,
         },

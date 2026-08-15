@@ -93,7 +93,15 @@
     "active": "使用中",
     "switchTo": "切换",
     "rename": "重命名",
-    "delete": "删除"
+    "delete": "删除",
+    "setPin": "设置 PIN",
+    "changePin": "更改 PIN",
+    "removePin": "移除 PIN",
+    "newPin": "新 PIN",
+    "confirmPin": "确认 PIN",
+    "pinMismatch": "两次输入的 PIN 不一致",
+    "enterPin": "输入 PIN",
+    "wrongPin": "PIN 错误"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",
@@ -112,6 +120,7 @@
     "showSidebar": "显示侧边栏",
     "hideSidebar": "隐藏侧边栏",
     "bigPictureMode": "大屏幕模式",
+    "switchProfile": "切换档案",
     "appName": "游戏库",
     "minimize": "最小化",
     "maximize": "最大化",

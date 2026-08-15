@@ -93,7 +93,15 @@
     "active": "Activo",
     "switchTo": "Cambiar",
     "rename": "Renombrar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "setPin": "Establecer PIN",
+    "changePin": "Cambiar PIN",
+    "removePin": "Quitar PIN",
+    "newPin": "Nuevo PIN",
+    "confirmPin": "Confirmar PIN",
+    "pinMismatch": "Los PIN no coinciden",
+    "enterPin": "Introduce el PIN",
+    "wrongPin": "PIN incorrecto"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",
@@ -112,6 +120,7 @@
     "showSidebar": "Mostrar barra lateral",
     "hideSidebar": "Ocultar barra lateral",
     "bigPictureMode": "Modo Big Picture",
+    "switchProfile": "Cambiar perfil",
     "appName": "Biblioteca de juegos",
     "minimize": "Minimizar",
     "maximize": "Maximizar",

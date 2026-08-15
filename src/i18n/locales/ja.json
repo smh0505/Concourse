@@ -93,7 +93,15 @@
     "active": "使用中",
     "switchTo": "切り替え",
     "rename": "名前を変更",
-    "delete": "削除"
+    "delete": "削除",
+    "setPin": "PINを設定",
+    "changePin": "PINを変更",
+    "removePin": "PINを削除",
+    "newPin": "新しいPIN",
+    "confirmPin": "PINを確認",
+    "pinMismatch": "PINが一致しません",
+    "enterPin": "PINを入力",
+    "wrongPin": "PINが間違っています"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",
@@ -112,6 +120,7 @@
     "showSidebar": "サイドバーを表示",
     "hideSidebar": "サイドバーを非表示",
     "bigPictureMode": "ビッグピクチャーモード",
+    "switchProfile": "プロフィールを切り替え",
     "appName": "ゲームライブラリ",
     "minimize": "最小化",
     "maximize": "最大化",

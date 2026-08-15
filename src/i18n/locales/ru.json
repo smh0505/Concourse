@@ -93,7 +93,15 @@
     "active": "Активен",
     "switchTo": "Переключить",
     "rename": "Переименовать",
-    "delete": "Удалить"
+    "delete": "Удалить",
+    "setPin": "Установить PIN",
+    "changePin": "Изменить PIN",
+    "removePin": "Удалить PIN",
+    "newPin": "Новый PIN",
+    "confirmPin": "Подтвердите PIN",
+    "pinMismatch": "PIN-коды не совпадают",
+    "enterPin": "Введите PIN",
+    "wrongPin": "Неверный PIN"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",
@@ -112,6 +120,7 @@
     "showSidebar": "Показать боковую панель",
     "hideSidebar": "Скрыть боковую панель",
     "bigPictureMode": "Режим Big Picture",
+    "switchProfile": "Сменить профиль",
     "appName": "Библиотека игр",
     "minimize": "Свернуть",
     "maximize": "Развернуть",

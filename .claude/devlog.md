@@ -6959,3 +6959,18 @@ since most games already remember their own resolution/windowed setting internal
 the real value is position specifically (most games don't remember which monitor/desktop
 position they were last at, especially on multi-monitor setups) - size is likely redundant in
 practice but harmless to also restore, so left as one combined rect rather than narrowing scope.
+
+### Milestone 39 stretch follow-up: remember_window vs. pseudo_fullscreen interaction
+
+User asked what happens toggling pseudo_fullscreen off after having it on - surfaced a real bug
+in the remember_window combination: a rect captured while pseudo-fullscreen was active reflects
+letterboxed dimensions (smaller, centered), not a normal window's size/position. Applying that
+saved rect to a later non-fullscreen launch (or worse, silently overwriting a genuinely normal
+saved rect with it) would show the wrong thing entirely.
+
+Fixed with a single shadow at the top of each tracking thread - `let remember_window =
+remember_window && !pseudo_fullscreen;` - rather than scattering the extra condition across
+every individual `apply`/`refresh`/`capture` call site. When both are enabled for the same
+session, remember_window now silently no-ops entirely (nothing captured, nothing applied),
+leaving whatever was last saved from an actual normal session untouched rather than corrupting
+it with letterboxed numbers.

@@ -129,17 +129,6 @@ async function onPinSubmit() {
     </div>
     <small>{{ t("profiles.description") }}</small>
 
-    <ProfileCreateForm
-      v-if="creating"
-      ref="createFormRef"
-      class="add-form"
-      layout="horizontal"
-      @submit="onCreateSubmit"
-      @keyup.esc="creating = false"
-    >
-      <button type="submit">{{ t("profiles.addProfile") }}</button>
-    </ProfileCreateForm>
-
     <ul class="item-list">
       <li v-for="profile in profiles.profiles" :key="profile.id" class="item-row list-row-shell">
         <template v-if="editingId === profile.id">
@@ -208,6 +197,14 @@ async function onPinSubmit() {
             </div>
           </div>
         </template>
+      </li>
+      <li v-if="creating" class="item-row list-row-shell">
+        <ProfileCreateForm
+          ref="createFormRef"
+          layout="horizontal"
+          @submit="onCreateSubmit"
+          @keyup.esc="creating = false"
+        />
       </li>
     </ul>
   </div>

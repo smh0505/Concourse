@@ -2,18 +2,18 @@
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-// No layout/visual opinions of its own - the root <form> picks up whatever class the caller
-// passes via normal attrs fallthrough (ProfileSwitcher.vue passes "profile-card creating",
-// ProfilesPanel.vue passes "add-form"), so each surface's existing scoped styling keeps
-// applying unchanged. This component only owns the shared field state/validation, not how it
-// looks in either place.
+// No layout/visual opinions of its own beyond arranging its own fields - the root <form> picks
+// up whatever class the caller passes via normal attrs fallthrough (ProfileSwitcher.vue passes
+// "profile-card creating", ProfilesPanel.vue passes "item-row list-row-shell"), so each
+// surface's existing scoped styling keeps applying unchanged. This component only owns the
+// shared field state/validation and the name+PIN fields' own internal arrangement, not the
+// outer card/row shape.
 const { t } = useI18n();
 
-// Only the field sizing/alignment differs between the two callers (ProfileSwitcher's compact
-// vertical card vs. ProfilesPanel's horizontal settings row) - everything else (the outer
-// card/row shape, button styling) stays each caller's own concern via the class it passes
-// through attrs fallthrough onto this component's root <form>. The live avatar preview below
-// only makes sense on the card layout, not the settings row, so it's gated on this too.
+// The live avatar preview and the Enter/Esc hint only make sense on the card layout /
+// button-less row layout respectively - ProfileSwitcher's vertical card shows its own shared
+// hint once under the screen title instead (see ProfileSwitcher.vue), so this component's own
+// hint only renders for "horizontal" (ProfilesPanel's row).
 const props = withDefaults(defineProps<{ layout?: "vertical" | "horizontal" }>(), {
   layout: "horizontal",
 });
@@ -86,15 +86,17 @@ defineExpose({ reset, setError: (message: string) => (error.value = message) });
 <template>
   <form :class="props.layout" @submit.prevent="onSubmit">
     <div v-if="props.layout === 'vertical'" class="profile-avatar">{{ avatarLetter }}</div>
-    <input v-model="name" autofocus :disabled="confirming" :placeholder="t('profiles.newProfileName')" />
-    <input
-      v-model="pinInput"
-      type="password"
-      inputmode="numeric"
-      :placeholder="confirming ? t('profiles.confirmPin') : t('profiles.optionalPin')"
-    />
+    <div class="fields">
+      <input v-model="name" autofocus :disabled="confirming" :placeholder="t('profiles.newProfileName')" />
+      <input
+        v-model="pinInput"
+        type="password"
+        inputmode="numeric"
+        :placeholder="confirming ? t('profiles.confirmPin') : t('profiles.optionalPin')"
+      />
+    </div>
     <p v-if="error" class="error-text">{{ error }}</p>
-    <slot />
+    <small v-if="props.layout === 'horizontal'" class="form-hint">{{ t("profiles.enterEscHint") }}</small>
   </form>
 </template>
 
@@ -106,12 +108,35 @@ form.vertical {
   gap: var(--space-3);
 }
 
+form.vertical .fields {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: var(--space-3);
+}
+
 form.vertical input {
   width: 100%;
   text-align: center;
 }
 
+/* ProfilesPanel's row layout - name and PIN fields share the row equally, matching the same
+   profile-row-content/row-top/name-row pattern every other row (rename, PIN-change) already
+   uses, rather than the fixed-width fields this layout used to have. */
+form.horizontal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+form.horizontal .fields {
+  display: flex;
+  gap: var(--space-3);
+}
+
 form.horizontal input {
-  max-width: 8rem;
+  flex: 1 1 0;
+  min-width: 0;
 }
 </style>

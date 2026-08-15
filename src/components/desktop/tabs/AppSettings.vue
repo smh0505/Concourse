@@ -335,8 +335,12 @@ onBeforeUnmount(stopListeningForHotkey);
 /* Hangs from the trigger's right edge instead of DropdownMenu.vue's own left:0 default -
    left:auto releases that constraint so right:0 alone positions it (not both at once, which
    would stretch the panel to span the trigger's full width). Still sizes to its own content
-   (the option list, not the trigger), just anchored on the other side now. */
-.language-menu-wrap :deep(.language-menu-panel) {
+   (the option list, not the trigger), just anchored on the other side now.
+   Both classes on each side (not just the wrap/panel-class alone) - DropdownMenu.vue's own
+   ".dropdown-menu-panel[data-v-xxx] { left: 0 }" ties this rule's specificity at a single
+   class, so which one wins depends on build-time CSS source order rather than the cascade
+   actually favoring the more specific override. Doubling up beats it outright regardless. */
+.language-menu-wrap.dropdown-menu-wrap :deep(.language-menu-panel.dropdown-menu-panel) {
   left: auto;
   right: 0;
 }

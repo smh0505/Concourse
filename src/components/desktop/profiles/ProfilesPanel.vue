@@ -224,10 +224,15 @@ async function onPinSubmit() {
 .section-title-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
 }
 
+/* Matches AppSettings.vue's other section headings (Quick Launch, Translation) - that scoped
+   rule lives in AppSettings.vue itself and can't reach this component's own h3 (only a child
+   component's root element inherits a parent's scoped styles), so it's duplicated here. */
 .section-title-row h3 {
+  font-size: 0.95rem;
   margin: 0;
 }
 

@@ -52,6 +52,13 @@ pub fn launch_game(
     let start_time = unix_timestamp(start);
 
     std::thread::spawn(move || {
+        // A rect captured while pseudo-fullscreen is active reflects letterboxed dimensions, not
+        // a normal window size/position - reusing it for a later non-fullscreen launch would
+        // apply the wrong thing. Remembering is skipped entirely for a session where
+        // pseudo-fullscreen is also on, leaving whatever was last saved from a genuinely normal
+        // session untouched.
+        let remember_window = remember_window && !pseudo_fullscreen;
+
         // Applied here, not before spawn returns - needs the game's own window, which doesn't
         // exist until moments after the process starts.
         let mut fullscreen_state = if pseudo_fullscreen {
@@ -217,6 +224,10 @@ pub fn track_folder_playtime(
         // Survives a brief process handoff (e.g. launcher relays to the real game exe)
         // without treating that gap as the end of the session.
         const MISSING_GRACE_POLLS: u32 = 2;
+
+        // See launch_game's identical shadow for why - a rect captured under pseudo-fullscreen
+        // reflects letterboxed dimensions, not a normal window size/position.
+        let remember_window = remember_window && !pseudo_fullscreen;
 
         let mut system = System::new();
 

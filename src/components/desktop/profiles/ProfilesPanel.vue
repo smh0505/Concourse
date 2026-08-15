@@ -155,12 +155,55 @@ async function switchProfile(id: number) {
           </div>
         </template>
         <template v-else>
-          <div class="name-column">
-            <div class="name-row">
-              <span class="item-name">{{ profile.name }}</span>
-              <span v-if="profile.id === profiles.activeProfileId" class="item-count">
-                {{ t("profiles.active") }}
-              </span>
+          <div class="profile-row-content">
+            <div class="row-top">
+              <div class="name-row">
+                <span class="item-name">{{ profile.name }}</span>
+                <span v-if="profile.id === profiles.activeProfileId" class="item-count">
+                  {{ t("profiles.active") }}
+                </span>
+              </div>
+              <div class="row-controls">
+                <button
+                  v-if="profile.id !== profiles.activeProfileId"
+                  class="icon-button"
+                  :title="t('profiles.switchTo')"
+                  @click="switchProfile(profile.id)"
+                >
+                  {{ t("profiles.switchTo") }}
+                </button>
+                <button
+                  v-if="profile.id !== 1"
+                  class="icon-button"
+                  :title="t('profiles.rename')"
+                  @click="startEdit(profile.id, profile.name)"
+                >
+                  <IconPencil :size="15" :stroke-width="1.75" />
+                </button>
+                <button
+                  class="icon-button"
+                  :title="profile.pin_hash ? t('profiles.changePin') : t('profiles.setPin')"
+                  @click="startPinEdit(profile.id)"
+                >
+                  <IconLock :size="15" :stroke-width="1.75" />
+                </button>
+                <button
+                  v-if="profile.pin_hash"
+                  class="icon-button"
+                  :title="t('profiles.removePin')"
+                  @click="removePin(profile.id)"
+                >
+                  <IconLockOpen :size="15" :stroke-width="1.75" />
+                </button>
+                <button
+                  v-if="profile.id !== 1 && profiles.profiles.length > 1"
+                  class="icon-button"
+                  :title="t('profiles.delete')"
+                  @click="onDelete(profile.id)"
+                >
+                  <IconTrash :size="15" :stroke-width="1.75" />
+                </button>
+              </div>
             </div>
             <form v-if="pinEditingId === profile.id" class="pin-inline" @submit.prevent="onPinSubmit">
               <input
@@ -174,47 +217,6 @@ async function switchProfile(id: number) {
               <span v-if="pinError" class="error-text">{{ pinError }}</span>
               <small class="form-hint">{{ t("profiles.enterEscHint") }}</small>
             </form>
-          </div>
-          <div class="row-controls">
-            <button
-              v-if="profile.id !== profiles.activeProfileId"
-              class="icon-button"
-              :title="t('profiles.switchTo')"
-              @click="switchProfile(profile.id)"
-            >
-              {{ t("profiles.switchTo") }}
-            </button>
-            <button
-              v-if="profile.id !== 1"
-              class="icon-button"
-              :title="t('profiles.rename')"
-              @click="startEdit(profile.id, profile.name)"
-            >
-              <IconPencil :size="15" :stroke-width="1.75" />
-            </button>
-            <button
-              class="icon-button"
-              :title="profile.pin_hash ? t('profiles.changePin') : t('profiles.setPin')"
-              @click="startPinEdit(profile.id)"
-            >
-              <IconLock :size="15" :stroke-width="1.75" />
-            </button>
-            <button
-              v-if="profile.pin_hash"
-              class="icon-button"
-              :title="t('profiles.removePin')"
-              @click="removePin(profile.id)"
-            >
-              <IconLockOpen :size="15" :stroke-width="1.75" />
-            </button>
-            <button
-              v-if="profile.id !== 1 && profiles.profiles.length > 1"
-              class="icon-button"
-              :title="t('profiles.delete')"
-              @click="onDelete(profile.id)"
-            >
-              <IconTrash :size="15" :stroke-width="1.75" />
-            </button>
           </div>
         </template>
       </li>
@@ -231,30 +233,42 @@ async function switchProfile(id: number) {
   gap: var(--space-3);
 }
 
-/* Takes over .item-name's usual flex:1 slot in the row, so the inline PIN form below can stack
-   under the name instead of sitting beside it in the same horizontal line. */
-.name-column {
+/* Takes over .item-row's usual flex:1 slot, so the inline PIN form below can span the row's
+   full width on its own line instead of being squeezed beside the name/buttons. */
+.profile-row-content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-2);
   flex: 1;
   min-width: 0;
+}
+
+/* Name and the button row stay aligned on one horizontal line, name on the left taking up the
+   slack, buttons on the right - unaffected by whether the PIN form below is showing. */
+.row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
 }
 
 .name-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
 }
 
 .pin-inline {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .pin-inline input {
-  max-width: 8rem;
+  width: 100%;
 }
 </style>

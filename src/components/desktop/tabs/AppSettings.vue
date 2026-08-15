@@ -332,9 +332,14 @@ onBeforeUnmount(stopListeningForHotkey);
   justify-content: space-between;
 }
 
-/* No right:0 override (unlike PluginSettings.vue's tabs-dropdown-panel) - that stretched the
-   panel to match a full-width trigger. This trigger is fit-content now, so the panel should be
-   free to size to its own (usually wider) content via DropdownMenu.vue's own left:0 default. */
+/* Hangs from the trigger's right edge instead of DropdownMenu.vue's own left:0 default -
+   left:auto releases that constraint so right:0 alone positions it (not both at once, which
+   would stretch the panel to span the trigger's full width). Still sizes to its own content
+   (the option list, not the trigger), just anchored on the other side now. */
+.language-menu-wrap :deep(.language-menu-panel) {
+  left: auto;
+  right: 0;
+}
 
 .language-menu-item {
   display: block;

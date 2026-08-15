@@ -260,7 +260,11 @@ pub fn migrations() -> Vec<Migration> {
             );
             INSERT INTO profiles (id, name) VALUES (1, 'Default');
 
-            ALTER TABLE games ADD COLUMN profile_id INTEGER NOT NULL DEFAULT 1 REFERENCES profiles(id);
+            -- No REFERENCES clause here - SQLite's ALTER TABLE ADD COLUMN forbids combining a
+            -- REFERENCES clause with a non-NULL DEFAULT (allowed fine in CREATE TABLE, which is
+            -- why tags_new/collections_new below can have both). The FK relationship still
+            -- holds logically; it's just not schema-enforced for this particular column.
+            ALTER TABLE games ADD COLUMN profile_id INTEGER NOT NULL DEFAULT 1;
 
             -- tags/collections each need profile_id in the recreated table, not just an ALTER
             -- ADD COLUMN, because their UNIQUE(name) constraint has to become UNIQUE(name,

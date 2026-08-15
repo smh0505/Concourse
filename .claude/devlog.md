@@ -7075,3 +7075,80 @@ Fixed by reordering so `library.refresh()` always runs first and unconditionally
 theming and quick-launch-hotkey persistence are nice-to-haves for this window, not the actual
 feature, so neither should be able to block the game list again regardless of what breaks inside
 them later.
+
+## Milestone 30 — Multi-Library / Profile Support, step 1
+
+Scoped with the user via three quick decisions before any code: `profile_id` column (not
+separate DB files per profile) for storage; theme + app-level settings stay global, everything
+else (plugin enablement, controller mapping, games/tags/collections/playtime) goes per-profile;
+kids mode is a filtered view of one profile, not a separate profile - deferred entirely to a
+later step, not built this pass. Only step 1 (the core schema/switcher/store-threading) shipped
+this session - plugin/controller-mapping settings scoping (step 2) and the kids-mode filter
+(step 3) are explicitly follow-up work, tracked as their own checklist items in milestones.md.
+
+### Schema
+
+Migration v13 adds `profiles` (id, name), seeds row 1 as "Default", and adds `profile_id` to
+`games` via a plain `ALTER TABLE ADD COLUMN ... DEFAULT 1` - every existing row backfills onto
+that Default profile automatically, so upgrading from a pre-M30 single-library install needs no
+explicit data migration at all.
+
+`tags`/`collections` needed a real table rebuild instead - their `UNIQUE(name)` constraint had
+to become `UNIQUE(name, profile_id)` (two profiles can each have their own "Co-op" tag without
+colliding), and SQLite can't `ALTER` a UNIQUE constraint in place. Rebuilt as `CREATE TABLE
+..._new` -> `INSERT ... SELECT` -> `DROP TABLE` -> `RENAME TO`, preserving `id` explicitly in
+the `INSERT` so `game_tags`/`game_collections`' existing FK references keep resolving correctly
+(SQLite resolves a FK's target table by name at each use, not a fixed binding made at the
+child table's own `CREATE TABLE` time, so the rename doesn't break anything already pointing at
+it). `playtime_sessions` was deliberately left alone - profile-scoping it transitively through a
+join to `games` avoids duplicating `profile_id` onto every session row for a table that's never
+queried independent of its owning game anyway.
+
+### Repository/store threading
+
+Every `GameRepository`/`TagRepository`/`CollectionRepository`/`PlaytimeRepository` method that
+reads or writes rows now takes (or resolves) a `profileId` - `list`/`getAll`/
+`getRecentlyPlayed`/`getAllLastPlayed` filter by it, `add`/`addWithPlatform`/`create` write it.
+`getForGame`/tag-lookup-by-game methods deliberately don't take one - a game's `id` already
+pins it to exactly one profile, and everything joined off that `game_id` is transitively scoped
+already, so threading `profileId` through those specific calls would just be a redundant filter
+that could never change the result. `library.ts`/`tags.ts`/`collections.ts`/`stats.ts` each
+gained a small `activeProfileId()` helper reading `useProfilesStore().activeProfileId!` -
+non-null asserted since App.vue never lets any of these mutating actions run before a profile is
+active (see below), matching this codebase's existing `viewingGame!`-style guaranteed-non-null
+convention rather than threading an `Option` through every call site for a state that can't
+actually occur at the call sites that matter.
+
+### Profile switcher, and why it's not gated on every launch
+
+`ProfileSwitcher.vue` only appears when `profiles.activeProfileId` is `null` - which, after the
+first-ever selection, only happens again if the remembered profile was later deleted. The
+alternative (always show the picker at every launch, Netflix/Steam-style) was considered and
+rejected: it would add friction to the common case (one person, one profile, upgrading from a
+pre-M30 install) for no benefit, since `profiles.init()` already reads back the last-active
+profile from `settings` and adopts it automatically if it still exists. `appSettings.init()`/
+`theme.init()` (the two global settings) run before `profiles.init()` in `App.vue`'s
+`onMounted`, specifically so the switcher itself - when it does need to show - is already in the
+user's chosen language/theme rather than stuck on defaults until after they pick.
+
+Everything else (`library.init()`, plugin/controller-mapping/wrapper/translation/presence init,
+the update-check timers) only runs once a profile is confirmed active - either immediately in
+`onMounted` (remembered profile), or via a one-shot `watch` on `activeProfileId` that
+self-unsubscribes after firing once (ProfileSwitcher's initial pick). Re-running that whole
+block on every later `activeProfileId` change would re-init plugins/theme/etc. needlessly for
+what should just be a data refresh - so an in-session "Switch Profile" (`ProfilesPanel.vue`,
+Settings) deliberately does not reuse this path at all. It calls `profiles.switchTo(id)` then
+`window.location.reload()` - a full reload re-runs `App.vue` from scratch against the newly-
+active profile, functionally identical to a restart. Simpler and unambiguously correct versus
+threading a lighter-weight re-init path through every store that reads profile-scoped data,
+for an action a user takes rarely.
+
+### Profile deletion cascade
+
+Deleting a `profiles` row does not `ON DELETE CASCADE` into `games`/`tags`/`collections` at the
+schema level - deliberately, since losing an entire library silently as a foreign-key side
+effect would be far too easy to trigger by accident. `profiles.ts`'s `deleteProfile` instead
+orchestrates it explicitly: `GameRepository.deleteByProfile` (which does cascade to
+`game_tags`/`game_collections`/`playtime_sessions` via their own existing `ON DELETE CASCADE`,
+same as any single-game delete) then `TagRepository`/`CollectionRepository.deleteAllForProfile`
+for the now-orphaned `tags`/`collections` rows themselves, then the `profiles` row last.

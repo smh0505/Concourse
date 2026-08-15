@@ -3,7 +3,14 @@ import { ref } from "vue";
 
 import { collections as collectionRepo, type Game } from "@/db";
 import { useLibraryStore } from "./library";
+import { useProfilesStore } from "./profiles";
 import type { PillMatchMode } from "./tags";
+
+/** App.vue gates the main library UI behind profile selection - by the time any of this
+ *  store's mutating actions can run, a profile is guaranteed active. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 
 /** Mirrors tags.ts exactly, over collections instead - split out of library.ts at the same
  *  time and for the same reason (its own dedicated "Collections" manager tab). */
@@ -20,7 +27,7 @@ export const useCollectionsStore = defineStore("collections", () => {
       games.map(async (g) => [g.id, await collectionRepo.getForGame(g.id)] as const),
     );
     gameCollections.value = Object.fromEntries(entries);
-    allCollections.value = await collectionRepo.getAll();
+    allCollections.value = await collectionRepo.getAll(activeProfileId());
   }
 
   /** See tags.ts's identical setFilters for why this replaces the whole set. */
@@ -47,12 +54,12 @@ export const useCollectionsStore = defineStore("collections", () => {
   }
 
   async function addToGame(game: Game, names: string[]) {
-    await collectionRepo.addToGame(game.id, names);
+    await collectionRepo.addToGame(game.id, names, activeProfileId());
     await refreshSelf();
   }
 
   async function removeFromGame(game: Game, name: string) {
-    await collectionRepo.removeFromGame(game.id, name);
+    await collectionRepo.removeFromGame(game.id, name, activeProfileId());
     await refreshSelf();
   }
 
@@ -60,32 +67,32 @@ export const useCollectionsStore = defineStore("collections", () => {
    *  loops the raw repo call instead of reusing addToGame/removeFromGame (each of those calls
    *  refreshSelf() itself). */
   async function addToGames(games: Game[], names: string[]) {
-    for (const game of games) await collectionRepo.addToGame(game.id, names);
+    for (const game of games) await collectionRepo.addToGame(game.id, names, activeProfileId());
     await refreshSelf();
   }
 
   async function removeFromGames(games: Game[], name: string) {
-    for (const game of games) await collectionRepo.removeFromGame(game.id, name);
+    for (const game of games) await collectionRepo.removeFromGame(game.id, name, activeProfileId());
     await refreshSelf();
   }
 
   async function create(name: string) {
-    await collectionRepo.create(name);
+    await collectionRepo.create(name, activeProfileId());
     await refreshSelf();
   }
 
   async function rename(oldName: string, newName: string) {
-    await collectionRepo.rename(oldName, newName);
+    await collectionRepo.rename(oldName, newName, activeProfileId());
     await refreshSelf();
   }
 
   async function remove(name: string) {
-    await collectionRepo.delete(name);
+    await collectionRepo.delete(name, activeProfileId());
     await refreshSelf();
   }
 
   async function getUsageCounts() {
-    return collectionRepo.getUsageCounts();
+    return collectionRepo.getUsageCounts(activeProfileId());
   }
 
   return {

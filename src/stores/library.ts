@@ -18,6 +18,13 @@ import { useWrapperPluginStore } from "./wrapperPlugins";
 import { useToastStore } from "./toasts";
 import { useTagsStore, type PillMatchMode } from "./tags";
 import { useCollectionsStore } from "./collections";
+import { useProfilesStore } from "./profiles";
+
+/** App.vue gates the main library UI behind profile selection (see profiles.ts) - by the time
+ *  any of this store's mutating actions can run, a profile is guaranteed active. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 
 const VIEW_MODE_SETTING = "view_mode";
 const SORT_OPTION_SETTING = "sort_option";
@@ -247,9 +254,9 @@ export const useLibraryStore = defineStore("library", () => {
   });
 
   async function refresh() {
-    games.value = await gameRepo.list();
+    games.value = await gameRepo.list(activeProfileId());
     lastPlayedByGameId.value = new Map(
-      (await playtimeRepo.getAllLastPlayed()).map((row) => [row.game_id, row.last_played]),
+      (await playtimeRepo.getAllLastPlayed(activeProfileId())).map((row) => [row.game_id, row.last_played]),
     );
     await useTagsStore().refresh(games.value);
     await useCollectionsStore().refresh(games.value);
@@ -333,7 +340,7 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function addGame(title: string, executablePath: string) {
     try {
-      await gameRepo.add(title, executablePath);
+      await gameRepo.add(title, executablePath, activeProfileId());
       await refresh();
     } catch (e) {
       useToastStore().push(String(e), "error");
@@ -382,6 +389,7 @@ export const useLibraryStore = defineStore("library", () => {
           entry.title,
           entry.executablePath,
           entry.platform,
+          activeProfileId(),
           entry.installDir,
         );
         added++;

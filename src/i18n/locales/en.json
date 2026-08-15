@@ -83,6 +83,18 @@
     "resolutionNone": "None selected",
     "noDisplayModes": "No display modes found for this monitor."
   },
+  "profiles": {
+    "switcherTitle": "Who's playing?",
+    "newProfile": "New Profile",
+    "newProfileName": "Profile name",
+    "title": "Profiles",
+    "description": "Separate libraries for each person sharing this PC. Games, tags, and collections are per-profile; theme and app settings are shared.",
+    "addProfile": "Add Profile",
+    "active": "Active",
+    "switchTo": "Switch",
+    "rename": "Rename",
+    "delete": "Delete"
+  },
   "candidatePicker": {
     "title": "Multiple matches found",
     "description": "Some providers found more than one match. Pick the right one per provider, or leave a section unselected to skip it."

@@ -83,6 +83,18 @@
     "resolutionNone": "Ninguna seleccionada",
     "noDisplayModes": "No se encontraron modos de pantalla para este monitor."
   },
+  "profiles": {
+    "switcherTitle": "¿Quién juega?",
+    "newProfile": "Nuevo perfil",
+    "newProfileName": "Nombre del perfil",
+    "title": "Perfiles",
+    "description": "Bibliotecas separadas para cada persona que comparte este PC. Los juegos, etiquetas y colecciones son por perfil; el tema y los ajustes de la app son compartidos.",
+    "addProfile": "Añadir perfil",
+    "active": "Activo",
+    "switchTo": "Cambiar",
+    "rename": "Renombrar",
+    "delete": "Eliminar"
+  },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",
     "description": "Algunos proveedores encontraron más de una coincidencia. Elige la correcta para cada proveedor, o deja una sección sin seleccionar para omitirla."

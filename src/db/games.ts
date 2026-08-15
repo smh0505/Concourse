@@ -2,16 +2,22 @@ import { getDb } from "./client";
 import type { Game, GameEditFields } from "./types";
 
 export class GameRepository {
-  async list(): Promise<Game[]> {
+  /** Milestone 30 - only the active profile's games. Every source-plugin scan/manual add also
+   *  writes profile_id (see add/addWithPlatform below), so this is a plain equality filter, not
+   *  a join. */
+  async list(profileId: number): Promise<Game[]> {
     const db = await getDb();
-    return db.select<Game[]>("SELECT * FROM games ORDER BY title COLLATE NOCASE");
+    return db.select<Game[]>(
+      "SELECT * FROM games WHERE profile_id = $1 ORDER BY title COLLATE NOCASE",
+      [profileId],
+    );
   }
 
-  async add(title: string, executablePath: string): Promise<void> {
+  async add(title: string, executablePath: string, profileId: number): Promise<void> {
     const db = await getDb();
     await db.execute(
-      "INSERT INTO games (title, executable_path) VALUES ($1, $2)",
-      [title, executablePath],
+      "INSERT INTO games (title, executable_path, profile_id) VALUES ($1, $2, $3)",
+      [title, executablePath, profileId],
     );
   }
 
@@ -19,12 +25,13 @@ export class GameRepository {
     title: string,
     executablePath: string,
     platform: string,
+    profileId: number,
     installDir?: string,
   ): Promise<void> {
     const db = await getDb();
     await db.execute(
-      "INSERT INTO games (title, executable_path, platform, install_dir) VALUES ($1, $2, $3, $4)",
-      [title, executablePath, platform, installDir ?? null],
+      "INSERT INTO games (title, executable_path, platform, install_dir, profile_id) VALUES ($1, $2, $3, $4, $5)",
+      [title, executablePath, platform, installDir ?? null, profileId],
     );
   }
 
@@ -44,6 +51,13 @@ export class GameRepository {
   async delete(id: number): Promise<void> {
     const db = await getDb();
     await db.execute("DELETE FROM games WHERE id = $1", [id]);
+  }
+
+  /** Milestone 30 - profile deletion cascade. Cascades to game_tags/game_collections/
+   *  playtime_sessions via their existing ON DELETE CASCADE FKs, same as a single-game delete. */
+  async deleteByProfile(profileId: number): Promise<void> {
+    const db = await getDb();
+    await db.execute("DELETE FROM games WHERE profile_id = $1", [profileId]);
   }
 
   async updateCoverArt(id: number, coverArtUrl: string): Promise<void> {

@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 import { playtime as playtimeRepo } from "@/db";
+import { useProfilesStore } from "./profiles";
 
 const RECENTLY_PLAYED_LIMIT = 10;
 
@@ -14,7 +15,8 @@ export const useStatsStore = defineStore("stats", () => {
   const recentlyPlayed = ref<RecentlyPlayedRow[]>([]);
 
   async function refresh() {
-    const rows = await playtimeRepo.getRecentlyPlayed(RECENTLY_PLAYED_LIMIT);
+    // App.vue gates the main library UI behind profile selection - guaranteed active here.
+    const rows = await playtimeRepo.getRecentlyPlayed(RECENTLY_PLAYED_LIMIT, useProfilesStore().activeProfileId!);
     recentlyPlayed.value = rows.map((row) => ({
       gameId: row.game_id,
       lastPlayed: row.last_played,

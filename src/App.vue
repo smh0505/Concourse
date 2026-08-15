@@ -17,6 +17,7 @@ import {
   usePluginUpdatesStore,
   useTranslationStore,
   usePresenceStore,
+  useProfilesStore,
 } from "./stores";
 import { TitleBar, NavSidebar, type AppView } from "./components/desktop/shell";
 import {
@@ -32,8 +33,10 @@ import { AddGame, CandidatePicker } from "./components/desktop/modalForms";
 import { ToastContainer } from "./components/desktop/common";
 import { GameDetail } from "./components/desktop/game";
 import { BigPictureGrid, BigPictureSlideshow } from "./components/bigpicture";
+import { ProfileSwitcher } from "./components/desktop/profiles";
 
 const { t } = useI18n();
+const profiles = useProfilesStore();
 const library = useLibraryStore();
 const plugins = usePluginStore();
 const theme = useThemeStore();
@@ -110,13 +113,18 @@ function checkAllPluginUpdates() {
   ]);
 }
 
-onMounted(async () => {
+// Everything below (games, tags, collections, stats, plugin scans) depends on which profile is
+// active (Milestone 30) - runs only once profiles.activeProfileId is set, whether that happens
+// immediately (a remembered profile from last launch) or after the user picks one in
+// ProfileSwitcher below. appSettings/theme are the two global (not per-profile) settings, so
+// they're initialized separately in onMounted below, before this - ProfileSwitcher itself
+// should already be in the right language/theme, not stuck on defaults until after a profile's
+// picked.
+async function initLibraryAndPlugins() {
   await library.init();
   await plugins.init();
-  await theme.init();
   await metadataProviders.init();
   await controllerMapping.init();
-  await appSettings.init();
   await wrapperPlugins.init();
   await translation.init();
   await presence.init();
@@ -133,7 +141,31 @@ onMounted(async () => {
       checkAllPluginUpdates();
     }
   });
+}
+
+onMounted(async () => {
+  await appSettings.init();
+  await theme.init();
+  await profiles.init();
+  if (profiles.activeProfileId !== null) await initLibraryAndPlugins();
 });
+
+// Fires once, the moment a profile first becomes active (either ProfileSwitcher's initial pick,
+// or - since profiles.init() already adopted a remembered profile before this component ever
+// mounted its watcher - never, in the common case where onMounted's own check above already
+// handled it). Re-running this on every subsequent id change would re-init plugins/theme/etc.
+// needlessly on an in-session profile switch, which only actually needs a plain data refresh -
+// see ProfilesPanel.vue's own switchProfile, which reloads the window instead of trying to
+// thread a lighter-weight re-init path through every store.
+const stopWatchingProfile = watch(
+  () => profiles.activeProfileId,
+  async (id) => {
+    if (id !== null) {
+      await initLibraryAndPlugins();
+      stopWatchingProfile();
+    }
+  },
+);
 onUnmounted(() => {
   library.dispose();
   translation.dispose();
@@ -143,6 +175,9 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <ProfileSwitcher v-if="profiles.activeProfileId === null" />
+
+  <template v-else>
   <div v-if="!bigPicture" class="app-window">
     <TitleBar
       :sidebar-collapsed="sidebarCollapsed"
@@ -224,6 +259,7 @@ onUnmounted(() => {
     :sections="metadataProviders.pendingCandidateSections ?? []"
     :on-submit="metadataProviders.submitCandidateSelections"
   />
+  </template>
 </template>
 
 <style scoped>

@@ -83,6 +83,18 @@
     "resolutionNone": "未選択",
     "noDisplayModes": "このモニターで利用可能な表示モードが見つかりません。"
   },
+  "profiles": {
+    "switcherTitle": "誰がプレイしますか?",
+    "newProfile": "新しいプロフィール",
+    "newProfileName": "プロフィール名",
+    "title": "プロフィール",
+    "description": "このPCを共有する各ユーザーごとに独立したライブラリ。ゲーム・タグ・コレクションはプロフィールごと、テーマとアプリ設定は共有されます。",
+    "addProfile": "プロフィールを追加",
+    "active": "使用中",
+    "switchTo": "切り替え",
+    "rename": "名前を変更",
+    "delete": "削除"
+  },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",
     "description": "一部のプロバイダーで複数の一致が見つかりました。プロバイダーごとに正しいものを選択するか、スキップする場合は選択せずにそのままにしてください。"

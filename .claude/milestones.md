@@ -589,18 +589,47 @@ auth research, including everything dropped below.
   required," suggesting no third-party integration surface by design; a stale/unrelated Apiary
   doc hit wasn't confirmed as this platform's own)
 
-## Milestone 30 — Multi-Library / Profile Support (not started)
+## Milestone 30 — Multi-Library / Profile Support
 Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a
-filtered "kids mode" view. Real schema/architecture question, not just a UI toggle - today
-there's exactly one SQLite DB (`library.db`) and no concept of "whose library this is."
-- [ ] Decide scope: fully separate DB files per profile (simplest, but no shared source-plugin
-  scan reuse) vs. a `profile_id` column threaded through every table (shared scan results,
-  per-profile visibility/filtering)
-- [ ] Profile switcher UI (likely at app launch, before the main library loads)
-- [ ] Decide what's global vs. per-profile: plugin enablement/settings, theme, controller
-  mapping are probably global; games/tags/collections/playtime are probably per-profile
-- [ ] "Kids mode" as a filtered view of one profile (age-rating/tag-based hide-list) vs. a real
-  separate profile - decide which before building
+filtered "kids mode" view. Real schema/architecture question, not just a UI toggle - previously
+there was exactly one SQLite DB (`library.db`) and no concept of "whose library this is."
+
+Scoping decided with the user up front:
+- **Storage**: `profile_id` column threaded through games/tags/collections (shared-schema, not
+  separate DB files per profile) - simpler cross-profile migrations, no per-profile connection
+  juggling.
+- **Global vs. per-profile**: theme and app-level settings (hotkey, close-to-tray, locale) stay
+  global; everything else (plugin enablement/settings, controller mapping, games/tags/
+  collections/playtime) is per-profile.
+- **Kids mode**: a filtered view of one profile (tag/age-rating hide-list), not a separate
+  profile - deferred to step 3 below, not built yet.
+
+**Step 1 (done)** - core architecture:
+- [x] `profiles` table + `profile_id` on games/tags/collections (migration v13); tags/
+  collections rebuilt (not just ALTER ADD COLUMN) since their UNIQUE(name) constraint had to
+  become UNIQUE(name, profile_id) - two profiles can each have their own "Co-op" tag.
+  playtime_sessions stays un-touched, scoped transitively through game_id via a join.
+  Every pre-M30 row backfills onto profile 1 ("Default") - upgrading is transparent.
+- [x] `ProfileRepository` + `profiles` store (`activeProfileId`, create/rename/delete);
+  deleting a profile also deletes its games/tags/collections (playtime cascades via games'
+  own FK) - an orphaned library nobody could ever see again would just be dead DB weight.
+- [x] `ProfileSwitcher.vue` - shown whenever no profile is active (fresh install, or the
+  remembered one was deleted); the last-active profile is otherwise remembered and adopted
+  automatically on launch, so a single-profile setup stays zero-friction. `appSettings`/`theme`
+  (the two global settings) init before the switcher shows, so it's already themed/localized.
+- [x] `ProfilesPanel.vue` (Settings) - create/rename/delete, plus an explicit "Switch" that
+  reloads the window against the newly-active profile rather than threading a lighter re-init
+  path through every store.
+- [x] Every game/tag/collection/playtime repo method threaded with `profileId`
+  (games/tags/collections/playtime/library/stats stores) - filtered reads, profile-scoped
+  writes.
+
+**Step 2 (not started)** - move plugin enablement/settings + controller mapping from global
+`settings` keys to per-profile-scoped ones (a `profile:{id}:{key}` prefix, matching this
+codebase's existing scoped-settings convention).
+
+**Step 3 (not started)** - kids mode: a per-profile tag/age-rating hide-list filter, applied on
+top of that profile's own library view.
 
 ## Milestone 31 — Custom Launch Arguments Per Game (not started)
 `launcher.rs`'s `launch_game` spawns `executable_path` bare - some games need `-windowed`,

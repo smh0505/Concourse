@@ -83,6 +83,18 @@
     "resolutionNone": "未选择",
     "noDisplayModes": "未找到此显示器的可用显示模式。"
   },
+  "profiles": {
+    "switcherTitle": "谁在玩?",
+    "newProfile": "新建档案",
+    "newProfileName": "档案名称",
+    "title": "档案",
+    "description": "为共用这台电脑的每个人提供独立的游戏库。游戏、标签和收藏按档案区分;主题和应用设置为共享。",
+    "addProfile": "添加档案",
+    "active": "使用中",
+    "switchTo": "切换",
+    "rename": "重命名",
+    "delete": "删除"
+  },
   "candidatePicker": {
     "title": "找到多个匹配项",
     "description": "部分提供方找到了不止一个匹配项。请为每个提供方选择正确的一项,若要跳过某项,可保持该分组不选。"

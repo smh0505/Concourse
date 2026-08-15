@@ -83,6 +83,18 @@
     "resolutionNone": "선택 안 함",
     "noDisplayModes": "이 모니터에 대한 디스플레이 모드를 찾을 수 없습니다."
   },
+  "profiles": {
+    "switcherTitle": "누가 플레이하나요?",
+    "newProfile": "새 프로필",
+    "newProfileName": "프로필 이름",
+    "title": "프로필",
+    "description": "이 PC를 공유하는 각 사용자를 위한 별도의 라이브러리입니다. 게임/태그/컬렉션은 프로필별로, 테마와 앱 설정은 공유됩니다.",
+    "addProfile": "프로필 추가",
+    "active": "사용 중",
+    "switchTo": "전환",
+    "rename": "이름 변경",
+    "delete": "삭제"
+  },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",
     "description": "일부 제공자가 두 개 이상의 일치 항목을 찾았습니다. 제공자별로 올바른 항목을 선택하거나, 건너뛰려면 섹션을 선택하지 않은 상태로 두세요."

@@ -8,6 +8,7 @@ import { IconSearch } from "@tabler/icons-vue";
 import { useLibraryStore } from "@/stores/library";
 import { useAppSettingsStore } from "@/stores/appSettings";
 import { useThemeStore } from "@/stores/theme";
+import { useProfilesStore } from "@/stores/profiles";
 import { displayTitle, type Game } from "@/db";
 import { fuzzyFilter } from "@/utils/fuzzyMatch";
 
@@ -20,6 +21,7 @@ const { t } = useI18n();
 const library = useLibraryStore();
 const appSettings = useAppSettingsStore();
 const theme = useThemeStore();
+const profiles = useProfilesStore();
 
 const search = ref("");
 const selectedIndex = ref(0);
@@ -54,12 +56,18 @@ async function resetAndFocus() {
   search.value = "";
   selectedIndex.value = 0;
   visibleCount.value = BATCH_SIZE;
+  // This window has its own separate Pinia instance (a different webview/JS runtime), never
+  // sees App.vue's own profile-picker flow - it just reads back whichever profile is currently
+  // active from the shared settings table. If none has ever been picked yet (only possible
+  // before the very first profile selection in the main window), library.refresh() below
+  // harmlessly no-ops rather than throwing.
+  await profiles.init();
   // library.refresh() runs first and on its own - this window's whole purpose is showing the
   // real library, so a failure in something unrelated (theming) must never leave it silently
   // stuck on an empty list. Previously theme.init() ran first and unguarded; any throw there
   // (or in appSettings.init(), see onMounted below) skipped this call entirely every time the
   // overlay was shown, with no retry - exactly the "quick-launch shows no games" symptom.
-  await library.refresh();
+  if (profiles.activeProfileId !== null) await library.refresh();
   try {
     // Re-applied on every show (not just once on mount) - the overlay window is created once
     // and reused (hidden/shown, never destroyed), so a theme changed in Settings while it was

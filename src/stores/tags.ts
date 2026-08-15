@@ -3,6 +3,13 @@ import { ref } from "vue";
 
 import { tags as tagRepo, type Game } from "@/db";
 import { useLibraryStore } from "./library";
+import { useProfilesStore } from "./profiles";
+
+/** App.vue gates the main library UI behind profile selection - by the time any of this
+ *  store's mutating actions can run, a profile is guaranteed active. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 
 export type PillMatchMode = "or" | "and";
 
@@ -25,7 +32,7 @@ export const useTagsStore = defineStore("tags", () => {
       games.map(async (g) => [g.id, await tagRepo.getForGame(g.id)] as const),
     );
     gameTags.value = Object.fromEntries(entries);
-    allTags.value = await tagRepo.getAll();
+    allTags.value = await tagRepo.getAll(activeProfileId());
   }
 
   /** Replaces the whole active set - used by library.ts's search-token sync watcher, which
@@ -55,12 +62,12 @@ export const useTagsStore = defineStore("tags", () => {
   }
 
   async function addToGame(game: Game, names: string[]) {
-    await tagRepo.addToGame(game.id, names);
+    await tagRepo.addToGame(game.id, names, activeProfileId());
     await refreshSelf();
   }
 
   async function removeFromGame(game: Game, name: string) {
-    await tagRepo.removeFromGame(game.id, name);
+    await tagRepo.removeFromGame(game.id, name, activeProfileId());
     await refreshSelf();
   }
 
@@ -68,12 +75,12 @@ export const useTagsStore = defineStore("tags", () => {
    *  addToGame/removeFromGame in a loop, since those each call refreshSelf() themselves; doing
    *  that per game in a multi-game batch would re-run the same full refresh N times over. */
   async function addToGames(games: Game[], names: string[]) {
-    for (const game of games) await tagRepo.addToGame(game.id, names);
+    for (const game of games) await tagRepo.addToGame(game.id, names, activeProfileId());
     await refreshSelf();
   }
 
   async function removeFromGames(games: Game[], name: string) {
-    for (const game of games) await tagRepo.removeFromGame(game.id, name);
+    for (const game of games) await tagRepo.removeFromGame(game.id, name, activeProfileId());
     await refreshSelf();
   }
 
@@ -81,22 +88,22 @@ export const useTagsStore = defineStore("tags", () => {
    *  tab - distinct from the per-game add/remove above, which only ever touch one game's own
    *  assignment. */
   async function create(name: string) {
-    await tagRepo.create(name);
+    await tagRepo.create(name, activeProfileId());
     await refreshSelf();
   }
 
   async function rename(oldName: string, newName: string) {
-    await tagRepo.rename(oldName, newName);
+    await tagRepo.rename(oldName, newName, activeProfileId());
     await refreshSelf();
   }
 
   async function remove(name: string) {
-    await tagRepo.delete(name);
+    await tagRepo.delete(name, activeProfileId());
     await refreshSelf();
   }
 
   async function getUsageCounts() {
-    return tagRepo.getUsageCounts();
+    return tagRepo.getUsageCounts(activeProfileId());
   }
 
   return {

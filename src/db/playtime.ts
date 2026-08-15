@@ -25,28 +25,35 @@ export class PlaytimeRepository {
 
   /** Most recent session end time per game, newest first - `total_playtime` lives on the
    *  `games` row already (aggregate), but "when was this last played" only exists in the
-   *  session log, so this always needs its own query rather than reading off `Game` directly. */
-  async getRecentlyPlayed(limit: number): Promise<RecentlyPlayedEntry[]> {
+   *  session log, so this always needs its own query rather than reading off `Game` directly.
+   *  `playtime_sessions` has no `profile_id` of its own (Milestone 30) - scoped transitively via
+   *  a join to `games`, rather than duplicating the column onto every session row. */
+  async getRecentlyPlayed(limit: number, profileId: number): Promise<RecentlyPlayedEntry[]> {
     const db = await getDb();
     return db.select<RecentlyPlayedEntry[]>(
-      `SELECT game_id, MAX(end_time) as last_played
+      `SELECT playtime_sessions.game_id as game_id, MAX(playtime_sessions.end_time) as last_played
        FROM playtime_sessions
-       GROUP BY game_id
+       JOIN games ON games.id = playtime_sessions.game_id
+       WHERE games.profile_id = $2
+       GROUP BY playtime_sessions.game_id
        ORDER BY last_played DESC
        LIMIT $1`,
-      [limit],
+      [limit, profileId],
     );
   }
 
   /** Same query as getRecentlyPlayed, unlimited - library.ts's "recently played" sort needs
    *  every game's last-played time (games with none sort last), not just a top-N list for a
    *  stats widget. */
-  async getAllLastPlayed(): Promise<RecentlyPlayedEntry[]> {
+  async getAllLastPlayed(profileId: number): Promise<RecentlyPlayedEntry[]> {
     const db = await getDb();
     return db.select<RecentlyPlayedEntry[]>(
-      `SELECT game_id, MAX(end_time) as last_played
+      `SELECT playtime_sessions.game_id as game_id, MAX(playtime_sessions.end_time) as last_played
        FROM playtime_sessions
-       GROUP BY game_id`,
+       JOIN games ON games.id = playtime_sessions.game_id
+       WHERE games.profile_id = $1
+       GROUP BY playtime_sessions.game_id`,
+      [profileId],
     );
   }
 }

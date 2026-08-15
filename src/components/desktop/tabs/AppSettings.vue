@@ -8,6 +8,7 @@ import { useTranslationStore } from "@/stores/translation";
 import { DropdownMenu } from "@/components/desktop/common";
 import { messages } from "@/i18n";
 import PluginSettings from "./PluginSettings.vue";
+import { ProfilesPanel } from "@/components/desktop/profiles";
 
 const { t } = useI18n();
 const appSettings = useAppSettingsStore();
@@ -146,6 +147,10 @@ onBeforeUnmount(stopListeningForHotkey);
           {{ localeNames[code] ?? code }}
         </button>
       </DropdownMenu>
+    </div>
+
+    <div class="translation-section">
+      <ProfilesPanel />
     </div>
 
     <div class="translation-section">

@@ -14,6 +14,7 @@ export * from "./pluginInstall";
 export * from "./pluginUpdates";
 export * from "./plugins";
 export * from "./presence";
+export * from "./profiles";
 export * from "./stats";
 export * from "./tags";
 export * from "./theme";

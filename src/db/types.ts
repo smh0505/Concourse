@@ -62,6 +62,9 @@ export interface Game {
   resolution_width: number | null;
   resolution_height: number | null;
   resolution_refresh: number | null;
+  /** Milestone 30 - which profile's library this game belongs to. Not user-editable via the
+   *  edit form (moving a game between profiles isn't supported in v1) - set once at insert. */
+  profile_id: number;
 }
 
 export type GameEditFields = Pick<

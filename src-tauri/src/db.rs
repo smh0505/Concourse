@@ -239,5 +239,57 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 13,
+            description: "add_profiles",
+            sql: r#"
+            -- Milestone 30, step 1 - multi-library/profile support. games/tags/collections are
+            -- per-profile (a shared PC's separate users don't want to see, tag, or organize each
+            -- other's libraries); playtime_sessions stays scoped transitively through game_id
+            -- rather than duplicating profile_id onto every session row. Theme and app-level
+            -- settings (hotkey, close-to-tray) stay global - see milestones.md for the scoping
+            -- decision.
+            --
+            -- Every existing row backfills onto profile 1 ("Default") via DEFAULT 1, so an
+            -- upgrade from a pre-M30 single-library install is transparent - nothing needs to
+            -- migrate data between profiles, there's just one profile holding everything that
+            -- was already there.
+            CREATE TABLE profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL
+            );
+            INSERT INTO profiles (id, name) VALUES (1, 'Default');
+
+            ALTER TABLE games ADD COLUMN profile_id INTEGER NOT NULL DEFAULT 1 REFERENCES profiles(id);
+
+            -- tags/collections each need profile_id in the recreated table, not just an ALTER
+            -- ADD COLUMN, because their UNIQUE(name) constraint has to become UNIQUE(name,
+            -- profile_id) - two profiles must each be able to have their own "Co-op" tag without
+            -- colliding. SQLite can't ALTER a UNIQUE constraint in place, so this rebuilds both
+            -- tables rather than the plain additive ALTER every other migration here uses.
+            -- game_tags/game_collections keep referencing the same tag/collection ids by rowid,
+            -- untouched by the rebuild - only the parent tables move.
+            CREATE TABLE tags_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                profile_id INTEGER NOT NULL DEFAULT 1 REFERENCES profiles(id),
+                UNIQUE(name, profile_id)
+            );
+            INSERT INTO tags_new (id, name, profile_id) SELECT id, name, 1 FROM tags;
+            DROP TABLE tags;
+            ALTER TABLE tags_new RENAME TO tags;
+
+            CREATE TABLE collections_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                profile_id INTEGER NOT NULL DEFAULT 1 REFERENCES profiles(id),
+                UNIQUE(name, profile_id)
+            );
+            INSERT INTO collections_new (id, name, profile_id) SELECT id, name, 1 FROM collections;
+            DROP TABLE collections;
+            ALTER TABLE collections_new RENAME TO collections;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

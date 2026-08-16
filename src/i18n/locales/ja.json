@@ -113,7 +113,10 @@
     "noGamesAdded": "このプロフィールにはまだゲームがありません。",
     "hiddenBadge": "非表示",
     "migrateToAdmin": "Adminのライブラリにコピー",
-    "migratedGame": "「{title}」をAdminのライブラリにコピーしました"
+    "migratedGame": "「{title}」をAdminのライブラリにコピーしました",
+    "pendingBadge": "承認待ち",
+    "approveGame": "承認",
+    "approvedGame": "「{title}」を承認しました"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

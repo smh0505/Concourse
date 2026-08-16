@@ -113,7 +113,10 @@
     "noGamesAdded": "Dieses Profil hat noch keine Spiele.",
     "hiddenBadge": "Verborgen",
     "migrateToAdmin": "In Admins Bibliothek kopieren",
-    "migratedGame": "\"{title}\" in Admins Bibliothek kopiert"
+    "migratedGame": "\"{title}\" in Admins Bibliothek kopiert",
+    "pendingBadge": "Ausstehende Prüfung",
+    "approveGame": "Genehmigen",
+    "approvedGame": "\"{title}\" genehmigt"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

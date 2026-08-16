@@ -113,7 +113,10 @@
     "noGamesAdded": "이 프로필에는 아직 게임이 없습니다.",
     "hiddenBadge": "숨김",
     "migrateToAdmin": "Admin 라이브러리로 복사",
-    "migratedGame": "\"{title}\"을(를) Admin 라이브러리로 복사했습니다"
+    "migratedGame": "\"{title}\"을(를) Admin 라이브러리로 복사했습니다",
+    "pendingBadge": "검토 대기 중",
+    "approveGame": "승인",
+    "approvedGame": "\"{title}\" 승인됨"
   },
   "candidatePicker": {
     "title": "여러 개의 일치 항목을 찾았습니다",

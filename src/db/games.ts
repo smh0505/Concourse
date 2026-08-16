@@ -6,12 +6,15 @@ export class GameRepository {
    *  writes profile_id (see add/addWithPlatform below), so this is a plain equality filter, not
    *  a join. Milestone 30 step 3 - also excludes any game carrying a tag Admin hid for this
    *  profile ("kids mode"), so every consumer (grid, list, Big Picture, stats) respects the
-   *  hide-list automatically without its own filtering logic. */
+   *  hide-list automatically without its own filtering logic. Also excludes anything still
+   *  pending_review (added by a non-admin profile, not yet approved by Admin) - the proactive
+   *  half of kids mode, since hidden_tags alone only protects a game after it's already tagged. */
   async list(profileId: number): Promise<Game[]> {
     const db = await getDb();
     return db.select<Game[]>(
       `SELECT * FROM games
        WHERE profile_id = $1
+       AND pending_review = 0
        AND id NOT IN (
          SELECT game_tags.game_id FROM game_tags
          JOIN hidden_tags ON hidden_tags.tag_id = game_tags.tag_id
@@ -20,6 +23,13 @@ export class GameRepository {
        ORDER BY title COLLATE NOCASE`,
       [profileId],
     );
+  }
+
+  /** Milestone 30 step 3 follow-up - Admin's approval action from the cross-profile library
+   *  view, clearing pending_review so the game joins that profile's normal list() results. */
+  async approvePending(id: number): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE games SET pending_review = 0 WHERE id = $1", [id]);
   }
 
   /** Milestone 30 step 3 follow-up - Admin's cross-profile library browser. Unlike list(),
@@ -57,11 +67,14 @@ export class GameRepository {
     );
   }
 
+  /** Milestone 30 step 3 follow-up - anything added while a non-admin profile is active starts
+   *  pending_review until Admin approves it (see list()'s own comment); Admin's own adds
+   *  (profileId 1) skip review entirely. */
   async add(title: string, executablePath: string, profileId: number): Promise<void> {
     const db = await getDb();
     await db.execute(
-      "INSERT INTO games (title, executable_path, profile_id) VALUES ($1, $2, $3)",
-      [title, executablePath, profileId],
+      "INSERT INTO games (title, executable_path, profile_id, pending_review) VALUES ($1, $2, $3, $4)",
+      [title, executablePath, profileId, profileId === 1 ? 0 : 1],
     );
   }
 
@@ -74,8 +87,9 @@ export class GameRepository {
   ): Promise<void> {
     const db = await getDb();
     await db.execute(
-      "INSERT INTO games (title, executable_path, platform, install_dir, profile_id) VALUES ($1, $2, $3, $4, $5)",
-      [title, executablePath, platform, installDir ?? null, profileId],
+      `INSERT INTO games (title, executable_path, platform, install_dir, profile_id, pending_review)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [title, executablePath, platform, installDir ?? null, profileId, profileId === 1 ? 0 : 1],
     );
   }
 

@@ -662,7 +662,13 @@ cross-profile library view (same panel, new button) - `GameRepository.listAllFor
 hidden-tag filtering) so Admin can see everything a profile has added, including anything
 currently hidden from that profile's own view, flagged with a "Hidden" badge - plus a per-game
 "copy to Admin's library" button (`GameRepository.copyToProfile()`) as a safety net so Admin
-keeps independent access even if the source profile later hides/loses the game.
+keeps independent access even if the source profile later hides/loses the game. Second
+follow-up: "pending Admin review" (migration v16, `games.pending_review`) - hidden_tags alone is
+reactive (Admin has to notice and tag a game before it's protected), so anything added while a
+non-admin profile is active now starts excluded from that profile's own `list()` until Admin
+explicitly approves it from the same cross-profile view (a "Pending review" badge + approve
+button). Admin's own adds skip review entirely; existing pre-upgrade libraries aren't
+retroactively hidden.
 
 **Big Picture extension (done).** "Launch into Big Picture on startup" now engages real OS
 fullscreen immediately, before a profile is even picked - `BigPictureProfileSwitcher.vue`

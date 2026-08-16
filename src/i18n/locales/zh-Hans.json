@@ -113,7 +113,10 @@
     "noGamesAdded": "该档案还没有游戏。",
     "hiddenBadge": "已隐藏",
     "migrateToAdmin": "复制到 Admin 的游戏库",
-    "migratedGame": "已将“{title}”复制到 Admin 的游戏库"
+    "migratedGame": "已将“{title}”复制到 Admin 的游戏库",
+    "pendingBadge": "待审核",
+    "approveGame": "批准",
+    "approvedGame": "已批准“{title}”"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

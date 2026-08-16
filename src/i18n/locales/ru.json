@@ -113,7 +113,10 @@
     "noGamesAdded": "У этого профиля пока нет игр.",
     "hiddenBadge": "Скрыто",
     "migrateToAdmin": "Скопировать в библиотеку Admin",
-    "migratedGame": "«{title}» скопирована в библиотеку Admin"
+    "migratedGame": "«{title}» скопирована в библиотеку Admin",
+    "pendingBadge": "Ожидает проверки",
+    "approveGame": "Одобрить",
+    "approvedGame": "«{title}» одобрена"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

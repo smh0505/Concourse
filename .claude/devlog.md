@@ -7449,3 +7449,39 @@ profile is always Admin's own; a toast confirms the copy.
 i18n: `profiles.migrateToAdmin`/`migratedGame` added across all 10 locales.
 
 Verified: `bun run build`.
+
+### Milestone 30 step 3 follow-up: "pending Admin review"
+
+User's next question exposed the real remaining gap: `hidden_tags` only protects a game *after*
+Admin notices it and hides one of its tags - a freshly scanned/added game is fully visible
+(including whatever metadata gets fetched for it) the moment it lands in a kid's library, with
+no window where Admin could have caught it first. This is the proactive counterpart to
+step 3's reactive filter, built on request rather than left as a documented limitation.
+
+Migration v16: `games.pending_review INTEGER NOT NULL DEFAULT 0`. `GameRepository.add`/
+`addWithPlatform` (the two-and-only insert paths - confirmed via grep, no other `INSERT INTO
+games` call site exists) now set it to 1 whenever the active profile isn't Admin (`profileId ===
+1 ? 0 : 1`), 0 otherwise. `list()` gained `AND pending_review = 0` alongside its existing
+hidden_tags exclusion - same enforcement point, so every consumer inherits it automatically,
+same reasoning as step 3 itself. `DEFAULT 0` (not 1) on the column itself is deliberately the
+*opposite* polarity of what new inserts explicitly set - it only exists so upgrading an existing
+install doesn't retroactively hide a library that was already fully visible before this shipped;
+the two insert methods are the only source of `pending_review = 1` rows.
+
+`GameRepository.approvePending(id)` - single `UPDATE ... SET pending_review = 0`. Admin's own
+`copyToProfile()` (migrate-to-Admin, above) already inserts with the column omitted, so it
+correctly falls back to the table's own `DEFAULT 0` - a migrated copy is never itself pending.
+
+`ProfilesPanel.vue`'s cross-profile view: `pending`/`hidden` are now two distinct badges instead
+of one generic "hidden" state (previously derived only by diffing `list()` against
+`listAllForProfile()`, which after this change conflates pending-review and hidden-by-tag into
+the same "missing from list()" signal) - `pending` is read straight off `pending_review` on the
+row itself, `hidden` only fires when `pending_review` is already 0 (so a pending game shows
+"Pending review", not both badges). A checkmark-icon "Approve" button appears only on pending
+rows, calling `approvePending()` then re-running `startLibraryView()` to refresh the panel's own
+badges in place.
+
+i18n: `profiles.pendingBadge`/`approveGame`/`approvedGame` added across all 10 locales.
+
+Verified: `cargo check` (migration v16), `bun run build` (typecheck + all 10 locale JSON files
+parse).

@@ -65,6 +65,11 @@ export interface Game {
   /** Milestone 30 - which profile's library this game belongs to. Not user-editable via the
    *  edit form (moving a game between profiles isn't supported in v1) - set once at insert. */
   profile_id: number;
+  /** SQLite boolean (0/1) - Milestone 30 step 3 follow-up, "pending Admin review". Set to 1 at
+   *  insert time for anything added while a non-admin profile is active (0 for Admin's own
+   *  adds); excluded from GameRepository.list() same as a hidden-tag game until Admin approves
+   *  it from the cross-profile library view. Not user-editable via the edit form. */
+  pending_review: number;
 }
 
 export type GameEditFields = Pick<

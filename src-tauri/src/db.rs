@@ -327,5 +327,25 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 16,
+            description: "add_pending_review",
+            sql: r#"
+            -- Milestone 30 step 3 follow-up - "pending Admin review". hidden_tags only protects
+            -- a game once it already carries a tag Admin has hidden, which is reactive (Admin has
+            -- to notice and tag it first) - a freshly added/scanned game is fully visible with
+            -- whatever metadata gets fetched for it in the meantime. This column closes that gap
+            -- proactively: any game added while a non-admin profile is active starts at 1 (not
+            -- yet reviewed) and is excluded from GameRepository.list() same as a hidden-tag game,
+            -- until Admin explicitly approves it from the cross-profile library view. Games added
+            -- while Admin (profile 1) is active default straight to 0 - no self-review needed.
+            -- DEFAULT 0 here (not 1) only matters for backfilling existing rows on upgrade - it
+            -- must never retroactively hide a library that was already visible before this
+            -- shipped; new inserts explicitly set 1 or 0 themselves (see GameRepository.add/
+            -- addWithPlatform), this default is purely the upgrade-safe fallback.
+            ALTER TABLE games ADD COLUMN pending_review INTEGER NOT NULL DEFAULT 0;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

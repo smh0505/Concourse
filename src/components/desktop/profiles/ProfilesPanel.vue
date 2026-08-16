@@ -2,6 +2,7 @@
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
+  IconCheck,
   IconDeviceGamepad2,
   IconDownload,
   IconEyeOff,
@@ -71,21 +72,36 @@ async function toggleHiddenTag(tagId: number) {
 
 // Milestone 30 step 3 follow-up - Admin's on-demand cross-profile library view, so Admin can
 // see what a non-admin profile has added even if it's currently hidden from that profile's own
-// view. Diffs the unfiltered list against the profile's own (hidden-tag-filtered) list rather
-// than fetching per-game tags, to flag which games are currently hidden.
+// view. Diffs the unfiltered list against the profile's own (hidden-tag- and pending-review-
+// filtered) list rather than fetching per-game tags, to flag which games are currently hidden.
+// pending is read straight off pending_review rather than derived, so "hidden by tag" and
+// "pending Admin review" show as distinct badges instead of one generic "hidden" state.
 const libraryViewId = ref<number | null>(null);
-const libraryViewGames = ref<(Game & { hidden: boolean })[]>([]);
+const libraryViewGames = ref<(Game & { hidden: boolean; pending: boolean })[]>([]);
 
 async function startLibraryView(id: number) {
   libraryViewId.value = id;
   const [all, visible] = await Promise.all([gameRepo.listAllForProfile(id), gameRepo.list(id)]);
   const visibleIds = new Set(visible.map((g) => g.id));
-  libraryViewGames.value = all.map((g) => ({ ...g, hidden: !visibleIds.has(g.id) }));
+  libraryViewGames.value = all.map((g) => ({
+    ...g,
+    pending: g.pending_review === 1,
+    hidden: g.pending_review === 0 && !visibleIds.has(g.id),
+  }));
 }
 
 function cancelLibraryView() {
   libraryViewId.value = null;
   libraryViewGames.value = [];
+}
+
+/** Milestone 30 step 3 follow-up - clears pending_review so the game joins the profile's
+ *  normal library on its next load; re-runs startLibraryView to refresh this panel's own badges
+ *  in place rather than a full reload. */
+async function approvePending(id: number, title: string, targetProfileId: number) {
+  await gameRepo.approvePending(id);
+  await startLibraryView(targetProfileId);
+  toasts.push(t("profiles.approvedGame", { title }), "success");
 }
 
 /** Copies (not moves) into Admin's own library - Admin is always the active profile here,
@@ -306,7 +322,16 @@ async function onPinSubmit() {
               </div>
               <div v-for="g in libraryViewGames" :key="g.id" class="library-view-item">
                 <span class="library-view-title">{{ g.title }}</span>
-                <span v-if="g.hidden" class="hidden-badge">{{ t("profiles.hiddenBadge") }}</span>
+                <span v-if="g.pending" class="pending-badge">{{ t("profiles.pendingBadge") }}</span>
+                <span v-else-if="g.hidden" class="hidden-badge">{{ t("profiles.hiddenBadge") }}</span>
+                <button
+                  v-if="g.pending"
+                  class="icon-button"
+                  :title="t('profiles.approveGame')"
+                  @click="approvePending(g.id, g.title, profile.id)"
+                >
+                  <IconCheck :size="14" :stroke-width="1.75" />
+                </button>
                 <button
                   class="icon-button"
                   :title="t('profiles.migrateToAdmin')"
@@ -450,6 +475,12 @@ async function onPinSubmit() {
 .hidden-badge {
   font-size: 0.75rem;
   opacity: 0.7;
+  white-space: nowrap;
+}
+
+.pending-badge {
+  font-size: 0.75rem;
+  color: var(--color-warning, #d97706);
   white-space: nowrap;
 }
 </style>

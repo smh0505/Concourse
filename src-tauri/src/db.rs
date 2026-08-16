@@ -347,5 +347,21 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 17,
+            description: "add_shared_admin_copy_id",
+            sql: r#"
+            -- Milestone 30 - Library tab admin review section. Tracks whether a non-admin
+            -- profile's game has already been "shared" (copied) into Admin's own library, so the
+            -- Library tab's folded review section can drop it once Admin has an independent copy.
+            -- Points at the resulting Admin-owned row. Nullable with no default is the one shape
+            -- ALTER TABLE ADD COLUMN allows for a REFERENCES column (see v13's own note on this
+            -- restriction - only a non-NULL DEFAULT combined with REFERENCES is forbidden).
+            -- ON DELETE SET NULL - if Admin later deletes their copy, the original correctly
+            -- reverts to "not yet shared" instead of silently vanishing from review forever.
+            ALTER TABLE games ADD COLUMN shared_admin_copy_id INTEGER REFERENCES games(id) ON DELETE SET NULL;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

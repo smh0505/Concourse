@@ -21,6 +21,7 @@ import {
 } from "./stores";
 import { TitleBar, NavSidebar, type AppView } from "./components/desktop/shell";
 import {
+  AdminReviewSection,
   AppSettings,
   StatsPanel,
   TagsPanel,
@@ -243,6 +244,7 @@ onUnmounted(() => {
               <GameFilters />
               <GameGrid v-if="library.viewMode === 'grid'" />
               <GameList v-else />
+              <AdminReviewSection v-if="profiles.isAdmin" />
             </div>
           </Transition>
         </template>

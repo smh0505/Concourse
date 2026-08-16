@@ -22,6 +22,7 @@ import { useTranslationStore } from "@/stores/translation";
 import { useToastStore } from "@/stores/toasts";
 import { useImageBrightness } from "@/composables/useImageBrightness";
 import { DropdownMenu } from "@/components/desktop/common";
+import { games as gameRepo } from "@/db";
 import type { Game, GameEditFields } from "@/db";
 
 const { t } = useI18n();
@@ -36,6 +37,27 @@ const toasts = useToastStore();
 // Guaranteed non-null while this component is rendered - App.vue only mounts it when
 // library.viewingGame is set.
 const game = computed<Game>(() => library.viewingGame!);
+
+/** Milestone 30 - Admin opened this from the Library tab's review section rather than their own
+ *  grid. Rendered read-only (see the template's own v-if split below): tags/collections/launch
+ *  settings/the edit form all write against the *active* profile's own namespace, which would
+ *  be wrong here - the game belongs to a different profile entirely. Only Approve/Share are
+ *  offered instead. */
+const isForeign = computed(() => library.viewingForeignGame !== null);
+const foreignOwnerName = computed(() => library.viewingForeignGame?.owner_name ?? "");
+
+async function onApproveForeign() {
+  await gameRepo.approvePending(game.value.id);
+  toasts.push(t("gameDetail.approvedGame", { title: game.value.title }), "success");
+  library.closeDetail();
+}
+
+async function onShareForeign() {
+  await gameRepo.shareToAdmin(game.value.id);
+  await library.refresh();
+  toasts.push(t("gameDetail.sharedGame", { title: game.value.title }), "success");
+  library.closeDetail();
+}
 
 const editing = ref(false);
 const error = ref("");
@@ -505,6 +527,36 @@ async function onDelete() {
 
 <template>
   <div class="game-detail-page">
+    <template v-if="isForeign">
+      <div class="game-detail">
+        <div class="view">
+          <div class="sticky-side">
+            <button class="back-button" @click="library.closeDetail()">
+              <IconArrowLeft :size="16" :stroke-width="1.75" />
+              {{ t("gameDetail.backToLibrary") }}
+            </button>
+            <div class="cover-wrap">
+              <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
+              <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
+            </div>
+          </div>
+
+          <div class="info">
+            <h1>{{ game.title }}</h1>
+            <p class="foreign-owner">{{ t("gameDetail.ownedBy", { name: foreignOwnerName }) }}</p>
+            <div v-if="descriptionHtml" class="description" v-html="descriptionHtml" />
+          </div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button v-if="game.pending_review === 1" @click="onApproveForeign">
+          {{ t("gameDetail.approveGame") }}
+        </button>
+        <button @click="onShareForeign">{{ t("gameDetail.shareGame") }}</button>
+      </div>
+    </template>
+    <template v-else>
     <div class="hero">
       <div
         v-if="backgroundArtUrl"
@@ -846,6 +898,7 @@ async function onDelete() {
         <button type="button" @click="onSave">{{ t("common.save") }}</button>
       </template>
     </div>
+    </template>
   </div>
 </template>
 
@@ -856,6 +909,12 @@ async function onDelete() {
   min-height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* Milestone 30 - Admin viewing a non-admin game read-only (see isForeign in script). */
+.foreign-owner {
+  opacity: 0.7;
+  font-size: 0.9rem;
 }
 
 /* position:sticky keeps this pinned to the top of the scrollport; negative margin-bottom

@@ -1,28 +1,16 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import {
-  IconCheck,
-  IconDeviceGamepad2,
-  IconDownload,
-  IconEyeOff,
-  IconLock,
-  IconPencil,
-  IconPlus,
-  IconTrash,
-} from "@tabler/icons-vue";
+import { IconEyeOff, IconLock, IconPencil, IconPlus, IconTrash } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
-import { useLibraryStore } from "@/stores/library";
-import { games as gameRepo, tags as tagRepo } from "@/db";
-import type { Game } from "@/db";
+import { tags as tagRepo } from "@/db";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
 
 const { t } = useI18n();
 const profiles = useProfilesStore();
 const toasts = useToastStore();
-const library = useLibraryStore();
 
 const creating = ref(false);
 const createFormRef = ref<InstanceType<typeof ProfileCreateForm> | null>(null);
@@ -68,49 +56,6 @@ async function toggleHiddenTag(tagId: number) {
   else next.add(tagId);
   hiddenTagIds.value = next;
   await tagRepo.setHiddenTagIds(tagEditingId.value, [...next]);
-}
-
-// Milestone 30 step 3 follow-up - Admin's on-demand cross-profile library view, so Admin can
-// see what a non-admin profile has added even if it's currently hidden from that profile's own
-// view. Diffs the unfiltered list against the profile's own (hidden-tag- and pending-review-
-// filtered) list rather than fetching per-game tags, to flag which games are currently hidden.
-// pending is read straight off pending_review rather than derived, so "hidden by tag" and
-// "pending Admin review" show as distinct badges instead of one generic "hidden" state.
-const libraryViewId = ref<number | null>(null);
-const libraryViewGames = ref<(Game & { hidden: boolean; pending: boolean })[]>([]);
-
-async function startLibraryView(id: number) {
-  libraryViewId.value = id;
-  const [all, visible] = await Promise.all([gameRepo.listAllForProfile(id), gameRepo.list(id)]);
-  const visibleIds = new Set(visible.map((g) => g.id));
-  libraryViewGames.value = all.map((g) => ({
-    ...g,
-    pending: g.pending_review === 1,
-    hidden: g.pending_review === 0 && !visibleIds.has(g.id),
-  }));
-}
-
-function cancelLibraryView() {
-  libraryViewId.value = null;
-  libraryViewGames.value = [];
-}
-
-/** Milestone 30 step 3 follow-up - clears pending_review so the game joins the profile's
- *  normal library on its next load; re-runs startLibraryView to refresh this panel's own badges
- *  in place rather than a full reload. */
-async function approvePending(id: number, title: string, targetProfileId: number) {
-  await gameRepo.approvePending(id);
-  await startLibraryView(targetProfileId);
-  toasts.push(t("profiles.approvedGame", { title }), "success");
-}
-
-/** Copies (not moves) into Admin's own library - Admin is always the active profile here,
- *  since only Admin can open this panel at all, so refreshing `library` reflects it right away
- *  without a full reload (unlike ProfilesPanel's own profile-switch action). */
-async function migrateToAdmin(gameId: number, title: string) {
-  await gameRepo.copyToProfile(gameId, 1);
-  await library.refresh();
-  toasts.push(t("profiles.migratedGame", { title }), "success");
 }
 
 async function onCreateSubmit(name: string, pin: string) {
@@ -278,16 +223,6 @@ async function onPinSubmit() {
                   <IconEyeOff :size="15" :stroke-width="1.75" />
                 </button>
                 <button
-                  v-if="profile.id !== 1 && profiles.isAdmin"
-                  class="icon-button"
-                  :title="t('profiles.viewLibrary')"
-                  @click="
-                    libraryViewId === profile.id ? cancelLibraryView() : startLibraryView(profile.id)
-                  "
-                >
-                  <IconDeviceGamepad2 :size="15" :stroke-width="1.75" />
-                </button>
-                <button
                   v-if="profile.id !== 1 && profiles.profiles.length > 1"
                   class="icon-button"
                   :title="t('profiles.delete')"
@@ -314,32 +249,6 @@ async function onPinSubmit() {
                 />
                 <span>{{ tag.name }}</span>
               </label>
-            </div>
-            <div v-if="libraryViewId === profile.id" class="library-view-panel">
-              <small class="form-hint">{{ t("profiles.viewLibraryHint", { name: profile.name }) }}</small>
-              <div v-if="libraryViewGames.length === 0" class="tag-hide-empty">
-                {{ t("profiles.noGamesAdded") }}
-              </div>
-              <div v-for="g in libraryViewGames" :key="g.id" class="library-view-item">
-                <span class="library-view-title">{{ g.title }}</span>
-                <span v-if="g.pending" class="pending-badge">{{ t("profiles.pendingBadge") }}</span>
-                <span v-else-if="g.hidden" class="hidden-badge">{{ t("profiles.hiddenBadge") }}</span>
-                <button
-                  v-if="g.pending"
-                  class="icon-button"
-                  :title="t('profiles.approveGame')"
-                  @click="approvePending(g.id, g.title, profile.id)"
-                >
-                  <IconCheck :size="14" :stroke-width="1.75" />
-                </button>
-                <button
-                  class="icon-button"
-                  :title="t('profiles.migrateToAdmin')"
-                  @click="migrateToAdmin(g.id, g.title)"
-                >
-                  <IconDownload :size="14" :stroke-width="1.75" />
-                </button>
-              </div>
             </div>
           </div>
         </template>
@@ -442,45 +351,5 @@ async function onPinSubmit() {
   align-items: center;
   gap: var(--space-2);
   font-size: 0.9rem;
-}
-
-/* Reuses .tag-hide-panel's shell tokens rather than redefining them, since it's the same
-   inline-panel-under-a-row shape - just a different list content. */
-.library-view-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  border-radius: var(--radius-2);
-  background: var(--surface-2, rgba(0, 0, 0, 0.05));
-  max-height: 240px;
-  overflow-y: auto;
-}
-
-.library-view-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 0.9rem;
-}
-
-.library-view-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hidden-badge {
-  font-size: 0.75rem;
-  opacity: 0.7;
-  white-space: nowrap;
-}
-
-.pending-badge {
-  font-size: 0.75rem;
-  color: var(--color-warning, #d97706);
-  white-space: nowrap;
 }
 </style>

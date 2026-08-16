@@ -3,6 +3,7 @@
 // dynamic import() of a barrel-exported name pulls in the whole barrel's module graph
 // statically, defeating the code-splitting that dynamic import exists for here in the first
 // place (see App.vue's own comment on that import for why it needs to stay a real split point).
+export { default as AdminReviewSection } from "./AdminReviewSection.vue";
 export { default as AppSettings } from "./AppSettings.vue";
 export { default as CollectionsPanel } from "./CollectionsPanel.vue";
 export { default as GameFilters } from "./GameFilters.vue";

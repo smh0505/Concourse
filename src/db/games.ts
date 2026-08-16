@@ -1,5 +1,5 @@
 import { getDb } from "./client";
-import type { Game, GameEditFields } from "./types";
+import type { Game, GameEditFields, UnsharedGame } from "./types";
 
 export class GameRepository {
   /** Milestone 30 - only the active profile's games (every insert path writes profile_id, see
@@ -24,46 +24,53 @@ export class GameRepository {
     );
   }
 
-  /** Milestone 30 step 3 follow-up - Admin's approval action from the cross-profile library
-   *  view, clearing pending_review so the game joins that profile's normal list() results. */
+  /** Milestone 30 step 3 follow-up - Admin's approval action from the Library tab's review
+   *  section, clearing pending_review so the game joins that profile's normal list() results. */
   async approvePending(id: number): Promise<void> {
     const db = await getDb();
     await db.execute("UPDATE games SET pending_review = 0 WHERE id = $1", [id]);
   }
 
-  /** Milestone 30 step 3 follow-up - Admin's cross-profile library browser. Unlike list(),
-   *  this does NOT exclude hidden-tag games - Admin needs to see everything a profile has
-   *  added, including what's currently hidden from that profile's own view, to actually make
-   *  informed hide-list decisions and to know what a kid has installed. */
-  async listAllForProfile(profileId: number): Promise<Game[]> {
+  /** Milestone 30 - feeds the Library tab's Admin-only review section: every game owned by a
+   *  non-admin profile that hasn't been shared into Admin's own library yet (shared_admin_copy_id
+   *  IS NULL), across every profile at once (not one at a time like the old per-profile Settings
+   *  panel), regardless of pending/hidden-tag status - Admin sees everything, unfiltered, in one
+   *  place. owner_name is a join, not a column, for each card's "Owned by" balloon line. */
+  async listUnsharedForAdmin(): Promise<UnsharedGame[]> {
     const db = await getDb();
-    return db.select<Game[]>(
-      "SELECT * FROM games WHERE profile_id = $1 ORDER BY title COLLATE NOCASE",
-      [profileId],
+    return db.select<UnsharedGame[]>(
+      `SELECT games.*, profiles.name as owner_name
+       FROM games JOIN profiles ON profiles.id = games.profile_id
+       WHERE games.profile_id != 1 AND games.shared_admin_copy_id IS NULL
+       ORDER BY games.title COLLATE NOCASE`,
     );
   }
 
-  /** Milestone 30 step 3 follow-up - Admin's "just in case" safety net from the cross-profile
-   *  library view: copies (not moves) a game into another profile's library, so Admin keeps
-   *  independent access even if the original profile later hides/deletes/loses the game. A
-   *  fresh INSERT...SELECT, not an UPDATE of profile_id - the source profile keeps its own copy
-   *  untouched. Deliberately narrow set of columns: launch-relevant fields (title/executable_
-   *  path/platform/install_dir) and cosmetic metadata (art/description/release_date) carry over;
+  /** Milestone 30 - Admin's "just in case" safety net from the Library tab's review section:
+   *  copies (not moves) a non-admin game into Admin's own library, so Admin keeps independent
+   *  access even if the source profile later hides/deletes/loses the game - then links the
+   *  source row to the new copy (shared_admin_copy_id) so it drops out of the review section.
+   *  Deliberately narrow set of copied columns: launch-relevant fields (title/executable_path/
+   *  platform/install_dir) and cosmetic metadata (art/description/release_date) carry over;
    *  per-installation session state (window rect, resolution override, translations, skip_*
    *  flags) resets to defaults, since those describe *this* copy's own future sessions, not the
    *  source profile's. */
-  async copyToProfile(id: number, targetProfileId: number): Promise<void> {
+  async shareToAdmin(id: number): Promise<void> {
     const db = await getDb();
-    await db.execute(
+    const result = await db.execute(
       `INSERT INTO games (
          title, executable_path, platform, cover_art_url, background_art_url,
          description, release_date, install_dir, profile_id
        )
        SELECT title, executable_path, platform, cover_art_url, background_art_url,
-              description, release_date, install_dir, $2
+              description, release_date, install_dir, 1
        FROM games WHERE id = $1`,
-      [id, targetProfileId],
+      [id],
     );
+    await db.execute("UPDATE games SET shared_admin_copy_id = $1 WHERE id = $2", [
+      result.lastInsertId,
+      id,
+    ]);
   }
 
   /** Milestone 30 step 3 follow-up - anything added while a non-admin profile is active starts

@@ -7485,3 +7485,92 @@ i18n: `profiles.pendingBadge`/`approveGame`/`approvedGame` added across all 10 l
 
 Verified: `cargo check` (migration v16), `bun run build` (typecheck + all 10 locale JSON files
 parse).
+
+### Milestone 30: Admin review moved from Settings to the Library tab
+
+User pushback on the just-shipped Settings-panel review UI: won't scale as a kid's library
+grows, and the user specifically wanted it on the Library tab itself (where they'd actually be
+looking), not buried in Settings. Design nailed down via three AskUserQuestion rounds rather
+than guessed, since several parts were genuinely consequential architecture calls:
+
+1. **How to know a game was already "shared" with Admin** - new `games.shared_admin_copy_id`
+   link column (migration v17) rather than a title/path heuristic, so it's exact even across
+   renames and correctly reverts to "unshared" if Admin later deletes their copy
+   (`ON DELETE SET NULL`). Nullable with no default - the one shape SQLite's `ALTER TABLE ADD
+   COLUMN` allows for a `REFERENCES` column (same restriction v13 hit for `games.profile_id`).
+2. **What the review section shows** - every non-admin game regardless of status (pending,
+   hidden-by-tag, or perfectly normal), not just pending ones - "one big inbox" per the user's
+   own words, so Admin doesn't have to separately dig through the hidden-tags checklist to see
+   what a kid's actually installed.
+3. **Grouping** - one flat list across every non-admin profile, not per-profile subsections;
+   each card's hover balloon gets an "Owned by {name}" line instead (reusing GameCard.vue's
+   existing `useBalloonAnchor` teleport-to-body pattern, just added to a new sibling card
+   component rather than overloading GameCard itself with review-mode props).
+4. **Does this replace the Settings panel** - yes for the game-browsing/approve/migrate parts;
+   the per-profile hidden-tags checklist itself stays in `ProfilesPanel.vue` (tag/profile
+   config, not game browsing - a real category difference, not just where it happened to live).
+5. A follow-up round covered three more decisions: hidden-tags config confirmed staying in
+   Settings; card actions confirmed as *both* inline buttons and a `GameDetail.vue` view (not
+   either/or); the fold starts collapsed every time rather than remembering state, matching
+   "primarily folded" as a deliberate default posture rather than a persisted preference.
+
+**Schema**: `shared_admin_copy_id INTEGER REFERENCES games(id) ON DELETE SET NULL` (migration
+v17). `GameRepository.copyToProfile()` renamed to `shareToAdmin(id)` (always targets Admin now,
+dropped the generic target-profile parameter since that's the only real caller) and now also
+writes the link back onto the source row using `execute()`'s own `lastInsertId` from the copy's
+`INSERT`. `listAllForProfile()` (the old per-profile browser) removed entirely - superseded by
+`listUnsharedForAdmin()`, a single query joining `profiles` for each card's owner name, spanning
+every non-admin profile in one call: `WHERE profile_id != 1 AND shared_admin_copy_id IS NULL`.
+
+**Deriving the hidden-by-tag ribbon**: `pending_review` is a direct column, but "hidden by tag"
+isn't - same diffing approach the old Settings panel used (compare against what `list()` would
+return for that game's own owning profile), just run once per distinct profile represented in
+the flat list rather than one profile at a time.
+
+**New components**: `ReviewGameCard.vue` (per-item, owns its own `useBalloonAnchor` call - can't
+call composables inside a `v-for` in a single component, same reason `GameCard.vue` is itself
+the per-card component rather than `GameGrid.vue` rendering cards inline) and
+`AdminReviewSection.vue` (fold state, loads+diffs the list, renders a `ReviewGameCard` grid).
+Wired into `App.vue`'s `.library-browse` below `GameGrid`/`GameList`, gated on
+`profiles.isAdmin`. Deliberately *not* built as new props on `GameCard.vue` itself - that
+component's existing footer (play/fetch-metadata/edit/remove) and selection-mode behavior are
+tuned for the active profile's own games; a foreign game's card needs different actions
+entirely (Approve/Share, no delete), so a parallel lightweight card avoids overloading one
+component with two different call contracts.
+
+**`GameDetail.vue` read-only mode**: real risk identified before writing any code - the existing
+edit form's tags/collections/launch-settings actions all write against the *active* profile's
+own namespace (`tags.addToGame` etc. use `activeProfileId()`, not the viewed game's own
+`profile_id`). Opening it unmodified for a foreign game would let Admin's tag actions attach to
+a game belonging to a different profile's tag namespace - a real data-integrity risk, not a UI
+nit, so this got its own confirmation question rather than being decided silently. Implemented
+as a template-level `v-if="isForeign"` / `v-else` split at the top of `<template>` - the whole
+existing tags/collections/edit-form content stays word-for-word unchanged in the `v-else`
+branch (zero behavior risk to the primary, well-tested path), with a new compact read-only
+branch (cover, title, owner name, description, Approve/Share) alongside it.
+
+The real plumbing gap this exposed: `library.viewingGame` was derived by looking `viewingGameId`
+up in `library.games` (the active profile's own list) - a foreign game was never in that array,
+so it'd resolve to `null` and `GameDetail` simply wouldn't render. Fixed by adding a second ref,
+`viewingForeignGame` (stores the whole `UnsharedGame` object directly, no lookup needed since
+it's never a member of `games`), folded into `viewingGame`'s existing computed
+(`viewingForeignGame.value ?? <existing lookup>`) - every other place in `GameDetail.vue` that
+reads `library.viewingGame` needed zero changes as a result. `openForeignDetail(game)` sets it;
+`closeDetail()` clears both `viewingGameId` and `viewingForeignGame`. Approve/Share from either
+`ReviewGameCard.vue` or `GameDetail.vue`'s own buttons call `library.closeDetail()` afterward -
+since `AdminReviewSection.vue` sits behind `App.vue`'s `v-if="library.viewingGame"` /
+`v-else` toggle (`Transition mode="out-in"`), it fully unmounts while `GameDetail` is shown and
+remounts fresh on return, so its own `onMounted` reload is all that's needed to reflect the
+change - no extra event/refresh plumbing required.
+
+**Cleanup**: `ProfilesPanel.vue` lost `libraryViewId`/`libraryViewGames`/`startLibraryView`/
+`cancelLibraryView`/`migrateToAdmin`/`approvePending` and their template/CSS entirely - the
+hidden-tags checklist (`tagEditingId` and friends) is the only game/review-adjacent state left
+there. Nine now-dead `profiles.*` i18n keys (`viewLibrary`, `viewLibraryHint`, `noGamesAdded`,
+`hiddenBadge`, `pendingBadge`, `approveGame`, `approvedGame`, `migrateToAdmin`, `migratedGame`)
+removed across all 10 locales; new `library.*` (`pendingBadge`, `hiddenBadge`, `approveGame`,
+`shareGame`, `ownedBy`, `reviewSectionTitle`, `approvedGame`, `sharedGame`) and `gameDetail.*`
+(`ownedBy`, `approveGame`, `shareGame`, `approvedGame`, `sharedGame`) keys added, same locales.
+
+Verified: `cargo check` (migration v17), `bun run build` (typecheck + all 10 locale JSON files
+parse).

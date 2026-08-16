@@ -68,9 +68,19 @@ export interface Game {
   /** SQLite boolean (0/1) - Milestone 30 step 3 follow-up, "pending Admin review". Set to 1 at
    *  insert time for anything added while a non-admin profile is active (0 for Admin's own
    *  adds); excluded from GameRepository.list() same as a hidden-tag game until Admin approves
-   *  it from the cross-profile library view. Not user-editable via the edit form. */
+   *  it from the Library tab's review section. Not user-editable via the edit form. */
   pending_review: number;
+  /** Milestone 30 - which of Admin's own games (if any) this non-admin game was copied into via
+   *  the Library tab review section's "Share" action. NULL means "not yet shared" - that's what
+   *  keeps a game in the review section's list; once shared it drops out. Points at the resulting
+   *  Admin-owned row's id (ON DELETE SET NULL - deleting that copy reverts this to unshared).
+   *  Always NULL on Admin's own games. Not user-editable via the edit form. */
+  shared_admin_copy_id: number | null;
 }
+
+/** A non-admin profile's game as shown in the Library tab's Admin-only review section -
+ *  `owner_name` is a join, not a column, added by GameRepository.listUnsharedForAdmin(). */
+export type UnsharedGame = Game & { owner_name: string };
 
 export type GameEditFields = Pick<
   Game,

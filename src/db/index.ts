@@ -12,6 +12,6 @@ export const playtime = new PlaytimeRepository();
 export const settings = new SettingsRepository();
 export const profiles = new ProfileRepository();
 
-export type { Game, GameEditFields } from "./types";
+export type { Game, GameEditFields, UnsharedGame } from "./types";
 export { displayTitle } from "./types";
 export type { Profile } from "./profiles";

@@ -607,9 +607,14 @@ history in devlog.
   compiled-in `:root` default until a profile is chosen
 - [x] Step 3 - kids mode: `hidden_tags(profile_id, tag_id)` table (migration v15), Admin-only
   per-target-profile tag hide-list, enforced in `GameRepository.list()`
-- [x] Kids mode follow-ups: Admin cross-profile library view + "copy to Admin's library" safety
-  net (`listAllForProfile`/`copyToProfile`); "pending Admin review" gate for non-admin additions
-  (migration v16, `games.pending_review`)
+- [x] Kids mode follow-up: "pending Admin review" gate for non-admin additions (migration v16,
+  `games.pending_review`) - hidden_tags alone was reactive, this closes the gap proactively
+- [x] Kids mode follow-up: Admin review moved from a per-profile Settings panel to a folded
+  section on the Library tab itself (`AdminReviewSection.vue`) - one flat cross-profile list
+  (`GameRepository.listUnsharedForAdmin()`), pending/hidden ribbons, an owner-name balloon per
+  card, inline Approve/Share actions, and a read-only `GameDetail.vue` view for foreign games
+  (`shared_admin_copy_id`, migration v17, tracks what's already been shared so it drops out of
+  the list). ProfilesPanel.vue keeps only the hidden-tags checklist itself.
 - [x] Big Picture extension - `BigPictureProfileSwitcher.vue` (full gamepad nav +
   `OnScreenKeyboard.vue`) for "launch into Big Picture on startup"
 

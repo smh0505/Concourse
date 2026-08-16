@@ -10,6 +10,7 @@ import {
   settings as settingsRepo,
   type Game,
   type GameEditFields,
+  type UnsharedGame,
 } from "@/db";
 import type { GameEntry } from "@/plugins/types";
 import { i18n } from "@/i18n";
@@ -158,8 +159,15 @@ export const useLibraryStore = defineStore("library", () => {
   // wholesale with fresh objects from a new DB query, which would otherwise leave a plain ref
   // pointing at a stale, orphaned object that never reflects those updates.
   const viewingGameId = ref<number | null>(null);
-  const viewingGame = computed(() =>
-    viewingGameId.value !== null ? games.value.find((g) => g.id === viewingGameId.value) ?? null : null,
+  // Milestone 30 - Admin opening a non-admin game from the Library tab's review section. That
+  // game isn't in `games` (which only ever holds the active profile's own list()), so it can't
+  // be looked up by id the way viewingGameId is below - the whole object is stashed directly,
+  // read-only in GameDetail.vue (see its own isForeign check).
+  const viewingForeignGame = ref<UnsharedGame | null>(null);
+  const viewingGame = computed(
+    () =>
+      viewingForeignGame.value ??
+      (viewingGameId.value !== null ? games.value.find((g) => g.id === viewingGameId.value) ?? null : null),
   );
   const viewMode = ref<ViewMode>("grid");
   const sortOption = ref<SortOption>("title");
@@ -401,20 +409,32 @@ export const useLibraryStore = defineStore("library", () => {
   }
 
   function openDetail(game: Game) {
+    viewingForeignGame.value = null;
     viewingGameId.value = game.id;
+  }
+
+  /** Milestone 30 - Admin opening a game from the Library tab's review section. Unlike
+   *  openDetail above, GameDetail.vue renders this read-only (see its own isForeign check) -
+   *  the game belongs to another profile's tag/collection namespace, so the usual edit/tag/
+   *  collection actions aren't safe to run against it from here. */
+  function openForeignDetail(game: UnsharedGame) {
+    viewingGameId.value = null;
+    viewingForeignGame.value = game;
   }
 
   function closeDetail() {
     viewingGameId.value = null;
+    viewingForeignGame.value = null;
   }
 
   /** Unlike the old edit modal, saving here doesn't close the detail page - it stays open,
    *  showing the just-saved data, matching the "detail page convertible to an editing page"
    *  design (editing is a mode within the page, not a separate flow that exits on save).
    *  `viewingGame` picks up the refreshed data on its own (derived from `games` by id), no
-   *  manual re-assignment needed here anymore. */
+   *  manual re-assignment needed here anymore. Never reachable for a foreign game - GameDetail
+   *  hides the edit form entirely in that case - but guarded anyway since this writes directly. */
   async function saveEdit(fields: GameEditFields) {
-    if (!viewingGame.value) return;
+    if (!viewingGame.value || viewingForeignGame.value) return;
     await gameRepo.update(viewingGame.value.id, fields);
     // Registry write, not a DB column read-back - keyed by the (possibly just-edited)
     // executable_path itself, applied once here rather than on every launch like the
@@ -597,6 +617,7 @@ export const useLibraryStore = defineStore("library", () => {
     fetchingMetadataFor,
     fetchingBackgroundFor,
     viewingGame,
+    viewingForeignGame,
     viewMode,
     sortOption,
     filteredGames,
@@ -615,6 +636,7 @@ export const useLibraryStore = defineStore("library", () => {
     deleteGames,
     importEntries,
     openDetail,
+    openForeignDetail,
     closeDetail,
     saveEdit,
     saveTranslatedTitle,

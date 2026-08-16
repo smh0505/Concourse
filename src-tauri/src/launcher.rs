@@ -75,37 +75,20 @@ pub fn launch_game(
         };
         let mut last_known_rect = window_state.as_ref().and_then(crate::remembered_window::capture);
 
-        if pseudo_fullscreen || always_on_top || remember_window {
-            // Polls instead of a single blocking child.wait() so a launcher window closing and
-            // being replaced by the real game window (same process, new HWND) still gets caught.
-            loop {
-                match child.try_wait() {
-                    Ok(Some(_)) => break,
-                    Ok(None) => {
-                        if pseudo_fullscreen {
-                            fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || vec![pid]);
-                        }
-                        if always_on_top {
-                            topmost_state = crate::always_on_top::refresh(topmost_state, || vec![pid]);
-                        }
-                        if remember_window {
-                            window_state = crate::remembered_window::refresh(window_state, || vec![pid]);
-                            // Captured here, while the game is still confirmed running - the
-                            // window is usually already destroyed by the time exit is detected
-                            // below, too late to read its final position/size.
-                            if let Some(rect) =
-                                window_state.as_ref().and_then(crate::remembered_window::capture)
-                            {
-                                last_known_rect = Some(rect);
-                            }
-                        }
-                        std::thread::sleep(std::time::Duration::from_secs(3));
-                    }
-                    Err(_) => break,
-                }
-            }
-        } else {
+        if !(pseudo_fullscreen || always_on_top || remember_window) {
             let _ = child.wait();
+        } else {
+            (fullscreen_state, topmost_state, window_state, last_known_rect) = poll_until_exit(
+                &mut child,
+                pid,
+                pseudo_fullscreen,
+                always_on_top,
+                remember_window,
+                fullscreen_state,
+                topmost_state,
+                window_state,
+                last_known_rect,
+            );
         }
 
         // A final live read in case the window somehow still exists, falling back to the last
@@ -144,6 +127,54 @@ pub fn launch_game(
     });
 
     Ok(())
+}
+
+/// Polls instead of a single blocking child.wait() so a launcher window closing and being
+/// replaced by the real game window (same process, new HWND) still gets caught. Extracted out
+/// of launch_game's spawned thread so the poll loop itself isn't nested inside an `if` inside a
+/// closure - refreshes whichever of the three window treatments are enabled each tick.
+#[allow(clippy::too_many_arguments)]
+fn poll_until_exit(
+    child: &mut std::process::Child,
+    pid: u32,
+    pseudo_fullscreen: bool,
+    always_on_top: bool,
+    remember_window: bool,
+    mut fullscreen_state: Option<crate::pseudo_fullscreen::PseudoFullscreenState>,
+    mut topmost_state: Option<crate::always_on_top::AlwaysOnTopState>,
+    mut window_state: Option<crate::remembered_window::RememberedWindowState>,
+    mut last_known_rect: Option<crate::remembered_window::SavedRect>,
+) -> (
+    Option<crate::pseudo_fullscreen::PseudoFullscreenState>,
+    Option<crate::always_on_top::AlwaysOnTopState>,
+    Option<crate::remembered_window::RememberedWindowState>,
+    Option<crate::remembered_window::SavedRect>,
+) {
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) => {
+                if pseudo_fullscreen {
+                    fullscreen_state = crate::pseudo_fullscreen::refresh(fullscreen_state, || vec![pid]);
+                }
+                if always_on_top {
+                    topmost_state = crate::always_on_top::refresh(topmost_state, || vec![pid]);
+                }
+                if remember_window {
+                    window_state = crate::remembered_window::refresh(window_state, || vec![pid]);
+                    // Captured here, while the game is still confirmed running - the window is
+                    // usually already destroyed by the time exit is detected below, too late to
+                    // read its final position/size.
+                    if let Some(rect) = window_state.as_ref().and_then(crate::remembered_window::capture) {
+                        last_known_rect = Some(rect);
+                    }
+                }
+                std::thread::sleep(std::time::Duration::from_secs(3));
+            }
+            Err(_) => break,
+        }
+    }
+    (fullscreen_state, topmost_state, window_state, last_known_rect)
 }
 
 fn saved_rect(

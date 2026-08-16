@@ -359,10 +359,8 @@ async fn watch_idle(app: AppHandle, generation: u64) {
 async fn wait_until_ready(client: &reqwest::Client) -> Result<(), String> {
     let url = format!("http://127.0.0.1:{}/health", SERVER_PORT);
     for _ in 0..120 {
-        if let Ok(resp) = client.get(&url).send().await {
-            if resp.status().is_success() {
-                return Ok(());
-            }
+        if client.get(&url).send().await.is_ok_and(|resp| resp.status().is_success()) {
+            return Ok(());
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }

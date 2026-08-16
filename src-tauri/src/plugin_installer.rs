@@ -40,6 +40,29 @@ async fn download_bytes(url: &str) -> Result<bytes::Bytes, String> {
         .map_err(|e| format!("Failed to read response body: {}", e))
 }
 
+/// Milestone 14/17 curated registry - unlike the Sigstore check elsewhere, a mismatch here is a
+/// hard reject: this hash was pinned by hand after actually reviewing that specific version, so
+/// a mismatch is a real "this isn't what was reviewed" signal, not just "no attestation exists
+/// yet" (which every pre-signing release would otherwise trip). `expected_sha256` is `None` for
+/// anything not sourced from the curated registry - nothing to check against, so this is a
+/// no-op. Shared by all three install paths (WASM plugin binary, theme manifest, controller
+/// manifest) - same check against whatever bytes constitute that kind's whole artifact.
+fn verify_pinned_hash(bytes: &[u8], expected_sha256: Option<&str>) -> Result<(), String> {
+    let Some(expected) = expected_sha256 else {
+        return Ok(());
+    };
+    use sha2::{Digest, Sha256};
+    let actual = format!("{:x}", Sha256::digest(bytes));
+    if !actual.eq_ignore_ascii_case(expected) {
+        return Err(format!(
+            "Pinned hash mismatch - this download doesn't match what was reviewed \
+             (expected {}, got {}). Install aborted.",
+            expected, actual
+        ));
+    }
+    Ok(())
+}
+
 /// A single user-configurable setting a WASM plugin declares it needs (e.g. an API key) -
 /// lets the host render one generic form instead of every plugin needing its own custom
 /// settings UI (which WASM plugins have no mechanism for at all, unlike TS-authored plugins'
@@ -348,21 +371,7 @@ async fn install_wasm_plugin(
     let wasm_url = sibling_url(manifest_url, &manifest.entry)?;
     let wasm_bytes = download_bytes(&wasm_url).await?;
 
-    // Milestone 14 curated registry - unlike the Sigstore check below, a mismatch here is a
-    // hard reject: this hash was pinned by hand after actually reviewing that specific
-    // version, so a mismatch is a real "this isn't what was reviewed" signal, not just "no
-    // attestation exists yet" (which every pre-signing release would otherwise trip).
-    if let Some(expected) = expected_sha256 {
-        use sha2::{Digest, Sha256};
-        let actual = format!("{:x}", Sha256::digest(&wasm_bytes));
-        if !actual.eq_ignore_ascii_case(expected) {
-            return Err(format!(
-                "Pinned hash mismatch - this download doesn't match what was reviewed \
-                 (expected {}, got {}). Install aborted.",
-                expected, actual
-            ));
-        }
-    }
+    verify_pinned_hash(&wasm_bytes, expected_sha256)?;
 
     let (verified, verification_note) =
         match crate::plugin_verification::parse_github_owner_repo(manifest_url) {
@@ -446,22 +455,7 @@ async fn install_data_theme(
     manifest.source_url = Some(manifest_url.to_string());
     manifest.installed_via_registry = expected_sha256.is_some();
 
-    // Milestone 14/17 curated registry - unlike the Sigstore check below, a mismatch here is a
-    // hard reject: this hash was pinned by hand after actually reviewing this specific version,
-    // so a mismatch is a real "this isn't what was reviewed" signal, not just "no attestation
-    // exists yet." Mirrors install_wasm_plugin's identical check against a .wasm binary - here
-    // the manifest's own bytes are the whole artifact, there's nothing else to hash.
-    if let Some(expected) = expected_sha256 {
-        use sha2::{Digest, Sha256};
-        let actual = format!("{:x}", Sha256::digest(manifest_bytes));
-        if !actual.eq_ignore_ascii_case(expected) {
-            return Err(format!(
-                "Pinned hash mismatch - this download doesn't match what was reviewed \
-                 (expected {}, got {}). Install aborted.",
-                expected, actual
-            ));
-        }
-    }
+    verify_pinned_hash(manifest_bytes, expected_sha256)?;
 
     let (verified, verification_note) =
         match crate::plugin_verification::parse_github_owner_repo(manifest_url) {
@@ -520,17 +514,7 @@ async fn install_data_controller(
     manifest.source_url = Some(manifest_url.to_string());
     manifest.installed_via_registry = expected_sha256.is_some();
 
-    if let Some(expected) = expected_sha256 {
-        use sha2::{Digest, Sha256};
-        let actual = format!("{:x}", Sha256::digest(manifest_bytes));
-        if !actual.eq_ignore_ascii_case(expected) {
-            return Err(format!(
-                "Pinned hash mismatch - this download doesn't match what was reviewed \
-                 (expected {}, got {}). Install aborted.",
-                expected, actual
-            ));
-        }
-    }
+    verify_pinned_hash(manifest_bytes, expected_sha256)?;
 
     let (verified, verification_note) =
         match crate::plugin_verification::parse_github_owner_repo(manifest_url) {

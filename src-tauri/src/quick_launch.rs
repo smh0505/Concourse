@@ -46,14 +46,14 @@ pub fn hide_quick_launch(app: AppHandle) {
 }
 
 pub fn toggle_overlay(app: &AppHandle) {
-    if let Some(window) = app.get_webview_window(OVERLAY_LABEL) {
-        if window.is_visible().unwrap_or(false) {
-            let _ = window.hide();
-        } else {
-            show_overlay(&window);
-        }
-    } else {
+    let Some(window) = app.get_webview_window(OVERLAY_LABEL) else {
         create_overlay(app);
+        return;
+    };
+    if window.is_visible().unwrap_or(false) {
+        let _ = window.hide();
+    } else {
+        show_overlay(&window);
     }
 }
 

@@ -7,12 +7,24 @@ import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loade
 import { setActiveCardVisual, clearActiveCardVisual } from "@/theme/cardVisualRegistry";
 import { setActiveFontFaces, clearActiveFontFaces } from "@/theme/fontFaceRegistry";
 import { useToastStore } from "./toasts";
+import { useProfilesStore } from "./profiles";
 import { i18n } from "@/i18n";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { ThemePlugin } from "@/plugins/types";
 
 const ACTIVE_THEME_SETTING = "active_theme_id";
 const DEFAULT_THEME_ID = "catppuccin-latte";
+
+/** Per-profile, not global - each profile picks its own look. init() now runs after profile
+ *  selection (App.vue), unlike before - the profile picker itself (ProfileSwitcher.vue) shows
+ *  before any theme.init() has ever run, so it renders in whatever styles.css's own :root
+ *  block defines (Catppuccin Latte, the compiled-in default) rather than any profile's actual
+ *  choice - a theme plugin only overrides those tokens at runtime, :root already has real
+ *  values on its own. That's a deliberate, stable "picker always looks the same" choice, not a
+ *  gap to fill with a separate theme system just for that one screen. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 
 let appliedCssVarNames: string[] = [];
 
@@ -72,13 +84,13 @@ export const useThemeStore = defineStore("theme", () => {
     }
 
     activeThemeId.value = id;
-    await settingsRepo.set(ACTIVE_THEME_SETTING, id ?? "");
+    await settingsRepo.setForProfile(activeProfileId(), ACTIVE_THEME_SETTING, id ?? "");
   }
 
   async function init() {
     await refreshManifests();
 
-    const stored = await settingsRepo.get(ACTIVE_THEME_SETTING);
+    const stored = await settingsRepo.getForProfile(activeProfileId(), ACTIVE_THEME_SETTING);
     if (stored === null) {
       await setActiveTheme(DEFAULT_THEME_ID);
     } else {

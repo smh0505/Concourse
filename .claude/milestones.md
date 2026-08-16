@@ -598,9 +598,12 @@ Scoping decided with the user up front:
 - **Storage**: `profile_id` column threaded through games/tags/collections (shared-schema, not
   separate DB files per profile) - simpler cross-profile migrations, no per-profile connection
   juggling.
-- **Global vs. per-profile**: theme and app-level settings (hotkey, close-to-tray, locale) stay
-  global; everything else (plugin enablement/settings, controller mapping, games/tags/
-  collections/playtime) is per-profile.
+- **Global vs. per-profile**: app-level settings (hotkey, close-to-tray, locale, auto-launch-Big-
+  Picture) stay global; everything else (theme, plugin enablement/settings, controller mapping,
+  games/tags/collections/playtime) is per-profile. Theme was originally scoped global too, moved
+  to per-profile later in step 2 (see below) - the profile picker itself now just renders in
+  styles.css's own compiled-in `:root` default (Catppuccin Latte) instead of any profile's real
+  choice, since no profile (and so no theme) is active yet at that point.
 - **Kids mode**: a filtered view of one profile (tag/age-rating hide-list), not a separate
   profile - deferred to step 3 below, not built yet.
 
@@ -642,6 +645,12 @@ profile has no legacy value to inherit, so it's a no-op for them. Out of scope: 
 own settings (e.g. an API key), stored via a separate host-function/`plugin_data` mechanism
 that never went through `SettingsRepository` to begin with - a bigger, separate schema change
 if ever wanted.
+
+**Theme moved to per-profile too (done, follow-up to step 2).** Same `getForProfile`/
+`setForProfile` mechanism. `theme.init()` moved from before profile selection to
+`initLibraryAndPlugins()` (after) - it can no longer run before a profile is chosen, so the
+picker (`ProfileSwitcher.vue`) renders in `:root`'s own compiled-in default (Catppuccin Latte)
+until then, a deliberate stable look rather than a gap needing its own theme system.
 
 **Step 3 (not started)** - kids mode: a per-profile tag/age-rating hide-list filter, applied on
 top of that profile's own library view.

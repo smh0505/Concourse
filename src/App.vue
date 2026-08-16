@@ -113,14 +113,17 @@ function checkAllPluginUpdates() {
   ]);
 }
 
-// Everything below (games, tags, collections, stats, plugin scans) depends on which profile is
-// active (Milestone 30) - runs only once profiles.activeProfileId is set, whether that happens
-// immediately (a remembered profile from last launch) or after the user picks one in
-// ProfileSwitcher below. appSettings/theme are the two global (not per-profile) settings, so
-// they're initialized separately in onMounted below, before this - ProfileSwitcher itself
-// should already be in the right language/theme, not stuck on defaults until after a profile's
-// picked.
+// Everything below (games, tags, collections, stats, plugin scans, theme) depends on which
+// profile is active (Milestone 30) - runs only once profiles.activeProfileId is set, whether
+// that happens immediately (a remembered profile from last launch) or after the user picks one
+// in ProfileSwitcher below. appSettings is the one remaining global (not per-profile) setting,
+// so it's initialized separately in onMounted below, before this - ProfileSwitcher itself
+// should already be in the right language, not stuck on a default until after a profile's
+// picked. Theme used to be initialized there too (before profiles.init()) - now that it's
+// per-profile, it can't run before a profile is chosen, so the picker instead renders in
+// styles.css's own :root default (Catppuccin Latte) until this runs. See theme.ts's own comment.
 async function initLibraryAndPlugins() {
+  await theme.init();
   await library.init();
   await plugins.init();
   await metadataProviders.init();
@@ -162,7 +165,6 @@ onMounted(async () => {
   // throw the user into Big Picture just because that startup preference happens to be on.
   const enteringBigPicture = appSettings.autoLaunchBigPicture && !profiles.consumeSkipAutoBigPictureOnce();
   if (enteringBigPicture) bigPicture.value = true;
-  await theme.init();
   // adoptRemembered: false when auto-launching into Big Picture - always show its own picker
   // as a console "who's playing" boot screen, not desktop's "remember last user" convenience,
   // even if a profile was in fact remembered from last session (see profiles.ts's own comment).

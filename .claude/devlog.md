@@ -7315,3 +7315,34 @@ Explicitly out of scope: WASM plugins' own settings (e.g. an API key entered thr
 `settingsComponent`) go through a separate host-function/`plugin_data` table mechanism that never
 touched `SettingsRepository` to begin with - scoping those per-profile would mean adding a
 `profile_id` column to `plugin_data` itself, a bigger, separate change if ever wanted.
+
+### Milestone 30: theme moved to per-profile too (reversing an earlier scoping call)
+
+User asked directly: if B changes the theme, does A see it too? Since theme was still using
+plain unscoped `settingsRepo.get/set` at that point, yes - one shared `active_theme_id` row.
+User decided that's wrong for theme specifically (unlike app-level settings, which stay global)
+and asked for it to move per-profile like everything else in step 2.
+
+Same mechanism: `theme.ts` gained the same `activeProfileId()` helper, `ACTIVE_THEME_SETTING`
+reads/writes switched to `getForProfile`/`setForProfile`.
+
+The real wrinkle: `theme.init()` previously ran in `App.vue`'s `onMounted` *before*
+`profiles.init()`, specifically so `ProfileSwitcher.vue` (the picker) would already be
+themed/localized rather than stuck on defaults. Once theme became per-profile, that ordering is
+no longer possible - there's no "the active profile's theme" to apply before a profile is
+active. Worried initially this would leave the picker unstyled/broken (it uses `var(--color-base)`
+etc. throughout), but checked `styles.css`'s own `:root` block first: it already defines real,
+complete default values (Catppuccin Latte, the compiled-in default) - a theme plugin's
+`applyCssVariables()` only *overrides* those at runtime via inline styles on
+`documentElement`, it doesn't create them from nothing. So with `theme.init()` moved into
+`initLibraryAndPlugins()` (after profile selection, alongside every other per-profile store),
+the picker simply renders in that `:root` default until a profile's own theme takes over -
+already a real, coherent, good-looking theme, not a broken intermediate state. Recommended
+keeping Catppuccin Latte as the deliberate "picker always looks the same, regardless of which
+profile logs in next" choice rather than building a separate theme system just for that one
+screen.
+
+`QuickLaunchOverlay.vue` needed no changes - it already called `profiles.init()` before
+`theme.init()`, and already wrapped `theme.init()` in try/catch from an earlier fix (see that
+window's own "shows no games" bug above), so a null `activeProfileId` there just logs and
+continues rather than throwing.

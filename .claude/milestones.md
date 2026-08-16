@@ -604,8 +604,8 @@ Scoping decided with the user up front:
   to per-profile later in step 2 (see below) - the profile picker itself now just renders in
   styles.css's own compiled-in `:root` default (Catppuccin Latte) instead of any profile's real
   choice, since no profile (and so no theme) is active yet at that point.
-- **Kids mode**: a filtered view of one profile (tag/age-rating hide-list), not a separate
-  profile - deferred to step 3 below, not built yet.
+- **Kids mode**: a filtered view of one profile (tag hide-list, Admin-only, no separate
+  profile/age-rating field), not a separate profile - built in step 3 below.
 
 **Step 1 (done)** - core architecture:
 - [x] `profiles` table + `profile_id` on games/tags/collections (migration v13); tags/

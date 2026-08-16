@@ -2,13 +2,12 @@ import { getDb } from "./client";
 import type { Game, GameEditFields } from "./types";
 
 export class GameRepository {
-  /** Milestone 30 - only the active profile's games. Every source-plugin scan/manual add also
-   *  writes profile_id (see add/addWithPlatform below), so this is a plain equality filter, not
-   *  a join. Milestone 30 step 3 - also excludes any game carrying a tag Admin hid for this
-   *  profile ("kids mode"), so every consumer (grid, list, Big Picture, stats) respects the
-   *  hide-list automatically without its own filtering logic. Also excludes anything still
-   *  pending_review (added by a non-admin profile, not yet approved by Admin) - the proactive
-   *  half of kids mode, since hidden_tags alone only protects a game after it's already tagged. */
+  /** Milestone 30 - only the active profile's games (every insert path writes profile_id, see
+   *  add/addWithPlatform below). Milestone 30 step 3 - also excludes anything hidden for this
+   *  profile: a game carrying an Admin-hidden tag (reactive - hidden_tags joined via game_tags),
+   *  or still pending_review (proactive - added by a non-admin profile, not yet approved). Both
+   *  enforced here rather than client-side, so every consumer (grid, list, Big Picture, stats)
+   *  respects kids mode automatically. */
   async list(profileId: number): Promise<Game[]> {
     const db = await getDb();
     return db.select<Game[]>(

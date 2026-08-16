@@ -88,7 +88,7 @@
     "newProfile": "New Profile",
     "newProfileName": "Profile name",
     "title": "Profiles",
-    "description": "Separate libraries for each person sharing this PC. Games, tags, and collections are per-profile; theme and app settings are shared.",
+    "description": "Separate libraries for each person sharing this PC. Games, tags, collections, plugins, and theme are per-profile; app-level settings are shared.",
     "addProfile": "Add Profile",
     "active": "Active",
     "switchTo": "Switch",
@@ -104,7 +104,10 @@
     "wrongPin": "Wrong PIN",
     "optionalPin": "PIN (optional)",
     "enterEscHint": "Enter to confirm, Esc to cancel",
-    "pinPatternHint": "Letters and numbers only"
+    "pinPatternHint": "Letters and numbers only",
+    "hiddenTags": "Hidden tags (kids mode)",
+    "hiddenTagsHint": "Games tagged with any of these are hidden from {name}'s library.",
+    "noTagsToHide": "This profile has no tags yet."
   },
   "candidatePicker": {
     "title": "Multiple matches found",

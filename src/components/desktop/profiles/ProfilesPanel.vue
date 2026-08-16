@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconLock, IconPencil, IconPlus, IconTrash } from "@tabler/icons-vue";
+import { IconEyeOff, IconLock, IconPencil, IconPlus, IconTrash } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
+import { tags as tagRepo } from "@/db";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
 
 const { t } = useI18n();
@@ -25,6 +26,37 @@ const pendingPin = ref("");
 const confirmingPin = ref(false);
 const pinError = ref("");
 const pinInputEl = ref<HTMLInputElement | null>(null);
+
+// Milestone 30 step 3 - kids mode. Only Admin (profile 1) can open this, and only for another
+// (non-admin) profile - see ProfilesPanel's template guard below. Loads that target profile's
+// own tags (not Admin's) plus its current hide-list, and writes the whole set back on every
+// toggle rather than one-at-a-time hide/unhide calls, matching setHiddenTagIds's shape.
+const tagEditingId = ref<number | null>(null);
+const profileTags = ref<{ id: number; name: string }[]>([]);
+const hiddenTagIds = ref<Set<number>>(new Set());
+
+async function startTagEdit(id: number) {
+  tagEditingId.value = id;
+  [profileTags.value, hiddenTagIds.value] = await Promise.all([
+    tagRepo.listWithIds(id),
+    tagRepo.getHiddenTagIds(id).then((ids) => new Set(ids)),
+  ]);
+}
+
+function cancelTagEdit() {
+  tagEditingId.value = null;
+  profileTags.value = [];
+  hiddenTagIds.value = new Set();
+}
+
+async function toggleHiddenTag(tagId: number) {
+  if (tagEditingId.value === null) return;
+  const next = new Set(hiddenTagIds.value);
+  if (next.has(tagId)) next.delete(tagId);
+  else next.add(tagId);
+  hiddenTagIds.value = next;
+  await tagRepo.setHiddenTagIds(tagEditingId.value, [...next]);
+}
 
 async function onCreateSubmit(name: string, pin: string) {
   try {
@@ -183,6 +215,14 @@ async function onPinSubmit() {
                   <IconLock :size="15" :stroke-width="1.75" />
                 </button>
                 <button
+                  v-if="profile.id !== 1 && profiles.isAdmin"
+                  class="icon-button"
+                  :title="t('profiles.hiddenTags')"
+                  @click="tagEditingId === profile.id ? cancelTagEdit() : startTagEdit(profile.id)"
+                >
+                  <IconEyeOff :size="15" :stroke-width="1.75" />
+                </button>
+                <button
                   v-if="profile.id !== 1 && profiles.profiles.length > 1"
                   class="icon-button"
                   :title="t('profiles.delete')"
@@ -195,6 +235,20 @@ async function onPinSubmit() {
             <div v-if="pinEditingId === profile.id" class="pin-inline-notice">
               <span v-if="pinError" class="error-text">{{ pinError }}</span>
               <small class="form-hint">{{ t("profiles.enterEscHint") }}</small>
+            </div>
+            <div v-if="tagEditingId === profile.id" class="tag-hide-panel">
+              <small class="form-hint">{{ t("profiles.hiddenTagsHint", { name: profile.name }) }}</small>
+              <div v-if="profileTags.length === 0" class="tag-hide-empty">
+                {{ t("profiles.noTagsToHide") }}
+              </div>
+              <label v-for="tag in profileTags" :key="tag.id" class="tag-hide-item">
+                <input
+                  type="checkbox"
+                  :checked="hiddenTagIds.has(tag.id)"
+                  @change="toggleHiddenTag(tag.id)"
+                />
+                <span>{{ tag.name }}</span>
+              </label>
             </div>
           </div>
         </template>
@@ -276,5 +330,26 @@ async function onPinSubmit() {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+.tag-hide-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-2);
+  background: var(--surface-2, rgba(0, 0, 0, 0.05));
+}
+
+.tag-hide-empty {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.tag-hide-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.9rem;
 }
 </style>

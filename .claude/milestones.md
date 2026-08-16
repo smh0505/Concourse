@@ -652,8 +652,12 @@ if ever wanted.
 picker (`ProfileSwitcher.vue`) renders in `:root`'s own compiled-in default (Catppuccin Latte)
 until then, a deliberate stable look rather than a gap needing its own theme system.
 
-**Step 3 (not started)** - kids mode: a per-profile tag/age-rating hide-list filter, applied on
-top of that profile's own library view.
+**Step 3 (done)** - kids mode: `hidden_tags(profile_id, tag_id)` table (migration v15). Only
+Admin (profile 1) can configure a hide-list, and only for another (non-admin) profile -
+`ProfilesPanel.vue` gained a per-row control (non-Admin rows only) opening a checklist of that
+target profile's own tags. Filtered at the SQL level in `GameRepository.list()` (a `NOT IN`
+against `hidden_tags` joined through `game_tags`), not client-side, so every consumer (grid,
+list, Big Picture, stats) respects it automatically.
 
 **Big Picture extension (done).** "Launch into Big Picture on startup" now engages real OS
 fullscreen immediately, before a profile is even picked - `BigPictureProfileSwitcher.vue`

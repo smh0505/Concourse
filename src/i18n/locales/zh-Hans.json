@@ -88,7 +88,7 @@
     "newProfile": "新建档案",
     "newProfileName": "档案名称",
     "title": "档案",
-    "description": "为共用这台电脑的每个人提供独立的游戏库。游戏、标签和收藏按档案区分;主题和应用设置为共享。",
+    "description": "为共用这台电脑的每个人提供独立的游戏库。游戏、标签、收藏、插件和主题按档案区分;应用设置为共享。",
     "addProfile": "添加档案",
     "active": "使用中",
     "switchTo": "切换",
@@ -104,7 +104,10 @@
     "wrongPin": "PIN 错误",
     "optionalPin": "PIN(可选)",
     "enterEscHint": "按 Enter 确认,按 Esc 取消",
-    "pinPatternHint": "仅限字母和数字"
+    "pinPatternHint": "仅限字母和数字",
+    "hiddenTags": "隐藏标签(儿童模式)",
+    "hiddenTagsHint": "带有这些标签的游戏将从{name}的游戏库中隐藏。",
+    "noTagsToHide": "该档案还没有标签。"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

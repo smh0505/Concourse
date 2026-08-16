@@ -37,6 +37,43 @@ export class TagRepository {
     return rows.map((r) => r.name);
   }
 
+  /** Milestone 30 step 3 - kids mode. Needs ids (unlike `getAll`) because `hidden_tags` keys
+   *  off tag_id, not name. Takes an explicit target profileId rather than the store's own
+   *  `activeProfileId()` convenience - this is always called cross-profile, by Admin managing
+   *  a different profile's hide-list. */
+  async listWithIds(profileId: number): Promise<{ id: number; name: string }[]> {
+    const db = await getDb();
+    return db.select<{ id: number; name: string }[]>(
+      "SELECT id, name FROM tags WHERE profile_id = $1 ORDER BY name",
+      [profileId],
+    );
+  }
+
+  /** Milestone 30 step 3 - which of `profileId`'s own tags are currently hidden from its
+   *  library view. */
+  async getHiddenTagIds(profileId: number): Promise<number[]> {
+    const db = await getDb();
+    const rows = await db.select<{ tag_id: number }[]>(
+      "SELECT tag_id FROM hidden_tags WHERE profile_id = $1",
+      [profileId],
+    );
+    return rows.map((r) => r.tag_id);
+  }
+
+  /** Milestone 30 step 3 - Admin's toggle handler. Replaces the full hidden-tag set for
+   *  `profileId` in one call rather than exposing separate hide/unhide methods, since the UI
+   *  is a checklist (whole-set state), not one-at-a-time actions. */
+  async setHiddenTagIds(profileId: number, tagIds: number[]): Promise<void> {
+    const db = await getDb();
+    await db.execute("DELETE FROM hidden_tags WHERE profile_id = $1", [profileId]);
+    for (const tagId of tagIds) {
+      await db.execute("INSERT INTO hidden_tags (profile_id, tag_id) VALUES ($1, $2)", [
+        profileId,
+        tagId,
+      ]);
+    }
+  }
+
   /** No profileId filter needed - `gameId` already belongs to exactly one profile, and every
    *  tag it's linked to via game_tags necessarily belongs to that same profile (a game can only
    *  ever be tagged with tags from its own profile in the first place). */

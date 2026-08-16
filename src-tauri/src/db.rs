@@ -309,5 +309,23 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 15,
+            description: "add_hidden_tags",
+            sql: r#"
+            -- Milestone 30 step 3 - kids mode. Only Admin (profile 1) can configure this, and
+            -- only for another (non-admin) profile - a game carrying any tag hidden for that
+            -- profile is excluded from every games query for it (GameRepository.list), not
+            -- filtered client-side after the fact. profile_id here is the RESTRICTED profile's
+            -- own id (matching the tag's own profile_id, since tags are per-profile too) - not
+            -- Admin's id, Admin is just who's allowed to edit these rows.
+            CREATE TABLE hidden_tags (
+                profile_id INTEGER NOT NULL REFERENCES profiles(id),
+                tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+                PRIMARY KEY (profile_id, tag_id)
+            );
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

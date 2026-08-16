@@ -88,7 +88,7 @@
     "newProfile": "Nuovo profilo",
     "newProfileName": "Nome profilo",
     "title": "Profili",
-    "description": "Librerie separate per ogni persona che condivide questo PC. Giochi, tag e raccolte sono per profilo; tema e impostazioni dell'app sono condivisi.",
+    "description": "Librerie separate per ogni persona che condivide questo PC. Giochi, tag, raccolte, plugin e tema sono per profilo; le impostazioni dell'app sono condivise.",
     "addProfile": "Aggiungi profilo",
     "active": "Attivo",
     "switchTo": "Cambia",
@@ -104,7 +104,10 @@
     "wrongPin": "PIN errato",
     "optionalPin": "PIN (facoltativo)",
     "enterEscHint": "Invio per confermare, Esc per annullare",
-    "pinPatternHint": "Solo lettere e numeri"
+    "pinPatternHint": "Solo lettere e numeri",
+    "hiddenTags": "Tag nascosti (modalità bambini)",
+    "hiddenTagsHint": "I giochi con uno di questi tag sono nascosti dalla libreria di {name}.",
+    "noTagsToHide": "Questo profilo non ha ancora tag."
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

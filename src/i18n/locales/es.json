@@ -88,7 +88,7 @@
     "newProfile": "Nuevo perfil",
     "newProfileName": "Nombre del perfil",
     "title": "Perfiles",
-    "description": "Bibliotecas separadas para cada persona que comparte este PC. Los juegos, etiquetas y colecciones son por perfil; el tema y los ajustes de la app son compartidos.",
+    "description": "Bibliotecas separadas para cada persona que comparte este PC. Los juegos, etiquetas, colecciones, complementos y el tema son por perfil; los ajustes de la app son compartidos.",
     "addProfile": "Añadir perfil",
     "active": "Activo",
     "switchTo": "Cambiar",
@@ -104,7 +104,10 @@
     "wrongPin": "PIN incorrecto",
     "optionalPin": "PIN (opcional)",
     "enterEscHint": "Enter para confirmar, Esc para cancelar",
-    "pinPatternHint": "Solo letras y números"
+    "pinPatternHint": "Solo letras y números",
+    "hiddenTags": "Etiquetas ocultas (modo infantil)",
+    "hiddenTagsHint": "Los juegos con alguna de estas etiquetas se ocultan de la biblioteca de {name}.",
+    "noTagsToHide": "Este perfil aún no tiene etiquetas."
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

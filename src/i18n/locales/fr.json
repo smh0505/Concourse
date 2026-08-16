@@ -88,7 +88,7 @@
     "newProfile": "Nouveau profil",
     "newProfileName": "Nom du profil",
     "title": "Profils",
-    "description": "Bibliothèques séparées pour chaque personne partageant ce PC. Jeux, tags et collections sont propres à chaque profil ; le thème et les paramètres de l'appli sont partagés.",
+    "description": "Bibliothèques séparées pour chaque personne partageant ce PC. Jeux, tags, collections, extensions et thème sont propres à chaque profil ; les paramètres de l'appli sont partagés.",
     "addProfile": "Ajouter un profil",
     "active": "Actif",
     "switchTo": "Changer",
@@ -104,7 +104,10 @@
     "wrongPin": "Code PIN incorrect",
     "optionalPin": "Code PIN (facultatif)",
     "enterEscHint": "Entrée pour confirmer, Échap pour annuler",
-    "pinPatternHint": "Lettres et chiffres uniquement"
+    "pinPatternHint": "Lettres et chiffres uniquement",
+    "hiddenTags": "Tags masqués (mode enfant)",
+    "hiddenTagsHint": "Les jeux portant l'un de ces tags sont masqués de la bibliothèque de {name}.",
+    "noTagsToHide": "Ce profil n'a pas encore de tags."
   },
   "candidatePicker": {
     "title": "Plusieurs correspondances trouvées",

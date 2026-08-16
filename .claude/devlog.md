@@ -7346,3 +7346,52 @@ screen.
 `theme.init()`, and already wrapped `theme.init()` in try/catch from an earlier fix (see that
 window's own "shows no games" bug above), so a null `activeProfileId` there just logs and
 continues rather than throwing.
+
+### Milestone 30 step 3: kids mode (per-profile hidden-tags filter)
+
+Design question up front, resolved via AskUserQuestion rather than guessed: who configures a
+profile's hide-list (self-service vs. Admin-only, for another profile), and what it filters on
+(tags vs. tags+age-rating). User picked Admin-only/cross-profile and tags-only - matches real
+parental-control semantics (a kid can't loosen their own restriction), and reuses the existing
+per-profile tag infrastructure with no metadata-provider scope expansion.
+
+Schema: `hidden_tags(profile_id, tag_id)` (migration v15, `CREATE TABLE` with a composite PK and
+`REFERENCES profiles(id)` / `REFERENCES tags(id) ON DELETE CASCADE`). `profile_id` here is the
+*restricted* profile's own id, matching that profile's own tags' `profile_id` (tags are already
+per-profile) - not Admin's id, Admin is just who's allowed to write these rows. Unlike v13's
+`ALTER TABLE ADD COLUMN` (which had to drop `REFERENCES` due to a SQLite restriction on that
+specific combination), this is a plain `CREATE TABLE`, so both FKs are unrestricted.
+
+`TagRepository` gained three methods: `listWithIds(profileId)` (existing `getAll()` only
+returns bare names - `hidden_tags` needs ids), `getHiddenTagIds(profileId)`, and
+`setHiddenTagIds(profileId, tagIds)` (replaces the whole hidden set in one call - delete-then-
+insert - matching the UI being a checklist rather than one-at-a-time toggles). All three take an
+explicit target `profileId` rather than the store's own `activeProfileId()` convenience, since
+this is intentionally a cross-profile Admin action.
+
+Filtering happens inside `GameRepository.list(profileId)` itself - a `NOT IN` against a subquery
+joining `game_tags`/`hidden_tags` on that profile's id - not client-side after the fact, so
+every consumer (desktop grid/list, Big Picture grid/slideshow, stats) respects the hide-list
+automatically with zero per-component filtering logic.
+
+UI: `ProfilesPanel.vue` gained a new per-row icon button (eye-off), shown only for non-admin
+rows (`profile.id !== 1`) and only when the *viewer* is Admin (`profiles.isAdmin` - since only
+Admin can ever be looking at this panel with another profile's row in it in the first place, but
+guarded explicitly rather than relying on that). Opens an inline checklist (same visual pattern
+as the existing inline PIN-edit row) of that target profile's own tags, fetched via
+`listWithIds`; toggling a checkbox recomputes the full hidden-id set and writes it back via
+`setHiddenTagIds` immediately - no separate save button, matching this panel's existing
+edit-inline-and-commit-on-change style elsewhere (rename, PIN).
+
+No live-refresh concern: Admin editing another profile's hide-list never changes what Admin's
+own currently-active library view shows, and a restricted profile can't open this panel to see
+its own hidden tags change out from under it (only Admin can, and only one profile is ever
+active at a time).
+
+i18n: `profiles.hiddenTags`/`hiddenTagsHint`/`noTagsToHide` added across all 10 locales; also
+caught and fixed `profiles.description` still saying "theme and app settings are shared" in
+every locale, stale since the theme-per-profile change above - now reads "...plugins, and theme
+are per-profile; app-level settings are shared."
+
+Verified: `cargo check` (migration v15), `bun run build` (typecheck + all 10 locale JSON files
+parse), all three M30 steps now done.

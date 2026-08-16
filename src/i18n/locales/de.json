@@ -88,7 +88,7 @@
     "newProfile": "Neues Profil",
     "newProfileName": "Profilname",
     "title": "Profile",
-    "description": "Getrennte Bibliotheken für jede Person, die diesen PC teilt. Spiele, Tags und Sammlungen sind pro Profil; Design und App-Einstellungen werden geteilt.",
+    "description": "Getrennte Bibliotheken für jede Person, die diesen PC teilt. Spiele, Tags, Sammlungen, Plugins und Design sind pro Profil; App-Einstellungen werden geteilt.",
     "addProfile": "Profil hinzufügen",
     "active": "Aktiv",
     "switchTo": "Wechseln",
@@ -104,7 +104,10 @@
     "wrongPin": "Falsche PIN",
     "optionalPin": "PIN (optional)",
     "enterEscHint": "Eingabetaste zum Bestätigen, Esc zum Abbrechen",
-    "pinPatternHint": "Nur Buchstaben und Zahlen"
+    "pinPatternHint": "Nur Buchstaben und Zahlen",
+    "hiddenTags": "Ausgeblendete Tags (Kindersicherung)",
+    "hiddenTagsHint": "Spiele mit einem dieser Tags werden aus {name}s Bibliothek ausgeblendet.",
+    "noTagsToHide": "Dieses Profil hat noch keine Tags."
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

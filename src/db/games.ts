@@ -4,11 +4,20 @@ import type { Game, GameEditFields } from "./types";
 export class GameRepository {
   /** Milestone 30 - only the active profile's games. Every source-plugin scan/manual add also
    *  writes profile_id (see add/addWithPlatform below), so this is a plain equality filter, not
-   *  a join. */
+   *  a join. Milestone 30 step 3 - also excludes any game carrying a tag Admin hid for this
+   *  profile ("kids mode"), so every consumer (grid, list, Big Picture, stats) respects the
+   *  hide-list automatically without its own filtering logic. */
   async list(profileId: number): Promise<Game[]> {
     const db = await getDb();
     return db.select<Game[]>(
-      "SELECT * FROM games WHERE profile_id = $1 ORDER BY title COLLATE NOCASE",
+      `SELECT * FROM games
+       WHERE profile_id = $1
+       AND id NOT IN (
+         SELECT game_tags.game_id FROM game_tags
+         JOIN hidden_tags ON hidden_tags.tag_id = game_tags.tag_id
+         WHERE hidden_tags.profile_id = $1
+       )
+       ORDER BY title COLLATE NOCASE`,
       [profileId],
     );
   }

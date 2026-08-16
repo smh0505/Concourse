@@ -812,6 +812,21 @@ yet). Real open questions before any code, not a quick stretch item:
 - [ ] Per-game opt-in likely (same reasoning as pseudo_fullscreen/always_on_top), given the
   latency/GPU cost tradeoff isn't something every game should pay
 
+## Squash `db.rs` Migrations (planned for 3.0.0)
+Scheduled deliberately - after 3.0.0's other changes land, not before. Same reasoning as the
+existing pre-1.0.0 squash (`db.rs`'s own comment on `migrations()`), but this time it's a real
+breaking change instead of a no-op: real installs already have migrations 1-N recorded by hash
+in `tauri-plugin-sql`'s own ledger, so replacing what an already-applied version's SQL contains
+won't cleanly re-apply - it fails outright ("migration N was previously applied but has been
+modified"), not silently. Deliberate, matches what a major version bump is supposed to mean, but
+needs to actually ship as one:
+- [ ] Release notes state plainly that 3.0.0 requires deleting/resetting `library.db` - not
+  something discovered via the raw tauri-plugin-sql error text
+- [ ] Consider a friendlier in-app message for that specific error case instead of the raw one,
+  since the failure mode is a hard crash on startup otherwise
+- [ ] Squash only after every other 3.0.0-targeted change has actually landed - a schema still
+  in flux is a moving target for what the new baseline migration should even contain
+
 ---
 
 # Icebox

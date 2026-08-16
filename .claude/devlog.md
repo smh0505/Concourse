@@ -7275,3 +7275,43 @@ inside `initLibraryAndPlugins()`, which only runs once a profile is active) when
 `autoLaunchBigPicture` is on - real OS fullscreen engages before `profiles.init()` even runs, so
 whichever picker actually renders (`BigPictureProfileSwitcher` if `bigPicture` is already true at
 that point, else the desktop `ProfileSwitcher`) is decided correctly from the start.
+
+### Milestone 30 step 2: per-profile plugin enablement/settings and controller mapping
+
+`SettingsRepository` gained `getForProfile(profileId, key)`/`setForProfile(profileId, key,
+value)` - thin wrappers prefixing the key with `profile:{id}:`, matching the `profile:{id}:{key}`
+convention the milestone itself already named. `getForProfile` also does a lazy one-time
+migration: if the scoped key has never been written, it falls back to (and copies forward) the
+old global key. This only ever matters for profile 1 ("Admin", the pre-M30 profile) - it's the
+only one that could have anything configured under the old global key, since every other
+profile is created after this change and never had one. No separate upfront migration pass
+needed; each key migrates itself, lazily, the first time that profile actually reads it.
+
+Every store that reads/writes plugin enablement or settings gained the same small
+`activeProfileId()` helper already established in `library.ts`/`tags.ts`/`collections.ts` (App.vue
+gates these stores' init behind profile selection, so it's guaranteed non-null): `plugins.ts`
+(source), `metadataProviders.ts`, `wrapperPlugins.ts`, `presence.ts` (including OBS's own
+port/style settings, `ObsPresenceSettings.vue`/`obs-presence/index.ts`'s websocket scene-switch
+settings), and `controllerMapping.ts` (active mapping id + per-mapping button/axis overrides).
+`library.ts`'s `VIEW_MODE_SETTING`/`SORT_OPTION_SETTING` moved too - not explicitly named in the
+milestone's own scoping text, but the same "library-browsing preference" domain as everything
+else already per-profile in that store, so scoping it any other way would've been inconsistent.
+
+`RESOLUTION_RESTORE_SETTING` (the crash-safety pending-resolution-restore flag from M39) and
+`translation.ts`'s selected-model setting deliberately stayed global - the former is a system-
+level one-shot flag with no per-user meaning, the latter tracks which (large, shared-disk-space)
+downloaded model is active, closer to theme's "expensive shared resource" reasoning than a
+per-user preference.
+
+One real design question surfaced and resolved without changing anything: does
+`controllerMapping.ts` going per-profile break gamepad navigation on `BigPictureProfileSwitcher.vue`
+itself, which runs *before* any profile is active? No - that screen's nav just runs against
+whatever `activeMapping` already holds (`FALLBACK_MAPPING`, since `controllerMapping.init()`
+hasn't run yet at that point), identical to what a freshly-created profile with no customization
+would see anyway. Per-profile customization only takes effect once `initLibraryAndPlugins()` runs
+post-login.
+
+Explicitly out of scope: WASM plugins' own settings (e.g. an API key entered through a plugin's
+`settingsComponent`) go through a separate host-function/`plugin_data` table mechanism that never
+touched `SettingsRepository` to begin with - scoping those per-profile would mean adding a
+`profile_id` column to `plugin_data` itself, a bigger, separate change if ever wanted.

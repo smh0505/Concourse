@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { defineComponent, h } from "vue";
 
 import { settings as settingsRepo } from "@/db";
+import { useProfilesStore } from "@/stores/profiles";
 import type { PresencePlugin } from "@/plugins/types";
 import ObsPresenceSettings from "./ObsPresenceSettings.vue";
 
@@ -33,14 +34,16 @@ export const OBS_WS_DEFAULT_PORT = 4455;
 /** No-op unless scene-switching is enabled and configured for this event. `.catch(() => {})`'d
  *  by the caller. */
 async function switchObsScene(sceneSetting: string) {
-  const enabled = await settingsRepo.get(OBS_WS_ENABLED_SETTING);
+  // App.vue gates presence plugin activation behind profile selection - guaranteed active here.
+  const pid = useProfilesStore().activeProfileId!;
+  const enabled = await settingsRepo.getForProfile(pid, OBS_WS_ENABLED_SETTING);
   if (enabled !== "true") return;
-  const scene = await settingsRepo.get(sceneSetting);
+  const scene = await settingsRepo.getForProfile(pid, sceneSetting);
   if (!scene) return;
   const [host, portStr, password] = await Promise.all([
-    settingsRepo.get(OBS_WS_HOST_SETTING),
-    settingsRepo.get(OBS_WS_PORT_SETTING),
-    settingsRepo.get(OBS_WS_PASSWORD_SETTING),
+    settingsRepo.getForProfile(pid, OBS_WS_HOST_SETTING),
+    settingsRepo.getForProfile(pid, OBS_WS_PORT_SETTING),
+    settingsRepo.getForProfile(pid, OBS_WS_PASSWORD_SETTING),
   ]);
   await invoke("obs_ws_switch_scene", {
     host: host || OBS_WS_DEFAULT_HOST,

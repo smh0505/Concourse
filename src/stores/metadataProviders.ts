@@ -5,6 +5,7 @@ import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import { i18n } from "@/i18n";
 import { useToastStore } from "./toasts";
+import { useProfilesStore } from "./profiles";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { MetadataCandidate, MetadataProviderPlugin, MetadataResult } from "@/plugins/types";
 
@@ -15,6 +16,11 @@ export interface PendingCandidateSection {
 }
 
 const ENABLED_PROVIDERS_SETTING = "enabled_metadata_providers";
+
+/** Milestone 30 step 2 - per-profile, not global. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 // No bundled default anymore - IGDB/SteamGridDB are both runtime-installed WASM plugins now
 // (install-by-URL), not guaranteed present for a fresh install the way the old built-in TS
 // igdb plugin was.
@@ -52,7 +58,7 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
   }
 
   async function persistEnabledIds() {
-    await settingsRepo.set(ENABLED_PROVIDERS_SETTING, JSON.stringify(enabledIds.value));
+    await settingsRepo.setForProfile(activeProfileId(), ENABLED_PROVIDERS_SETTING, JSON.stringify(enabledIds.value));
   }
 
   async function reloadPlugins() {
@@ -182,7 +188,7 @@ export const useMetadataProviderStore = defineStore("metadataProviders", () => {
   async function init() {
     await refreshManifests();
 
-    const stored = await settingsRepo.get(ENABLED_PROVIDERS_SETTING);
+    const stored = await settingsRepo.getForProfile(activeProfileId(), ENABLED_PROVIDERS_SETTING);
     if (stored === null) {
       enabledIds.value = [...DEFAULT_PROVIDER_IDS];
       await persistEnabledIds();

@@ -630,9 +630,18 @@ Scoping decided with the user up front:
   verified Rust-side (`auth.rs`), never a plaintext PIN in the DB or JS layer. ProfileSwitcher
   prompts for it on a locked profile's card; ProfilesPanel manages set/change/remove.
 
-**Step 2 (not started)** - move plugin enablement/settings + controller mapping from global
-`settings` keys to per-profile-scoped ones (a `profile:{id}:{key}` prefix, matching this
-codebase's existing scoped-settings convention).
+**Step 2 (done).** Plugin enablement/settings (source, metadata, wrapper, presence - including
+OBS's overlay-style/websocket sub-settings) and controller mapping (active id + per-mapping
+overrides) moved from global `settings` keys to per-profile-scoped ones (`SettingsRepository`
+gained `getForProfile`/`setForProfile`, a `profile:{id}:{key}` prefix). `library.ts`'s view-
+mode/sort-option preferences moved too, same domain as everything else already per-profile
+there. `getForProfile` falls back to (and copies forward) the old global key if the scoped one
+was never written - a lazy one-time migration for whatever profile 1 ("Admin") already had
+configured before profiles existed, with no separate upfront migration pass needed. Any other
+profile has no legacy value to inherit, so it's a no-op for them. Out of scope: WASM plugins'
+own settings (e.g. an API key), stored via a separate host-function/`plugin_data` mechanism
+that never went through `SettingsRepository` to begin with - a bigger, separate schema change
+if ever wanted.
 
 **Step 3 (not started)** - kids mode: a per-profile tag/age-rating hide-list filter, applied on
 top of that profile's own library view.

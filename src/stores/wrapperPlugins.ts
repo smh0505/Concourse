@@ -3,10 +3,16 @@ import { ref } from "vue";
 
 import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
+import { useProfilesStore } from "./profiles";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { LocaleProfile, WrapperPlugin } from "@/plugins/types";
 
 const ENABLED_WRAPPERS_SETTING = "enabled_wrapper_plugins";
+
+/** Milestone 30 step 2 - per-profile, not global. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 // Default both to enabled (unlike source/metadata plugins, which are opt-in) so existing
 // per-game wrapper selections, remapped to these ids by db migration v8, keep working without
 // requiring a new opt-in toggle.
@@ -24,7 +30,7 @@ export const useWrapperPluginStore = defineStore("wrapperPlugins", () => {
   const profiles = ref<WrapperProfile[]>([]);
 
   async function persistEnabledIds() {
-    await settingsRepo.set(ENABLED_WRAPPERS_SETTING, JSON.stringify([...enabledIds.value]));
+    await settingsRepo.setForProfile(activeProfileId(), ENABLED_WRAPPERS_SETTING, JSON.stringify([...enabledIds.value]));
   }
 
   async function refreshManifests() {
@@ -67,7 +73,7 @@ export const useWrapperPluginStore = defineStore("wrapperPlugins", () => {
   async function init() {
     manifests.value = await getAvailablePluginManifests("wrapper");
 
-    const stored = await settingsRepo.get(ENABLED_WRAPPERS_SETTING);
+    const stored = await settingsRepo.getForProfile(activeProfileId(), ENABLED_WRAPPERS_SETTING);
     if (stored === null) {
       enabledIds.value = new Set(DEFAULT_WRAPPER_IDS);
       await persistEnabledIds();

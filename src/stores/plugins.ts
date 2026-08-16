@@ -5,11 +5,19 @@ import { settings as settingsRepo } from "@/db";
 import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loader";
 import { useLibraryStore } from "./library";
 import { useToastStore } from "./toasts";
+import { useProfilesStore } from "./profiles";
 import { i18n } from "@/i18n";
 import type { PluginManifest } from "@/plugins/manifest";
 import type { SourcePlugin } from "@/plugins/types";
 
 const ENABLED_PLUGINS_SETTING = "enabled_plugins";
+
+/** Milestone 30 step 2 - which source plugins are enabled is per-profile now, not global. App.vue
+ *  gates plugin init behind profile selection, so this is guaranteed active by the time any of
+ *  this store's actions run. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 
 export const usePluginStore = defineStore("plugins", () => {
   const manifests = ref<PluginManifest[]>([]);
@@ -25,7 +33,7 @@ export const usePluginStore = defineStore("plugins", () => {
   }
 
   async function persistEnabledIds() {
-    await settingsRepo.set(ENABLED_PLUGINS_SETTING, JSON.stringify(enabledIds.value));
+    await settingsRepo.setForProfile(activeProfileId(), ENABLED_PLUGINS_SETTING, JSON.stringify(enabledIds.value));
   }
 
   async function reloadPlugins() {
@@ -84,7 +92,7 @@ export const usePluginStore = defineStore("plugins", () => {
   async function init() {
     await refreshManifests();
 
-    const stored = await settingsRepo.get(ENABLED_PLUGINS_SETTING);
+    const stored = await settingsRepo.getForProfile(activeProfileId(), ENABLED_PLUGINS_SETTING);
     if (stored) {
       try {
         enabledIds.value = JSON.parse(stored);

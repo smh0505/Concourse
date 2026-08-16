@@ -19,8 +19,15 @@ import {
   OBS_PRESENCE_TEMPLATE_SETTING,
 } from "@/plugins/obs-presence";
 import { useLibraryStore } from "./library";
+import { useProfilesStore } from "./profiles";
 
 const ENABLED_PRESENCE_SETTING = "enabled_presence_plugins";
+
+/** Milestone 30 step 2 - presence plugin enablement/settings (including OBS's own port/style)
+ *  are per-profile, not global. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 // Discord defaults on, preserving Milestone 28's original opt-out default now that it's a
 // plugin instead of a hardcoded feature. OBS is new and has nothing configured on the OBS side
 // yet for a fresh install, so it stays opt-in like source/metadata plugins.
@@ -44,7 +51,7 @@ export const usePresenceStore = defineStore("presence", () => {
   let unlistenEnded: UnlistenFn | undefined;
 
   async function persistEnabledIds() {
-    await settingsRepo.set(ENABLED_PRESENCE_SETTING, JSON.stringify([...enabledIds.value]));
+    await settingsRepo.setForProfile(activeProfileId(), ENABLED_PRESENCE_SETTING, JSON.stringify([...enabledIds.value]));
   }
 
   async function refreshManifests() {
@@ -78,7 +85,7 @@ export const usePresenceStore = defineStore("presence", () => {
   /** Rust always boots on DEFAULT_PORT (no DB access of its own) - re-apply a saved custom port
    *  here so a fresh launch matches what was last configured. */
   async function applyPersistedObsPort() {
-    const storedPort = await settingsRepo.get(OBS_PRESENCE_PORT_SETTING);
+    const storedPort = await settingsRepo.getForProfile(activeProfileId(), OBS_PRESENCE_PORT_SETTING);
     if (!storedPort) return;
     const port = Number(storedPort);
     if (!Number.isInteger(port) || port <= 0) return;
@@ -87,11 +94,12 @@ export const usePresenceStore = defineStore("presence", () => {
 
   /** Same rationale as `applyPersistedObsPort`. */
   async function applyPersistedObsStyle() {
+    const pid = activeProfileId();
     const [template, mode, alertSecondsStr, corner] = await Promise.all([
-      settingsRepo.get(OBS_PRESENCE_TEMPLATE_SETTING),
-      settingsRepo.get(OBS_PRESENCE_MODE_SETTING),
-      settingsRepo.get(OBS_PRESENCE_ALERT_SECONDS_SETTING),
-      settingsRepo.get(OBS_PRESENCE_CORNER_SETTING),
+      settingsRepo.getForProfile(pid, OBS_PRESENCE_TEMPLATE_SETTING),
+      settingsRepo.getForProfile(pid, OBS_PRESENCE_MODE_SETTING),
+      settingsRepo.getForProfile(pid, OBS_PRESENCE_ALERT_SECONDS_SETTING),
+      settingsRepo.getForProfile(pid, OBS_PRESENCE_CORNER_SETTING),
     ]);
     if (!template && !mode && !alertSecondsStr && !corner) return;
     const alertSeconds = alertSecondsStr ? Number(alertSecondsStr) : OBS_PRESENCE_DEFAULT_ALERT_SECONDS;
@@ -108,7 +116,7 @@ export const usePresenceStore = defineStore("presence", () => {
     await applyPersistedObsPort();
     await applyPersistedObsStyle();
 
-    const stored = await settingsRepo.get(ENABLED_PRESENCE_SETTING);
+    const stored = await settingsRepo.getForProfile(activeProfileId(), ENABLED_PRESENCE_SETTING);
     if (stored === null) {
       enabledIds.value = new Set(DEFAULT_PRESENCE_IDS);
       await persistEnabledIds();

@@ -264,12 +264,12 @@ export const useLibraryStore = defineStore("library", () => {
 
   async function setViewMode(mode: ViewMode) {
     viewMode.value = mode;
-    await settingsRepo.set(VIEW_MODE_SETTING, mode);
+    await settingsRepo.setForProfile(activeProfileId(), VIEW_MODE_SETTING, mode);
   }
 
   async function setSortOption(option: SortOption) {
     sortOption.value = option;
-    await settingsRepo.set(SORT_OPTION_SETTING, option);
+    await settingsRepo.setForProfile(activeProfileId(), SORT_OPTION_SETTING, option);
   }
 
   /** Toggles one tag:/collection:/platform: token in `search` - a pill click is really just
@@ -560,9 +560,9 @@ export const useLibraryStore = defineStore("library", () => {
       }
     }
 
-    const storedViewMode = await settingsRepo.get(VIEW_MODE_SETTING);
+    const storedViewMode = await settingsRepo.getForProfile(activeProfileId(), VIEW_MODE_SETTING);
     if (storedViewMode === "grid" || storedViewMode === "list") viewMode.value = storedViewMode;
-    const storedSortOption = await settingsRepo.get(SORT_OPTION_SETTING);
+    const storedSortOption = await settingsRepo.getForProfile(activeProfileId(), SORT_OPTION_SETTING);
     if (
       storedSortOption === "title" ||
       storedSortOption === "recentlyPlayed" ||

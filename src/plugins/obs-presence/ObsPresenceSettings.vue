@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { IconCheck, IconChevronDown, IconPlugConnected } from "@tabler/icons-vue";
 
 import { settings as settingsRepo } from "@/db";
+import { useProfilesStore } from "@/stores/profiles";
 import BaseModal from "@/components/desktop/common/BaseModal.vue";
 import { DropdownMenu } from "@/components/desktop/common";
 import {
@@ -29,6 +30,11 @@ import {
 } from "./index";
 
 const { t } = useI18n();
+
+/** Milestone 30 step 2 - OBS presence/websocket settings are per-profile, not global. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 
 const modalOpen = ref(false);
 const appliedPort = ref(OBS_PRESENCE_DEFAULT_PORT);
@@ -146,13 +152,14 @@ function describeWsError(e: unknown): { message: string; raw: string } {
 /** Instant-persist on change, same as the style section - no connect-time failure mode from
  *  just typing. */
 async function saveWsSettings() {
+  const pid = activeProfileId();
   await Promise.all([
-    settingsRepo.set(OBS_WS_ENABLED_SETTING, String(wsEnabled.value)),
-    settingsRepo.set(OBS_WS_HOST_SETTING, wsHost.value || OBS_WS_DEFAULT_HOST),
-    settingsRepo.set(OBS_WS_PORT_SETTING, wsPort.value || String(OBS_WS_DEFAULT_PORT)),
-    settingsRepo.set(OBS_WS_PASSWORD_SETTING, wsPassword.value),
-    settingsRepo.set(OBS_WS_START_SCENE_SETTING, wsStartScene.value),
-    settingsRepo.set(OBS_WS_END_SCENE_SETTING, wsEndScene.value),
+    settingsRepo.setForProfile(pid, OBS_WS_ENABLED_SETTING, String(wsEnabled.value)),
+    settingsRepo.setForProfile(pid, OBS_WS_HOST_SETTING, wsHost.value || OBS_WS_DEFAULT_HOST),
+    settingsRepo.setForProfile(pid, OBS_WS_PORT_SETTING, wsPort.value || String(OBS_WS_DEFAULT_PORT)),
+    settingsRepo.setForProfile(pid, OBS_WS_PASSWORD_SETTING, wsPassword.value),
+    settingsRepo.setForProfile(pid, OBS_WS_START_SCENE_SETTING, wsStartScene.value),
+    settingsRepo.setForProfile(pid, OBS_WS_END_SCENE_SETTING, wsEndScene.value),
   ]);
 }
 
@@ -186,7 +193,8 @@ async function fetchScenes() {
 }
 
 async function openModal() {
-  const stored = await settingsRepo.get(OBS_PRESENCE_PORT_SETTING);
+  const pid = activeProfileId();
+  const stored = await settingsRepo.getForProfile(pid, OBS_PRESENCE_PORT_SETTING);
   const storedPort = stored ? Number(stored) : OBS_PRESENCE_DEFAULT_PORT;
   appliedPort.value = Number.isInteger(storedPort) && storedPort > 0 ? storedPort : OBS_PRESENCE_DEFAULT_PORT;
   portInput.value = String(appliedPort.value);
@@ -194,10 +202,10 @@ async function openModal() {
   testStatus.value = "idle";
 
   const [storedTemplate, storedMode, storedAlertSeconds, storedCorner] = await Promise.all([
-    settingsRepo.get(OBS_PRESENCE_TEMPLATE_SETTING),
-    settingsRepo.get(OBS_PRESENCE_MODE_SETTING),
-    settingsRepo.get(OBS_PRESENCE_ALERT_SECONDS_SETTING),
-    settingsRepo.get(OBS_PRESENCE_CORNER_SETTING),
+    settingsRepo.getForProfile(pid, OBS_PRESENCE_TEMPLATE_SETTING),
+    settingsRepo.getForProfile(pid, OBS_PRESENCE_MODE_SETTING),
+    settingsRepo.getForProfile(pid, OBS_PRESENCE_ALERT_SECONDS_SETTING),
+    settingsRepo.getForProfile(pid, OBS_PRESENCE_CORNER_SETTING),
   ]);
   template.value = storedTemplate ?? OBS_PRESENCE_DEFAULT_TEMPLATE;
   mode.value = storedMode ?? OBS_PRESENCE_DEFAULT_MODE;
@@ -211,12 +219,12 @@ async function openModal() {
 
   const [storedWsEnabled, storedWsHost, storedWsPort, storedWsPassword, storedStartScene, storedEndScene] =
     await Promise.all([
-      settingsRepo.get(OBS_WS_ENABLED_SETTING),
-      settingsRepo.get(OBS_WS_HOST_SETTING),
-      settingsRepo.get(OBS_WS_PORT_SETTING),
-      settingsRepo.get(OBS_WS_PASSWORD_SETTING),
-      settingsRepo.get(OBS_WS_START_SCENE_SETTING),
-      settingsRepo.get(OBS_WS_END_SCENE_SETTING),
+      settingsRepo.getForProfile(pid, OBS_WS_ENABLED_SETTING),
+      settingsRepo.getForProfile(pid, OBS_WS_HOST_SETTING),
+      settingsRepo.getForProfile(pid, OBS_WS_PORT_SETTING),
+      settingsRepo.getForProfile(pid, OBS_WS_PASSWORD_SETTING),
+      settingsRepo.getForProfile(pid, OBS_WS_START_SCENE_SETTING),
+      settingsRepo.getForProfile(pid, OBS_WS_END_SCENE_SETTING),
     ]);
   wsEnabled.value = storedWsEnabled === "true";
   wsHost.value = storedWsHost || OBS_WS_DEFAULT_HOST;
@@ -240,11 +248,12 @@ async function applyStyle() {
       alertSeconds: seconds,
       corner: corner.value,
     });
+    const pid = activeProfileId();
     await Promise.all([
-      settingsRepo.set(OBS_PRESENCE_TEMPLATE_SETTING, template.value),
-      settingsRepo.set(OBS_PRESENCE_MODE_SETTING, mode.value),
-      settingsRepo.set(OBS_PRESENCE_ALERT_SECONDS_SETTING, String(seconds)),
-      settingsRepo.set(OBS_PRESENCE_CORNER_SETTING, corner.value),
+      settingsRepo.setForProfile(pid, OBS_PRESENCE_TEMPLATE_SETTING, template.value),
+      settingsRepo.setForProfile(pid, OBS_PRESENCE_MODE_SETTING, mode.value),
+      settingsRepo.setForProfile(pid, OBS_PRESENCE_ALERT_SECONDS_SETTING, String(seconds)),
+      settingsRepo.setForProfile(pid, OBS_PRESENCE_CORNER_SETTING, corner.value),
     ]);
     styleStatus.value = "idle";
   } catch (e) {
@@ -274,7 +283,7 @@ async function applyPort() {
   testStatus.value = "idle";
   try {
     await invoke("set_obs_presence_port", { port });
-    await settingsRepo.set(OBS_PRESENCE_PORT_SETTING, String(port));
+    await settingsRepo.setForProfile(activeProfileId(), OBS_PRESENCE_PORT_SETTING, String(port));
     appliedPort.value = port;
     applyStatus.value = "success";
     applyMessage.value = t("obsPresence.applySuccess", { port });

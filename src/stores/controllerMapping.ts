@@ -7,11 +7,21 @@ import { getAvailablePluginManifests, loadEnabledPlugins } from "@/plugins/loade
 import type { PluginManifest } from "@/plugins/manifest";
 import type { ControllerMappingPlugin, GamepadMapping } from "@/plugins/types";
 import { useToastStore } from "./toasts";
+import { useProfilesStore } from "./profiles";
 import { i18n } from "@/i18n";
 
 const ACTIVE_MAPPING_SETTING = "active_controller_mapping_id";
 const DEFAULT_MAPPING_ID = "standard-gamepad";
 const MAPPING_OVERRIDE_PREFIX = "controller_mapping_override_";
+
+/** Milestone 30 step 2 - per-profile, not global. Note: BigPictureProfileSwitcher.vue's own
+ *  gamepad nav (before any profile is active) never calls into this store's per-profile reads -
+ *  it just runs against whatever activeMapping already holds (FALLBACK_MAPPING, since init()
+ *  below hasn't run yet), which is exactly the same "not customized yet" state a fresh profile
+ *  would see anyway. */
+function activeProfileId(): number {
+  return useProfilesStore().activeProfileId!;
+}
 
 const FALLBACK_MAPPING: GamepadMapping = {
   dpadUp: { kind: "button", index: 12 },
@@ -40,7 +50,7 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
    *  user override individual buttons (e.g. a controller whose face buttons enumerate
    *  differently) without forking the plugin itself. */
   async function getMappingOverride(id: string): Promise<Partial<GamepadMapping>> {
-    const raw = await settingsRepo.get(`${MAPPING_OVERRIDE_PREFIX}${id}`);
+    const raw = await settingsRepo.getForProfile(activeProfileId(), `${MAPPING_OVERRIDE_PREFIX}${id}`);
     if (!raw) return {};
     try {
       return JSON.parse(raw) as Partial<GamepadMapping>;
@@ -50,12 +60,12 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
   }
 
   async function setMappingOverride(id: string, override: Partial<GamepadMapping>) {
-    await settingsRepo.set(`${MAPPING_OVERRIDE_PREFIX}${id}`, JSON.stringify(override));
+    await settingsRepo.setForProfile(activeProfileId(), `${MAPPING_OVERRIDE_PREFIX}${id}`, JSON.stringify(override));
     if (activeMappingId.value === id) await setActiveMapping(id);
   }
 
   async function resetMappingOverride(id: string) {
-    await settingsRepo.set(`${MAPPING_OVERRIDE_PREFIX}${id}`, "");
+    await settingsRepo.setForProfile(activeProfileId(), `${MAPPING_OVERRIDE_PREFIX}${id}`, "");
     if (activeMappingId.value === id) await setActiveMapping(id);
   }
 
@@ -68,7 +78,7 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
       activeMapping.value = FALLBACK_MAPPING;
     }
     activeMappingId.value = id;
-    await settingsRepo.set(ACTIVE_MAPPING_SETTING, id ?? "");
+    await settingsRepo.setForProfile(activeProfileId(), ACTIVE_MAPPING_SETTING, id ?? "");
   }
 
   async function refreshManifests() {
@@ -95,7 +105,7 @@ export const useControllerMappingStore = defineStore("controllerMapping", () => 
   async function init() {
     await refreshManifests();
 
-    const stored = await settingsRepo.get(ACTIVE_MAPPING_SETTING);
+    const stored = await settingsRepo.getForProfile(activeProfileId(), ACTIVE_MAPPING_SETTING);
     if (stored === null) {
       await setActiveMapping(DEFAULT_MAPPING_ID);
     } else {

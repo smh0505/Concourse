@@ -589,94 +589,29 @@ auth research, including everything dropped below.
   required," suggesting no third-party integration surface by design; a stale/unrelated Apiary
   doc hit wasn't confirmed as this platform's own)
 
-## Milestone 30 — Multi-Library / Profile Support
-Separate libraries per user profile on a shared PC (couples/family sharing one machine), or a
-filtered "kids mode" view. Real schema/architecture question, not just a UI toggle - previously
-there was exactly one SQLite DB (`library.db`) and no concept of "whose library this is."
+## Milestone 30 — Multi-Library / Profile Support (closed, 2.6.0)
+Per-user-profile libraries on a shared PC, plus an Admin-only "kids mode" filter. `profile_id`
+threaded through games/tags/collections (shared schema, not per-profile DB files). Global vs.
+per-profile scoping: only app-level settings (hotkey, close-to-tray, locale, auto-launch-Big-
+Picture) stay global - everything else, including theme, is per-profile. Full rationale/design
+history in devlog.
 
-Scoping decided with the user up front:
-- **Storage**: `profile_id` column threaded through games/tags/collections (shared-schema, not
-  separate DB files per profile) - simpler cross-profile migrations, no per-profile connection
-  juggling.
-- **Global vs. per-profile**: app-level settings (hotkey, close-to-tray, locale, auto-launch-Big-
-  Picture) stay global; everything else (theme, plugin enablement/settings, controller mapping,
-  games/tags/collections/playtime) is per-profile. Theme was originally scoped global too, moved
-  to per-profile later in step 2 (see below) - the profile picker itself now just renders in
-  styles.css's own compiled-in `:root` default (Catppuccin Latte) instead of any profile's real
-  choice, since no profile (and so no theme) is active yet at that point.
-- **Kids mode**: a filtered view of one profile (tag hide-list, Admin-only, no separate
-  profile/age-rating field), not a separate profile - built in step 3 below.
-
-**Step 1 (done)** - core architecture:
-- [x] `profiles` table + `profile_id` on games/tags/collections (migration v13); tags/
-  collections rebuilt (not just ALTER ADD COLUMN) since their UNIQUE(name) constraint had to
-  become UNIQUE(name, profile_id) - two profiles can each have their own "Co-op" tag.
-  playtime_sessions stays un-touched, scoped transitively through game_id via a join.
-  Every pre-M30 row backfills onto profile 1 ("Admin") - upgrading is transparent. (SQLite
-  forbids REFERENCES + non-NULL DEFAULT on ALTER TABLE ADD COLUMN - the games.profile_id column
-  drops the REFERENCES clause, CREATE TABLE-based tags_new/collections_new keep theirs.)
-- [x] `ProfileRepository` + `profiles` store (`activeProfileId`, create/rename/delete);
-  deleting a profile also deletes its games/tags/collections (playtime cascades via games'
-  own FK) - an orphaned library nobody could ever see again would just be dead DB weight.
-- [x] `ProfileSwitcher.vue` - shown whenever no profile is active (fresh install, or the
-  remembered one was deleted); the last-active profile is otherwise remembered and adopted
-  automatically on launch, so a single-profile setup stays zero-friction. `appSettings`/`theme`
-  (the two global settings) init before the switcher shows, so it's already themed/localized.
-- [x] `ProfilesPanel.vue` (Settings) - create/rename/delete, plus an explicit "Switch" that
-  reloads the window against the newly-active profile rather than threading a lighter re-init
-  path through every store. TitleBar also gained its own "Switch Profile" button (back to the
-  picker without picking a specific profile first) - `profiles.backToPicker()` + reload.
-- [x] Every game/tag/collection/playtime repo method threaded with `profileId`
-  (games/tags/collections/playtime/library/stats stores) - filtered reads, profile-scoped
-  writes.
-- [x] Optional per-profile PIN (migration v14, `profiles.pin_hash`) - salted SHA-256 hashed/
-  verified Rust-side (`auth.rs`), never a plaintext PIN in the DB or JS layer. ProfileSwitcher
-  prompts for it on a locked profile's card; ProfilesPanel manages set/change/remove.
-
-**Step 2 (done).** Plugin enablement/settings (source, metadata, wrapper, presence - including
-OBS's overlay-style/websocket sub-settings) and controller mapping (active id + per-mapping
-overrides) moved from global `settings` keys to per-profile-scoped ones (`SettingsRepository`
-gained `getForProfile`/`setForProfile`, a `profile:{id}:{key}` prefix). `library.ts`'s view-
-mode/sort-option preferences moved too, same domain as everything else already per-profile
-there. `getForProfile` falls back to (and copies forward) the old global key if the scoped one
-was never written - a lazy one-time migration for whatever profile 1 ("Admin") already had
-configured before profiles existed, with no separate upfront migration pass needed. Any other
-profile has no legacy value to inherit, so it's a no-op for them. Out of scope: WASM plugins'
-own settings (e.g. an API key), stored via a separate host-function/`plugin_data` mechanism
-that never went through `SettingsRepository` to begin with - a bigger, separate schema change
-if ever wanted.
-
-**Theme moved to per-profile too (done, follow-up to step 2).** Same `getForProfile`/
-`setForProfile` mechanism. `theme.init()` moved from before profile selection to
-`initLibraryAndPlugins()` (after) - it can no longer run before a profile is chosen, so the
-picker (`ProfileSwitcher.vue`) renders in `:root`'s own compiled-in default (Catppuccin Latte)
-until then, a deliberate stable look rather than a gap needing its own theme system.
-
-**Step 3 (done)** - kids mode: `hidden_tags(profile_id, tag_id)` table (migration v15). Only
-Admin (profile 1) can configure a hide-list, and only for another (non-admin) profile -
-`ProfilesPanel.vue` gained a per-row control (non-Admin rows only) opening a checklist of that
-target profile's own tags. Filtered at the SQL level in `GameRepository.list()` (a `NOT IN`
-against `hidden_tags` joined through `game_tags`), not client-side, so every consumer (grid,
-list, Big Picture, stats) respects it automatically. Follow-up: Admin also gained an on-demand
-cross-profile library view (same panel, new button) - `GameRepository.listAllForProfile()` (no
-hidden-tag filtering) so Admin can see everything a profile has added, including anything
-currently hidden from that profile's own view, flagged with a "Hidden" badge - plus a per-game
-"copy to Admin's library" button (`GameRepository.copyToProfile()`) as a safety net so Admin
-keeps independent access even if the source profile later hides/loses the game. Second
-follow-up: "pending Admin review" (migration v16, `games.pending_review`) - hidden_tags alone is
-reactive (Admin has to notice and tag a game before it's protected), so anything added while a
-non-admin profile is active now starts excluded from that profile's own `list()` until Admin
-explicitly approves it from the same cross-profile view (a "Pending review" badge + approve
-button). Admin's own adds skip review entirely; existing pre-upgrade libraries aren't
-retroactively hidden.
-
-**Big Picture extension (done).** "Launch into Big Picture on startup" now engages real OS
-fullscreen immediately, before a profile is even picked - `BigPictureProfileSwitcher.vue`
-renders the picker in Big Picture's own console style instead of the small windowed
-ProfileSwitcher.vue, with full gamepad navigation (`useGamepadNav.ts` was refactored to expose
-a lower-level `useGamepadDirections` for this) and a gamepad/mouse/keyboard-navigable
-`OnScreenKeyboard.vue` for PIN entry and profile creation (PINs aren't numeral-only, so a plain
-numpad wasn't enough).
+- [x] Step 1 - core architecture: `profiles` table + `profile_id` on games/tags/collections
+  (migration v13); `ProfileRepository`/`profiles` store; `ProfileSwitcher.vue` +
+  `ProfilesPanel.vue` (create/rename/delete/switch); every game/tag/collection/playtime repo
+  method profile-scoped; optional per-profile PIN (migration v14, salted SHA-256 via `auth.rs`)
+- [x] Step 2 - plugin enablement/settings (source/metadata/wrapper/presence incl. OBS
+  sub-settings), controller mapping, and library view-mode/sort moved from global to
+  per-profile settings keys (`SettingsRepository.getForProfile`/`setForProfile`)
+- [x] Theme moved to per-profile too (follow-up to step 2) - picker renders in styles.css's
+  compiled-in `:root` default until a profile is chosen
+- [x] Step 3 - kids mode: `hidden_tags(profile_id, tag_id)` table (migration v15), Admin-only
+  per-target-profile tag hide-list, enforced in `GameRepository.list()`
+- [x] Kids mode follow-ups: Admin cross-profile library view + "copy to Admin's library" safety
+  net (`listAllForProfile`/`copyToProfile`); "pending Admin review" gate for non-admin additions
+  (migration v16, `games.pending_review`)
+- [x] Big Picture extension - `BigPictureProfileSwitcher.vue` (full gamepad nav +
+  `OnScreenKeyboard.vue`) for "launch into Big Picture on startup"
 
 ## Milestone 31 — Custom Launch Arguments Per Game (not started)
 `launcher.rs`'s `launch_game` spawns `executable_path` bare - some games need `-windowed`,

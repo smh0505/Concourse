@@ -34,6 +34,29 @@ export class GameRepository {
     );
   }
 
+  /** Milestone 30 step 3 follow-up - Admin's "just in case" safety net from the cross-profile
+   *  library view: copies (not moves) a game into another profile's library, so Admin keeps
+   *  independent access even if the original profile later hides/deletes/loses the game. A
+   *  fresh INSERT...SELECT, not an UPDATE of profile_id - the source profile keeps its own copy
+   *  untouched. Deliberately narrow set of columns: launch-relevant fields (title/executable_
+   *  path/platform/install_dir) and cosmetic metadata (art/description/release_date) carry over;
+   *  per-installation session state (window rect, resolution override, translations, skip_*
+   *  flags) resets to defaults, since those describe *this* copy's own future sessions, not the
+   *  source profile's. */
+  async copyToProfile(id: number, targetProfileId: number): Promise<void> {
+    const db = await getDb();
+    await db.execute(
+      `INSERT INTO games (
+         title, executable_path, platform, cover_art_url, background_art_url,
+         description, release_date, install_dir, profile_id
+       )
+       SELECT title, executable_path, platform, cover_art_url, background_art_url,
+              description, release_date, install_dir, $2
+       FROM games WHERE id = $1`,
+      [id, targetProfileId],
+    );
+  }
+
   async add(title: string, executablePath: string, profileId: number): Promise<void> {
     const db = await getDb();
     await db.execute(

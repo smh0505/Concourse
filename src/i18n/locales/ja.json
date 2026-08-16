@@ -111,7 +111,9 @@
     "viewLibrary": "ライブラリを表示",
     "viewLibraryHint": "{name}が追加したすべてのゲーム(現在本人のビューから非表示になっているものも含む)。",
     "noGamesAdded": "このプロフィールにはまだゲームがありません。",
-    "hiddenBadge": "非表示"
+    "hiddenBadge": "非表示",
+    "migrateToAdmin": "Adminのライブラリにコピー",
+    "migratedGame": "「{title}」をAdminのライブラリにコピーしました"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

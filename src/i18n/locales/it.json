@@ -111,7 +111,9 @@
     "viewLibrary": "Visualizza libreria",
     "viewLibraryHint": "Tutti i giochi aggiunti da {name}, inclusi quelli attualmente nascosti dalla sua vista.",
     "noGamesAdded": "Questo profilo non ha ancora giochi.",
-    "hiddenBadge": "Nascosto"
+    "hiddenBadge": "Nascosto",
+    "migrateToAdmin": "Copia nella libreria di Admin",
+    "migratedGame": "\"{title}\" copiato nella libreria di Admin"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

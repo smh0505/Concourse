@@ -660,7 +660,9 @@ against `hidden_tags` joined through `game_tags`), not client-side, so every con
 list, Big Picture, stats) respects it automatically. Follow-up: Admin also gained an on-demand
 cross-profile library view (same panel, new button) - `GameRepository.listAllForProfile()` (no
 hidden-tag filtering) so Admin can see everything a profile has added, including anything
-currently hidden from that profile's own view, flagged with a "Hidden" badge.
+currently hidden from that profile's own view, flagged with a "Hidden" badge - plus a per-game
+"copy to Admin's library" button (`GameRepository.copyToProfile()`) as a safety net so Admin
+keeps independent access even if the source profile later hides/loses the game.
 
 **Big Picture extension (done).** "Launch into Big Picture on startup" now engages real OS
 fullscreen immediately, before a profile is even picked - `BigPictureProfileSwitcher.vue`

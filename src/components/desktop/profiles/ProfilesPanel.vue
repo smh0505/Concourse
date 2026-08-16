@@ -3,6 +3,7 @@ import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   IconDeviceGamepad2,
+  IconDownload,
   IconEyeOff,
   IconLock,
   IconPencil,
@@ -12,6 +13,7 @@ import {
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
+import { useLibraryStore } from "@/stores/library";
 import { games as gameRepo, tags as tagRepo } from "@/db";
 import type { Game } from "@/db";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
@@ -19,6 +21,7 @@ import ProfileCreateForm from "./ProfileCreateForm.vue";
 const { t } = useI18n();
 const profiles = useProfilesStore();
 const toasts = useToastStore();
+const library = useLibraryStore();
 
 const creating = ref(false);
 const createFormRef = ref<InstanceType<typeof ProfileCreateForm> | null>(null);
@@ -83,6 +86,15 @@ async function startLibraryView(id: number) {
 function cancelLibraryView() {
   libraryViewId.value = null;
   libraryViewGames.value = [];
+}
+
+/** Copies (not moves) into Admin's own library - Admin is always the active profile here,
+ *  since only Admin can open this panel at all, so refreshing `library` reflects it right away
+ *  without a full reload (unlike ProfilesPanel's own profile-switch action). */
+async function migrateToAdmin(gameId: number, title: string) {
+  await gameRepo.copyToProfile(gameId, 1);
+  await library.refresh();
+  toasts.push(t("profiles.migratedGame", { title }), "success");
 }
 
 async function onCreateSubmit(name: string, pin: string) {
@@ -293,8 +305,15 @@ async function onPinSubmit() {
                 {{ t("profiles.noGamesAdded") }}
               </div>
               <div v-for="g in libraryViewGames" :key="g.id" class="library-view-item">
-                <span>{{ g.title }}</span>
+                <span class="library-view-title">{{ g.title }}</span>
                 <span v-if="g.hidden" class="hidden-badge">{{ t("profiles.hiddenBadge") }}</span>
+                <button
+                  class="icon-button"
+                  :title="t('profiles.migrateToAdmin')"
+                  @click="migrateToAdmin(g.id, g.title)"
+                >
+                  <IconDownload :size="14" :stroke-width="1.75" />
+                </button>
               </div>
             </div>
           </div>
@@ -416,9 +435,16 @@ async function onPinSubmit() {
 .library-view-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
   font-size: 0.9rem;
+}
+
+.library-view-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hidden-badge {

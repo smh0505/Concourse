@@ -7423,3 +7423,29 @@ i18n: `profiles.viewLibrary`/`viewLibraryHint`/`noGamesAdded`/`hiddenBadge` adde
 locales.
 
 Verified: `bun run build` (typecheck + all 10 locale JSON files parse).
+
+### Milestone 30 step 3 follow-up: migrate-to-Admin safety net
+
+Immediate next request: since a hidden game is genuinely inaccessible to the profile it's hidden
+from (confirmed above - never enters `library.games` for that profile at all), and only Admin
+can un-hide it, the user wanted an escape hatch - Admin can pull a copy of any game (in the
+cross-profile view, hidden or not) into Admin's own library, "just in case."
+
+`GameRepository.copyToProfile(id, targetProfileId)` - a single `INSERT ... SELECT`, not an
+`UPDATE profile_id` - the source profile keeps its own row untouched, this is a copy, not a
+move. Deliberately narrow column set: title/executable_path/platform/install_dir (everything
+needed to actually launch it) plus cover/background art/description/release_date (cosmetic
+metadata). Left out on purpose: window rect, resolution override, translations, skip_* flags -
+those describe a specific installation's own future sessions, not something that should carry
+over into a brand new row. `games.profile_id`'s own doc comment ("moving a game between profiles
+isn't supported in v1") still holds - this sidesteps it entirely by inserting fresh rather than
+reassigning.
+
+`ProfilesPanel.vue`'s library-view panel gained a small download-icon button per game row
+calling `migrateToAdmin()`, which copies then calls `library.refresh()` - safe to do inline
+without a full reload, since only Admin can ever have this panel open, so the currently active
+profile is always Admin's own; a toast confirms the copy.
+
+i18n: `profiles.migrateToAdmin`/`migratedGame` added across all 10 locales.
+
+Verified: `bun run build`.

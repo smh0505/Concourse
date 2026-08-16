@@ -111,7 +111,9 @@
     "viewLibrary": "Ver biblioteca",
     "viewLibraryHint": "Todos los juegos que {name} ha añadido, incluidos los que están ocultos de su propia vista.",
     "noGamesAdded": "Este perfil aún no tiene juegos.",
-    "hiddenBadge": "Oculto"
+    "hiddenBadge": "Oculto",
+    "migrateToAdmin": "Copiar a la biblioteca de Admin",
+    "migratedGame": "\"{title}\" copiado a la biblioteca de Admin"
   },
   "candidatePicker": {
     "title": "Se encontraron varias coincidencias",

@@ -111,7 +111,9 @@
     "viewLibrary": "View library",
     "viewLibraryHint": "Every game {name} has added, including anything currently hidden from their own view.",
     "noGamesAdded": "This profile has no games yet.",
-    "hiddenBadge": "Hidden"
+    "hiddenBadge": "Hidden",
+    "migrateToAdmin": "Copy to Admin's library",
+    "migratedGame": "Copied \"{title}\" to Admin's library"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

@@ -111,7 +111,9 @@
     "viewLibrary": "Просмотреть библиотеку",
     "viewLibraryHint": "Все игры, добавленные {name}, включая скрытые из собственного вида этого профиля.",
     "noGamesAdded": "У этого профиля пока нет игр.",
-    "hiddenBadge": "Скрыто"
+    "hiddenBadge": "Скрыто",
+    "migrateToAdmin": "Скопировать в библиотеку Admin",
+    "migratedGame": "«{title}» скопирована в библиотеку Admin"
   },
   "candidatePicker": {
     "title": "Найдено несколько совпадений",

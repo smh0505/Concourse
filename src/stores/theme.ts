@@ -65,23 +65,27 @@ export const useThemeStore = defineStore("theme", () => {
     }
   }
 
+  /** Loads `id`'s plugin (if any) and wires its visuals/CSS vars/activate hook. Returns null
+   *  (leaving activePlugin cleared) when `id` doesn't resolve to an installed plugin - a
+   *  no-match theme id still gets recorded as active by setActiveTheme below, just with nothing
+   *  applied. */
+  async function activateThemePlugin(id: string): Promise<ThemePlugin | null> {
+    const plugin = await loadThemePlugin(id);
+    if (!plugin) return null;
+
+    setActiveCardVisual(plugin.cardVisual);
+    setActiveFontFaces(plugin.fontFaces);
+    applyCssVariables(plugin.cssVariables);
+    if (plugin.activate) await plugin.activate();
+    return plugin;
+  }
+
   async function setActiveTheme(id: string | null) {
     if (activePlugin?.deactivate) await activePlugin.deactivate();
     clearActiveCardVisual();
     clearActiveFontFaces();
     applyCssVariables(undefined);
-    activePlugin = null;
-
-    if (id) {
-      const plugin = await loadThemePlugin(id);
-      if (plugin) {
-        activePlugin = plugin;
-        setActiveCardVisual(plugin.cardVisual);
-        setActiveFontFaces(plugin.fontFaces);
-        applyCssVariables(plugin.cssVariables);
-        if (plugin.activate) await plugin.activate();
-      }
-    }
+    activePlugin = id ? await activateThemePlugin(id) : null;
 
     activeThemeId.value = id;
     await settingsRepo.setForProfile(activeProfileId(), ACTIVE_THEME_SETTING, id ?? "");

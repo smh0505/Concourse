@@ -107,7 +107,11 @@
     "pinPatternHint": "Letters and numbers only",
     "hiddenTags": "Hidden tags (kids mode)",
     "hiddenTagsHint": "Games tagged with any of these are hidden from {name}'s library.",
-    "noTagsToHide": "This profile has no tags yet."
+    "noTagsToHide": "This profile has no tags yet.",
+    "viewLibrary": "View library",
+    "viewLibraryHint": "Every game {name} has added, including anything currently hidden from their own view.",
+    "noGamesAdded": "This profile has no games yet.",
+    "hiddenBadge": "Hidden"
   },
   "candidatePicker": {
     "title": "Multiple matches found",

@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconEyeOff, IconLock, IconPencil, IconPlus, IconTrash } from "@tabler/icons-vue";
+import {
+  IconDeviceGamepad2,
+  IconEyeOff,
+  IconLock,
+  IconPencil,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
-import { tags as tagRepo } from "@/db";
+import { games as gameRepo, tags as tagRepo } from "@/db";
+import type { Game } from "@/db";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
 
 const { t } = useI18n();
@@ -56,6 +64,25 @@ async function toggleHiddenTag(tagId: number) {
   else next.add(tagId);
   hiddenTagIds.value = next;
   await tagRepo.setHiddenTagIds(tagEditingId.value, [...next]);
+}
+
+// Milestone 30 step 3 follow-up - Admin's on-demand cross-profile library view, so Admin can
+// see what a non-admin profile has added even if it's currently hidden from that profile's own
+// view. Diffs the unfiltered list against the profile's own (hidden-tag-filtered) list rather
+// than fetching per-game tags, to flag which games are currently hidden.
+const libraryViewId = ref<number | null>(null);
+const libraryViewGames = ref<(Game & { hidden: boolean })[]>([]);
+
+async function startLibraryView(id: number) {
+  libraryViewId.value = id;
+  const [all, visible] = await Promise.all([gameRepo.listAllForProfile(id), gameRepo.list(id)]);
+  const visibleIds = new Set(visible.map((g) => g.id));
+  libraryViewGames.value = all.map((g) => ({ ...g, hidden: !visibleIds.has(g.id) }));
+}
+
+function cancelLibraryView() {
+  libraryViewId.value = null;
+  libraryViewGames.value = [];
 }
 
 async function onCreateSubmit(name: string, pin: string) {
@@ -223,6 +250,16 @@ async function onPinSubmit() {
                   <IconEyeOff :size="15" :stroke-width="1.75" />
                 </button>
                 <button
+                  v-if="profile.id !== 1 && profiles.isAdmin"
+                  class="icon-button"
+                  :title="t('profiles.viewLibrary')"
+                  @click="
+                    libraryViewId === profile.id ? cancelLibraryView() : startLibraryView(profile.id)
+                  "
+                >
+                  <IconDeviceGamepad2 :size="15" :stroke-width="1.75" />
+                </button>
+                <button
                   v-if="profile.id !== 1 && profiles.profiles.length > 1"
                   class="icon-button"
                   :title="t('profiles.delete')"
@@ -249,6 +286,16 @@ async function onPinSubmit() {
                 />
                 <span>{{ tag.name }}</span>
               </label>
+            </div>
+            <div v-if="libraryViewId === profile.id" class="library-view-panel">
+              <small class="form-hint">{{ t("profiles.viewLibraryHint", { name: profile.name }) }}</small>
+              <div v-if="libraryViewGames.length === 0" class="tag-hide-empty">
+                {{ t("profiles.noGamesAdded") }}
+              </div>
+              <div v-for="g in libraryViewGames" :key="g.id" class="library-view-item">
+                <span>{{ g.title }}</span>
+                <span v-if="g.hidden" class="hidden-badge">{{ t("profiles.hiddenBadge") }}</span>
+              </div>
             </div>
           </div>
         </template>
@@ -351,5 +398,32 @@ async function onPinSubmit() {
   align-items: center;
   gap: var(--space-2);
   font-size: 0.9rem;
+}
+
+/* Reuses .tag-hide-panel's shell tokens rather than redefining them, since it's the same
+   inline-panel-under-a-row shape - just a different list content. */
+.library-view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-2);
+  background: var(--surface-2, rgba(0, 0, 0, 0.05));
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.library-view-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+}
+
+.hidden-badge {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  white-space: nowrap;
 }
 </style>

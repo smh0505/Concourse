@@ -107,7 +107,11 @@
     "pinPatternHint": "仅限字母和数字",
     "hiddenTags": "隐藏标签(儿童模式)",
     "hiddenTagsHint": "带有这些标签的游戏将从{name}的游戏库中隐藏。",
-    "noTagsToHide": "该档案还没有标签。"
+    "noTagsToHide": "该档案还没有标签。",
+    "viewLibrary": "查看游戏库",
+    "viewLibraryHint": "{name}添加的所有游戏,包括当前对其自己隐藏的游戏。",
+    "noGamesAdded": "该档案还没有游戏。",
+    "hiddenBadge": "已隐藏"
   },
   "candidatePicker": {
     "title": "找到多个匹配项",

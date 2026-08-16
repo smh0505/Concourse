@@ -107,7 +107,11 @@
     "pinPatternHint": "Solo lettere e numeri",
     "hiddenTags": "Tag nascosti (modalità bambini)",
     "hiddenTagsHint": "I giochi con uno di questi tag sono nascosti dalla libreria di {name}.",
-    "noTagsToHide": "Questo profilo non ha ancora tag."
+    "noTagsToHide": "Questo profilo non ha ancora tag.",
+    "viewLibrary": "Visualizza libreria",
+    "viewLibraryHint": "Tutti i giochi aggiunti da {name}, inclusi quelli attualmente nascosti dalla sua vista.",
+    "noGamesAdded": "Questo profilo non ha ancora giochi.",
+    "hiddenBadge": "Nascosto"
   },
   "candidatePicker": {
     "title": "Trovate più corrispondenze",

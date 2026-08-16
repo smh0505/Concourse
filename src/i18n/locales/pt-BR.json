@@ -107,7 +107,11 @@
     "pinPatternHint": "Somente letras e números",
     "hiddenTags": "Tags ocultas (modo infantil)",
     "hiddenTagsHint": "Jogos com qualquer uma dessas tags ficam ocultos na biblioteca de {name}.",
-    "noTagsToHide": "Este perfil ainda não tem tags."
+    "noTagsToHide": "Este perfil ainda não tem tags.",
+    "viewLibrary": "Ver biblioteca",
+    "viewLibraryHint": "Todos os jogos adicionados por {name}, incluindo os que estão ocultos da própria visualização dele.",
+    "noGamesAdded": "Este perfil ainda não tem jogos.",
+    "hiddenBadge": "Oculto"
   },
   "candidatePicker": {
     "title": "Várias correspondências encontradas",

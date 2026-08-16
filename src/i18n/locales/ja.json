@@ -107,7 +107,11 @@
     "pinPatternHint": "英数字のみ",
     "hiddenTags": "非表示タグ(キッズモード)",
     "hiddenTagsHint": "これらのタグが付いたゲームは{name}のライブラリから非表示になります。",
-    "noTagsToHide": "このプロフィールにはまだタグがありません。"
+    "noTagsToHide": "このプロフィールにはまだタグがありません。",
+    "viewLibrary": "ライブラリを表示",
+    "viewLibraryHint": "{name}が追加したすべてのゲーム(現在本人のビューから非表示になっているものも含む)。",
+    "noGamesAdded": "このプロフィールにはまだゲームがありません。",
+    "hiddenBadge": "非表示"
   },
   "candidatePicker": {
     "title": "複数の一致が見つかりました",

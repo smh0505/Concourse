@@ -107,7 +107,11 @@
     "pinPatternHint": "Nur Buchstaben und Zahlen",
     "hiddenTags": "Ausgeblendete Tags (Kindersicherung)",
     "hiddenTagsHint": "Spiele mit einem dieser Tags werden aus {name}s Bibliothek ausgeblendet.",
-    "noTagsToHide": "Dieses Profil hat noch keine Tags."
+    "noTagsToHide": "Dieses Profil hat noch keine Tags.",
+    "viewLibrary": "Bibliothek ansehen",
+    "viewLibraryHint": "Alle Spiele, die {name} hinzugefügt hat, einschließlich aller, die derzeit vor diesem Profil verborgen sind.",
+    "noGamesAdded": "Dieses Profil hat noch keine Spiele.",
+    "hiddenBadge": "Verborgen"
   },
   "candidatePicker": {
     "title": "Mehrere Treffer gefunden",

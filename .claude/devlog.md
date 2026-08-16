@@ -7395,3 +7395,31 @@ are per-profile; app-level settings are shared."
 
 Verified: `cargo check` (migration v15), `bun run build` (typecheck + all 10 locale JSON files
 parse), all three M30 steps now done.
+
+### Milestone 30 step 3 follow-up: Admin's cross-profile library view
+
+Two gaps surfaced after step 3 shipped, both from the user directly:
+1. The hide-list mechanism is generic per-profile, not actually age-gated - it applies to any
+   non-admin profile, including another adult sharing the PC. Confirmed as-designed, not a bug -
+   "kids mode" is the milestone's name for the feature, not a runtime distinction the code makes.
+2. Admin had no way to know what games a non-admin profile had added at all, hidden or not -
+   `ProfilesPanel.vue`'s hidden-tags checklist only shows tag names, never actual games, and
+   Admin's own `library.games` is scoped to Admin's own profile_id.
+
+Resolved via AskUserQuestion (on-demand cross-profile view vs. live notification/badge vs.
+both) - user picked the on-demand view, no new event/unread-state machinery needed.
+
+`GameRepository` gained `listAllForProfile(profileId)` - deliberately *not* filtered by
+`hidden_tags`, unlike `list()` - Admin needs to see everything a profile has, including what's
+currently hidden from that profile's own view, to make an informed hide-list decision and to
+actually know what got installed. `ProfilesPanel.vue` gained a second per-row control (gamepad
+icon, same `profile.id !== 1 && profiles.isAdmin` guard as the hidden-tags button) opening an
+inline scrollable list of that profile's games; each hidden-from-its-owner game gets a "Hidden"
+badge, computed by diffing `listAllForProfile()` against the profile's own `list()` (a set
+membership check) rather than fetching per-game tags - cheaper and reuses two calls the panel
+already needed.
+
+i18n: `profiles.viewLibrary`/`viewLibraryHint`/`noGamesAdded`/`hiddenBadge` added across all 10
+locales.
+
+Verified: `bun run build` (typecheck + all 10 locale JSON files parse).

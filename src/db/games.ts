@@ -22,6 +22,18 @@ export class GameRepository {
     );
   }
 
+  /** Milestone 30 step 3 follow-up - Admin's cross-profile library browser. Unlike list(),
+   *  this does NOT exclude hidden-tag games - Admin needs to see everything a profile has
+   *  added, including what's currently hidden from that profile's own view, to actually make
+   *  informed hide-list decisions and to know what a kid has installed. */
+  async listAllForProfile(profileId: number): Promise<Game[]> {
+    const db = await getDb();
+    return db.select<Game[]>(
+      "SELECT * FROM games WHERE profile_id = $1 ORDER BY title COLLATE NOCASE",
+      [profileId],
+    );
+  }
+
   async add(title: string, executablePath: string, profileId: number): Promise<void> {
     const db = await getDb();
     await db.execute(

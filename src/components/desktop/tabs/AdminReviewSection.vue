@@ -52,10 +52,13 @@ async function approve(game: UnsharedGame) {
 }
 
 async function share(game: UnsharedGame) {
-  await gameRepo.shareToAdmin(game.id);
+  const matched = await gameRepo.shareToAdmin(game.id);
   await load();
   await library.refresh();
-  toasts.push(t("library.sharedGame", { title: game.title }), "success");
+  toasts.push(
+    t(matched ? "library.sharedGameMatched" : "library.sharedGame", { title: game.title }),
+    "success",
+  );
 }
 
 /** Updates just this one card in place rather than re-running load() for the whole section -

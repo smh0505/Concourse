@@ -7658,3 +7658,30 @@ i18n: `gameDetail.alternateTitle`/`alternateTitleHint` added across all 10 local
 
 Verified: `cargo check` (migration v18), `bun run build` (typecheck + all 10 locale JSON files
 parse).
+
+### Milestone 30: dedup guard on shareToAdmin
+
+User asked how per-profile games actually work and whether duplicates were possible - walked
+through it: cross-profile duplicates (two profiles independently scanning the same Steam
+library) are by design, not a bug, since each profile needs its own independent playtime/tags
+for a shared game. The real gap was `shareToAdmin()` itself - unlike `importEntries` (which
+already does a title-match merge check before inserting from a plugin scan), `shareToAdmin` had
+no dedup check at all, so sharing a kid's copy of a game Admin already owns independently would
+silently create a second row in Admin's own library.
+
+`GameRepository.shareToAdmin(id)` now checks for an existing title match in Admin's own library
+first - same case-insensitive, `skip_dedup`-respecting match `importEntries` already uses for
+plugin scans (`LOWER(title)` comparison, `skip_dedup = 0` rows only), via a self-join
+(`games AS admin_games` / `games AS source`) rather than a separate round-trip query. On a
+match, no `INSERT` happens - `shared_admin_copy_id` just points at the *existing* row, same
+end state as a normal share minus the duplicate; Admin's pre-existing row is left completely
+untouched (unlike `importEntries`'s merge, which upgrades `executable_path`/`platform` from the
+new scan - a re-scanned source is assumed more current, but a shared copy from a kid's profile
+isn't a more current version of Admin's own already-configured install, so nothing there should
+change). Return type changed from `void` to `boolean` (`true` = matched existing, `false` =
+inserted fresh) so both call sites (`AdminReviewSection.vue`, `GameDetail.vue`'s
+`onShareForeign`) can toast the right message.
+
+i18n: `library.sharedGameMatched`/`gameDetail.sharedGameMatched` added across all 10 locales.
+
+Verified: `bun run build`, `cargo check`.

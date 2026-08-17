@@ -620,6 +620,9 @@ history in devlog.
   checklist itself.
 - [x] Optional per-game `alternate_title` (migration v18) - `fetchMetadata()` retries with it if
   the primary title's search returns nothing from any provider, before giving up.
+- [x] `shareToAdmin()` dedup guard - a title match (case-insensitive, `skip_dedup`-respecting,
+  same as `importEntries`'s plugin-scan merge) against Admin's own library links to the
+  existing row instead of inserting a duplicate when Admin already owns the game independently.
 - [x] Big Picture extension - `BigPictureProfileSwitcher.vue` (full gamepad nav +
   `OnScreenKeyboard.vue`) for "launch into Big Picture on startup"
 

@@ -64,14 +64,34 @@ export class GameRepository {
   /** Milestone 30 - Admin's "just in case" safety net from the Library tab's review section:
    *  copies (not moves) a non-admin game into Admin's own library, so Admin keeps independent
    *  access even if the source profile later hides/deletes/loses the game - then links the
-   *  source row to the new copy (shared_admin_copy_id) so it drops out of the review section.
+   *  source row to the copy (shared_admin_copy_id) so it drops out of the review section.
    *  Deliberately narrow set of copied columns: launch-relevant fields (title/executable_path/
    *  platform/install_dir) and cosmetic metadata (art/description/release_date) carry over;
    *  per-installation session state (window rect, resolution override, translations, skip_*
    *  flags) resets to defaults, since those describe *this* copy's own future sessions, not the
-   *  source profile's. */
-  async shareToAdmin(id: number): Promise<void> {
+   *  source profile's.
+   *  Checks for an existing title match in Admin's own library first (same case-insensitive,
+   *  skip_dedup-respecting match `importEntries` uses for plugin scans) - if Admin already owns
+   *  this game independently, links to that row instead of inserting a duplicate. Returns
+   *  whether it matched an existing row (true) or inserted a fresh copy (false), so callers can
+   *  toast accordingly. */
+  async shareToAdmin(id: number): Promise<boolean> {
     const db = await getDb();
+    const [existing] = await db.select<{ id: number }[]>(
+      `SELECT admin_games.id FROM games AS admin_games
+       JOIN games AS source ON source.id = $1
+       WHERE admin_games.profile_id = 1
+       AND admin_games.skip_dedup = 0
+       AND LOWER(admin_games.title) = LOWER(source.title)
+       LIMIT 1`,
+      [id],
+    );
+
+    if (existing) {
+      await db.execute("UPDATE games SET shared_admin_copy_id = $1 WHERE id = $2", [existing.id, id]);
+      return true;
+    }
+
     const result = await db.execute(
       `INSERT INTO games (
          title, executable_path, platform, cover_art_url, background_art_url,
@@ -86,6 +106,7 @@ export class GameRepository {
       result.lastInsertId,
       id,
     ]);
+    return false;
   }
 
   /** Milestone 30 step 3 follow-up - anything added while a non-admin profile is active starts

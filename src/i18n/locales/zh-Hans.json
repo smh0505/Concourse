@@ -39,6 +39,7 @@
     "shareGame": "添加到我的游戏库",
     "approvedGame": "已批准“{title}”",
     "sharedGame": "已将“{title}”添加到你的游戏库",
+    "sharedGameMatched": "你已拥有“{title}” - 已关联到你现有的副本",
     "noMetadataYet": "尚未获取元数据。",
     "tags": "标签",
     "addTag": "添加标签",
@@ -337,6 +338,7 @@
     "reviewSectionTitle": "其他档案添加的游戏 ({count})",
     "approvedGame": "已批准“{title}”",
     "sharedGame": "已将“{title}”添加到你的游戏库",
+    "sharedGameMatched": "你已拥有“{title}” - 已关联到你现有的副本",
     "noMetadataFound": "未找到「{title}」的元数据。",
     "noBackgroundArtFound": "未找到「{title}」的背景图。"
   },

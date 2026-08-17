@@ -39,6 +39,7 @@
     "shareGame": "Добавить в мою библиотеку",
     "approvedGame": "«{title}» одобрена",
     "sharedGame": "«{title}» добавлена в вашу библиотеку",
+    "sharedGameMatched": "У вас уже есть «{title}» - привязано к вашей существующей копии",
     "noMetadataYet": "Метаданные ещё не получены.",
     "tags": "Теги",
     "addTag": "Добавить тег",
@@ -337,6 +338,7 @@
     "reviewSectionTitle": "Добавлено другими профилями ({count})",
     "approvedGame": "«{title}» одобрена",
     "sharedGame": "«{title}» добавлена в вашу библиотеку",
+    "sharedGameMatched": "У вас уже есть «{title}» - привязано к вашей существующей копии",
     "noMetadataFound": "Метаданные для \"{title}\" не найдены.",
     "noBackgroundArtFound": "Фоновое изображение для \"{title}\" не найдено."
   },

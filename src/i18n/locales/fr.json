@@ -39,6 +39,7 @@
     "shareGame": "Ajouter à ma bibliothèque",
     "approvedGame": "\"{title}\" approuvé",
     "sharedGame": "\"{title}\" ajouté à votre bibliothèque",
+    "sharedGameMatched": "Vous avez déjà \"{title}\" - lié à votre copie existante",
     "noMetadataYet": "Aucune métadonnée récupérée pour le moment.",
     "tags": "Tags",
     "addTag": "Ajouter un tag",
@@ -337,6 +338,7 @@
     "reviewSectionTitle": "Ajoutés par d'autres profils ({count})",
     "approvedGame": "\"{title}\" approuvé",
     "sharedGame": "\"{title}\" ajouté à votre bibliothèque",
+    "sharedGameMatched": "Vous avez déjà \"{title}\" - lié à votre copie existante",
     "noMetadataFound": "Aucune métadonnée trouvée pour \"{title}\".",
     "noBackgroundArtFound": "Aucune image de fond trouvée pour \"{title}\"."
   },

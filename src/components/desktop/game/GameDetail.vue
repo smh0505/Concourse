@@ -55,9 +55,12 @@ async function onApproveForeign() {
 }
 
 async function onShareForeign() {
-  await gameRepo.shareToAdmin(game.value.id);
+  const matched = await gameRepo.shareToAdmin(game.value.id);
   await library.refresh();
-  toasts.push(t("gameDetail.sharedGame", { title: game.value.title }), "success");
+  toasts.push(
+    t(matched ? "gameDetail.sharedGameMatched" : "gameDetail.sharedGame", { title: game.value.title }),
+    "success",
+  );
   library.closeDetail();
 }
 

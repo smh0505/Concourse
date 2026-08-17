@@ -39,6 +39,7 @@
     "shareGame": "Share to my library",
     "approvedGame": "Approved \"{title}\"",
     "sharedGame": "Shared \"{title}\" to your library",
+    "sharedGameMatched": "You already have \"{title}\" - linked to your existing copy",
     "noMetadataYet": "No metadata fetched yet.",
     "tags": "Tags",
     "addTag": "Add tag",
@@ -337,6 +338,7 @@
     "reviewSectionTitle": "Added by other profiles ({count})",
     "approvedGame": "Approved \"{title}\"",
     "sharedGame": "Shared \"{title}\" to your library",
+    "sharedGameMatched": "You already have \"{title}\" - linked to your existing copy",
     "noMetadataFound": "No metadata found for \"{title}\".",
     "noBackgroundArtFound": "No background art found for \"{title}\"."
   },

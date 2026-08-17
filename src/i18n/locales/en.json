@@ -39,6 +39,7 @@
     "shareGame": "Share to my library",
     "approvedGame": "Approved \"{title}\"",
     "sharedGame": "Shared \"{title}\" to your library",
+    "noMetadataYet": "No metadata fetched yet.",
     "tags": "Tags",
     "addTag": "Add tag",
     "collections": "Collections",

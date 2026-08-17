@@ -299,8 +299,14 @@ export const useLibraryStore = defineStore("library", () => {
    *  (description/releaseDate/genres, e.g. IGDB) and/or art (coverArtUrl/backgroundArtUrl,
    *  e.g. SteamGridDB); metadataProviders.fetchMetadata already merges across all of them,
    *  first-non-null-wins per field, so this just applies whatever came back without needing
-   *  to know which provider produced which piece. */
-  async function fetchMetadata(game: Game) {
+   *  to know which provider produced which piece.
+   *  `skipGenreTags` - Milestone 30, set by fetchMetadataForForeign below. `tags.addToGame`
+   *  always resolves against the *active* profile's own tag namespace (activeProfileId()), not
+   *  the game's actual owning profile - fine for Admin's own games, wrong for a foreign one
+   *  from the Library tab's review section, where it would silently attach an Admin-owned tag
+   *  to another profile's game. Description/cover/background art have no such per-profile
+   *  namespace, so those still apply normally either way. */
+  async function fetchMetadata(game: Game, skipGenreTags = false) {
     const toasts = useToastStore();
     fetchingMetadataFor.value = game.id;
     try {
@@ -308,7 +314,7 @@ export const useLibraryStore = defineStore("library", () => {
       const meta = await metadataProviders.fetchMetadata(game.title);
       if (meta) {
         await gameRepo.updateMetadata(game.id, meta.description, meta.releaseDate);
-        if (meta.genres.length > 0) {
+        if (meta.genres.length > 0 && !skipGenreTags) {
           await useTagsStore().addToGame(game, meta.genres);
         }
         if (meta.coverArtUrl) await gameRepo.updateCoverArt(game.id, meta.coverArtUrl);
@@ -322,6 +328,18 @@ export const useLibraryStore = defineStore("library", () => {
     } finally {
       fetchingMetadataFor.value = null;
     }
+  }
+
+  /** Milestone 30 - the review section's own "Fetch Metadata" action (ReviewGameCard.vue and
+   *  GameDetail.vue's isForeign branch). Unlike fetchMetadata() above, `game` here was never in
+   *  `games` (the active profile's own list), so refresh() re-fetching that array does nothing
+   *  useful for it - re-reads this one row instead (with its owner_name join) and reassigns
+   *  viewingForeignGame directly if it's the one currently open, so GameDetail picks up the new
+   *  cover/description without needing to close and reopen. */
+  async function fetchMetadataForForeign(game: UnsharedGame) {
+    await fetchMetadata(game, true);
+    const fresh = await gameRepo.getUnsharedById(game.id);
+    if (fresh && viewingForeignGame.value?.id === game.id) viewingForeignGame.value = fresh;
   }
 
   /** GameDetail's dedicated "just refresh background art without leaving the page"
@@ -630,6 +648,7 @@ export const useLibraryStore = defineStore("library", () => {
     setSortOption,
     setSearchToken,
     fetchMetadata,
+    fetchMetadataForForeign,
     fetchBackgroundArt,
     addGame,
     deleteGame,

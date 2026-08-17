@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { IconCheck, IconDownload } from "@tabler/icons-vue";
+import { IconCheck, IconDownload, IconInfoCircle, IconLoader2 } from "@tabler/icons-vue";
 
 import { useBalloonAnchor } from "@/composables/useBalloonAnchor";
 import type { UnsharedGame } from "@/db";
 
-const props = defineProps<{ game: UnsharedGame & { pending: boolean; hiddenByTag: boolean } }>();
-const emit = defineEmits<{ approve: []; share: []; open: [] }>();
+const props = defineProps<{
+  game: UnsharedGame & { pending: boolean; hiddenByTag: boolean };
+  fetching: boolean;
+}>();
+const emit = defineEmits<{ approve: []; share: []; open: []; fetchMetadata: [] }>();
 
 const { t } = useI18n();
 
@@ -30,6 +33,10 @@ const ribbon = computed(() => {
 
       <div v-if="ribbon" class="ribbon" :class="`ribbon-${ribbon.key}`">{{ ribbon.label }}</div>
 
+      <div v-if="fetching" class="fetch-overlay">
+        <IconLoader2 :size="24" :stroke-width="1.75" class="spin" />
+      </div>
+
       <div class="footer icon-action-row">
         <button
           v-if="game.pending"
@@ -38,6 +45,14 @@ const ribbon = computed(() => {
           @click.stop="emit('approve')"
         >
           <IconCheck :size="15" :stroke-width="1.75" />
+        </button>
+        <button
+          class="fetch-metadata"
+          :title="t('gameCard.fetchMetadata')"
+          :disabled="fetching"
+          @click.stop="emit('fetchMetadata')"
+        >
+          <IconInfoCircle :size="15" :stroke-width="1.75" />
         </button>
         <button class="share" :title="t('library.shareGame')" @click.stop="emit('share')">
           <IconDownload :size="15" :stroke-width="1.75" />
@@ -138,6 +153,26 @@ const ribbon = computed(() => {
 
 .card:hover .footer {
   transform: translateY(0);
+}
+
+.fetch-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
 

@@ -39,6 +39,7 @@
     "shareGame": "添加到我的游戏库",
     "approvedGame": "已批准“{title}”",
     "sharedGame": "已将“{title}”添加到你的游戏库",
+    "noMetadataYet": "尚未获取元数据。",
     "tags": "标签",
     "addTag": "添加标签",
     "collections": "合集",

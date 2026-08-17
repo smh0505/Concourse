@@ -19,6 +19,7 @@ const toasts = useToastStore();
 const expanded = ref(false);
 const games = ref<(UnsharedGame & { pending: boolean; hiddenByTag: boolean })[]>([]);
 const loading = ref(false);
+const fetchingId = ref<number | null>(null);
 
 /** hiddenByTag can't be read off a column the way pending can (pending_review is direct) - it's
  *  derived by checking, for every distinct owning profile represented, whether that profile's
@@ -56,6 +57,23 @@ async function share(game: UnsharedGame) {
   await library.refresh();
   toasts.push(t("library.sharedGame", { title: game.title }), "success");
 }
+
+/** Updates just this one card in place rather than re-running load() for the whole section -
+ *  a metadata fetch never changes pending/hidden status, so there's no reason to re-derive
+ *  hiddenByTag (which needs a query per distinct owning profile) for a single-row change. */
+async function fetchMetadataFor(game: UnsharedGame) {
+  fetchingId.value = game.id;
+  try {
+    await library.fetchMetadataForForeign(game);
+    const fresh = await gameRepo.getUnsharedById(game.id);
+    const idx = games.value.findIndex((g) => g.id === game.id);
+    if (fresh && idx !== -1) {
+      games.value[idx] = { ...fresh, pending: fresh.pending_review === 1, hiddenByTag: games.value[idx].hiddenByTag };
+    }
+  } finally {
+    fetchingId.value = null;
+  }
+}
 </script>
 
 <template>
@@ -71,9 +89,11 @@ async function share(game: UnsharedGame) {
         v-for="game in games"
         :key="game.id"
         :game="game"
+        :fetching="fetchingId === game.id"
         @approve="approve(game)"
         @share="share(game)"
         @open="library.openForeignDetail(game)"
+        @fetch-metadata="fetchMetadataFor(game)"
       />
     </div>
   </div>

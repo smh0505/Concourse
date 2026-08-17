@@ -7574,3 +7574,45 @@ removed across all 10 locales; new `library.*` (`pendingBadge`, `hiddenBadge`, `
 
 Verified: `cargo check` (migration v17), `bun run build` (typecheck + all 10 locale JSON files
 parse).
+
+### Milestone 30: fetching metadata for a game pending review
+
+User caught a real gap immediately after the read-only-mode decision above: a game still
+`pending_review` was never visible to its own owning profile either (excluded from that
+profile's own `list()`, same as Admin's view) - so nobody could have fetched metadata for it yet
+by the time Admin sees it in the review section. Read-only mode as shipped had no Fetch
+Metadata action at all, so Admin had no way to even see what the game was before deciding
+approve/hide/share.
+
+The obvious fix - just let the read-only view call the existing `library.fetchMetadata(game)` -
+had the same cross-profile risk already identified for the edit form, just reached through a
+different door: `fetchMetadata()` calls `tags.addToGame(game, meta.genres)` when a provider
+returns genre tags, and `tags.addToGame` always resolves against `activeProfileId()` (Admin),
+never the game's actual `profile_id`. Fetching metadata for a foreign game would've silently
+created Admin-owned tags linked to another profile's game - exactly the mismatch read-only mode
+was built to prevent, just not caught the first time since tags didn't come up until "how does
+Admin see what the game even is" forced the question.
+
+Fix: `fetchMetadata()` gained an optional `skipGenreTags` parameter (default false, so the
+primary flow is untouched) - description/cover/background art have no per-profile namespace, so
+those still apply normally either way; only the genre-tag write is skipped. New
+`fetchMetadataForForeign(game: UnsharedGame)` wraps it with `skipGenreTags: true`, then re-reads
+the single row (`GameRepository.getUnsharedById`, new - same shape as `listUnsharedForAdmin` but
+scoped to one id) and reassigns `viewingForeignGame` if that's still the open game, so
+`GameDetail.vue` picks up the new cover/description without a close/reopen round-trip - unlike
+the primary flow, there's no reactive `games` array a single foreign row could re-derive from.
+
+Wired into three places: `GameDetail.vue`'s isForeign action-bar (new Fetch Metadata button,
+reusing the existing `fetchingMetadata` computed and cover skeleton shimmer for a consistent
+loading state, plus a new "No metadata fetched yet" placeholder when there's nothing to show),
+`ReviewGameCard.vue` (new inline icon button + loading spinner overlay, mirroring
+`GameCard.vue`'s own fetch-overlay treatment exactly), and `AdminReviewSection.vue` (tracks
+`fetchingId` for the spinner, updates just the one affected card in place after a fetch rather
+than reloading the whole section - a metadata fetch never changes pending/hidden status, so
+there's nothing else in the list that could have changed).
+
+i18n: `gameDetail.noMetadataYet` added across all 10 locales; `fetchMetadata`/`fetching` labels
+on the two new buttons reuse existing `gameDetail.*`/`gameCard.*` keys rather than adding
+duplicates.
+
+Verified: `cargo check`, `bun run build` (typecheck + all 10 locale JSON files parse).

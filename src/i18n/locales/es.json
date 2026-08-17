@@ -39,6 +39,7 @@
     "shareGame": "Añadir a mi biblioteca",
     "approvedGame": "\"{title}\" aprobado",
     "sharedGame": "\"{title}\" añadido a tu biblioteca",
+    "noMetadataYet": "Aún no se han obtenido metadatos.",
     "tags": "Etiquetas",
     "addTag": "Añadir etiqueta",
     "collections": "Colecciones",

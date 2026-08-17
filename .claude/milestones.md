@@ -612,9 +612,12 @@ history in devlog.
 - [x] Kids mode follow-up: Admin review moved from a per-profile Settings panel to a folded
   section on the Library tab itself (`AdminReviewSection.vue`) - one flat cross-profile list
   (`GameRepository.listUnsharedForAdmin()`), pending/hidden ribbons, an owner-name balloon per
-  card, inline Approve/Share actions, and a read-only `GameDetail.vue` view for foreign games
-  (`shared_admin_copy_id`, migration v17, tracks what's already been shared so it drops out of
-  the list). ProfilesPanel.vue keeps only the hidden-tags checklist itself.
+  card, inline Approve/Share/Fetch-Metadata actions, and a read-only `GameDetail.vue` view for
+  foreign games (`shared_admin_copy_id`, migration v17, tracks what's already been shared so it
+  drops out of the list). Metadata fetch for a foreign game skips its genre-tag write
+  (`fetchMetadata`'s own `skipGenreTags`) - `tags.addToGame` always resolves against Admin's own
+  namespace, not the game's actual owning profile. ProfilesPanel.vue keeps only the hidden-tags
+  checklist itself.
 - [x] Big Picture extension - `BigPictureProfileSwitcher.vue` (full gamepad nav +
   `OnScreenKeyboard.vue`) for "launch into Big Picture on startup"
 

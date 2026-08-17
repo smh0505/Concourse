@@ -39,6 +39,7 @@
     "shareGame": "自分のライブラリに追加",
     "approvedGame": "「{title}」を承認しました",
     "sharedGame": "「{title}」をライブラリに追加しました",
+    "noMetadataYet": "まだメタデータが取得されていません。",
     "tags": "タグ",
     "addTag": "タグを追加",
     "collections": "コレクション",

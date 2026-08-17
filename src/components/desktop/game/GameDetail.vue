@@ -41,8 +41,10 @@ const game = computed<Game>(() => library.viewingGame!);
 /** Milestone 30 - Admin opened this from the Library tab's review section rather than their own
  *  grid. Rendered read-only (see the template's own v-if split below): tags/collections/launch
  *  settings/the edit form all write against the *active* profile's own namespace, which would
- *  be wrong here - the game belongs to a different profile entirely. Only Approve/Share are
- *  offered instead. */
+ *  be wrong here - the game belongs to a different profile entirely. Approve/Share/Fetch
+ *  Metadata are offered instead - fetch is safe here despite the above (it writes description/
+ *  cover/background art, no profile-scoped tag/collection namespace involved), see
+ *  fetchMetadataForForeign's own comment for the one thing it deliberately skips. */
 const isForeign = computed(() => library.viewingForeignGame !== null);
 const foreignOwnerName = computed(() => library.viewingForeignGame?.owner_name ?? "");
 
@@ -57,6 +59,10 @@ async function onShareForeign() {
   await library.refresh();
   toasts.push(t("gameDetail.sharedGame", { title: game.value.title }), "success");
   library.closeDetail();
+}
+
+function onFetchMetadataForeign() {
+  if (library.viewingForeignGame) library.fetchMetadataForForeign(library.viewingForeignGame);
 }
 
 const editing = ref(false);
@@ -536,7 +542,10 @@ async function onDelete() {
               {{ t("gameDetail.backToLibrary") }}
             </button>
             <div class="cover-wrap">
-              <img v-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
+              <div v-if="fetchingMetadata" class="cover cover-skeleton">
+                <div class="shimmer" />
+              </div>
+              <img v-else-if="game.cover_art_url" class="cover" :src="game.cover_art_url" :alt="game.title" />
               <div v-else class="cover-placeholder">{{ game.title.charAt(0).toUpperCase() }}</div>
             </div>
           </div>
@@ -545,11 +554,18 @@ async function onDelete() {
             <h1>{{ game.title }}</h1>
             <p class="foreign-owner">{{ t("gameDetail.ownedBy", { name: foreignOwnerName }) }}</p>
             <div v-if="descriptionHtml" class="description" v-html="descriptionHtml" />
+            <p v-else-if="!fetchingMetadata" class="foreign-owner">
+              {{ t("gameDetail.noMetadataYet") }}
+            </p>
           </div>
         </div>
       </div>
 
       <div class="action-bar">
+        <button type="button" :disabled="fetchingMetadata" @click="onFetchMetadataForeign">
+          <IconInfoCircle :size="16" :stroke-width="1.75" />
+          {{ fetchingMetadata ? t("gameDetail.fetching") : t("gameDetail.fetchMetadata") }}
+        </button>
         <button v-if="game.pending_review === 1" @click="onApproveForeign">
           {{ t("gameDetail.approveGame") }}
         </button>

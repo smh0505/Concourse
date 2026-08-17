@@ -46,6 +46,21 @@ export class GameRepository {
     );
   }
 
+  /** Milestone 30 - re-reads a single game the review section is showing, after a metadata
+   *  fetch updates its row - `listUnsharedForAdmin` only ever loads once per section mount, so
+   *  there's no reactive array a single-row update could re-derive from the way the active
+   *  profile's own `games` array does. Same owner_name join, scoped to one id. */
+  async getUnsharedById(id: number): Promise<UnsharedGame | null> {
+    const db = await getDb();
+    const rows = await db.select<UnsharedGame[]>(
+      `SELECT games.*, profiles.name as owner_name
+       FROM games JOIN profiles ON profiles.id = games.profile_id
+       WHERE games.id = $1`,
+      [id],
+    );
+    return rows[0] ?? null;
+  }
+
   /** Milestone 30 - Admin's "just in case" safety net from the Library tab's review section:
    *  copies (not moves) a non-admin game into Admin's own library, so Admin keeps independent
    *  access even if the source profile later hides/deletes/loses the game - then links the

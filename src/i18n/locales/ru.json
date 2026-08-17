@@ -39,6 +39,7 @@
     "shareGame": "Добавить в мою библиотеку",
     "approvedGame": "«{title}» одобрена",
     "sharedGame": "«{title}» добавлена в вашу библиотеку",
+    "noMetadataYet": "Метаданные ещё не получены.",
     "tags": "Теги",
     "addTag": "Добавить тег",
     "collections": "Коллекции",

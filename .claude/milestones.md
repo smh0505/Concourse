@@ -775,6 +775,24 @@ yet). Real open questions before any code, not a quick stretch item:
 - [ ] Per-game opt-in likely (same reasoning as pseudo_fullscreen/always_on_top), given the
   latency/GPU cost tradeoff isn't something every game should pay
 
+## Milestone 41 — Big Picture Menu & Desktop Feature Parity (not started)
+Big Picture today is thin: `BigPictureGrid.vue`/`BigPictureSlideshow.vue` (the two view modes),
+`BigPictureProfileSwitcher.vue`, and that's it - no search/filter, no tags/collections, no
+Settings, no Stats. The grid/slideshow toggle and "Exit Big Picture" are also always-on-screen
+floating buttons directly in `App.vue`'s BP overlay, not part of any menu. User-proposed polish
+pass, scope to be narrowed further when this milestone actually starts:
+- [ ] Design a hideable in-BP menu, gamepad/keyboard/mouse-navigable (`useGamepadNav`/
+  `useGamepadDirections`, same input model `OnScreenKeyboard.vue` already uses) - toggled via a
+  dedicated button/hotkey, not permanently visible over the game grid/slideshow
+- [ ] Move the existing view-mode toggle and Exit button into that menu; remove their standalone
+  floating buttons from `App.vue`'s BP overlay template once the menu covers them
+- [ ] Bring a first slice of desktop-only functionality into Big Picture through the same menu -
+  candidates: search/filter, tag/collection browsing, Settings (at minimum plugin/theme/
+  controller-mapping), Stats
+- [ ] Per function, decide full BP-native screen (like `BigPictureGrid.vue` itself) vs. a
+  simplified subset - BP's controller-first input model doesn't make every desktop UI pattern
+  (e.g. free-text search, dense settings forms) translate directly
+
 ## Squash `db.rs` Migrations (planned for 3.0.0)
 Scheduled deliberately - after 3.0.0's other changes land, not before. Same reasoning as the
 existing pre-1.0.0 squash (`db.rs`'s own comment on `migrations()`), but this time it's a real

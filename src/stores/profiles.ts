@@ -105,16 +105,46 @@ export const useProfilesStore = defineStore("profiles", () => {
     await loadProfiles();
   }
 
+  /** Milestone 30 follow-up - a random human-typeable one-time recovery code, shown once
+   *  whenever a PIN is set (see setPin below). 4 groups of 4 uppercase alnum characters
+   *  (excluding easily-confused 0/O/1/I) separated by dashes - short enough to type back in,
+   *  long enough (32^16 possibilities) that guessing it isn't meaningfully easier than guessing
+   *  the PIN itself would be under this same casual-guard threat model (see auth.rs's own
+   *  comment - neither is a real security boundary against local filesystem access). */
+  function generateRecoveryCode(): string {
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const chars = Array.from(bytes, (b) => alphabet[b % alphabet.length]);
+    return [0, 4, 8, 12].map((start) => chars.slice(start, start + 4).join("")).join("-");
+  }
+
   /** The raw PIN is only ever hashed Rust-side (`hash_profile_pin`) - this repo/store never
-   *  writes a plaintext PIN anywhere, including in transit to the DB layer. */
-  async function setPin(id: number, pin: string) {
+   *  writes a plaintext PIN anywhere, including in transit to the DB layer.
+   *  Recovery codes only ever matter for Admin (id 1) - any other profile's PIN can already be
+   *  reset by Admin via ProfilesPanel without needing the old one (that panel is itself gated
+   *  admin-only), so generating an unused, never-displayed recovery code for a non-admin profile
+   *  would just be dead state. For id 1, also generates a fresh recovery code (invalidating any
+   *  previous one - single-use, not a permanent backup password) and returns it raw, the only
+   *  time it's ever available in plaintext - the caller must show it to the user exactly once. */
+  async function setPin(id: number, pin: string): Promise<string | null> {
     const hash = await invoke<string>("hash_profile_pin", { pin });
     await profileRepo.setPinHash(id, hash);
+    if (id !== 1) {
+      await profileRepo.setRecoveryCodeHash(id, null);
+      await loadProfiles();
+      return null;
+    }
+    const recoveryCode = generateRecoveryCode();
+    const recoveryHash = await invoke<string>("hash_profile_pin", { pin: recoveryCode });
+    await profileRepo.setRecoveryCodeHash(id, recoveryHash);
     await loadProfiles();
+    return recoveryCode;
   }
 
   async function clearPin(id: number) {
     await profileRepo.setPinHash(id, null);
+    await profileRepo.setRecoveryCodeHash(id, null);
     await loadProfiles();
   }
 
@@ -124,6 +154,23 @@ export const useProfilesStore = defineStore("profiles", () => {
     const profile = profiles.value.find((p) => p.id === id);
     if (!profile?.pin_hash) return true;
     return invoke<boolean>("verify_profile_pin", { pin, stored: profile.pin_hash });
+  }
+
+  async function verifyRecoveryCode(id: number, code: string): Promise<boolean> {
+    const profile = profiles.value.find((p) => p.id === id);
+    if (!profile?.recovery_code_hash) return false;
+    return invoke<boolean>("verify_profile_pin", { pin: code, stored: profile.recovery_code_hash });
+  }
+
+  /** ProfileSwitcher's "Forgot PIN?" flow - verifies `code` against the stored recovery code,
+   *  and only if valid replaces the PIN (which, via setPin, also generates and returns a fresh
+   *  recovery code to replace the one just consumed). Null return means the code was wrong;
+   *  the caller shouldn't distinguish "no recovery code set" from "wrong code" any more
+   *  specifically than that either way. */
+  async function recoverWithNewPin(id: number, code: string, newPin: string): Promise<string | null> {
+    const ok = await verifyRecoveryCode(id, code);
+    if (!ok) return null;
+    return setPin(id, newPin);
   }
 
   /** Deletes the profile's entire library (games/tags/collections - playtime_sessions cascade
@@ -164,5 +211,7 @@ export const useProfilesStore = defineStore("profiles", () => {
     setPin,
     clearPin,
     verifyPin,
+    verifyRecoveryCode,
+    recoverWithNewPin,
   };
 });

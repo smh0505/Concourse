@@ -7,6 +7,7 @@ import { useProfilesStore } from "@/stores/profiles";
 import { useToastStore } from "@/stores/toasts";
 import { tags as tagRepo } from "@/db";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
+import RecoveryCodeDisplay from "./RecoveryCodeDisplay.vue";
 
 const { t } = useI18n();
 const profiles = useProfilesStore();
@@ -26,6 +27,11 @@ const pendingPin = ref("");
 const confirmingPin = ref(false);
 const pinError = ref("");
 const pinInputEl = ref<HTMLInputElement | null>(null);
+// Milestone 30 follow-up - Admin's PIN is mandatory now, and setPin(1, ...) always returns a
+// fresh recovery code that needs showing exactly once (see profiles.ts's own comment on why
+// it's id-1-only) - this row's inline PIN form swaps to RecoveryCodeDisplay in place rather
+// than closing immediately, same "must confirm you saved it" pattern SetupAdminPin.vue uses.
+const newRecoveryCode = ref<string | null>(null);
 
 // Milestone 30 step 3 - kids mode. Only Admin (profile 1) can open this, and only for another
 // (non-admin) profile - see ProfilesPanel's template guard below. Loads that target profile's
@@ -105,6 +111,7 @@ function cancelPinEdit() {
   pendingPin.value = "";
   confirmingPin.value = false;
   pinError.value = "";
+  newRecoveryCode.value = null;
 }
 
 async function onPinSubmit() {
@@ -130,11 +137,28 @@ async function onPinSubmit() {
     return;
   }
 
+  // Admin's PIN is mandatory (App.vue's onboarding gate) - clearing it here would just leave
+  // the gate to re-trigger on next launch, confusing rather than actually removing anything.
+  if (pinEditingId.value === 1 && !pendingPin.value) {
+    confirmingPin.value = false;
+    pendingPin.value = "";
+    pinError.value = t("profiles.adminPinRequired");
+    return;
+  }
+
   try {
     // Both entries blank and matching means "remove the PIN", the only way to do that now
     // that there's no separate remove button.
     if (pendingPin.value) {
-      await profiles.setPin(pinEditingId.value, pendingPin.value);
+      const recoveryCode = await profiles.setPin(pinEditingId.value, pendingPin.value);
+      if (recoveryCode) {
+        pinInput.value = "";
+        pendingPin.value = "";
+        confirmingPin.value = false;
+        pinError.value = "";
+        newRecoveryCode.value = recoveryCode;
+        return;
+      }
     } else {
       await profiles.clearPin(pinEditingId.value);
     }
@@ -184,7 +208,7 @@ async function onPinSubmit() {
                 </span>
               </div>
               <form
-                v-if="pinEditingId === profile.id"
+                v-if="pinEditingId === profile.id && !newRecoveryCode"
                 class="pin-inline-row"
                 @submit.prevent="onPinSubmit"
               >
@@ -198,6 +222,9 @@ async function onPinSubmit() {
                   @keyup.esc="cancelPinEdit"
                 />
               </form>
+              <div v-if="pinEditingId === profile.id && newRecoveryCode" class="pin-inline-row">
+                <RecoveryCodeDisplay :code="newRecoveryCode" @continue="cancelPinEdit" />
+              </div>
               <div v-if="pinEditingId !== profile.id" class="row-controls">
                 <button
                   v-if="profile.id !== 1"

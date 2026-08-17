@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { IconLayoutGrid, IconSlideshow } from "@tabler/icons-vue";
@@ -34,7 +34,7 @@ import { AddGame, CandidatePicker } from "./components/desktop/modalForms";
 import { ToastContainer } from "./components/desktop/common";
 import { GameDetail } from "./components/desktop/game";
 import { BigPictureGrid, BigPictureSlideshow, BigPictureProfileSwitcher } from "./components/bigpicture";
-import { ProfileSwitcher } from "./components/desktop/profiles";
+import { ProfileSwitcher, SetupAdminPin } from "./components/desktop/profiles";
 
 const { t } = useI18n();
 const profiles = useProfilesStore();
@@ -50,6 +50,13 @@ const pluginUpdates = usePluginUpdatesStore();
 const translation = useTranslationStore();
 const presence = usePresenceStore();
 const bigPicture = ref(false);
+
+// Milestone 30 follow-up - Admin's PIN became mandatory: SetupAdminPin renders in place of
+// either picker (even in Big Picture mode - typing/recording a recovery code needs precision UI
+// on-screen keyboards aren't built for) until profile 1 has one. Truthy before profiles.init()
+// resolves (profiles.profiles starts empty) same as the pickers' own activeProfileId === null
+// check already is - a brief pre-load flash, not a new behavior class.
+const adminNeedsPin = computed(() => !profiles.profiles.find((p) => p.id === 1)?.pin_hash);
 const bigPictureViewMode = ref<"grid" | "slideshow">("grid");
 const activeView = ref<AppView>("library");
 const sidebarCollapsed = ref(false);
@@ -208,7 +215,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <BigPictureProfileSwitcher v-if="profiles.activeProfileId === null && bigPicture" />
+  <SetupAdminPin v-if="profiles.activeProfileId === null && adminNeedsPin" />
+  <BigPictureProfileSwitcher v-else-if="profiles.activeProfileId === null && bigPicture" />
   <ProfileSwitcher v-else-if="profiles.activeProfileId === null" />
 
   <template v-else>

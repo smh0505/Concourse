@@ -377,5 +377,22 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 19,
+            description: "add_profile_recovery_code",
+            sql: r#"
+            -- Milestone 30 follow-up - Admin's PIN became mandatory (App.vue's onboarding gate
+            -- forces it to be set before the app is usable at all, now that Admin can un-hide
+            -- games/approve/share across profiles), which raises a real "what if Admin forgets
+            -- it" question with no account/cloud system to recover through. A one-time recovery
+            -- code, generated and shown once whenever a PIN is set (hash_profile_pin/
+            -- verify_profile_pin, same format/threat model as pin_hash itself - see auth.rs's
+            -- own comment), is the local-only answer: entering it on a locked card unlocks and
+            -- forces a new PIN, which also regenerates this (single-use, not a permanent backup
+            -- password). Nullable - a profile with no PIN has no recovery code either.
+            ALTER TABLE profiles ADD COLUMN recovery_code_hash TEXT;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

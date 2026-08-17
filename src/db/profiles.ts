@@ -6,6 +6,10 @@ export interface Profile {
   /** "<salt_hex>:<hash_hex>" from Rust's hash_profile_pin, or null if this profile has no PIN
    *  set (the default - ProfileSwitcher switches into it with no prompt). */
   pin_hash: string | null;
+  /** Same "<salt_hex>:<hash_hex>" shape as pin_hash, hashed via the same hash_profile_pin
+   *  command - a one-time recovery code, shown to the user once whenever a PIN is set, that
+   *  unlocks and forces a new PIN if the original is forgotten. Null whenever pin_hash is null. */
+  recovery_code_hash: string | null;
 }
 
 export class ProfileRepository {
@@ -30,6 +34,12 @@ export class ProfileRepository {
   async setPinHash(id: number, hash: string | null): Promise<void> {
     const db = await getDb();
     await db.execute("UPDATE profiles SET pin_hash = $1 WHERE id = $2", [hash, id]);
+  }
+
+  /** Same shape/reasoning as setPinHash - this repo never sees the raw recovery code either. */
+  async setRecoveryCodeHash(id: number, hash: string | null): Promise<void> {
+    const db = await getDb();
+    await db.execute("UPDATE profiles SET recovery_code_hash = $1 WHERE id = $2", [hash, id]);
   }
 
   /** Cascades nowhere on its own - games/tags/collections reference profile_id without

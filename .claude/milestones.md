@@ -623,6 +623,10 @@ history in devlog.
 - [x] `shareToAdmin()` dedup guard - a title match (case-insensitive, `skip_dedup`-respecting,
   same as `importEntries`'s plugin-scan merge) against Admin's own library links to the
   existing row instead of inserting a duplicate when Admin already owns the game independently.
+- [x] Mandatory Admin PIN + one-time recovery code (migration v19, `profiles.recovery_code_hash`)
+  - `SetupAdminPin.vue` gates the app until Admin (profile 1) sets a PIN; a `RecoveryCodeDisplay`
+  code is shown once and can later unlock via `ProfileSwitcher.vue`'s "Forgot PIN?" if lost.
+  Admin-only (id 1) - any other profile's PIN is already resettable by Admin without one.
 - [x] Big Picture extension - `BigPictureProfileSwitcher.vue` (full gamepad nav +
   `OnScreenKeyboard.vue`) for "launch into Big Picture on startup"
 

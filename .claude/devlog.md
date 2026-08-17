@@ -7685,3 +7685,59 @@ inserted fresh) so both call sites (`AdminReviewSection.vue`, `GameDetail.vue`'s
 i18n: `library.sharedGameMatched`/`gameDetail.sharedGameMatched` added across all 10 locales.
 
 Verified: `bun run build`, `cargo check`.
+
+### Milestone 30: mandatory Admin PIN + recovery code
+
+User raised it directly: now that Admin can un-hide games/approve/share across every profile,
+Admin's PIN (previously just optional, same as any other profile's) needed to actually mean
+something, and forgetting it needed a real answer given the app has no account/cloud system to
+verify identity through. Two design questions asked via AskUserQuestion rather than guessed -
+when to enforce it (first launch/onboarding, not nagging every session) and how recovery should
+work (a one-time recovery code, not a filesystem-access reset or security questions) - both
+picked the recommended option, chosen specifically because the PIN's own documented threat
+model (`auth.rs`'s comment: casual-guard against another household member, not real security
+against local filesystem access) means a locally-generated, locally-verified recovery code
+fits without inventing a stronger guarantee than the PIN itself ever had.
+
+Migration v19: `profiles.recovery_code_hash TEXT`, same shape/mechanism as `pin_hash` (hashed
+via the same `hash_profile_pin`/`verify_profile_pin` Rust commands - a recovery code is just
+another string to hash, no new crypto surface). Scoped to Admin (id 1) only, not every profile -
+any *other* profile's forgotten PIN can already be reset by Admin via `ProfilesPanel.vue`
+without needing the old one (that panel is itself gated admin-only), so a recovery code for a
+non-admin profile would be generated, never shown anywhere, and just sit as dead state. `setPin`
+now returns `string | null` - the raw code (id 1) or `null` (every other id), the one time it's
+ever available in plaintext; a fresh call always regenerates it (invalidating the previous one -
+single-use, not a permanent backup password).
+
+`profiles.ts`'s `generateRecoveryCode()`: 16 bytes from `crypto.getRandomValues`, mapped through
+a 33-character alphabet (uppercase alnum minus 0/O/1/I, the commonly-confused set) into
+4 groups of 4 dashed together (`XXXX-XXXX-XXXX-XXXX`) - typeable back in without a keyboard's
+shift key, comparable entropy to guessing the PIN itself under the same casual-guard threat
+model, not trying to be cryptographically stronger than what it's protecting.
+
+Three surfaces:
+- **`SetupAdminPin.vue`** (new) - `App.vue` renders this in place of *either* picker
+  (`ProfileSwitcher.vue`/`BigPictureProfileSwitcher.vue`, even when Big Picture auto-launch is
+  on - typing a PIN and recording a recovery code needs precision UI, not a gamepad on-screen
+  keyboard) whenever `adminNeedsPin` (profile 1 has no `pin_hash` yet) is true. Two-stage PIN
+  entry, then `RecoveryCodeDisplay.vue` (new, shared) before continuing - a "must confirm you
+  saved it" checkbox gates the continue button, so the code isn't dismissed unread. Fires once
+  per install (fresh installs on first launch, existing installs on their first launch after
+  upgrading past this migration) - once `pin_hash` is set, the gate never triggers again.
+- **`ProfileSwitcher.vue`**'s "Forgot PIN?" - only shown when the profile being unlocked
+  actually has a `recovery_code_hash` (in practice, only ever Admin). A combined 3-field form
+  (code + new PIN + confirmation) rather than the single-field-reuse pattern the rest of this
+  file uses - a rare-path recovery flow doesn't need that same minimal-footprint polish. Success
+  shows the freshly regenerated code via the same `RecoveryCodeDisplay.vue`, then unlocks.
+- **`ProfilesPanel.vue`**'s existing PIN-change flow - `setPin`'s return now surfaces inline via
+  the same component instead of closing immediately. Also gained a guard: submitting an empty
+  PIN for id 1 (previously "clear the PIN") now errors instead, since a cleared Admin PIN would
+  just leave the onboarding gate to silently re-trigger next launch rather than actually
+  achieving anything the user asked for.
+
+i18n: `profiles.pinRequired`/`adminPinRequired`/`forgotPin`/`enterRecoveryCode`/
+`wrongRecoveryCode`/`setupAdminPinTitle`/`setupAdminPinHint`/`recoveryCodeIntro`/
+`recoveryCodeWarning`/`recoveryCodeConfirm`/`copyCode` added across all 10 locales.
+
+Verified: `cargo check` (migration v19), `bun run build` (typecheck + all 10 locale JSON files
+parse).

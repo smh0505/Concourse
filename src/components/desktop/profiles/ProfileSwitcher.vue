@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { nextTick, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { IconLock } from "@tabler/icons-vue";
 
 import { useProfilesStore } from "@/stores/profiles";
 import ProfileCreateForm from "./ProfileCreateForm.vue";
+import RecoveryCodeDisplay from "./RecoveryCodeDisplay.vue";
 import type { Profile } from "@/db";
 
 const { t } = useI18n();
@@ -47,6 +48,7 @@ function cancelUnlock() {
   unlockingId.value = null;
   pinValue.value = "";
   pinError.value = "";
+  cancelRecovery();
 }
 
 async function confirmUnlock() {
@@ -60,6 +62,71 @@ async function confirmUnlock() {
   }
   const id = unlockingId.value;
   unlockingId.value = null;
+  await select(id);
+}
+
+// Milestone 30 follow-up - "Forgot PIN?" only ever shows for a profile that actually has a
+// recovery code (in practice, only ever Admin - see profiles.ts's own comment on why recovery
+// codes are id-1-only). One combined form (code + new PIN + confirmation) rather than the
+// single-field-reuse pattern the rest of this file uses elsewhere - a rare-path recovery flow
+// doesn't need that same minimal-footprint polish, and three distinct fields read more clearly
+// for something this unusual.
+const recoveringId = computed(() =>
+  unlockingId.value !== null && profiles.profiles.find((p) => p.id === unlockingId.value)?.recovery_code_hash
+    ? unlockingId.value
+    : null,
+);
+const recovering = ref(false);
+const recoveryCodeInput = ref("");
+const newPinInput = ref("");
+const newPinConfirmInput = ref("");
+const recoveryError = ref("");
+// Set once recovery succeeds - the card then shows RecoveryCodeDisplay (the freshly regenerated
+// code) instead of the recovery form, same "must confirm you saved it" gate SetupAdminPin.vue
+// uses for the very first code.
+const newRecoveryCode = ref<string | null>(null);
+
+function startRecovery() {
+  recovering.value = true;
+  recoveryCodeInput.value = "";
+  newPinInput.value = "";
+  newPinConfirmInput.value = "";
+  recoveryError.value = "";
+}
+
+function cancelRecovery() {
+  recovering.value = false;
+  recoveryCodeInput.value = "";
+  newPinInput.value = "";
+  newPinConfirmInput.value = "";
+  recoveryError.value = "";
+  newRecoveryCode.value = null;
+}
+
+async function confirmRecovery() {
+  if (unlockingId.value === null) return;
+  if (!newPinInput.value) {
+    recoveryError.value = t("profiles.pinRequired");
+    return;
+  }
+  if (newPinInput.value !== newPinConfirmInput.value) {
+    recoveryError.value = t("profiles.pinMismatch");
+    return;
+  }
+  const newCode = await profiles.recoverWithNewPin(unlockingId.value, recoveryCodeInput.value, newPinInput.value);
+  if (!newCode) {
+    recoveryError.value = t("profiles.wrongRecoveryCode");
+    return;
+  }
+  recovering.value = false;
+  newRecoveryCode.value = newCode;
+}
+
+async function onRecoveryContinue() {
+  if (unlockingId.value === null) return;
+  const id = unlockingId.value;
+  unlockingId.value = null;
+  newRecoveryCode.value = null;
   await select(id);
 }
 
@@ -89,8 +156,48 @@ async function onCreateSubmit(name: string, pin: string) {
       </div>
       <div class="grid">
         <template v-for="profile in profiles.profiles" :key="profile.id">
+          <div v-if="unlockingId === profile.id && newRecoveryCode" class="profile-card creating recovery-card">
+            <RecoveryCodeDisplay :code="newRecoveryCode" @continue="onRecoveryContinue" />
+          </div>
           <form
-            v-if="unlockingId === profile.id"
+            v-else-if="unlockingId === profile.id && recovering"
+            class="profile-card creating recovery-card"
+            @submit.prevent="confirmRecovery"
+          >
+            <div class="profile-avatar">
+              {{ profile.name.charAt(0).toUpperCase() }}
+              <IconLock :size="14" :stroke-width="2" class="profile-avatar-lock" />
+            </div>
+            <input
+              v-model="recoveryCodeInput"
+              autofocus
+              :placeholder="t('profiles.enterRecoveryCode')"
+              @keyup.esc="cancelUnlock"
+            />
+            <input
+              v-model="newPinInput"
+              type="password"
+              pattern="[a-zA-Z0-9]*"
+              :title="t('profiles.pinPatternHint')"
+              :placeholder="t('profiles.newPin')"
+              @keyup.esc="cancelUnlock"
+            />
+            <input
+              v-model="newPinConfirmInput"
+              type="password"
+              pattern="[a-zA-Z0-9]*"
+              :title="t('profiles.pinPatternHint')"
+              :placeholder="t('profiles.confirmPin')"
+              @keyup.esc="cancelUnlock"
+            />
+            <p v-if="recoveryError" class="error-text">{{ recoveryError }}</p>
+            <button type="submit">{{ t("common.continue") }}</button>
+            <button type="button" class="link-button" @click="cancelRecovery">
+              {{ t("common.cancel") }}
+            </button>
+          </form>
+          <form
+            v-else-if="unlockingId === profile.id"
             class="profile-card creating"
             @submit.prevent="confirmUnlock"
           >
@@ -108,6 +215,9 @@ async function onCreateSubmit(name: string, pin: string) {
               @keyup.esc="cancelUnlock"
             />
             <p v-if="pinError" class="error-text">{{ pinError }}</p>
+            <button v-if="recoveringId === profile.id" type="button" class="link-button" @click="startRecovery">
+              {{ t("profiles.forgotPin") }}
+            </button>
           </form>
           <button v-else type="button" class="profile-card" @click="onCardClick(profile)">
             <div class="profile-avatar">
@@ -216,4 +326,22 @@ h1 {
   text-align: center;
 }
 
+.link-button {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+/* The recovery form/display card needs more room than the plain unlock form - 3 inputs plus
+   RecoveryCodeDisplay's own content, both wider than a single-field unlock. */
+.recovery-card {
+  width: 16rem;
+}
 </style>

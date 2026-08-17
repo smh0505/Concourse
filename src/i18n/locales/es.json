@@ -61,6 +61,8 @@
     "fetchMetadata": "Obtener metadatos",
     "titleLabel": "Título",
     "executablePathLabel": "Ruta del ejecutable",
+    "alternateTitle": "Título alternativo",
+    "alternateTitleHint": "Término de búsqueda alternativo si el título principal no encuentra metadatos",
     "translate": "Traducir",
     "translateTitleOnly": "Traducir solo el título",
     "translateContentOnly": "Traducir solo el contenido",

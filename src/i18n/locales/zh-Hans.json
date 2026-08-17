@@ -61,6 +61,8 @@
     "fetchMetadata": "获取元数据",
     "titleLabel": "标题",
     "executablePathLabel": "可执行文件路径",
+    "alternateTitle": "备用标题",
+    "alternateTitleHint": "主标题找不到元数据时使用的备用搜索词",
     "translate": "翻译",
     "translateTitleOnly": "仅翻译标题",
     "translateContentOnly": "仅翻译内容",

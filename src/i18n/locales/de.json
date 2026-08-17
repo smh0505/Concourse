@@ -61,6 +61,8 @@
     "fetchMetadata": "Metadaten abrufen",
     "titleLabel": "Titel",
     "executablePathLabel": "Pfad zur ausführbaren Datei",
+    "alternateTitle": "Alternativer Titel",
+    "alternateTitleHint": "Ausweich-Suchbegriff, falls der Haupttitel keine Metadaten findet",
     "translate": "Übersetzen",
     "translateTitleOnly": "Nur Titel übersetzen",
     "translateContentOnly": "Nur Inhalt übersetzen",

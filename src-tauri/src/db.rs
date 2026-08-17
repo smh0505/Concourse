@@ -363,5 +363,19 @@ pub fn migrations() -> Vec<Migration> {
         "#,
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 18,
+            description: "add_alternate_title",
+            sql: r#"
+            -- Milestone 30 follow-up - a scanned exe/folder title doesn't always match what
+            -- metadata providers know a game by (region-specific naming, abbreviated install
+            -- folder names, etc.), so a search against the primary title can come back empty
+            -- even though the game is well-known under a different name. User-editable optional
+            -- fallback search term - fetchMetadata() (library.ts) retries with this if the
+            -- primary title's search returns nothing, rather than giving up immediately.
+            ALTER TABLE games ADD COLUMN alternate_title TEXT;
+        "#,
+            kind: MigrationKind::Up,
+        },
     ]
 }

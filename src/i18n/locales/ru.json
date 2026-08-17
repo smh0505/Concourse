@@ -61,6 +61,8 @@
     "fetchMetadata": "Получить метаданные",
     "titleLabel": "Название",
     "executablePathLabel": "Путь к исполняемому файлу",
+    "alternateTitle": "Альтернативное название",
+    "alternateTitleHint": "Запасной поисковый запрос, если по основному названию метаданные не найдены",
     "translate": "Перевести",
     "translateTitleOnly": "Перевести только название",
     "translateContentOnly": "Перевести только описание",

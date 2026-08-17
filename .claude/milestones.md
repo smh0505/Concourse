@@ -614,10 +614,12 @@ history in devlog.
   (`GameRepository.listUnsharedForAdmin()`), pending/hidden ribbons, an owner-name balloon per
   card, inline Approve/Share/Fetch-Metadata actions, and a read-only `GameDetail.vue` view for
   foreign games (`shared_admin_copy_id`, migration v17, tracks what's already been shared so it
-  drops out of the list). Metadata fetch for a foreign game skips its genre-tag write
-  (`fetchMetadata`'s own `skipGenreTags`) - `tags.addToGame` always resolves against Admin's own
-  namespace, not the game's actual owning profile. ProfilesPanel.vue keeps only the hidden-tags
+  drops out of the list). Genre tags from a foreign-game fetch write against the game's actual
+  `profile_id` (a direct `tagRepo.addToGame` call, bypassing the `tags` store's always-active-
+  profile resolution) rather than being dropped. ProfilesPanel.vue keeps only the hidden-tags
   checklist itself.
+- [x] Optional per-game `alternate_title` (migration v18) - `fetchMetadata()` retries with it if
+  the primary title's search returns nothing from any provider, before giving up.
 - [x] Big Picture extension - `BigPictureProfileSwitcher.vue` (full gamepad nav +
   `OnScreenKeyboard.vue`) for "launch into Big Picture on startup"
 

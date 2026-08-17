@@ -61,6 +61,8 @@
     "fetchMetadata": "Récupérer les métadonnées",
     "titleLabel": "Titre",
     "executablePathLabel": "Chemin de l'exécutable",
+    "alternateTitle": "Titre alternatif",
+    "alternateTitleHint": "Terme de recherche de secours si le titre principal ne trouve aucune métadonnée",
     "translate": "Traduire",
     "translateTitleOnly": "Traduire uniquement le titre",
     "translateContentOnly": "Traduire uniquement le contenu",

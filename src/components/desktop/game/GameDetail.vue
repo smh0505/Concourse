@@ -90,6 +90,7 @@ const form = ref<GameEditFields>({
   resolution_width: null,
   resolution_height: null,
   resolution_refresh: null,
+  alternate_title: "",
 });
 
 /** Populated when editing starts (see startEdit) - the target display's supported modes, for
@@ -148,6 +149,7 @@ function resetForm() {
     resolution_width: game.value.resolution_width,
     resolution_height: game.value.resolution_height,
     resolution_refresh: game.value.resolution_refresh,
+    alternate_title: game.value.alternate_title ?? "",
   };
 }
 
@@ -520,6 +522,7 @@ async function onSave() {
     resolution_width: form.value.resolution_width,
     resolution_height: form.value.resolution_height,
     resolution_refresh: form.value.resolution_refresh,
+    alternate_title: form.value.alternate_title?.trim() || null,
   });
   editing.value = false;
 }
@@ -762,6 +765,10 @@ async function onDelete() {
 
           <form v-else class="edit-form" @submit.prevent="onSave">
             <input v-model="form.title" :placeholder="t('gameDetail.titleLabel')" class="title-input" />
+            <label>
+              {{ t("gameDetail.alternateTitle") }}
+              <input v-model="form.alternate_title" :placeholder="t('gameDetail.alternateTitleHint')" />
+            </label>
             <div class="field-row">
               <span
                 class="platform-field"

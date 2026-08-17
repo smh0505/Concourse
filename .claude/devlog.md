@@ -7616,3 +7616,45 @@ on the two new buttons reuse existing `gameDetail.*`/`gameCard.*` keys rather th
 duplicates.
 
 Verified: `cargo check`, `bun run build` (typecheck + all 10 locale JSON files parse).
+
+### Milestone 30: genre tags for foreign games, and an alternate-title metadata fallback
+
+User pushed back on the previous fix's `skipGenreTags` flag - dropping a fetched game's genre
+tags entirely just because Admin (not the owning profile) triggered the fetch loses real
+information, rather than actually solving the namespace mismatch. Right fix, not a workaround:
+`tags.addToGame` (the Pinia store method) always resolves `activeProfileId()` internally, but
+the underlying `tagRepo.addToGame(gameId, names, profileId)` already takes an explicit
+`profileId` - nothing forced it to be the *active* one. `fetchMetadata()` now calls
+`tagRepo.addToGame(game.id, meta.genres, game.profile_id)` directly, bypassing the store
+entirely - correct for both cases uniformly, since Admin's own games already have
+`profile_id === activeProfileId()` by construction, so nothing changes for the primary flow.
+Only calls `useTagsStore().refresh(games.value)` (the store's own reactive-state sync) when the
+game actually belongs to the active profile - refreshing Admin's own tag state after writing
+into a different profile's namespace would be pointless (nothing in `games.value` would reflect
+it) and is skipped. The `skipGenreTags` parameter and its whole reason for existing are gone;
+`fetchMetadataForForeign()` is now a plain wrapper around the same `fetchMetadata()` everyone
+else uses.
+
+Second request, same conversation turn: a scanned exe/folder title doesn't always match what a
+metadata provider knows a game by (abbreviated install-folder names, region-specific naming),
+so a search can come back completely empty even for a well-known game. Asked which of three
+shapes this should take (a manual per-game fallback field, automatic title-mangling like
+stripping subtitle suffixes, or a new per-source-plugin capability to report a canonical title)
+rather than guessing - a manual field was the smallest, most consistent-with-existing-patterns
+option (every other optional per-game hint, like `install_dir`/`locale_profile_guid`, is either
+scanner-set or user-set, never auto-derived by string heuristics), and the user picked it.
+
+Migration v18: `games.alternate_title TEXT`, nullable, no default - a plain user-editable
+optional column, no `REFERENCES`/upgrade-safety concerns like the last few migrations had.
+`GameEditFields` gained `alternate_title` (`GameDetail.vue`'s edit form, right under the title
+field: a labeled text input with a placeholder explaining what it's for). `fetchMetadata()`
+retries once with `game.alternate_title` if the primary `game.title` search returns nothing from
+every enabled provider, before giving up and showing the "no metadata found" toast - applies
+uniformly whether fetching for Admin's own game or a foreign one from the review section, since
+`alternate_title` is a plain column read off whatever `Game`/`UnsharedGame` row was passed in,
+no profile-scoping concerns unlike the tag write above.
+
+i18n: `gameDetail.alternateTitle`/`alternateTitleHint` added across all 10 locales.
+
+Verified: `cargo check` (migration v18), `bun run build` (typecheck + all 10 locale JSON files
+parse).

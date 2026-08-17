@@ -189,12 +189,13 @@ export class GameRepository {
          resolution_width = $17,
          resolution_height = $18,
          resolution_refresh = $19,
+         alternate_title = $20,
          translated_title = NULL,
          translated_description = NULL,
          translated_locale = NULL,
          show_translated_title = 0,
          show_translated_description = 0
-       WHERE id = $20`,
+       WHERE id = $21`,
       [
         fields.title,
         fields.executable_path,
@@ -215,6 +216,7 @@ export class GameRepository {
         fields.resolution_width,
         fields.resolution_height,
         fields.resolution_refresh,
+        fields.alternate_title,
         id,
       ],
     );

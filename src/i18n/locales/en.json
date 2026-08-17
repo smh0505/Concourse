@@ -61,6 +61,8 @@
     "fetchMetadata": "Fetch Metadata",
     "titleLabel": "Title",
     "executablePathLabel": "Executable path",
+    "alternateTitle": "Alternate title",
+    "alternateTitleHint": "Fallback search term if the main title finds no metadata",
     "translate": "Translate",
     "translating": "Translating...",
     "translateTitleOnly": "Translate Title Only",

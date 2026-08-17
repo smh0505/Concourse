@@ -8,6 +8,7 @@ import {
   games as gameRepo,
   playtime as playtimeRepo,
   settings as settingsRepo,
+  tags as tagRepo,
   type Game,
   type GameEditFields,
   type UnsharedGame,
@@ -300,22 +301,31 @@ export const useLibraryStore = defineStore("library", () => {
    *  e.g. SteamGridDB); metadataProviders.fetchMetadata already merges across all of them,
    *  first-non-null-wins per field, so this just applies whatever came back without needing
    *  to know which provider produced which piece.
-   *  `skipGenreTags` - Milestone 30, set by fetchMetadataForForeign below. `tags.addToGame`
-   *  always resolves against the *active* profile's own tag namespace (activeProfileId()), not
-   *  the game's actual owning profile - fine for Admin's own games, wrong for a foreign one
-   *  from the Library tab's review section, where it would silently attach an Admin-owned tag
-   *  to another profile's game. Description/cover/background art have no such per-profile
-   *  namespace, so those still apply normally either way. */
-  async function fetchMetadata(game: Game, skipGenreTags = false) {
+   *  Genre tags write against `game.profile_id`, not `activeProfileId()` - for Admin's own
+   *  games those are always the same value, but for a foreign game opened from the Library
+   *  tab's review section they're not, and writing through the `tags` store (which always
+   *  resolves `activeProfileId()`) would've silently attached an Admin-owned tag to another
+   *  profile's game. Calling `tagRepo.addToGame` directly (bypassing the store) is correct for
+   *  both cases uniformly and needs no store refresh either way - the tag lands in whichever
+   *  profile's own namespace actually owns the game, invisible to Admin's own tag state, same
+   *  as it should be.
+   *  A scanned exe/folder title doesn't always match what a provider knows a game by - if the
+   *  primary title search comes back empty and `alternate_title` is set, retries once with that
+   *  before giving up, rather than requiring the user to notice and manually re-search. */
+  async function fetchMetadata(game: Game) {
     const toasts = useToastStore();
     fetchingMetadataFor.value = game.id;
     try {
       const metadataProviders = useMetadataProviderStore();
-      const meta = await metadataProviders.fetchMetadata(game.title);
+      let meta = await metadataProviders.fetchMetadata(game.title);
+      if (!meta && game.alternate_title) {
+        meta = await metadataProviders.fetchMetadata(game.alternate_title);
+      }
       if (meta) {
         await gameRepo.updateMetadata(game.id, meta.description, meta.releaseDate);
-        if (meta.genres.length > 0 && !skipGenreTags) {
-          await useTagsStore().addToGame(game, meta.genres);
+        if (meta.genres.length > 0) {
+          await tagRepo.addToGame(game.id, meta.genres, game.profile_id);
+          if (game.profile_id === activeProfileId()) await useTagsStore().refresh(games.value);
         }
         if (meta.coverArtUrl) await gameRepo.updateCoverArt(game.id, meta.coverArtUrl);
         if (meta.backgroundArtUrl) await gameRepo.updateBackgroundArt(game.id, meta.backgroundArtUrl);
@@ -337,7 +347,7 @@ export const useLibraryStore = defineStore("library", () => {
    *  viewingForeignGame directly if it's the one currently open, so GameDetail picks up the new
    *  cover/description without needing to close and reopen. */
   async function fetchMetadataForForeign(game: UnsharedGame) {
-    await fetchMetadata(game, true);
+    await fetchMetadata(game);
     const fresh = await gameRepo.getUnsharedById(game.id);
     if (fresh && viewingForeignGame.value?.id === game.id) viewingForeignGame.value = fresh;
   }

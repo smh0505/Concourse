@@ -76,6 +76,11 @@ export interface Game {
    *  Admin-owned row's id (ON DELETE SET NULL - deleting that copy reverts this to unshared).
    *  Always NULL on Admin's own games. Not user-editable via the edit form. */
   shared_admin_copy_id: number | null;
+  /** Milestone 30 follow-up - optional fallback search term for fetchMetadata() (library.ts):
+   *  if a search against `title` finds nothing from any enabled provider, it retries once with
+   *  this instead of giving up. User-editable via the edit form - a scanned exe/folder name
+   *  doesn't always match what providers know a game by. NULL means no fallback configured. */
+  alternate_title: string | null;
 }
 
 /** A non-admin profile's game as shown in the Library tab's Admin-only review section -
@@ -103,6 +108,7 @@ export type GameEditFields = Pick<
   | "resolution_width"
   | "resolution_height"
   | "resolution_refresh"
+  | "alternate_title"
 >;
 
 /** The title to show for `game` under the current UI `locale` - a valid cached translation, or

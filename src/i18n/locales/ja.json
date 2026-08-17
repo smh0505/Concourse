@@ -61,6 +61,8 @@
     "fetchMetadata": "メタデータを取得",
     "titleLabel": "タイトル",
     "executablePathLabel": "実行ファイルのパス",
+    "alternateTitle": "代替タイトル",
+    "alternateTitleHint": "メインタイトルでメタデータが見つからない場合の代替検索語",
     "translate": "翻訳",
     "translateTitleOnly": "タイトルのみ翻訳",
     "translateContentOnly": "内容のみ翻訳",

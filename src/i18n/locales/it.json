@@ -61,6 +61,8 @@
     "fetchMetadata": "Recupera metadati",
     "titleLabel": "Titolo",
     "executablePathLabel": "Percorso dell'eseguibile",
+    "alternateTitle": "Titolo alternativo",
+    "alternateTitleHint": "Termine di ricerca alternativo se il titolo principale non trova metadati",
     "translate": "Traduci",
     "translateTitleOnly": "Traduci solo il titolo",
     "translateContentOnly": "Traduci solo il contenuto",
